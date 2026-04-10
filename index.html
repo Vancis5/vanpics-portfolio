@@ -67,7 +67,7 @@
   #swipe-hint {
     display: flex;
     position: fixed;
-    bottom: 4rem;
+    bottom: 12vh;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -319,6 +319,13 @@ function openLightbox(i, direction) {
     img.style.opacity = '0';
     img.style.transform = 'translateX(' + exitX + ') scale(0.98)';
 
+    // hide info panel immediately so old text isn't visible
+    var infoEl = document.getElementById('lightbox-info');
+    if (infoEl) {
+      infoEl.style.animation = 'none';
+      infoEl.style.opacity = '0';
+    }
+
     // update blur bg immediately (visual polish) — text stays hidden until image ready
     var incoming = blurActive === 'a' ? 'b' : 'a';
     document.getElementById('lightbox-bg-blur-' + incoming + '-inner').style.backgroundImage = 'url(' + p.src + ')';
@@ -340,11 +347,6 @@ function openLightbox(i, direction) {
       img.style.transition = 'none';
       img.style.transform = 'translateX(' + enterX + ') scale(0.98)';
       img.style.opacity = '0';
-
-      // also hide info panel so old text isn't visible during load
-      var infoEl = document.getElementById('lightbox-info');
-      infoEl.style.animation = 'none';
-      infoEl.style.opacity = '0';
 
       // assign handlers BEFORE setting src — Firefox fires load before handler if src set first
       var loadFired = false;
@@ -576,28 +578,38 @@ if (isMobile) {
     }
 
     // ── Scroll settle — detect new active slide ──
-    function onSnapSettle() {
+    function onSnapSettle(targetIdx) {
       var w = imgWrap.offsetWidth;
       if (!w) return;
-      var idx = Math.round(imgWrap.scrollLeft / w);
-      idx = Math.max(0, Math.min(idx, activePhotos.length - 1));
-      if (idx === cur) return;
+      var rawNearest = Math.round(imgWrap.scrollLeft / w);
+      var idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, activePhotos.length - 1));
 
-      var dir = idx > cur ? 1 : -1;
-      cur = idx;
-      var p = activePhotos[cur];
+      if (idx !== cur) {
+        var dir = idx > cur ? 1 : -1;
+        cur = idx;
+        var p = activePhotos[cur];
 
-      // blur bg crossfade
-      var inc = blurActive === 'a' ? 'b' : 'a';
-      document.getElementById('lightbox-bg-blur-' + inc + '-inner').style.backgroundImage = 'url(' + p.src + ')';
-      document.getElementById('lightbox-bg-blur-' + inc).classList.add('active');
-      document.getElementById('lightbox-bg-blur-' + blurActive).classList.remove('active');
-      blurActive = inc;
+        // blur bg crossfade
+        var inc = blurActive === 'a' ? 'b' : 'a';
+        document.getElementById('lightbox-bg-blur-' + inc + '-inner').style.backgroundImage = 'url(' + p.src + ')';
+        document.getElementById('lightbox-bg-blur-' + inc).classList.add('active');
+        document.getElementById('lightbox-bg-blur-' + blurActive).classList.remove('active');
+        blurActive = inc;
 
-      setLightboxContent(p);
-      animateInfo(dir);
-      showFilmstrip();
-      updateLoading();
+        setLightboxContent(p);
+        showFilmstrip();
+        updateLoading();
+      }
+
+      // enforce visible opacity if this was called by snap-settle completion (no arg)
+      if (typeof targetIdx !== 'number') {
+        var info = document.getElementById('lightbox-info');
+        if (info) {
+          info.style.animation = 'none';
+          info.style.transition = 'opacity 0.3s ease';
+          info.style.opacity = '1';
+        }
+      }
     }
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
@@ -605,19 +617,31 @@ if (isMobile) {
       clearTimeout(snapTimer);
       onSnapSettle();
     });
-    // fallback for older browsers
+    // fallback for older browsers + continuous tracking
     imgWrap.addEventListener('scroll', function() {
       clearTimeout(snapTimer);
       snapTimer = setTimeout(onSnapSettle, 150);
-      // fade info proportionally during scroll
       var w = imgWrap.offsetWidth;
       if (!w) return;
       var nearest = Math.round(imgWrap.scrollLeft / w);
+      nearest = Math.max(0, Math.min(nearest, activePhotos.length - 1));
+
+      // preload text underneath if we cross 50% mark
+      if (nearest !== cur) {
+        onSnapSettle(nearest);
+      }
+
       var dist = Math.abs(imgWrap.scrollLeft - nearest * w) / w;
       var info = document.getElementById('lightbox-info');
       if (info) {
-        info.style.transition = 'none';
-        info.style.opacity = 1 - Math.min(1, dist * 3);
+        info.style.animation = 'none';
+        if (dist > 0.05) {
+          info.style.transition = 'opacity 0.15s ease';
+          info.style.opacity = '0';
+        } else {
+          info.style.transition = 'opacity 0.3s ease';
+          info.style.opacity = '1';
+        }
       }
     }, { passive: true });
 
