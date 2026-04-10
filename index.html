@@ -606,8 +606,10 @@ if (isMobile) {
         var info = document.getElementById('lightbox-info');
         if (info) {
           info.style.animation = 'none';
-          info.style.transition = 'opacity 0.3s ease';
+          info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
           info.style.opacity = '1';
+          info.style.filter = 'blur(0px)';
+          info.style.transform = 'translateX(0px)';
         }
       }
     }
@@ -635,12 +637,17 @@ if (isMobile) {
       var info = document.getElementById('lightbox-info');
       if (info) {
         info.style.animation = 'none';
+        var swipeDelta = imgWrap.scrollLeft - cur * w;
         if (dist > 0.05) {
-          info.style.transition = 'opacity 0.15s ease';
+          info.style.transition = 'opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease';
           info.style.opacity = '0';
+          info.style.filter = 'blur(6px)';
+          info.style.transform = swipeDelta > 0 ? 'translateX(-16px)' : 'translateX(16px)';
         } else {
-          info.style.transition = 'opacity 0.3s ease';
+          info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
           info.style.opacity = '1';
+          info.style.filter = 'blur(0px)';
+          info.style.transform = 'translateX(0px)';
         }
       }
     }, { passive: true });
