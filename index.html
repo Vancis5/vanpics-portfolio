@@ -173,9 +173,9 @@
   <button id="lightbox-close" onclick="closeLightbox()">close</button>
   <div id="lightbox-content">
     <div id="lightbox-img-wrap">
-      <img id="lightbox-img" src="" alt="">
+      <img id="lightbox-img" class="zoomable" src="" alt="">
     </div>
-    <div id="lightbox-info">
+    <div id="lightbox-info" onclick="toggleLightboxDesc()">
       <div id="lightbox-title"></div>
       <div id="lightbox-desc"></div>
       <div id="lightbox-meta"></div>
@@ -471,11 +471,12 @@ function closeLightbox() {
   clearTimeout(filmstripHideTimer);
   hideFilmstrip();
   if (liftZone) liftZone.style.display = 'none';
-  img.onload = null;
   img.onerror = null;
   img.src = '';
+  img.classList.remove('zoomed');
   img.style.transition = '';
   img.style.transform = '';
+  img.style.transformOrigin = '';
   img.style.opacity = '';
   // re-query info — animateInfo clone-replaces the node so a cached ref would be stale
   var info = document.getElementById('lightbox-info');
@@ -513,6 +514,31 @@ document.addEventListener('keydown', function(e) {
 
 // desktop: click bg to close
 if (!isMobile) document.getElementById('lightbox-bg').addEventListener('click', closeLightbox);
+
+function toggleImageZoom(e) {
+  var img = e.target;
+  if (!img.classList.contains('zoomable')) return;
+  e.stopPropagation();
+  
+  if (img.classList.contains('zoomed')) {
+    img.classList.remove('zoomed');
+    img.style.transform = '';
+    img.style.transformOrigin = '';
+  } else {
+    img.classList.add('zoomed');
+    if (!isMobile) {
+      var rect = img.getBoundingClientRect();
+      var x = ((e.clientX - rect.left) / rect.width) * 100;
+      var y = ((e.clientY - rect.top) / rect.height) * 100;
+      img.style.transformOrigin = x + '% ' + y + '%';
+      img.style.transform = 'scale(2.2)';
+    } else {
+      img.style.transformOrigin = 'center center';
+      img.style.transform = 'scale(2.5)';
+    }
+  }
+}
+document.getElementById('lightbox-img').addEventListener('click', toggleImageZoom);
 
 // SWIPE for lightbox
 var lbEl = document.getElementById('lightbox');
@@ -556,6 +582,8 @@ if (isMobile) {
         img.draggable = false;
         img.loading = (Math.abs(i - cur) <= 2) ? 'eager' : 'lazy';
         img.src = p.src;
+        img.classList.add('zoomable');
+        img.addEventListener('click', toggleImageZoom);
         slide.appendChild(img);
         imgWrap.appendChild(slide);
       });
@@ -707,8 +735,19 @@ if (isMobile) {
         e.preventDefault();
         var content = document.getElementById('lightbox-content');
         content.style.transition = 'none';
-        content.style.transform = 'translateY(' + dy + 'px)';
-        content.style.opacity = Math.max(0.15, 1 - dy / 350);
+        var tilt = Math.max(-25, (dy / 400) * -25);
+        content.style.transformOrigin = 'bottom left';
+        content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
+        content.style.opacity = Math.max(0.15, 1 - dy / 400);
+
+        var info = document.getElementById('lightbox-info');
+        if (info) {
+          var blurVal = Math.min(18, (dy / 300) * 18);
+          var txtOpac = Math.max(0, 1 - dy / 180);
+          info.style.transition = 'none';
+          info.style.filter = 'blur(' + blurVal + 'px)';
+          info.style.opacity = txtOpac;
+        }
       }
     }, { passive: false });
 
@@ -724,13 +763,22 @@ if (isMobile) {
         swipeHappened = true;
         var content = document.getElementById('lightbox-content');
         content.style.transition = 'transform 0.28s ease-out, opacity 0.28s ease-out';
-        content.style.transform = 'translateY(' + window.innerHeight + 'px)';
+        content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
         content.style.opacity = '0';
+
+        var info = document.getElementById('lightbox-info');
+        if (info) {
+          info.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
+          info.style.filter = 'blur(18px)';
+          info.style.opacity = '0';
+        }
+
         setTimeout(function() {
           closeLightbox();
           setTimeout(function() {
             content.style.transition = '';
             content.style.transform = '';
+            content.style.transformOrigin = '';
             content.style.opacity = '';
           }, 450);
         }, 280);
@@ -739,7 +787,15 @@ if (isMobile) {
         content.style.transition = 'transform 0.3s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease';
         content.style.transform = '';
         content.style.opacity = '1';
-        setTimeout(function() { content.style.transition = ''; }, 320);
+        
+        var info = document.getElementById('lightbox-info');
+        if (info) {
+          info.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
+          info.style.filter = 'blur(0px)';
+          info.style.opacity = '1';
+        }
+        
+        setTimeout(function() { content.style.transition = ''; content.style.transformOrigin = ''; }, 320);
       }
       dLocked = false;
       dChecked = false;
@@ -747,13 +803,21 @@ if (isMobile) {
   })();
 }
 
-// SCROLL REVEAL for gallery
 function revealCards() {
   var cards = document.querySelectorAll('.photo-card:not(.revealed)');
   cards.forEach(function(card) {
     var rect = card.getBoundingClientRect();
     if (rect.top < window.innerHeight - 60) {
-      card.classList.add('revealed');
+      var img = card.querySelector('img');
+      if (img && img.complete && img.naturalHeight !== 0) {
+        card.classList.add('revealed');
+      } else if (img && !img.dataset.loadListenerAttached) {
+        img.dataset.loadListenerAttached = "true";
+        img.addEventListener('load', function() {
+          var r = card.getBoundingClientRect();
+          if (r.top < window.innerHeight - 60) card.classList.add('revealed');
+        });
+      }
     }
   });
 }
@@ -972,6 +1036,7 @@ if (isMouseDevice) {
   document.documentElement.addEventListener('mouseleave', hideCursor);
   document.addEventListener('mouseenter', showCursor);
   document.documentElement.addEventListener('mouseenter', showCursor);
+  document.addEventListener('contextmenu', function() { hideCursor(); cursor.style.transform='translate(-50%,-50%) scale(0.6)'; });
   // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
   var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img';
   document.addEventListener('mouseover', function(e) {

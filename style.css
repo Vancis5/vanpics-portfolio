@@ -38,9 +38,18 @@ body::after {
 ::-webkit-scrollbar-thumb:hover { background: rgba(221,216,207,0.22); }
 
 @media (hover: hover) and (pointer: fine) {
-  html, body, body * { cursor: none !important; }
+  html, body, body *:not(.zoomable) { cursor: none !important; }
   #cursor { position: fixed; width: 7px; height: 7px; background: rgba(221,216,207,0.9); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: transform 0.15s ease, opacity 0.3s ease; opacity: 0; }
   #cursor-ring { position: fixed; width: 28px; height: 28px; border: 1px solid rgba(221,216,207,0.25); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: width 0.3s, height 0.3s, border-color 0.3s, opacity 0.3s ease; opacity: 0; }
+  body .zoomable:hover { cursor: zoom-in !important; }
+  body .zoomable.zoomed:hover { cursor: zoom-out !important; }
+}
+
+.zoomable { cursor: zoom-in !important; }
+.zoomable.zoomed {
+  cursor: zoom-out !important;
+  z-index: 50;
+  position: relative;
 }
 
 /* HERO */
@@ -494,6 +503,7 @@ body::after {
     flex: 0 0 100%;
     width: 100%;
     height: 100%;
+    padding: 0 0.8rem;
     scroll-snap-align: center;
     scroll-snap-stop: always;
     display: flex;
@@ -506,6 +516,7 @@ body::after {
     max-height: 100%;
     object-fit: contain;
     border-radius: 3px;
+    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
   }
 }
 
