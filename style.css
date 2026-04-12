@@ -581,6 +581,7 @@ body::after {
 .filmstrip-thumb.active {
   opacity: 1;
   transform: scaleY(1.12);
+  transition: opacity 0s, transform 0.1s ease-out;
 }
 
 @media (min-width: 640px) {

@@ -1138,6 +1138,9 @@ function buildFilmstrip() {
 }
 
 var fsRaf = null;
+var fsVelocity = 0;
+var fsTarget = 0;
+
 function updateFilmstrip() {
   var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
   thumbs.forEach(function(t) {
@@ -1148,22 +1151,28 @@ function updateFilmstrip() {
     var wrapW = filmstripEl.offsetWidth;
     var thumbL = active.offsetLeft;
     var thumbW = active.offsetWidth;
-    var target = thumbL - wrapW / 2 + thumbW / 2;
-    var start = filmstripEl.scrollLeft;
-    var change = target - start;
-    if (Math.abs(change) < 2) return;
-    if (fsRaf) cancelAnimationFrame(fsRaf);
-    var startTime = performance.now();
-    var duration = 500;
-    function step(time) {
-      var elapsed = time - startTime;
-      if (elapsed >= duration) { filmstripEl.scrollLeft = target; return; }
-      var t = elapsed / duration;
-      var ease = t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
-      filmstripEl.scrollLeft = start + change * ease;
+    fsTarget = thumbL - wrapW / 2 + thumbW / 2;
+    
+    if (!fsRaf) {
+      function step() {
+        var pos = filmstripEl.scrollLeft;
+        var diff = fsTarget - pos;
+        
+        var accel = diff * 0.08;
+        fsVelocity += accel;
+        fsVelocity *= 0.82;
+        
+        filmstripEl.scrollLeft = pos + fsVelocity;
+        
+        if (Math.abs(fsVelocity) < 0.2 && Math.abs(diff) < 1) {
+          filmstripEl.scrollLeft = fsTarget;
+          fsRaf = null;
+          return;
+        }
+        fsRaf = requestAnimationFrame(step);
+      }
       fsRaf = requestAnimationFrame(step);
     }
-    fsRaf = requestAnimationFrame(step);
   }
 }
 
