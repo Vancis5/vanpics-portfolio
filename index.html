@@ -657,6 +657,7 @@ window.addEventListener('mouseup', function() {
   }
 });
 
+
 // Desktop: Mouse wheel / Touchpad pinch -> Zoom
 document.getElementById('lightbox-img-wrap').addEventListener('wheel', function(e) {
   var lb = document.getElementById('lightbox');
@@ -1348,12 +1349,24 @@ function updateFilmstrip() {
     var thumbW = active.offsetWidth;
     fsTarget = thumbL - wrapW / 2 + thumbW / 2;
     
+<<<<<<< HEAD
     if (!fsRaf && !isMobile) { 
       function step() {
         var pos = filmstripEl.scrollLeft;
         var diff = fsTarget - pos;
         var targetVel = diff * 0.12; 
         fsVelocity += (targetVel - fsVelocity) * 0.25;
+=======
+    if (!fsRaf && !isMobile) { // Mobile seamlessly scrubs 1:1 on touch scroll
+      function step() {
+        var pos = filmstripEl.scrollLeft;
+        var diff = fsTarget - pos;
+        
+        // Exact critically damped "ease out" interpolation curve. No overshoot.
+        var targetVel = diff * 0.12; 
+        fsVelocity += (targetVel - fsVelocity) * 0.25;
+        
+>>>>>>> 04441c010c12abf47d6d0d33dd28291b0d337b50
         filmstripEl.scrollLeft = pos + fsVelocity;
         if (Math.abs(fsVelocity) < 0.2 && Math.abs(diff) < 1) {
           filmstripEl.scrollLeft = fsTarget;
