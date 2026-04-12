@@ -168,8 +168,6 @@
 
 <div id="lightbox">
   <div id="lightbox-bg"></div>
-  <div id="lightbox-bg-blur-a" class="lightbox-bg-blur"><div class="lightbox-bg-blur-inner" id="lightbox-bg-blur-a-inner"></div></div>
-  <div id="lightbox-bg-blur-b" class="lightbox-bg-blur"><div class="lightbox-bg-blur-inner" id="lightbox-bg-blur-b-inner"></div></div>
   <button id="lightbox-close" onclick="closeLightbox()">close</button>
   <div id="lightbox-content">
     <div id="lightbox-img-wrap">
@@ -179,7 +177,7 @@
       <div id="lightbox-title"></div>
       <div id="lightbox-desc"></div>
       <div id="lightbox-meta"></div>
-      <button id="lightbox-desc-toggle" onclick="toggleLightboxDesc()">read</button>
+      <button id="lightbox-desc-toggle">read</button>
     </div>
   </div>
 
@@ -238,26 +236,83 @@ if (glowBall) {
   })();
 }
 
-// blur bg crossfade state
-var blurActive = 'a';
+// blur bg crossfade logic — dynamic layers for flawless rapid scrolling
+function setLightboxBlur(src) {
+  var bgLayer = document.createElement('div');
+  bgLayer.className = 'lightbox-bg-blur';
+  var inner = document.createElement('div');
+  inner.className = 'lightbox-bg-blur-inner';
+  inner.style.backgroundImage = 'url(' + src + ')';
+  bgLayer.appendChild(inner);
+
+  var lb = document.getElementById('lightbox');
+  lb.insertBefore(bgLayer, document.getElementById('lightbox-close'));
+
+  void bgLayer.offsetWidth; // force browser layout
+  bgLayer.classList.add('active');
+
+  // find and fade out old layers
+  var oldLayers = lb.querySelectorAll('.lightbox-bg-blur');
+  for (var i = 0; i < oldLayers.length; i++) {
+    if (oldLayers[i] === bgLayer) continue;
+    oldLayers[i].classList.remove('active');
+    (function(layer) {
+      setTimeout(function() {
+        if (layer.parentNode) layer.parentNode.removeChild(layer);
+      }, 700);
+    })(oldLayers[i]);
+  }
+}
 
 // updates text + blur bg only — image src is set separately to avoid double-load
 function setLightboxContent(p) {
   document.getElementById('lightbox-title').textContent = p.title;
-  document.getElementById('lightbox-desc').textContent = p.desc;
+  var descEl = document.getElementById('lightbox-desc');
+  descEl.textContent = p.desc;
   document.getElementById('lightbox-meta').textContent = p.year + (p.location ? ' \u2014 ' + p.location : '');
-  // reset desc expansion on every new photo
-  var info = document.getElementById('lightbox-info');
+  
+  var content = document.getElementById('lightbox-content');
   var btn = document.getElementById('lightbox-desc-toggle');
-  if (info) info.classList.remove('desc-open');
-  if (btn) btn.textContent = 'read';
-  var incoming = blurActive === 'a' ? 'b' : 'a';
-  var layerIn  = document.getElementById('lightbox-bg-blur-' + incoming);
-  var layerOut = document.getElementById('lightbox-bg-blur-' + blurActive);
-  document.getElementById('lightbox-bg-blur-' + incoming + '-inner').style.backgroundImage = 'url(' + p.src + ')';
-  layerIn.classList.add('active');
-  layerOut.classList.remove('active');
-  blurActive = incoming;
+  
+  if (content && content.classList.contains('desc-open')) {
+    // Hardware accelerated glide down — FLIP animation avoids layout thrashing during heavy swipe blur load
+    var imgWrap = document.getElementById('lightbox-img-wrap');
+    var info = document.getElementById('lightbox-info');
+    
+    var startImg = imgWrap.getBoundingClientRect();
+    var startInfo = info.getBoundingClientRect();
+    
+    descEl.style.transition = 'none'; // skip CSS reflow animation
+    content.classList.remove('desc-open');
+    if (btn) btn.textContent = 'read';
+    
+    var endImg = imgWrap.getBoundingClientRect();
+    var endInfo = info.getBoundingClientRect();
+    
+    var dImg = startImg.top - endImg.top;
+    var dInfo = startInfo.top - endInfo.top;
+    
+    imgWrap.style.transition = 'none';
+    imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+    info.style.transition = 'none';
+    info.style.transform = 'translateY(' + dInfo + 'px)';
+    
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+        imgWrap.style.transform = '';
+        info.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+        info.style.transform = '';
+        setTimeout(function() {
+          descEl.style.transition = '';
+          imgWrap.style.transition = '';
+          info.style.transition = '';
+        }, 450);
+      });
+    });
+  } else if (btn) {
+    btn.textContent = 'read';
+  }
 }
 
 
@@ -327,11 +382,7 @@ function openLightbox(i, direction) {
     }
 
     // update blur bg immediately (visual polish) — text stays hidden until image ready
-    var incoming = blurActive === 'a' ? 'b' : 'a';
-    document.getElementById('lightbox-bg-blur-' + incoming + '-inner').style.backgroundImage = 'url(' + p.src + ')';
-    document.getElementById('lightbox-bg-blur-' + incoming).classList.add('active');
-    document.getElementById('lightbox-bg-blur-' + blurActive).classList.remove('active');
-    blurActive = incoming;
+    setLightboxBlur(p.src);
 
     showFilmstrip();
 
@@ -395,14 +446,8 @@ function openLightbox(i, direction) {
     // INITIAL OPEN
     var openGen = ++navGen;
 
-    blurActive = 'b';
-    document.getElementById('lightbox-bg-blur-a').classList.remove('active');
-    document.getElementById('lightbox-bg-blur-b').classList.remove('active');
-    document.getElementById('lightbox-bg-blur-b-inner').style.backgroundImage = '';
     // pre-load blur layer so it crossfades in with the image
-    document.getElementById('lightbox-bg-blur-a-inner').style.backgroundImage = 'url(' + p.src + ')';
-    document.getElementById('lightbox-bg-blur-a').classList.add('active');
-    blurActive = 'a';
+    setLightboxBlur(p.src);
 
     // image starts invisible — no content yet
     img.onload = null; img.onerror = null;
@@ -481,15 +526,15 @@ function closeLightbox() {
   // re-query info — animateInfo clone-replaces the node so a cached ref would be stale
   var info = document.getElementById('lightbox-info');
   if (info) { info.style.animation = 'none'; info.style.opacity = '0'; }
-  document.getElementById('lightbox-bg-blur-a').classList.remove('active');
-  document.getElementById('lightbox-bg-blur-b').classList.remove('active');
+  var oldLayers = document.querySelectorAll('.lightbox-bg-blur');
+  for (var i = 0; i < oldLayers.length; i++) oldLayers[i].classList.remove('active');
 }
 
 function toggleLightboxDesc() {
-  var info = document.getElementById('lightbox-info');
+  var content = document.getElementById('lightbox-content');
   var btn = document.getElementById('lightbox-desc-toggle');
-  if (!info || !btn) return;
-  var open = info.classList.toggle('desc-open');
+  if (!content || !btn) return;
+  var open = content.classList.toggle('desc-open');
   btn.textContent = open ? 'close' : 'read';
 }
 
@@ -617,12 +662,8 @@ if (isMobile) {
         cur = idx;
         var p = activePhotos[cur];
 
-        // blur bg crossfade
-        var inc = blurActive === 'a' ? 'b' : 'a';
-        document.getElementById('lightbox-bg-blur-' + inc + '-inner').style.backgroundImage = 'url(' + p.src + ')';
-        document.getElementById('lightbox-bg-blur-' + inc).classList.add('active');
-        document.getElementById('lightbox-bg-blur-' + blurActive).classList.remove('active');
-        blurActive = inc;
+        // blur bg crossfade immediately
+        setLightboxBlur(p.src);
 
         setLightboxContent(p);
         showFilmstrip();
@@ -1096,6 +1137,7 @@ function buildFilmstrip() {
   initFilmstripDrag();
 }
 
+var fsRaf = null;
 function updateFilmstrip() {
   var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
   thumbs.forEach(function(t) {
@@ -1106,7 +1148,22 @@ function updateFilmstrip() {
     var wrapW = filmstripEl.offsetWidth;
     var thumbL = active.offsetLeft;
     var thumbW = active.offsetWidth;
-    filmstripEl.scrollTo({ left: thumbL - wrapW / 2 + thumbW / 2, behavior: 'smooth' });
+    var target = thumbL - wrapW / 2 + thumbW / 2;
+    var start = filmstripEl.scrollLeft;
+    var change = target - start;
+    if (Math.abs(change) < 2) return;
+    if (fsRaf) cancelAnimationFrame(fsRaf);
+    var startTime = performance.now();
+    var duration = 500;
+    function step(time) {
+      var elapsed = time - startTime;
+      if (elapsed >= duration) { filmstripEl.scrollLeft = target; return; }
+      var t = elapsed / duration;
+      var ease = t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+      filmstripEl.scrollLeft = start + change * ease;
+      fsRaf = requestAnimationFrame(step);
+    }
+    fsRaf = requestAnimationFrame(step);
   }
 }
 

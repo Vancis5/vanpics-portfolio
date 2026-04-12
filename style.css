@@ -375,7 +375,7 @@ body::after {
                 filter 0.35s ease,
                 margin-bottom 0.3s ease;
   }
-  #lightbox-info.desc-open #lightbox-desc {
+  #lightbox-content.desc-open #lightbox-desc {
     max-height: 20rem;
     opacity: 1;
     filter: blur(0px);
