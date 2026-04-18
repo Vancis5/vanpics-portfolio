@@ -1,0 +1,916 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #111010;
+  --text: #ddd8cf;
+  --text-muted: rgba(221, 216, 207, 0.48);
+  --text-faint: rgba(221, 216, 207, 0.22);
+  --border: rgba(221, 216, 207, 0.09);
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Cormorant Garamond', serif;
+  overflow-x: hidden;
+}
+
+/* grain texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(221, 216, 207, 0.12);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(221, 216, 207, 0.22);
+}
+
+@media (hover: hover) and (pointer: fine) {
+
+  html,
+  body,
+  body *:not(.zoomable) {
+    cursor: none !important;
+  }
+
+  #cursor {
+    position: fixed;
+    width: 7px;
+    height: 7px;
+    background: rgba(221, 216, 207, 0.9);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  #cursor-ring {
+    position: fixed;
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(221, 216, 207, 0.25);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s, border-color 0.3s, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  body .zoomable:hover {
+    cursor: zoom-in !important;
+  }
+
+  body .zoomable.zoomed:hover {
+    cursor: zoom-out !important;
+  }
+}
+
+.zoomable {
+  cursor: zoom-in !important;
+}
+
+.zoomable.zoomed {
+  cursor: zoom-out !important;
+  z-index: 50;
+  position: relative;
+}
+
+/* HERO */
+#hero {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+
+/* edge fades */
+#hero::before,
+#hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+#hero::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg) 20%, transparent);
+}
+
+#hero::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg) 20%, transparent);
+}
+
+.carousel-row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  will-change: transform;
+}
+
+.carousel-row img {
+  height: 22vh;
+  min-height: 120px;
+  width: auto;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: block;
+  filter: brightness(0.78) saturate(0.85);
+  transition: opacity 0.5s ease, filter 0.35s ease, transform 0.35s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* mobile: 4 rows fill screen */
+@media (hover: none) and (max-width: 639px) {
+  .carousel-row img {
+    height: 21vh;
+    min-height: 110px;
+  }
+
+  #hero {
+    gap: 6px;
+  }
+}
+
+@media (min-width: 500px) {
+  .carousel-row img {
+    height: 28vh;
+    min-height: 160px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-row img {
+    height: 255px;
+    min-height: 255px;
+  }
+}
+
+@media (hover: hover) {
+  .carousel-row img:hover {
+    filter: brightness(1) saturate(1);
+    transform: scale(1.03);
+  }
+}
+
+#hero-identity {
+  position: absolute;
+  bottom: 1.75rem;
+  left: 1.5rem;
+  z-index: 5;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: fadeup 0.9s ease 1.2s forwards;
+}
+
+@media (min-width: 640px) {
+  #hero-identity {
+    bottom: 2.25rem;
+    left: 2.25rem;
+  }
+}
+
+@keyframes fadeup {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#hero-identity h1 {
+  font-weight: 400;
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+#hero-identity p {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: clamp(0.58rem, 1.5vw, 0.65rem);
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  text-transform: lowercase;
+}
+
+#scroll-hint {
+  position: absolute;
+  bottom: 1.75rem;
+  right: 1.5rem;
+  z-index: 5;
+  opacity: 0;
+  animation: fadeup 0.9s ease 1.6s forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 640px) {
+  #scroll-hint {
+    bottom: 2.25rem;
+    right: 2.25rem;
+  }
+}
+
+#scroll-hint span {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.57rem;
+  letter-spacing: 0.18em;
+  color: var(--text-faint);
+  text-transform: lowercase;
+}
+
+.scroll-line {
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(to bottom, var(--text-faint), transparent);
+  animation: scrollpulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollpulse {
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.75;
+  }
+}
+
+/* GALLERY */
+#gallery-section {
+  padding: 3.5rem 1.25rem 6rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  #gallery-section {
+    padding: 4.5rem 1.75rem 7rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #gallery-section {
+    padding: 5rem 2rem 8rem;
+  }
+}
+
+#gallery-header {
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: fadeup 0.8s ease 0.2s forwards;
+}
+
+@media (min-width: 640px) {
+  #gallery-header {
+    margin-bottom: 2.5rem;
+  }
+}
+
+#gallery-header p {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  color: var(--text-faint);
+  text-transform: lowercase;
+}
+
+/* MASONRY */
+#masonry {
+  columns: 1;
+  column-gap: 0.75rem;
+}
+
+@media (min-width: 500px) {
+  #masonry {
+    columns: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  #masonry {
+    columns: 3;
+    column-gap: 1rem;
+  }
+}
+
+.photo-card {
+  break-inside: avoid;
+  margin-bottom: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 1024px) {
+  .photo-card {
+    margin-bottom: 1rem;
+  }
+}
+
+.photo-card img {
+  width: 100%;
+  display: block;
+  transition: transform 0.7s ease, filter 0.35s ease;
+  filter: brightness(0.82) saturate(0.88);
+}
+
+@media (hover: hover) {
+  .photo-card:hover img {
+    transform: scale(1.03);
+    filter: brightness(1) saturate(1);
+  }
+
+  .photo-card:hover .photo-card-overlay {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .photo-card-overlay {
+    opacity: 1 !important;
+  }
+
+  .photo-card img {
+    filter: brightness(0.76) saturate(0.85);
+  }
+}
+
+.photo-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(17, 16, 16, 0.92) 0%, transparent 52%);
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1rem;
+}
+
+.photo-card-title {
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.photo-card-year {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.53rem;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  margin-top: 0.2rem;
+}
+
+/* LIGHTBOX */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  overflow: hidden;
+  /* no scrollbar — filmstrip is fixed, content fits viewport */
+}
+
+#lightbox.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#lightbox-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: #0d0c0c;
+}
+
+.lightbox-bg-blur {
+  position: fixed;
+  inset: -50px;
+  z-index: -1;
+  transform: scale(1.12);
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  pointer-events: none;
+}
+
+.lightbox-bg-blur.active {
+  opacity: 1;
+}
+
+/* inner div carries the blur — never animates, so no per-frame repaint */
+.lightbox-bg-blur-inner {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(50px) brightness(0.22) saturate(0.65);
+}
+
+#lightbox-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  /* fixed height so justify-content:center is reliable */
+  width: 100%;
+  /* symmetric-ish padding: top clears close button, bottom clears filmstrip */
+  padding: 4.5rem 1.5rem 5rem;
+  gap: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+#lightbox-zoom-darken {
+  position: absolute;
+  inset: -50svh -50vw;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  /* Behind image-wrap, over inherited info */
+  transition: opacity 0.15s ease-out;
+}
+
+#lightbox-img-wrap {
+  width: 100%;
+  left: 0;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 48%; /* Visually shifted slightly up for optical center */
+  transform: translateY(-50%);
+  z-index: 2;
+  /* Sits above darken layer */
+}
+
+#lightbox-img {
+  display: block;
+  width: auto;
+  /* don't force full width — portrait images get no side borders */
+  max-width: 100%;
+  max-height: 44svh;
+  object-fit: contain;
+  border-radius: 3px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoomed {
+  transition: none !important;
+  /* track finger perfectly 1:1 without dragging rubber-band */
+}
+
+/* info pinned below image */
+#lightbox-info {
+  opacity: 0;
+  margin-top: auto;
+  flex-shrink: 0;
+  pointer-events: none; /* Let empty space pass taps to swipe zone */
+}
+#lightbox-info > * {
+  pointer-events: auto; /* Re-enable clicks for actual text/buttons */
+}
+
+#lightbox-title {
+  font-size: clamp(1.2rem, 5vw, 1.9rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 0.6rem;
+}
+
+#lightbox-desc {
+  font-size: clamp(0.88rem, 2.5vw, 1rem);
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  max-width: 38ch;
+}
+
+/* mobile: desc hidden by default, expands on toggle */
+@media (hover: none) and (max-width: 767px) {
+  #lightbox-desc {
+    max-height: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+    opacity: 0;
+    filter: blur(4px);
+    /* closing: sine-out — smooth deceleration, no clunk */
+    transition: max-height 0.5s cubic-bezier(0.37, 0, 0.63, 1),
+      opacity 0.38s cubic-bezier(0.37, 0, 0.63, 1),
+      filter 0.38s cubic-bezier(0.37, 0, 0.63, 1),
+      margin-bottom 0.38s cubic-bezier(0.37, 0, 0.63, 1);
+  }
+
+  #lightbox-content.desc-open #lightbox-desc {
+    max-height: 20rem;
+    opacity: 1;
+    filter: blur(0px);
+    margin-bottom: 1rem;
+    /* opening: expo-out — snappy entry */
+    transition: max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+      filter 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+      margin-bottom 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+#lightbox-desc-toggle {
+  display: none;
+  /* desktop: desc always visible, no toggle needed */
+}
+
+@media (hover: none) and (max-width: 767px) {
+  #lightbox-desc-toggle {
+    display: inline-block;
+    margin-top: 0.6rem;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-faint);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.52rem;
+    letter-spacing: 0.16em;
+    text-transform: lowercase;
+    padding: 0.1rem 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  #lightbox-desc-toggle:active {
+    color: var(--text-muted);
+    border-color: var(--text-faint);
+  }
+}
+
+#lightbox-meta {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.57rem;
+  letter-spacing: 0.18em;
+  color: var(--text-faint);
+  text-transform: lowercase;
+}
+
+@media (min-width: 640px) and (orientation: landscape),
+(min-width: 768px) {
+  #lightbox-content {
+    flex-direction: row;
+    align-items: center;
+    /* vertically center both columns */
+    justify-content: center;
+    padding: 4.5rem 2.5rem 4.5rem;
+    transition: padding-bottom 0.3s ease;
+    gap: 3rem;
+    height: 100svh;
+  }
+
+  /* filmstrip visible — shift center up to account for filmstrip height */
+  #lightbox.filmstrip-visible #lightbox-content {
+    padding-bottom: 8rem;
+  }
+
+  #lightbox-img-wrap {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 50vw;
+    display: flex;
+    align-items: center;
+  }
+
+  #lightbox-img {
+    width: auto;
+    max-width: 100%;
+    max-height: 72svh;
+  }
+
+  #lightbox-info {
+    flex: 1;
+    min-width: 200px;
+    max-width: 340px;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  #lightbox-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4.5rem 3rem 4.5rem;
+    gap: 4rem;
+    transition: padding-bottom 0.3s ease;
+  }
+
+  #lightbox.filmstrip-visible #lightbox-content {
+    padding-bottom: 8rem;
+  }
+
+  #lightbox-img-wrap {
+    max-width: min(56vw, 640px);
+  }
+
+  #lightbox-img {
+    max-width: 100%;
+    max-height: 72svh;
+  }
+
+  #lightbox-info {
+    max-width: 380px;
+    min-width: 220px;
+  }
+}
+
+#lightbox-close {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 10;
+  background: rgba(17, 16, 16, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.57rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  padding: 0.5rem 0.85rem;
+  transition: color 0.2s, border-color 0.2s;
+  text-transform: lowercase;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 40px;
+  outline: none;
+}
+
+#lightbox-close:hover,
+#lightbox-close:active {
+  color: var(--text);
+  border-color: rgba(221, 216, 207, 0.28);
+}
+
+/* kill focus rings on all lightbox interactive elements — Firefox mobile shows them on tap */
+#lightbox *:focus {
+  outline: none;
+}
+
+#lightbox-close:focus,
+.filmstrip-thumb:focus {
+  outline: none;
+}
+
+/* MOBILE SCROLL-SNAP GALLERY */
+@media (hover: none) {
+  #lightbox-img {
+    display: none;
+  }
+
+  #lightbox-img-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    height: 44svh;
+    position: absolute; /* Preserve global un-shifting layout */
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    justify-content: flex-start;
+  }
+
+  #lightbox-img-wrap::-webkit-scrollbar {
+    display: none;
+  }
+
+  .snap-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    padding: 0 0.8rem;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: pan-x;
+    transition: opacity 0.15s ease;
+  }
+
+  .snap-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 3px;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* FILMSTRIP */
+#filmstrip-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 1.25rem 0 1.5rem;
+  background: linear-gradient(to top, rgba(13, 12, 12, 0.92) 0%, transparent 100%);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+@media (hover: none) {
+  #filmstrip-wrap {
+    /* Much faster intuitive animation on mobile tap */
+    transition: opacity 0.1s ease, transform 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+#filmstrip-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+#filmstrip {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-x;
+  /* native horizontal scroll on mobile, doesn't interfere with swipe */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
+}
+
+#filmstrip::-webkit-scrollbar {
+  display: none;
+}
+
+#filmstrip.dragging {
+  cursor: grabbing;
+}
+
+.filmstrip-thumb {
+  flex-shrink: 0;
+  width: 52px;
+  height: 38px;
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 0.32;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filmstrip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.filmstrip-thumb.active {
+  opacity: 1;
+  transform: scaleY(1.12);
+  /* opacity snaps instantly (no ghost trail during scrub), scale eases in nicely */
+  transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (min-width: 640px) {
+  .filmstrip-thumb {
+    width: 62px;
+    height: 44px;
+  }
+
+  #filmstrip-wrap {
+    padding: 1.5rem 0 1.75rem;
+  }
+}
+
+
+/* invisible hit zone — always pointer-events active so hover can revive hidden filmstrip */
+#filmstrip-lift-zone {
+  display: none;
+  /* hidden by default — JS sets display:block when lightbox opens */
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #filmstrip-lift-zone {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    z-index: 9;
+    /* just below filmstrip-wrap (z-index: 10) */
+    pointer-events: all;
+    cursor: default;
+  }
+}
+
+footer {
+  padding: 2rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+  }
+}
+
+footer p {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  text-transform: lowercase;
+}
