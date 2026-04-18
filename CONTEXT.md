@@ -122,7 +122,7 @@ The only file the user edits. Single `const photos = [...]` array. Each entry:
 - **Thumbs:** 52px × 38px (desktop: 62px × 44px), `object-fit: cover`, lazy loaded
 - **Active indicator:** inactive at 32% opacity, active at 100% + `scaleY(1.12)`
 - **Centering:** padding-based — sets `--filmstrip-content-w` CSS var from computed total width; `padding-left/right: max(1.25rem, (100vw - contentW) / 2)`. Works correctly when content overflows (unlike `justify-content: center`).
-- **Clone bookends:** 8 clones appended after real thumbs for infinite-feel scroll on right edge. Clones have class `filmstrip-clone`, no `data-idx`. Active state and auto-scroll target only `.filmstrip-thumb:not(.filmstrip-clone)`.
+- **Centering:** padding-based — sets `padding-left/right: (window.innerWidth / 2) - (thumbW / 2)`. This ensures both the first and last images can be centered on the screen when active. No clones or bookends are used.
 - **Edge fade:** `mask-image` gradient — transparent → opaque over first 15% and last 15%.
 - **Auto-scroll:** scrolls active thumb to center on every update
 - **Mouse wheel:** only fires when hovering wrap, scrolls horizontally

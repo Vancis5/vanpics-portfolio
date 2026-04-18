@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Francis Evan</title>
+  <meta name="description" content="pics by van">
+  <meta property="og:title" content="Francis Evan">
+  <meta property="og:description" content="pics by van">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Francis Evan">
+  <meta name="twitter:description" content="pics by van">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* LOADER */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #111010;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.7s ease;
+    }
+
+    #loader.lifting {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #loader-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(221, 216, 207, 0.35);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.25;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.8;
+        transform: scale(1.4);
+      }
+    }
+
+    /* glow ball - desktop only */
+    @media (hover: hover) and (pointer: fine) {
+      #glow-ball {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(210, 140, 40, 0.18) 0%, rgba(180, 100, 20, 0.08) 40%, transparent 70%);
+        transition: opacity 0.4s ease;
+        will-change: left, top;
+      }
+    }
+
+    /* swipe hint for mobile */
+    #swipe-hint {
+      display: none;
+    }
+
+    @media (hover: none) {
+      #swipe-hint {
+        display: flex;
+        position: fixed;
+        bottom: 12vh;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        align-items: center;
+        gap: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+      }
+
+      #swipe-hint.visible {
+        opacity: 1;
+      }
+
+      #swipe-hint span {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.55rem;
+        letter-spacing: 0.15em;
+        color: rgba(221, 216, 207, 0.35);
+        text-transform: lowercase;
+      }
+    }
+
+    /* scroll reveal for gallery cards */
+    .photo-card {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .photo-card.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* lightbox image — transitions handled via inline JS for directional control */
+    #lightbox-img {
+      transition: opacity 0.28s ease, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+      min-height: 160px;
+      background: rgba(221, 216, 207, 0.04);
+      border-radius: 3px;
+      will-change: opacity, transform;
+    }
+
+    /* skeleton pulse while image is loading (opacity 0 = still loading) */
+    #lightbox-img[src=""] {
+      animation: imgSkeleton 1.4s ease-in-out infinite;
+    }
+
+    @keyframes imgSkeleton {
+
+      0%,
+      100% {
+        background: rgba(221, 216, 207, 0.03);
+      }
+
+      50% {
+        background: rgba(221, 216, 207, 0.07);
+      }
+    }
+
+    /* lightbox info — keyframe only, no CSS transition to avoid double-fire */
+    #lightbox-info {
+      opacity: 0;
+      --lb-from-x: 0px;
+      --lb-from-y: 12px;
+    }
+
+    #lightbox-info.sliding {
+      opacity: 0;
+    }
+
+    @keyframes lbInfoIn {
+      from {
+        opacity: 0;
+        filter: blur(6px);
+        transform: translateX(var(--lb-from-x)) translateY(var(--lb-from-y));
+      }
+
+      to {
+        opacity: 1;
+        filter: blur(0px);
+        transform: translateX(0) translateY(0);
+      }
+    }
+
+    @keyframes lbInfoOut {
+      from {
+        opacity: 1;
+        filter: blur(0px);
+      }
+
+      to {
+        opacity: 0;
+        filter: blur(6px);
+      }
+    }
+
+    #lightbox-info.animating {
+      animation: lbInfoIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: filter, opacity, transform;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="loader">
+    <div id="loader-dot"></div>
+  </div>
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+  <section id="hero">
+    <div id="glow-ball"></div>
+    <div class="carousel-row" id="row-0"></div>
+    <div class="carousel-row" id="row-1"></div>
+    <div class="carousel-row" id="row-2"></div>
+    <div class="carousel-row" id="row-3" style="display:none"></div>
+    <div id="hero-identity">
+      <h1>Francis Evan</h1>
+      <p>a collection of things i saw</p>
+    </div>
+    <div id="scroll-hint" onclick="document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})">
+      <span>scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <section id="gallery-section">
+    <div id="gallery-header">
+      <p>photographs</p>
+    </div>
+    <div id="masonry"></div>
+  </section>
+
+  <div id="lightbox">
+    <div id="lightbox-bg"></div>
+    <div id="blur-layer-a" class="lightbox-bg-blur">
+      <div class="lightbox-bg-blur-inner"></div>
+    </div>
+    <div id="blur-layer-b" class="lightbox-bg-blur">
+      <div class="lightbox-bg-blur-inner"></div>
+    </div>
+    <button id="lightbox-close" onclick="closeLightbox()">close</button>
+    <div id="lightbox-content">
+      <div id="lightbox-zoom-darken"></div>
+      <div id="lightbox-img-wrap">
+        <img id="lightbox-img" class="zoomable" src="" alt="">
+      </div>
+      <div id="lightbox-info" onclick="toggleLightboxDesc()">
+        <div id="lightbox-title"></div>
+        <div id="lightbox-desc"></div>
+        <div id="lightbox-meta"></div>
+        <button id="lightbox-desc-toggle">read</button>
+      </div>
+    </div>
+
+    <div id="filmstrip-wrap">
+      <div id="filmstrip"></div>
+    </div>
+    <!-- invisible hit zone at bottom — always pointer-events active, lifts filmstrip on hover -->
+    <div id="filmstrip-lift-zone"></div>
+    <div id="swipe-hint">
+      <span>&larr; swipe &rarr;</span>
+    </div>
+  </div>
+
+  <footer>
+    <p>francis evan lorzano &mdash; maasin city, southern leyte</p>
+    <p>all rights reserved</p>
+  </footer>
+
+  <script src="photos.js"></script>
+  <script>
+    function slugify(text) {
+      return text.toString().toLowerCase().trim()
+        .replace(/\s+/g, '-')     // Replace spaces with -
+        .replace(/[^\w-]+/g, '')  // Remove all non-word chars
+        .replace(/--+/g, '-');    // Replace multiple - with single -
+    }
+    var activePhotos = photos.filter(function (p) { return p.title !== ''; });
+    var carouselPhotos = activePhotos.filter(function (p) { return p.heroSlide === true; });
+    if (carouselPhotos.length === 0) carouselPhotos = activePhotos;
+
+    // preload first 6 carousel images — browser discovers them before JS fully executes
+    carouselPhotos.slice(0, 6).forEach(function (p) {
+      var link = document.createElement('link');
+      link.rel = 'preload'; link.as = 'image'; link.href = p.src;
+      document.head.appendChild(link);
+    });
+    var cur = 0;
+    var isMobile = window.matchMedia('(hover: none)').matches;
+    var heroVisible = true, pageVisible = true;
+    var heroRafId = null, glowRafId = null;
+
+    // GLOW BALL
+    var glowBall = document.getElementById('glow-ball');
+    var glowX = window.innerWidth / 2, glowY = window.innerHeight / 2;
+    var glowTargetX = glowX, glowTargetY = glowY;
+
+    if (glowBall) {
+      var hero = document.getElementById('hero');
+      var mouseInHero = false;
+      hero.addEventListener('mouseenter', function () { mouseInHero = true; startLoops(); });
+      hero.addEventListener('mouseleave', function () { mouseInHero = false; });
+      hero.addEventListener('mousemove', function (e) {
+        var rect = hero.getBoundingClientRect();
+        glowTargetX = e.clientX - rect.left;
+        glowTargetY = e.clientY - rect.top;
+      });
+      function animateGlow() {
+        var scrollFade = Math.max(0, 1 - (window.scrollY / 350));
+        var targetOp = (mouseInHero && heroVisible && pageVisible) ? scrollFade : 0;
+
+        if (glowBall.style.opacity != targetOp) {
+          glowBall.style.opacity = targetOp;
+        }
+
+        // Stop loop only if target is 0 AND transition is essentially done
+        if (targetOp === 0 && (!glowBall.style.opacity || parseFloat(glowBall.style.opacity) < 0.01)) {
+          glowRafId = null;
+          return;
+        }
+
+        glowX += (glowTargetX - glowX) * 0.08;
+        glowY += (glowTargetY - glowY) * 0.08;
+        glowBall.style.left = glowX + 'px';
+        glowBall.style.top = glowY + 'px';
+        glowRafId = requestAnimationFrame(animateGlow);
+      }
+    }
+
+    var blurFlip = false;
+    function setLightboxBlur(src) {
+      var a = document.getElementById('blur-layer-a');
+      var b = document.getElementById('blur-layer-b');
+      var active = blurFlip ? b : a;
+      var inactive = blurFlip ? a : b;
+
+      active.querySelector('.lightbox-bg-blur-inner').style.backgroundImage = 'url(' + src + ')';
+      active.classList.add('active');
+      inactive.classList.remove('active');
+
+      blurFlip = !blurFlip;
+    }
+
+    // updates text + blur bg only — image src is set separately to avoid double-load
+    function setLightboxContent(p) {
+      document.getElementById('lightbox-title').textContent = p.title;
+      var descEl = document.getElementById('lightbox-desc');
+      descEl.innerHTML = p.desc;
+      document.getElementById('lightbox-meta').textContent = p.year + (p.location ? ' \u2014 ' + p.location : '');
+
+      var content = document.getElementById('lightbox-content');
+      var btn = document.getElementById('lightbox-desc-toggle');
+
+      if (content && content.classList.contains('desc-open')) {
+        // Hardware accelerated glide down — FLIP animation avoids layout thrashing during heavy swipe blur load
+        var imgWrap = document.getElementById('lightbox-img-wrap');
+        var info = document.getElementById('lightbox-info');
+
+        var startImg = imgWrap.getBoundingClientRect();
+        var startInfo = info.getBoundingClientRect();
+
+        descEl.style.transition = 'none'; // skip CSS reflow animation
+        content.classList.remove('desc-open');
+        if (btn) btn.textContent = 'read';
+
+        var endImg = imgWrap.getBoundingClientRect();
+        var endInfo = info.getBoundingClientRect();
+
+        var dImg = startImg.top - endImg.top;
+        var dInfo = startInfo.top - endInfo.top;
+
+        imgWrap.style.transition = 'none';
+        imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+        info.style.transition = 'none';
+        info.style.transform = 'translateY(' + dInfo + 'px)';
+
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+            imgWrap.style.transform = '';
+            info.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+            info.style.transform = '';
+            setTimeout(function () {
+              descEl.style.transition = '';
+              imgWrap.style.transition = '';
+              info.style.transition = '';
+            }, 450);
+          });
+        });
+      } else if (btn) {
+        btn.textContent = 'read';
+      }
+    }
+
+
+    function animateInfo(dir) {
+      var info = document.getElementById('lightbox-info');
+
+      // only animate exit if there's visible content (opacity > 0 means it's shown)
+      var hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
+      if (hasContent) {
+        // create exit ghost — absolutely positioned so it doesn't shift layout
+        var ghost = info.cloneNode(true);
+        ghost.style.position = 'absolute';
+        ghost.style.top = info.offsetTop + 'px';
+        ghost.style.left = info.offsetLeft + 'px';
+        ghost.style.width = info.offsetWidth + 'px';
+        ghost.style.pointerEvents = 'none';
+        ghost.style.animation = 'lbInfoOut 0.22s ease forwards';
+        ghost.style.willChange = 'filter, opacity';
+        ghost.style.zIndex = '1';
+        info.parentNode.appendChild(ghost);
+        setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 250);
+      }
+
+      // clone-replace for enter — clean slate, no animation-cancel issues
+      var fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
+      var fromY = dir === 0 ? 16 : 0;
+      var clone = info.cloneNode(true);
+      clone.style.setProperty('--lb-from-x', fromX + 'px');
+      clone.style.setProperty('--lb-from-y', fromY + 'px');
+      clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
+      clone.style.willChange = 'filter, opacity, transform';
+      info.parentNode.replaceChild(clone, info);
+    }
+
+    // increments each navigation so stale callbacks from aborted navigations are ignored
+    var navGen = 0;
+
+    function openLightbox(i, direction) {
+      cur = i;
+      isManuallyNavigating = true;
+      var p = activePhotos[i];
+      var lb = document.getElementById('lightbox');
+      var img = document.getElementById('lightbox-img');
+
+      // Deep Link: Update the URL hash quietly
+      var slug = slugify(p.title);
+      if (window.location.hash !== '#' + slug) {
+        history.replaceState(null, null, '#' + slug);
+      }
+
+      // Mobile: already open — just scroll to the slide
+      if (lb.classList.contains('open') && isMobile && mobileScrollToSlide) {
+        mobileScrollToSlide(i, true);
+        showFilmstrip();
+        return;
+      }
+
+      if (lb.classList.contains('open')) {
+        var dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
+        var exitX = dir > 0 ? '-6%' : '6%';
+        var enterX = dir > 0 ? '6%' : '-6%';
+        var gen = ++navGen;
+
+        // exit current image immediately — snappy
+        img.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+        img.style.opacity = '0';
+        img.style.transform = 'translateX(' + exitX + ') scale(0.98)';
+
+        // hide info panel immediately so old text isn't visible
+        var infoEl = document.getElementById('lightbox-info');
+        if (infoEl) {
+          infoEl.style.animation = 'none';
+          infoEl.style.opacity = '0';
+        }
+
+        // update blur bg immediately (visual polish) — text stays hidden until image ready
+        setLightboxBlur(p.src);
+
+        showFilmstrip();
+
+        var entered = false;
+
+        function doEnter() {
+          if (entered || gen !== navGen) return;
+          entered = true;
+
+          // blank src, position off-screen, fully invisible — nothing bleeds through
+          img.onload = null; img.onerror = null;
+          img.src = '';
+          img.style.transition = 'none';
+          img.style.transform = 'translateX(' + enterX + ') scale(0.98)';
+          img.style.opacity = '0';
+
+          // assign handlers BEFORE setting src — Firefox fires load before handler if src set first
+          var loadFired = false;
+          function afterLoad() {
+            if (loadFired || gen !== navGen) return;
+            loadFired = true;
+            img.onload = null; img.onerror = null;
+            // update text content now — invisible, correct position, layout settled
+            setLightboxContent(p);
+            loadSwipeNeighbors();
+            requestAnimationFrame(function () {
+              if (gen !== navGen) return;
+              // one frame for layout to commit image dimensions — then animate both together
+              animateInfo(dir);
+              void img.offsetWidth; // force reflow — Firefox needs this to honour opacity transition
+              img.style.transition = 'opacity 0.32s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+              img.style.opacity = '1';
+              img.style.transform = 'translateX(0) scale(1)';
+            });
+          }
+
+          requestAnimationFrame(function () {
+            if (gen !== navGen) return;
+            img.onload = function () { clearTimeout(loadFallback); afterLoad(); };
+            img.onerror = function () { clearTimeout(loadFallback); afterLoad(); };
+            img.src = p.src;
+            var loadFallback = setTimeout(afterLoad, 700);
+            // decode() waits for full pixel decode — reliable in Firefox unlike img.complete
+            if (img.decode) img.decode().then(function () { clearTimeout(loadFallback); afterLoad(); }).catch(function () { });
+          });
+        }
+
+        // probe starts the network request — doEnter fires after min 150ms exit time
+        var probe = new Image();
+        var probeReady = false;
+        var minWaitDone = false;
+        function maybeEnter() { if (probeReady && minWaitDone) doEnter(); }
+        probe.onload = probe.onerror = function () { probeReady = true; maybeEnter(); };
+        probe.src = p.src;
+        // decode() fires after pixel decode — reliable Firefox alternative to img.complete
+        if (probe.decode) probe.decode().then(function () { probeReady = true; maybeEnter(); }).catch(function () { });
+        setTimeout(function () { minWaitDone = true; maybeEnter(); }, 150);
+        setTimeout(doEnter, 600); // hard fallback
+
+      } else {
+        // INITIAL OPEN
+        var openGen = ++navGen;
+
+        // pre-load blur layer so it crossfades in with the image
+        setLightboxBlur(p.src);
+
+        // image starts invisible — no content yet
+        img.onload = null; img.onerror = null;
+        img.src = '';
+        img.style.transition = 'none';
+        img.style.opacity = '0';
+        img.style.transform = '';
+
+        // info panel fully hidden — no stale text visible
+        var infoEl2 = document.getElementById('lightbox-info');
+        infoEl2.style.animation = 'none';
+        infoEl2.style.opacity = '0';
+
+        lb.classList.add('open');
+        lb.scrollTop = 0;
+        document.body.style.overflow = 'hidden';
+        if (liftZone) liftZone.style.display = 'block';
+        // allow other UI (cursor ring) to reset on lightbox open
+        window.dispatchEvent(new Event('lightbox-open'));
+        setTimeout(showFilmstrip, 300);
+
+        var hint = document.getElementById('swipe-hint');
+        if (hint) {
+          hint.classList.add('visible');
+          setTimeout(function () { hint.classList.remove('visible'); }, 2500);
+        }
+
+        var openLoadFired = false;
+        function afterOpenLoad() {
+          if (openLoadFired || openGen !== navGen) return;
+          openLoadFired = true;
+          img.onload = null; img.onerror = null;
+          // Mobile: scroll-snap IIFE handles content — skip
+          if (isMobile && mobileScrollToSlide) return;
+          // text content set now — invisible, layout settled
+          setLightboxContent(p);
+          loadSwipeNeighbors();
+          requestAnimationFrame(function () {
+            if (openGen !== navGen) return;
+            animateInfo(0);
+            void img.offsetWidth; // force reflow — Firefox transition fix
+            img.style.transition = 'opacity 0.45s ease';
+            img.style.opacity = '1';
+          });
+        }
+
+        // handlers BEFORE src — Firefox-safe
+        var openFallback;
+        requestAnimationFrame(function () {
+          img.onload = function () { clearTimeout(openFallback); afterOpenLoad(); };
+          img.onerror = function () { clearTimeout(openFallback); afterOpenLoad(); };
+          img.src = p.src;
+          openFallback = setTimeout(afterOpenLoad, 700);
+          // decode() waits for pixel decode — reliable in Firefox unlike img.complete
+          if (img.decode) img.decode().then(function () { clearTimeout(openFallback); afterOpenLoad(); }).catch(function () { });
+        });
+      }
+    }
+
+    function closeLightbox() {
+      var lb = document.getElementById('lightbox');
+      var img = document.getElementById('lightbox-img');
+      ++navGen; // invalidates all pending callbacks
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+      clearTimeout(filmstripHideTimer);
+      hideFilmstrip();
+      if (liftZone) liftZone.style.display = 'none';
+      img.onerror = null;
+      img.src = '';
+      img.classList.remove('zoomed');
+      img.style.transition = '';
+      img.style.transform = '';
+      img.style.transformOrigin = '';
+      img.style.opacity = '';
+      // re-query info — animateInfo clone-replaces the node so a cached ref would be stale
+      var info = document.getElementById('lightbox-info');
+      if (info) { info.style.animation = 'none'; info.style.opacity = '0'; }
+      document.getElementById('blur-layer-a').classList.remove('active');
+      document.getElementById('blur-layer-b').classList.remove('active');
+      // Clear hash on close
+      if (window.location.hash) {
+        history.replaceState(null, null, window.location.pathname + window.location.search);
+      }
+    }
+
+    function toggleLightboxDesc() {
+      var content = document.getElementById('lightbox-content');
+      var btn = document.getElementById('lightbox-desc-toggle');
+      if (!content || !btn) return;
+      var open = content.classList.toggle('desc-open');
+      btn.textContent = open ? 'close' : 'read';
+    }
+
+    // reset desc expansion on new photo
+    function resetDescToggle() {
+      var info = document.getElementById('lightbox-info');
+      var btn = document.getElementById('lightbox-desc-toggle');
+      if (info) info.classList.remove('desc-open');
+      if (btn) btn.textContent = 'read';
+    }
+
+    function navigateLightbox(d) {
+      if (lbZoomLevel > 1) resetZoom();
+      cur = (cur + d + activePhotos.length) % activePhotos.length;
+      openLightbox(cur, d);
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') navigateLightbox(1);
+      if (e.key === 'ArrowLeft') navigateLightbox(-1);
+    });
+
+    // desktop: click bg to close
+    if (!isMobile) document.getElementById('lightbox-bg').addEventListener('click', closeLightbox);
+
+    // Continuous Zoom Physics Framework
+    var lbZoomLevel = 1;
+    var lbZoomPanX = 0;
+    var lbZoomPanY = 0;
+    var isDraggingZoom = false;
+    var lastDragX = 0;
+    var lastDragY = 0;
+
+    function updateZoomTransform(img) {
+      var mWrap = document.getElementById('lightbox-img-wrap');
+      if (lbZoomLevel <= 1) {
+        lbZoomLevel = 1;
+        lbZoomPanX = 0;
+        lbZoomPanY = 0;
+        img.style.transform = '';
+        // reset cursor
+        img.style.cursor = '';
+        img.style.position = '';
+        img.style.zIndex = '';
+        img.classList.remove('zoomed');
+        var dark = document.getElementById('lightbox-zoom-darken');
+        if (dark) dark.style.opacity = '0';
+        showFilmstrip();
+        if (isMobile) {
+          mWrap.style.transform = ''; // revert translation
+          mWrap.style.overflowX = 'auto'; // restore gallery swipe
+          mWrap.style.overflowY = 'hidden';
+          mWrap.scrollLeft = cur * mWrap.offsetWidth; // explicitly bind scroll back unconditionally
+          var slides = mWrap.querySelectorAll('.snap-slide');
+          for (var i = 0; i < slides.length; i++) slides[i].style.opacity = '1';
+        }
+      } else {
+        img.style.position = 'relative';
+        img.style.zIndex = '100'; // Make sure the image pops cleanly above bounds
+
+        // Mobile gets unconstrained panning, but auto-resets if dragged extremely far off-screen
+        var zw = img.offsetWidth * lbZoomLevel;
+        var zh = img.offsetHeight * lbZoomLevel;
+
+        if (isMobile) {
+          var limitX = (zw / 2) + (window.innerWidth / 2) - 80;
+          var limitY = (zh / 2) + (window.innerHeight / 2) - 80;
+          if (Math.abs(lbZoomPanX) > Math.max(0, limitX) || Math.abs(lbZoomPanY) > Math.max(0, limitY)) {
+            resetZoom();
+            return;
+          }
+        } else {
+          // Desktop stays clamped so it's impossible to lose the image with the mouse
+          var maxPanX = Math.max(0, (zw - window.innerWidth) / 2);
+          var maxPanY = Math.max(0, (zh - window.innerHeight) / 2);
+          lbZoomPanX = Math.max(-maxPanX, Math.min(maxPanX, lbZoomPanX));
+          lbZoomPanY = Math.max(-maxPanY, Math.min(maxPanY, lbZoomPanY));
+        }
+
+        img.style.transform = 'translate(' + lbZoomPanX + 'px, ' + lbZoomPanY + 'px) scale(' + lbZoomLevel + ')';
+        img.classList.add('zoomed');
+        // zoom cursor
+        if (!isMobile) img.style.cursor = 'grab';
+        if (isDraggingZoom) img.style.cursor = 'grabbing';
+
+        var dark = document.getElementById('lightbox-zoom-darken');
+        // base darkness leaps to 30%, climbing dynamically to 90%
+        if (dark) dark.style.opacity = Math.min(0.95, 0.3 + (lbZoomLevel - 1) * 0.5);
+        hideFilmstrip();
+
+        if (isMobile && mWrap.style.overflowX !== 'visible') {
+          // Prevent browser from zero-ing out scroll when we swap to visible overflow
+          mWrap.style.transform = 'translateX(-' + (cur * mWrap.offsetWidth) + 'px)';
+          mWrap.style.overflowX = 'visible'; // allow zoom popping over descriptions and screens!
+          mWrap.style.overflowY = 'visible';
+          var slides = mWrap.querySelectorAll('.snap-slide');
+          for (var i = 0; i < slides.length; i++) {
+            if (parseInt(slides[i].dataset.idx) !== cur) slides[i].style.opacity = '0';
+          }
+        } else if (isMobile) {
+          // already visible, ensure neighbors are hidden while panning to prevent peeking
+          var slides = mWrap.querySelectorAll('.snap-slide');
+          for (var i = 0; i < slides.length; i++) {
+            if (parseInt(slides[i].dataset.idx) !== cur) slides[i].style.opacity = '0';
+          }
+        }
+      }
+    }
+
+    function resetZoom() {
+      lbZoomLevel = 1;
+      var imgs = document.querySelectorAll('.zoomable');
+      for (var i = 0; i < imgs.length; i++) updateZoomTransform(imgs[i]);
+    }
+
+    function toggleImageZoom(e) {
+      var img = e.target;
+      if (!img.classList.contains('zoomable')) return;
+      e.stopPropagation();
+      if (lbZoomLevel > 1) { resetZoom(); }
+    }
+    document.getElementById('lightbox-img').addEventListener('click', toggleImageZoom);
+
+    // Desktop mouse panning
+    var mWrap = document.getElementById('lightbox-img-wrap');
+    mWrap.addEventListener('mousedown', function (e) {
+      if (isMobile || lbZoomLevel <= 1) return;
+      isDraggingZoom = true;
+      lastDragX = e.clientX;
+      lastDragY = e.clientY;
+      var img = document.getElementById('lightbox-img');
+      if (img) img.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!isDraggingZoom) return;
+      var dx = e.clientX - lastDragX;
+      var dy = e.clientY - lastDragY;
+      lbZoomPanX += dx;
+      lbZoomPanY += dy;
+      lastDragX = e.clientX;
+      lastDragY = e.clientY;
+      var img = document.getElementById('lightbox-img');
+      if (img) updateZoomTransform(img);
+    });
+    window.addEventListener('mouseup', function () {
+      if (isDraggingZoom) {
+        isDraggingZoom = false;
+        var img = document.getElementById('lightbox-img');
+        if (img && lbZoomLevel > 1) img.style.cursor = 'grab';
+      }
+    });
+
+
+    // Desktop: Mouse wheel / Touchpad pinch -> Zoom
+    document.getElementById('lightbox-img-wrap').addEventListener('wheel', function (e) {
+      var lb = document.getElementById('lightbox');
+      var mWrap = document.getElementById('lightbox-img-wrap');
+      if (!lb.classList.contains('open') || isMobile) return;
+
+      var img = isMobile ? mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img') : document.getElementById('lightbox-img');
+      if (!img || !img.classList.contains('zoomable')) return;
+
+      e.preventDefault();
+
+      var scaleDelta = e.deltaY * -0.01;
+      var newScale = Math.min(Math.max(1, lbZoomLevel + scaleDelta), 6);
+      if (newScale === lbZoomLevel) return;
+
+      var ratio = newScale / lbZoomLevel;
+      var rect = img.getBoundingClientRect();
+
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var mx = e.clientX - cx;
+      var my = e.clientY - cy;
+
+      lbZoomPanX -= mx * (ratio - 1);
+      lbZoomPanY -= my * (ratio - 1);
+      lbZoomLevel = newScale;
+
+      updateZoomTransform(img);
+    }, { passive: false });
+
+    // SWIPE for lightbox
+    var lbEl = document.getElementById('lightbox');
+    var imgWrap = document.getElementById('lightbox-img-wrap');
+    var loadSwipeNeighbors = function () { };
+    var mobileScrollToSlide = null;
+    var swipeHappened = false;
+
+    // mobile: tap content area (not interactive elements) to toggle filmstrip
+    lbEl.addEventListener('click', function (e) {
+      if (!isMobile) return;
+      if (swipeHappened) { swipeHappened = false; return; }
+      if (e.target.closest('button, .filmstrip-thumb, #filmstrip-wrap')) return;
+      if (filmstripWrap.classList.contains('visible')) {
+        hideFilmstrip();
+      } else {
+        showFilmstrip();
+      }
+    });
+
+    // ─── MOBILE SCROLL-SNAP GALLERY ───
+    // Native scroll container with snap points — browser handles touch physics
+    if (isMobile) {
+      (function () {
+        var slidesBuilt = false;
+        var snapTimer = null;
+
+        // ── Build slides ──
+        function buildSlides() {
+          if (slidesBuilt) return;
+          slidesBuilt = true;
+          // Remove old #lightbox-img from flow (CSS hides it, but clear src too)
+          var mainImg = document.getElementById('lightbox-img');
+          if (mainImg) { mainImg.removeAttribute('src'); }
+          activePhotos.forEach(function (p, i) {
+            var slide = document.createElement('div');
+            slide.className = 'snap-slide';
+            slide.dataset.idx = i;
+            var img = document.createElement('img');
+            img.alt = p.title || '';
+            img.draggable = false;
+            img.loading = (Math.abs(i - cur) <= 2) ? 'eager' : 'lazy';
+            img.src = p.src;
+            img.classList.add('zoomable');
+            img.addEventListener('click', toggleImageZoom);
+            slide.appendChild(img);
+            imgWrap.appendChild(slide);
+          });
+        }
+
+        // ── Scroll to slide ──
+        function scrollToSlide(idx, smooth) {
+          var w = imgWrap.offsetWidth;
+          if (!w) return;
+          imgWrap.scrollTo({ left: idx * w, behavior: smooth ? 'smooth' : 'instant' });
+        }
+        mobileScrollToSlide = scrollToSlide;
+
+        // ── Eager-load nearby slides ──
+        function updateLoading() {
+          var imgs = imgWrap.querySelectorAll('.snap-slide img');
+          for (var i = 0; i < imgs.length; i++) {
+            imgs[i].loading = (Math.abs(i - cur) <= 2) ? 'eager' : 'lazy';
+          }
+        }
+
+        // ── Scroll settle — detect new active slide ──
+        function onSnapSettle(targetIdx) {
+          isManuallyNavigating = false; // Reset navigation flag on settle
+          var w = imgWrap.offsetWidth;
+          if (!w) return;
+          var rawNearest = Math.round(imgWrap.scrollLeft / w);
+          var idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, activePhotos.length - 1));
+
+          if (idx !== cur) {
+            var dir = idx > cur ? 1 : -1;
+            cur = idx;
+            var p = activePhotos[cur];
+
+            // blur bg crossfade immediately
+            setLightboxBlur(p.src);
+
+            setLightboxContent(p);
+            showFilmstrip();
+            updateLoading();
+          }
+
+          // enforce visible opacity if this was called by snap-settle completion (no arg)
+          if (typeof targetIdx !== 'number') {
+            var info = document.getElementById('lightbox-info');
+            if (info) {
+              info.style.animation = 'none';
+              info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
+              info.style.opacity = '1';
+              info.style.filter = 'blur(0px)';
+              info.style.transform = 'translateX(0px)';
+            }
+          }
+        }
+
+        // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
+        imgWrap.addEventListener('scrollend', function () {
+          clearTimeout(snapTimer);
+          onSnapSettle();
+        });
+        // fallback for older browsers + continuous tracking
+        imgWrap.addEventListener('scroll', function () {
+          clearTimeout(snapTimer);
+          snapTimer = setTimeout(onSnapSettle, 150);
+          var w = imgWrap.offsetWidth;
+          if (!w) return;
+          var f = imgWrap.scrollLeft / w;
+
+          // smoothly sync filmstrip scrub to native drag
+          if (!fsRaf && !isManuallyNavigating) {
+            var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
+            if (thumbs.length > 0) {
+              var thumbW = thumbs[0].offsetWidth;
+              var gap = 5;
+              var paddingLeft = parseFloat(filmstripEl.style.paddingLeft) || 0;
+              var targetCenter = paddingLeft + f * (thumbW + gap) + thumbW / 2;
+              filmstripEl.scrollLeft = targetCenter - filmstripEl.offsetWidth / 2;
+            }
+          }
+
+          var nearest = Math.round(f);
+          nearest = Math.max(0, Math.min(nearest, activePhotos.length - 1));
+
+          // preload text underneath if we cross 50% mark
+          if (nearest !== cur) {
+            onSnapSettle(nearest);
+          }
+
+          var dist = Math.abs(imgWrap.scrollLeft - nearest * w) / w;
+          var info = document.getElementById('lightbox-info');
+          if (info) {
+            info.style.animation = 'none';
+            var swipeDelta = imgWrap.scrollLeft - cur * w;
+            if (dist > 0.05) {
+              info.style.transition = 'opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease';
+              info.style.opacity = '0';
+              info.style.filter = 'blur(6px)';
+              info.style.transform = swipeDelta > 0 ? 'translateX(-16px)' : 'translateX(16px)';
+            } else {
+              info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
+              info.style.opacity = '1';
+              info.style.filter = 'blur(0px)';
+              info.style.transform = 'translateX(0px)';
+            }
+          }
+        }, { passive: true });
+
+        // ── Setup on lightbox open ──
+        window.addEventListener('lightbox-open', function () {
+          buildSlides();
+          requestAnimationFrame(function () {
+            scrollToSlide(cur, false);
+            updateLoading();
+            var p = activePhotos[cur];
+            setLightboxContent(p);
+            animateInfo(0);
+          });
+        });
+
+        // Override loadSwipeNeighbors
+        loadSwipeNeighbors = function () { updateLoading(); };
+
+        // Re-align on resize/orientation change
+        window.addEventListener('resize', function () {
+          if (lbEl.classList.contains('open')) {
+            scrollToSlide(cur, false);
+          }
+        });
+
+        // ─── SWIPE DOWN TO DISMISS & PINCH TO ZOOM ───
+        var dStartX = 0, dStartY = 0, dDY = 0;
+        var dLocked = false, dChecked = false;
+        var dPts = [];
+        var isPinching = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
+
+        lbEl.addEventListener('touchstart', function (e) {
+          if (!lbEl.classList.contains('open')) return;
+          // stricter check to prevent interaction fight between filmstrip and dismiss gesture
+          if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+
+          if (e.touches.length === 2 && !dLocked) {
+            isPinching = true;
+            pinchInitDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            pinchInitLevel = lbZoomLevel;
+            pinchInitPanX = lbZoomPanX;
+            pinchInitPanY = lbZoomPanY;
+
+            var cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            var cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            pinchInitCx = cx;
+            pinchInitCy = cy;
+            var mWrap = document.getElementById('lightbox-img-wrap');
+            var img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
+            if (img) {
+              var rect = img.getBoundingClientRect();
+              pinchInitMx = cx - (rect.left + rect.width / 2);
+              pinchInitMy = cy - (rect.top + rect.height / 2);
+            }
+
+            if (isMobile) {
+              var mWrap = document.getElementById('lightbox-img-wrap');
+              var slides = mWrap.querySelectorAll('.snap-slide');
+              for (var i = 0; i < slides.length; i++) {
+                if (parseInt(slides[i].dataset.idx) !== cur) {
+                  slides[i].style.transition = 'none';
+                  slides[i].style.opacity = '0';
+                }
+              }
+            }
+            return;
+          }
+
+          if (isPinching) return;
+
+          if (lbZoomLevel > 1 && e.touches.length === 1) {
+            dStartX = e.touches[0].clientX;
+            dStartY = e.touches[0].clientY;
+            return;
+          }
+
+          dStartX = e.touches[0].clientX;
+          dStartY = e.touches[0].clientY;
+          dDY = 0;
+          dLocked = false;
+          dChecked = false;
+          dPts = [{ y: dStartY, t: Date.now() }];
+        }, { passive: false });
+
+        lbEl.addEventListener('touchmove', function (e) {
+          if (isPinching && e.touches.length === 2) {
+            e.preventDefault();
+            var dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            var ratio = dist / pinchInitDist;
+            var newScale = Math.min(Math.max(1, pinchInitLevel * ratio), 6);
+            if (newScale === lbZoomLevel) return;
+
+            var cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            var cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            var dx = cx - pinchInitCx;
+            var dy = cy - pinchInitCy;
+
+            lbZoomLevel = newScale;
+            lbZoomPanX = pinchInitPanX - pinchInitMx * (newScale / pinchInitLevel - 1) + dx;
+            lbZoomPanY = pinchInitPanY - pinchInitMy * (newScale / pinchInitLevel - 1) + dy;
+
+            var mWrap = document.getElementById('lightbox-img-wrap');
+            var img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
+            if (img) updateZoomTransform(img);
+            return;
+          }
+
+          if (lbZoomLevel > 1 && e.touches.length === 1 && !isPinching) {
+            e.preventDefault();
+            var dx = e.touches[0].clientX - dStartX;
+            var dy = e.touches[0].clientY - dStartY;
+            lbZoomPanX += dx;
+            lbZoomPanY += dy;
+            dStartX = e.touches[0].clientX;
+            dStartY = e.touches[0].clientY;
+            var mWrap = document.getElementById('lightbox-img-wrap');
+            var img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
+            if (img) updateZoomTransform(img);
+            return;
+          }
+
+          if (isPinching || e.touches.length !== 1) return;
+
+          if (dChecked && !dLocked) return;
+          var dx = e.touches[0].clientX - dStartX;
+          var dy = e.touches[0].clientY - dStartY;
+          dPts.push({ y: e.touches[0].clientY, t: Date.now() });
+          if (dPts.length > 8) dPts.shift();
+
+          if (!dChecked && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+            dChecked = true;
+            dLocked = dy > 0 && Math.abs(dy) > Math.abs(dx);
+          }
+
+          if (dLocked && dy > 0) {
+            dDY = dy;
+            e.preventDefault();
+            var content = document.getElementById('lightbox-content');
+            content.style.transition = 'none';
+            var tilt = Math.max(-10, (dy / 400) * -10); // reduced from -25
+            content.style.transformOrigin = 'bottom left';
+            content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
+            content.style.opacity = Math.max(0.15, 1 - dy / 400);
+
+            var info = document.getElementById('lightbox-info');
+            if (info) {
+              var blurVal = Math.min(18, (dy / 300) * 18);
+              var txtOpac = Math.max(0, 1 - dy / 180);
+              info.style.transition = 'none';
+              info.style.filter = 'blur(' + blurVal + 'px)';
+              info.style.opacity = txtOpac;
+            }
+          }
+        }, { passive: false });
+
+        lbEl.addEventListener('touchend', function (e) {
+          if (e.touches.length < 2) {
+            if (isPinching && e.touches.length === 1 && lbZoomLevel > 1) {
+              dStartX = e.touches[0].clientX;
+              dStartY = e.touches[0].clientY;
+            }
+            isPinching = false;
+
+            if (lbZoomLevel <= 1 && isMobile) {
+              var mWrap = document.getElementById('lightbox-img-wrap');
+              var slides = mWrap.querySelectorAll('.snap-slide');
+              for (var i = 0; i < slides.length; i++) {
+                slides[i].style.transition = '';
+                slides[i].style.opacity = '1';
+              }
+            }
+          }
+
+          if (!dLocked) return;
+          var vy = 0;
+          if (dPts.length >= 2) {
+            var a = dPts[Math.max(0, dPts.length - 4)], b = dPts[dPts.length - 1];
+            var dt = b.t - a.t;
+            if (dt > 0) vy = (b.y - a.y) / dt;
+          }
+          if (dDY > 100 || vy > 0.35) {
+            swipeHappened = true;
+            var content = document.getElementById('lightbox-content');
+            content.style.transition = 'transform 0.28s ease-out, opacity 0.28s ease-out';
+            content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
+            content.style.opacity = '0';
+
+            var info = document.getElementById('lightbox-info');
+            if (info) {
+              info.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
+              info.style.filter = 'blur(18px)';
+              info.style.opacity = '0';
+            }
+
+            setTimeout(function () {
+              closeLightbox();
+              setTimeout(function () {
+                content.style.transition = '';
+                content.style.transform = '';
+                content.style.transformOrigin = '';
+                content.style.opacity = '';
+              }, 450);
+            }, 280);
+          } else {
+            var content = document.getElementById('lightbox-content');
+            content.style.transition = 'transform 0.3s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease';
+            content.style.transform = '';
+            content.style.opacity = '1';
+
+            var info = document.getElementById('lightbox-info');
+            if (info) {
+              info.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
+              info.style.filter = 'blur(0px)';
+              info.style.opacity = '1';
+            }
+
+            setTimeout(function () { content.style.transition = ''; content.style.transformOrigin = ''; }, 320);
+          }
+          dLocked = false;
+          dChecked = false;
+        }, { passive: true });
+      })();
+    }
+
+    function revealCards() {
+      var cards = document.querySelectorAll('.photo-card:not(.revealed)');
+      cards.forEach(function (card) {
+        var rect = card.getBoundingClientRect();
+        if (rect.top < window.innerHeight - 60) {
+          var img = card.querySelector('img');
+          if (img && img.complete && img.naturalHeight !== 0) {
+            card.classList.add('revealed');
+          } else if (img && !img.dataset.loadListenerAttached) {
+            img.dataset.loadListenerAttached = "true";
+            img.addEventListener('load', function () {
+              var r = card.getBoundingClientRect();
+              if (r.top < window.innerHeight - 60) card.classList.add('revealed');
+            });
+          }
+        }
+      });
+    }
+
+    window.addEventListener('scroll', revealCards, { passive: true });
+
+    // MASONRY — scroll reveal handles fade-in
+    // aspect ratios cached in localStorage to prevent CLS on repeat visits
+    var RATIO_CACHE_KEY = 'van_ratios_v1';
+    var ratioCache = {};
+    try {
+      var stored = localStorage.getItem(RATIO_CACHE_KEY);
+      if (stored) ratioCache = JSON.parse(stored);
+    } catch (e) { }
+
+    function saveRatioCache() {
+      try { localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCache)); } catch (e) { }
+    }
+
+    function buildMasonry() {
+      var m = document.getElementById('masonry');
+      activePhotos.forEach(function (p, i) {
+        var card = document.createElement('div');
+        card.className = 'photo-card';
+        var imgEl = document.createElement('img');
+        imgEl.src = p.src;
+        imgEl.alt = p.title;
+        imgEl.loading = 'lazy';
+
+        // apply cached ratio immediately — prevents layout shift on repeat visits
+        var cached = ratioCache[p.src];
+        if (cached) {
+          imgEl.style.aspectRatio = cached;
+        } else {
+          // first visit: read ratio after load, cache it
+          imgEl.addEventListener('load', function () {
+            if (imgEl.naturalWidth && imgEl.naturalHeight) {
+              var r = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(4);
+              ratioCache[p.src] = r;
+              imgEl.style.aspectRatio = r;
+              saveRatioCache();
+            }
+          });
+        }
+
+        var overlay = document.createElement('div');
+        overlay.className = 'photo-card-overlay';
+        overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-year">' + p.year + '</div>';
+        card.appendChild(imgEl);
+        card.appendChild(overlay);
+        card.addEventListener('click', (function (idx) {
+          return function () { openLightbox(idx); };
+        })(i));
+        m.appendChild(card);
+      });
+      setTimeout(revealCards, 100);
+    }
+
+    // PARALLAX
+    var scrollY = 0;
+    window.addEventListener('scroll', function () { scrollY = window.scrollY; }, { passive: true });
+
+    // CAROUSEL
+    var ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
+    // cruise speed scaled by device — mobile narrower so same px/frame looks faster
+    var CRUISE_SPEED = isMobile ? 0.28 : (window.innerWidth < 1024 ? 0.36 : 0.45);
+    var EASE_FRAMES = 120;
+    var START_SPEED_MULT = 8.0;
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+    function getCurrentSpeed(frame) {
+      if (frame >= EASE_FRAMES) return CRUISE_SPEED;
+      var t = frame / EASE_FRAMES;
+      return CRUISE_SPEED * START_SPEED_MULT + (CRUISE_SPEED - CRUISE_SPEED * START_SPEED_MULT) * easeOutCubic(t);
+    }
+
+    var rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
+    var easeFrame = 0;
+
+    function buildCarousel() {
+      var rowIds = ['row-0', 'row-1', 'row-2', 'row-3'];
+      var rows = rowIds.map(function (id) { return document.getElementById(id); });
+
+      // show/hide row-3 based on device
+      if (isMobile) {
+        rows[3].style.display = 'flex';
+      } else {
+        rows[3].style.display = 'none';
+      }
+
+      var activeRows = isMobile ? rows : rows.slice(0, 3);
+      var activeRowCount = activeRows.length;
+
+      if (carouselPhotos.length === 0) { startLoops(); return; }
+
+      // rows stay visible; eager images handle their own fade-in
+      activeRows.forEach(function (r) { r.style.opacity = '1'; });
+
+      var groups = [];
+      for (var g = 0; g < activeRowCount; g++) groups.push([]);
+      carouselPhotos.forEach(function (p, i) { groups[i % activeRowCount].push(p); });
+
+      var eagerImgs = [];
+
+      activeRows.forEach(function (row, ri) {
+        var group = groups[ri].length > 0 ? groups[ri] : carouselPhotos;
+        var copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
+
+        for (var c = 0; c < copies * 2; c++) {
+          group.forEach(function (p) {
+            var img = document.createElement('img');
+            img.src = p.src; img.alt = p.title; img.draggable = false;
+            if (c === 0) {
+              img.loading = 'eager';
+              // start invisible — fade in on load so images don't cut in on cold load
+              img.style.opacity = '0';
+              img.addEventListener('load', function () { img.style.opacity = '1'; });
+              img.addEventListener('error', function () { img.style.opacity = '1'; });
+              eagerImgs.push(img);
+            } else {
+              img.loading = 'lazy';
+            }
+            var idx = activePhotos.indexOf(p);
+            img.addEventListener('click', (function (capturedIdx) {
+              return function () { openLightbox(capturedIdx >= 0 ? capturedIdx : 0); };
+            })(idx));
+            row.appendChild(img);
+          });
+        }
+      });
+
+      var loaded = 0;
+      var total = eagerImgs.length;
+
+      function onImageReady() {
+        if (++loaded < total) return;
+        // defer to next paint — Firefox offsetWidth is 0 if read before layout pass
+        requestAnimationFrame(function () {
+          activeRows.forEach(function (row, ri) {
+            var group = groups[ri].length > 0 ? groups[ri] : carouselPhotos;
+            var copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
+            var imgs = Array.from(row.querySelectorAll('img'));
+            var w = 0;
+            for (var i = 0; i < group.length * copies && i < imgs.length; i++) w += (imgs[i].offsetWidth || 220) + 10;
+            rowState[ri].setWidth = w > 0 ? w : group.length * copies * 230;
+            if (ROW_CONFIG[ri].dir === 1) rowState[ri].offset = -rowState[ri].setWidth;
+          });
+          activeRows.forEach(function (r) { r.style.opacity = '1'; }); // already visible, belt-and-suspenders
+          if (window.__onCarouselReady) window.__onCarouselReady();
+          startLoops();
+        });
+      }
+
+      if (total === 0) { activeRows.forEach(function (r) { r.style.opacity = '1'; }); startLoops(); return; }
+      eagerImgs.forEach(function (img) {
+        var counted = false;
+        function countOnce() { if (!counted) { counted = true; onImageReady(); } }
+        img.addEventListener('load', countOnce);
+        img.addEventListener('error', countOnce);
+        if (img.complete) {
+          // already cached — decode() waits for pixel decode before resolving
+          if (img.decode) {
+            img.decode().then(countOnce).catch(countOnce);
+          } else {
+            // no decode() — nudge src to retrigger load event (cached, no network hit)
+            var s = img.src; img.src = ''; img.src = s;
+          }
+        }
+      });
+    }
+
+    function tick() {
+      if (!heroVisible || !pageVisible) { heroRafId = null; return; }
+      var rowIds = isMobile ? ['row-0', 'row-1', 'row-2', 'row-3'] : ['row-0', 'row-1', 'row-2'];
+      var rows = rowIds.map(function (id) { return document.getElementById(id); });
+      var speed = getCurrentSpeed(easeFrame);
+      if (easeFrame < EASE_FRAMES + 10) easeFrame++;
+
+      var px = [scrollY * 0.18, -scrollY * 0.12, scrollY * 0.22, -scrollY * 0.15];
+
+      rowState.forEach(function (state, ri) {
+        if (ri >= rows.length) return;
+        state.offset += speed * state.dir;
+        if (state.setWidth > 0) {
+          if (state.dir === -1 && state.offset < -state.setWidth) state.offset += state.setWidth;
+          if (state.dir === 1 && state.offset > 0) state.offset -= state.setWidth;
+        }
+        rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
+      });
+
+      heroRafId = requestAnimationFrame(tick);
+    }
+
+    // CURSOR - mouse only
+    var isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (isMouseDevice) {
+      var cursor = document.getElementById('cursor');
+      var ring = document.getElementById('cursor-ring');
+      var mx = 0, my = 0, rx = 0, ry = 0;
+      var cursorVisible = false;
+
+      document.addEventListener('mousemove', function (e) {
+        mx = e.clientX; my = e.clientY;
+        cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+        if (!cursorVisible) {
+          cursorVisible = true;
+          cursor.style.opacity = '1'; ring.style.opacity = '1';
+        }
+      });
+      (function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
+      document.addEventListener('click', function () { cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; setTimeout(function () { cursor.style.transform = 'translate(-50%,-50%) scale(1)'; }, 150); });
+      // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
+      function hideCursor() { cursor.style.opacity = '0'; ring.style.opacity = '0'; cursorVisible = false; }
+      function showCursor() { if (cursorVisible) return; cursorVisible = true; cursor.style.opacity = '1'; ring.style.opacity = '1'; }
+      document.addEventListener('mouseleave', hideCursor);
+      document.documentElement.addEventListener('mouseleave', hideCursor);
+      document.addEventListener('mouseenter', showCursor);
+      document.documentElement.addEventListener('mouseenter', showCursor);
+      document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
+      // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
+      var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img';
+      document.addEventListener('mouseover', function (e) {
+        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+          ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';
+        }
+      });
+      document.addEventListener('mouseout', function (e) {
+        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+          ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
+        }
+      });
+
+      // reset ring when lightbox opens — hover context is lost when carousel img is covered
+      window.addEventListener('lightbox-open', function () {
+        ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
+      });
+    }
+
+    // FILMSTRIP
+    var filmstripWrap = document.getElementById('filmstrip-wrap');
+    var filmstripEl = document.getElementById('filmstrip');
+    var filmstripHideTimer = null;
+    var filmstripBuilt = false;
+    var liftZone = document.getElementById('filmstrip-lift-zone');
+
+    function buildFilmstrip() {
+      if (filmstripBuilt) return;
+      filmstripBuilt = true;
+
+      var THUMB_W = window.innerWidth >= 640 ? 62 : 52;
+      var pad = (window.innerWidth / 2) - (THUMB_W / 2);
+      filmstripEl.style.paddingLeft = pad + 'px';
+      filmstripEl.style.paddingRight = pad + 'px';
+
+      activePhotos.forEach(function (p, i) {
+        var thumb = document.createElement('div');
+        thumb.className = 'filmstrip-thumb';
+        thumb.dataset.idx = i;
+        var img = document.createElement('img');
+        img.src = p.src;
+        img.alt = p.title;
+        img.loading = 'lazy';
+        thumb.appendChild(img);
+        thumb.addEventListener('click', (function (idx) {
+          return function () {
+            var d = idx === cur ? 0 : (idx > cur ? 1 : -1);
+            cur = idx;
+            openLightbox(idx, d);
+          };
+        })(i));
+        filmstripEl.appendChild(thumb);
+      });
+
+      initFilmstripDrag();
+    }
+
+    var fsRaf = null;
+    var fsVelocity = 0;
+    var fsTarget = 0;
+    var isManuallyNavigating = false;
+
+    function updateFilmstrip() {
+      var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
+      thumbs.forEach(function (t) {
+        t.classList.toggle('active', parseInt(t.dataset.idx) === cur);
+      });
+      var active = filmstripEl.querySelector('.filmstrip-thumb.active');
+      if (active) {
+        var wrapW = filmstripEl.offsetWidth;
+        var thumbL = active.offsetLeft;
+        var thumbW = active.offsetWidth;
+        fsTarget = thumbL - wrapW / 2 + thumbW / 2;
+        if (!fsRaf) {
+          if (!isMobile || isManuallyNavigating) {
+            var startPos = filmstripEl.scrollLeft;
+            var startTime = performance.now();
+            var duration = 300;
+
+            function step(time) {
+              var elapsed = time - startTime;
+              if (elapsed >= duration) {
+                filmstripEl.scrollLeft = fsTarget;
+                fsRaf = null;
+                isManuallyNavigating = false;
+                return;
+              }
+              var t = Math.min(1, elapsed / duration);
+              var ease = -(Math.cos(Math.PI * t) - 1) / 2;
+              filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
+              fsRaf = requestAnimationFrame(step);
+            }
+            fsRaf = requestAnimationFrame(step);
+          } else {
+            filmstripEl.scrollLeft = fsTarget;
+          }
+        }
+      }
+    }
+
+    function showFilmstrip() {
+      buildFilmstrip();
+      updateFilmstrip();
+      filmstripWrap.classList.add('visible');
+      document.getElementById('lightbox').classList.add('filmstrip-visible');
+      clearTimeout(filmstripHideTimer);
+      filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+    }
+
+    function hideFilmstrip() {
+      filmstripWrap.classList.remove('visible');
+      document.getElementById('lightbox').classList.remove('filmstrip-visible');
+    }
+
+    // keep filmstrip visible while hovering it
+    filmstripWrap.addEventListener('mouseenter', function () { clearTimeout(filmstripHideTimer); });
+    filmstripWrap.addEventListener('mouseleave', function () {
+      // short grace — enough to prevent flicker if mouse clips the edge
+      filmstripHideTimer = setTimeout(hideFilmstrip, 200);
+    });
+    filmstripWrap.addEventListener('touchstart', function () { clearTimeout(filmstripHideTimer); }, { passive: true });
+    filmstripWrap.addEventListener('touchend', function () {
+      filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
+    }, { passive: true });
+
+    // invisible lift zone — hovering bottom of screen revives hidden filmstrip
+    if (liftZone) {
+      liftZone.addEventListener('mouseenter', function () {
+        clearTimeout(filmstripHideTimer);
+        showFilmstrip();
+      });
+      liftZone.addEventListener('mouseleave', function () {
+        // if mouse left lift zone without entering filmstrip, hide immediately
+        filmstripHideTimer = setTimeout(hideFilmstrip, 0);
+      });
+    }
+
+    // mouse wheel scroll — momentum accumulator for smooth visual feel
+    var wheelVelocity = 0;
+    var wheelRafId = null;
+    filmstripWrap.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      wheelVelocity += (e.deltaY + e.deltaX) * 0.6; // accumulate, scaled down slightly
+      clearTimeout(filmstripHideTimer);
+      filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
+      if (!wheelRafId) {
+        (function wheelLoop() {
+          if (Math.abs(wheelVelocity) < 0.5) { wheelVelocity = 0; wheelRafId = null; return; }
+          filmstripEl.scrollLeft += wheelVelocity;
+          wheelVelocity *= 0.82; // friction — decay per frame
+          wheelRafId = requestAnimationFrame(wheelLoop);
+        })();
+      }
+    }, { passive: false });
+
+    // click-drag scroll
+    function initFilmstripDrag() {
+      var isDragging = false;
+      var dragStartX = 0;
+      var scrollStart = 0;
+      var dragMoved = false;
+
+      filmstripEl.addEventListener('mousedown', function (e) {
+        isDragging = true;
+        dragMoved = false;
+        dragStartX = e.clientX;
+        scrollStart = filmstripEl.scrollLeft;
+        filmstripEl.classList.add('dragging');
+        clearTimeout(filmstripHideTimer);
+      });
+
+      document.addEventListener('mousemove', function (e) {
+        if (!isDragging) return;
+        var dx = e.clientX - dragStartX;
+        if (Math.abs(dx) > 3) dragMoved = true;
+        filmstripEl.scrollLeft = scrollStart - dx;
+      });
+
+      document.addEventListener('mouseup', function () {
+        if (!isDragging) return;
+        isDragging = false;
+        filmstripEl.classList.remove('dragging');
+        filmstripHideTimer = setTimeout(hideFilmstrip, 1500);
+      });
+
+      // suppress click on thumbs if we just dragged
+      filmstripEl.addEventListener('click', function (e) {
+        if (dragMoved) { e.stopPropagation(); dragMoved = false; }
+      }, true);
+    }
+
+
+    // buildCarousel internally waits for images, then calls onReady
+    // we hook into that by wrapping the final reveal
+    function liftLoader() {
+      var loader = document.getElementById('loader');
+      loader.classList.add('lifting');
+      setTimeout(function () { loader.style.display = 'none'; }, 750);
+    }
+
+    // Lift loader via direct callback — no MutationObserver (flaky in Firefox)
+    var _loaderLifted = false;
+    function safeLift() { if (!_loaderLifted) { _loaderLifted = true; liftLoader(); } }
+    // Hard fallback: lift after 4s no matter what
+    setTimeout(safeLift, 4000);
+    // Expose for buildCarousel to call after rows are visible
+    window.__onCarouselReady = function () { setTimeout(safeLift, 120); };
+
+    buildCarousel();
+    buildMasonry();
+
+    // Visibility & Animation Loop Management
+    function startLoops() {
+      if (heroVisible && pageVisible) {
+        if (!heroRafId) heroRafId = requestAnimationFrame(tick);
+        if (!glowRafId && typeof animateGlow === 'function') glowRafId = requestAnimationFrame(animateGlow);
+      }
+    }
+    var heroObs = new IntersectionObserver(function (entries) {
+      heroVisible = entries[0].isIntersecting;
+      startLoops();
+    }, { threshold: 0 });
+    heroObs.observe(document.getElementById('hero'));
+    document.addEventListener('visibilitychange', function () {
+      pageVisible = !document.hidden;
+      startLoops();
+    });
+
+    // Deep Link Initial Load
+    function checkHash() {
+      var hash = window.location.hash.substring(1);
+      if (!hash) return;
+      for (var i = 0; i < activePhotos.length; i++) {
+        if (slugify(activePhotos[i].title) === hash) {
+          openLightbox(i);
+          break;
+        }
+      }
+    }
+    // Defer slightly to ensure layout is ready
+    setTimeout(checkHash, 300);
+  </script>
+</body>
+
+</html>
