@@ -449,9 +449,6 @@
 
       // Mobile: already open — natively smooth scroll while locking UI logic to prevent glitches during rapid passage
       if (lb.classList.contains('open') && isMobile && mobileScrollToSlide) {
-        window.isAutoRapidScrolling = true;
-        clearTimeout(window.autoRapidScrollTimer);
-        
         var info = document.getElementById('lightbox-info');
         if (info) {
           info.style.transition = 'opacity 0.15s ease';
@@ -460,18 +457,6 @@
         
         mobileScrollToSlide(i, true);
         
-        window.autoRapidScrollTimer = setTimeout(function() {
-          window.isAutoRapidScrolling = false;
-          var finalP = activePhotos[i];
-          setLightboxBlur(finalP.src);
-          setLightboxContent(finalP);
-          showFilmstrip();
-          if (info) {
-            info.style.transition = 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-            info.style.opacity = '1';
-          }
-        }, 650);
-
         cur = i;
         updateFilmstrip();
         return;
@@ -968,11 +953,41 @@
           });
         }
 
-        // ── Scroll to slide ──
         function scrollToSlide(idx, smooth) {
           var w = imgWrap.offsetWidth;
           if (!w) return;
-          imgWrap.scrollTo({ left: idx * w, behavior: smooth ? 'smooth' : 'instant' });
+          if (smooth) {
+            window.isAutoRapidScrolling = true;
+            imgWrap.style.scrollSnapType = 'none'; // release OS clamp
+            var startPos = imgWrap.scrollLeft;
+            var targetPos = idx * w;
+            var startTime = performance.now();
+            var duration = 380; // mathematically sleek transition (faster than OS default)
+
+            function step(time) {
+              var elapsed = time - startTime;
+              if (elapsed >= duration) {
+                imgWrap.scrollTo({ left: targetPos, behavior: 'instant' });
+                imgWrap.style.scrollSnapType = ''; // restore OS clamp
+                window.isAutoRapidScrolling = false;
+                onSnapSettle(idx); // officially settle resolution physics
+                
+                var info = document.getElementById('lightbox-info');
+                if (info) {
+                  info.style.transition = 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+                  info.style.opacity = '1';
+                }
+                return;
+              }
+              var t = elapsed / duration;
+              var ease = 1 - Math.pow(1 - t, 4); // ease-out quart
+              imgWrap.scrollTo({ left: startPos + (targetPos - startPos) * ease, behavior: 'instant' });
+              requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+          } else {
+            imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
+          }
         }
         mobileScrollToSlide = scrollToSlide;
 
@@ -1056,7 +1071,7 @@
           var f = imgWrap.scrollLeft / w;
 
           // smoothly sync filmstrip scrub to native drag
-          if (!fsRaf && !isManuallyNavigating) {
+          if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling) {
             var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
             if (thumbs.length > 0) {
               var thumbW = thumbs[0].offsetWidth;
