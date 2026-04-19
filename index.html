@@ -1589,29 +1589,29 @@
         var thumbL = active.offsetLeft;
         var thumbW = active.offsetWidth;
         fsTarget = thumbL - wrapW / 2 + thumbW / 2;
-        if (!fsRaf) {
-          if (!isMobile || isManuallyNavigating) {
-            var startPos = filmstripEl.scrollLeft;
-            var startTime = performance.now();
-            var duration = 300;
+        if (!isMobile || isManuallyNavigating) {
+          if (fsRaf) { cancelAnimationFrame(fsRaf); }
+          var startPos = filmstripEl.scrollLeft;
+          var startTime = performance.now();
+          var duration = 400; // graceful duration
 
-            function step(time) {
-              var elapsed = time - startTime;
-              if (elapsed >= duration) {
-                filmstripEl.scrollLeft = fsTarget;
-                fsRaf = null;
-                isManuallyNavigating = false;
-                return;
-              }
-              var t = Math.min(1, elapsed / duration);
-              var ease = -(Math.cos(Math.PI * t) - 1) / 2;
-              filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
-              fsRaf = requestAnimationFrame(step);
+          function step(time) {
+            var elapsed = time - startTime;
+            if (elapsed >= duration) {
+              filmstripEl.scrollLeft = fsTarget;
+              fsRaf = null;
+              isManuallyNavigating = false;
+              return;
             }
+            var t = Math.min(1, elapsed / duration);
+            // silky ease-out-quart
+            var ease = 1 - Math.pow(1 - t, 4);
+            filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
             fsRaf = requestAnimationFrame(step);
-          } else {
-            filmstripEl.scrollLeft = fsTarget;
           }
+          fsRaf = requestAnimationFrame(step);
+        } else {
+          filmstripEl.scrollLeft = fsTarget;
         }
       }
     }
