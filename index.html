@@ -447,10 +447,33 @@
         history.replaceState(null, null, '#' + slug);
       }
 
-      // Mobile: already open — just scroll to the slide
+      // Mobile: already open — natively smooth scroll while locking UI logic to prevent glitches during rapid passage
       if (lb.classList.contains('open') && isMobile && mobileScrollToSlide) {
+        window.isAutoRapidScrolling = true;
+        clearTimeout(window.autoRapidScrollTimer);
+        
+        var info = document.getElementById('lightbox-info');
+        if (info) {
+          info.style.transition = 'opacity 0.15s ease';
+          info.style.opacity = '0';
+        }
+        
         mobileScrollToSlide(i, true);
-        showFilmstrip();
+        
+        window.autoRapidScrollTimer = setTimeout(function() {
+          window.isAutoRapidScrolling = false;
+          var finalP = activePhotos[i];
+          setLightboxBlur(finalP.src);
+          setLightboxContent(finalP);
+          showFilmstrip();
+          if (info) {
+            info.style.transition = 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+            info.style.opacity = '1';
+          }
+        }, 650);
+
+        cur = i;
+        updateFilmstrip();
         return;
       }
 
@@ -953,6 +976,24 @@
         }
         mobileScrollToSlide = scrollToSlide;
 
+        // Over-scroll loop detection bounds
+        var wrapTouchX = 0;
+        imgWrap.addEventListener('touchstart', function(e) {
+          if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
+        }, {passive: true});
+        imgWrap.addEventListener('touchend', function(e) {
+          if (Math.abs(lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
+          var dx = e.changedTouches[0].clientX - wrapTouchX;
+          var maxScroll = imgWrap.scrollWidth - imgWrap.offsetWidth;
+          if (imgWrap.scrollLeft >= maxScroll - 5 && dx < -45) {
+            // Pulled left while on the last slide -> Loop to 0
+            openLightbox(0, 1);
+          } else if (imgWrap.scrollLeft <= 5 && dx > 45) {
+            // Pulled right while on the first slide -> Loop to end
+            openLightbox(activePhotos.length - 1, -1);
+          }
+        }, {passive: true});
+
         // ── Eager-load nearby slides ──
         function updateLoading() {
           var imgs = imgWrap.querySelectorAll('.snap-slide img');
@@ -1028,6 +1069,12 @@
 
           var nearest = Math.round(f);
           nearest = Math.max(0, Math.min(nearest, activePhotos.length - 1));
+
+          // rapid scroll mode suspends normal text updates to keep transition fluid
+          if (window.isAutoRapidScrolling) {
+            cur = nearest;
+            return;
+          }
 
           // preload text underneath if we cross 50% mark
           if (nearest !== cur) {
@@ -1141,6 +1188,7 @@
         }, { passive: false });
 
         lbEl.addEventListener('touchmove', function (e) {
+          if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
           if (isPinching && e.touches.length === 2) {
             e.preventDefault();
             var dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -1212,6 +1260,7 @@
         }, { passive: false });
 
         lbEl.addEventListener('touchend', function (e) {
+          if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
           if (e.touches.length < 2) {
             if (isPinching && e.touches.length === 1 && lbZoomLevel > 1) {
               dStartX = e.touches[0].clientX;
