@@ -584,7 +584,6 @@
       var lb = document.getElementById('lightbox');
       var img = document.getElementById('lightbox-img');
       ++navGen; // invalidates all pending callbacks
-      resetDescToggle();
       lb.classList.remove('open');
       document.body.style.overflow = '';
       clearTimeout(filmstripHideTimer);
@@ -618,9 +617,9 @@
 
     // reset desc expansion on new photo
     function resetDescToggle() {
-      var content = document.getElementById('lightbox-content');
+      var info = document.getElementById('lightbox-info');
       var btn = document.getElementById('lightbox-desc-toggle');
-      if (content) content.classList.remove('desc-open');
+      if (info) info.classList.remove('desc-open');
       if (btn) btn.textContent = 'read';
     }
 
@@ -738,8 +737,6 @@
     function toggleImageZoom(e) {
       var img = e.target;
       if (!img.classList.contains('zoomable')) return;
-      // Desktop only: click to reset zoom. Mobile uses double-tap (handled in lbEl click).
-      if (isMobile) return;
       e.stopPropagation();
       if (lbZoomLevel > 1) { resetZoom(); }
     }
@@ -812,57 +809,39 @@
     var mobileScrollToSlide = null;
     var swipeHappened = false;
 
-    // ─── MOBILE: Single-tap = toggle filmstrip, Double-tap on image = zoom ───
-    var tapTimer = null;
-    var tapCount = 0;
-    var lastTapX = 0, lastTapY = 0;
+    var lastTapT = 0;
 
+    // mobile: tap content area (not interactive elements) to toggle filmstrip
     lbEl.addEventListener('click', function (e) {
       if (!isMobile) return;
       if (swipeHappened) { swipeHappened = false; return; }
       if (e.target.closest('button, .filmstrip-thumb, #filmstrip-wrap')) return;
 
-      tapCount++;
-      lastTapX = e.clientX;
-      lastTapY = e.clientY;
-
-      if (tapCount === 1) {
-        // Wait to see if a second tap arrives
-        tapTimer = setTimeout(function () {
-          tapCount = 0;
-          // Single tap: toggle filmstrip
-          if (filmstripWrap.classList.contains('visible')) {
-            hideFilmstrip();
-          } else {
-            showFilmstrip();
-          }
-        }, 280);
-      } else if (tapCount >= 2) {
-        clearTimeout(tapTimer);
-        tapCount = 0;
-        // Double tap: only zoom if on the image area
-        var mWrap = document.getElementById('lightbox-img-wrap');
-        var isOnImage = e.target.closest('#lightbox-img-wrap, .snap-slide');
-        if (isOnImage) {
-          if (lbZoomLevel > 1) {
-            resetZoom();
-          } else {
-            // Zoom in centered on tap point
-            lbZoomLevel = 2.5;
-            var img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
-            if (img) {
-              var rect = img.getBoundingClientRect();
-              lbZoomPanX = -(lastTapX - (rect.left + rect.width / 2)) * (lbZoomLevel - 1);
-              lbZoomPanY = -(lastTapY - (rect.top + rect.height / 2)) * (lbZoomLevel - 1);
-
-              img.dataset.zoomAnimated = "true";
-              updateZoomTransform(img);
-              setTimeout(function () {
-                delete img.dataset.zoomAnimated;
-                img.classList.add('zoomed'); // Disable transition for subsequent panning
-              }, 360);
-            }
-          }
+      var now = Date.now();
+      if (e.target.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
+        // Double tap zoom
+        if (lbZoomLevel > 1) {
+          resetZoom();
+        } else {
+          lbZoomLevel = 2.5;
+          var img = e.target;
+          var rect = img.getBoundingClientRect();
+          lbZoomPanX = -(e.clientX - (rect.left + rect.width / 2)) * (lbZoomLevel - 1);
+          lbZoomPanY = -(e.clientY - (rect.top + rect.height / 2)) * (lbZoomLevel - 1);
+          img.dataset.zoomAnimated = "true";
+          updateZoomTransform(img);
+          setTimeout(function () {
+            delete img.dataset.zoomAnimated;
+            img.classList.add('zoomed'); // Disable transition for subsequent panning
+          }, 360);
+        }
+        lastTapT = 0;
+      } else {
+        lastTapT = now;
+        if (filmstripWrap.classList.contains('visible')) {
+          hideFilmstrip();
+        } else {
+          showFilmstrip();
         }
       }
     });
@@ -915,9 +894,7 @@
 
         // ── Scroll settle — detect new active slide ──
         function onSnapSettle(targetIdx) {
-          // If a manual navigation (filmstrip tap) is in progress, don't reset its state
-          // or re-trigger updateFilmstrip from a stale scroll position mid-animation.
-          if (!isManuallyNavigating) isManuallyNavigating = false;
+          isManuallyNavigating = false; // Reset navigation flag on settle
           var w = imgWrap.offsetWidth;
           if (!w) return;
           var rawNearest = Math.round(imgWrap.scrollLeft / w);
@@ -932,8 +909,7 @@
             setLightboxBlur(p.src);
 
             setLightboxContent(p);
-            // Skip showFilmstrip if manual nav is handling it — prevents startPos corruption
-            if (!isManuallyNavigating) showFilmstrip();
+            showFilmstrip();
             updateLoading();
           }
 
@@ -954,47 +930,24 @@
         imgWrap.addEventListener('scrollend', function () {
           clearTimeout(snapTimer);
           onSnapSettle();
-          // Finger is fully lifted. Run the expo-out centering animation to land exactly.
-          // Force the animated path in updateFilmstrip by temporarily flagging as manual.
-          if (!isManuallyNavigating) {
-            isManuallyNavigating = true;
-            updateFilmstrip();
-          }
         });
         // fallback for older browsers + continuous tracking
-        var fsScrubRaf = null;
-        var fsScrubF = 0;
-
         imgWrap.addEventListener('scroll', function () {
           clearTimeout(snapTimer);
           snapTimer = setTimeout(onSnapSettle, 150);
           var w = imgWrap.offsetWidth;
           if (!w) return;
-          fsScrubF = imgWrap.scrollLeft / w;
-          var f = fsScrubF;
+          var f = imgWrap.scrollLeft / w;
 
-          // rAF-batched filmstrip scrub — one DOM write per frame max, never more.
-          // This is how Google/Apple Photos keeps it buttery: read scroll pos on event,
-          // write to filmstrip only on next paint. Prevents layout thrash from sync writes.
-          if (!isManuallyNavigating) {
-            if (fsRaf) { cancelAnimationFrame(fsRaf); fsRaf = null; }
-            if (!fsScrubRaf) {
-              fsScrubRaf = requestAnimationFrame(function () {
-                fsScrubRaf = null;
-                var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
-                if (thumbs.length > 0) {
-                  var thumbW = thumbs[0].offsetWidth;
-                  var gap = 5;
-                  var paddingLeft = parseFloat(filmstripEl.style.paddingLeft) || 0;
-                  var targetCenter = paddingLeft + fsScrubF * (thumbW + gap) + thumbW / 2;
-                  filmstripEl.scrollLeft = targetCenter - filmstripEl.offsetWidth / 2;
-                  // Active highlight tracks finger in real-time
-                  var nearestThumb = Math.max(0, Math.min(Math.round(fsScrubF), activePhotos.length - 1));
-                  thumbs.forEach(function (t) {
-                    t.classList.toggle('active', parseInt(t.dataset.idx) === nearestThumb);
-                  });
-                }
-              });
+          // smoothly sync filmstrip scrub to native drag
+          if (!fsRaf && !isManuallyNavigating) {
+            var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
+            if (thumbs.length > 0) {
+              var thumbW = thumbs[0].offsetWidth;
+              var gap = 5;
+              var paddingLeft = parseFloat(filmstripEl.style.paddingLeft) || 0;
+              var targetCenter = paddingLeft + f * (thumbW + gap) + thumbW / 2;
+              filmstripEl.scrollLeft = targetCenter - filmstripEl.offsetWidth / 2;
             }
           }
 
@@ -1051,12 +1004,11 @@
         var dStartX = 0, dStartY = 0, dDY = 0;
         var dLocked = false, dChecked = false;
         var dPts = [];
-        var dStartedInInfo = false;
         var isPinching = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
 
         lbEl.addEventListener('touchstart', function (e) {
           if (!lbEl.classList.contains('open')) return;
-          // filmstrip propagation is stopped above — this guard is a belt-and-suspenders
+          // stricter check to prevent interaction fight between filmstrip and dismiss gesture
           if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
 
           if (e.touches.length === 2 && !dLocked) {
@@ -1104,7 +1056,6 @@
           dDY = 0;
           dLocked = false;
           dChecked = false;
-          dStartedInInfo = !!e.target.closest('#lightbox-info');
           dPts = [{ y: dStartY, t: Date.now() }];
         }, { passive: false });
 
@@ -1155,17 +1106,7 @@
 
           if (!dChecked && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
             dChecked = true;
-            dLocked = !dStartedInInfo && dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.15;
-          }
-
-          // Horizontal swipe from outside imgWrap: forward to scroll container so
-          // swiping anywhere on the lightbox (not just the image) navigates photos
-          if (dChecked && !dLocked && !e.target.closest('#lightbox-img-wrap')) {
-            var mWrapFwd = document.getElementById('lightbox-img-wrap');
-            if (mWrapFwd && mWrapFwd.style.overflowX !== 'visible') {
-              e.preventDefault();
-              mWrapFwd.scrollLeft = cur * mWrapFwd.offsetWidth - dx;
-            }
+            dLocked = dy > 0 && Math.abs(dy) > Math.abs(dx);
           }
 
           if (dLocked && dy > 0) {
@@ -1254,7 +1195,6 @@
           }
           dLocked = false;
           dChecked = false;
-          dStartedInInfo = false;
         }, { passive: true });
       })();
     }
@@ -1519,13 +1459,6 @@
     var filmstripBuilt = false;
     var liftZone = document.getElementById('filmstrip-lift-zone');
 
-    // Mobile: stop filmstrip touch propagation so it never bleeds into dismiss/nav gestures
-    if (isMobile) {
-      filmstripWrap.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
-      filmstripWrap.addEventListener('touchmove', function (e) { e.stopPropagation(); }, { passive: true });
-      filmstripWrap.addEventListener('touchend', function (e) { e.stopPropagation(); }, { passive: true });
-    }
-
     function buildFilmstrip() {
       if (filmstripBuilt) return;
       filmstripBuilt = true;
@@ -1547,10 +1480,6 @@
         thumb.addEventListener('click', (function (idx) {
           return function () {
             var d = idx === cur ? 0 : (idx > cur ? 1 : -1);
-            // Cancel any in-progress filmstrip animation before navigating
-            // Fixes: filmstrip rewinding to old position before traveling to new one
-            if (fsRaf) { cancelAnimationFrame(fsRaf); fsRaf = null; }
-            isManuallyNavigating = true;
             cur = idx;
             openLightbox(idx, d);
           };
@@ -1564,7 +1493,6 @@
     var fsRaf = null;
     var fsVelocity = 0;
     var fsTarget = 0;
-    var fsCurrentPos = 0;
     var isManuallyNavigating = false;
 
     function updateFilmstrip() {
@@ -1578,39 +1506,30 @@
         var thumbL = active.offsetLeft;
         var thumbW = active.offsetWidth;
         fsTarget = thumbL - wrapW / 2 + thumbW / 2;
+        if (!fsRaf) {
+          if (!isMobile || isManuallyNavigating) {
+            var startPos = filmstripEl.scrollLeft;
+            var startTime = performance.now();
+            var duration = 300;
 
-        if (!isMobile || isManuallyNavigating) {
-          // Desktop or manual tap nav: animated scroll to center active thumb.
-          // Cancel any in-progress animation or scrub rAF — start fresh.
-          if (fsRaf) { cancelAnimationFrame(fsRaf); fsRaf = null; }
-          if (typeof fsScrubRaf !== 'undefined' && fsScrubRaf) {
-            cancelAnimationFrame(fsScrubRaf); fsScrubRaf = null;
-          }
-          var startPos = filmstripEl.scrollLeft;
-          fsCurrentPos = startPos;
-          var startTime = performance.now();
-          var duration = 360;
-
-          function step(time) {
-            var elapsed = time - startTime;
-            if (elapsed >= duration) {
-              filmstripEl.scrollLeft = fsTarget;
-              fsCurrentPos = fsTarget;
-              fsRaf = null;
-              isManuallyNavigating = false;
-              return;
+            function step(time) {
+              var elapsed = time - startTime;
+              if (elapsed >= duration) {
+                filmstripEl.scrollLeft = fsTarget;
+                fsRaf = null;
+                isManuallyNavigating = false;
+                return;
+              }
+              var t = Math.min(1, elapsed / duration);
+              var ease = -(Math.cos(Math.PI * t) - 1) / 2;
+              filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
+              fsRaf = requestAnimationFrame(step);
             }
-            var t = elapsed / duration;
-            var ease = t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
-            fsCurrentPos = startPos + (fsTarget - startPos) * ease;
-            filmstripEl.scrollLeft = fsCurrentPos;
             fsRaf = requestAnimationFrame(step);
+          } else {
+            filmstripEl.scrollLeft = fsTarget;
           }
-          fsRaf = requestAnimationFrame(step);
         }
-        // Mobile swipe: NO jump here. The scroll event's 1:1 scrub already tracks
-        // the finger continuously — including through the snap deceleration.
-        // updateFilmstrip on mobile swipe only updates the active class (done above).
       }
     }
 
