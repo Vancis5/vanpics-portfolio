@@ -796,6 +796,8 @@
         }
 
         img.style.transform = 'translate(' + lbZoomPanX + 'px, ' + lbZoomPanY + 'px) scale(' + lbZoomLevel + ')';
+        var hint = document.getElementById('swipe-hint');
+        if (hint) hint.classList.remove('visible');
 
         if (!img.dataset.zoomAnimated) {
           img.classList.add('zoomed');
@@ -1131,6 +1133,11 @@
           if (!w) return;
           var f = imgWrap.scrollLeft / w;
 
+          var hint = document.getElementById('swipe-hint');
+          if (hint && Math.abs(imgWrap.scrollLeft - cur * w) > 10) {
+            hint.classList.remove('visible');
+          }
+
           // smoothly sync filmstrip scrub to native drag
           if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling) {
             var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
@@ -1139,7 +1146,7 @@
               var gap = 5;
               var paddingLeft = parseFloat(filmstripEl.style.paddingLeft) || 0;
               var targetCenter = paddingLeft + f * (thumbW + gap) + thumbW / 2;
-              filmstripEl.scrollLeft = targetCenter - filmstripEl.offsetWidth / 2;
+              startFsSync(targetCenter - filmstripEl.offsetWidth / 2);
             }
           }
 
@@ -1702,6 +1709,40 @@
     var fsVelocity = 0;
     var fsTarget = 0;
     var isManuallyNavigating = false;
+    var fsSyncTarget = null;
+    var fsSyncRaf = null;
+
+    // Smooth lerp loop for mobile filmstrip tracking during swipe.
+    // Uses frame-rate-independent exponential decay so the filmstrip
+    // chases the target position without jitter or abrupt transitions.
+    function startFsSync(target) {
+      fsSyncTarget = target;
+      if (fsSyncRaf) return; // loop already running — just updated target
+      var prevTime = 0;
+      function syncLoop(time) {
+        if (fsSyncTarget === null) { fsSyncRaf = null; return; }
+        var dt = prevTime ? Math.min(time - prevTime, 33) : 16;
+        prevTime = time;
+        var current = filmstripEl.scrollLeft;
+        var diff = fsSyncTarget - current;
+        if (Math.abs(diff) < 0.5) {
+          filmstripEl.scrollLeft = fsSyncTarget;
+          fsSyncRaf = null;
+          fsSyncTarget = null;
+          return;
+        }
+        // k=14: reaches 90% in ~165ms, 99% in ~330ms
+        var alpha = 1 - Math.exp(-14 * dt / 1000);
+        filmstripEl.scrollLeft = current + diff * alpha;
+        fsSyncRaf = requestAnimationFrame(syncLoop);
+      }
+      fsSyncRaf = requestAnimationFrame(syncLoop);
+    }
+
+    function stopFsSync() {
+      if (fsSyncRaf) { cancelAnimationFrame(fsSyncRaf); fsSyncRaf = null; }
+      fsSyncTarget = null;
+    }
 
     function updateFilmstrip() {
       var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
@@ -1716,6 +1757,7 @@
         fsTarget = thumbL - wrapW / 2 + thumbW / 2;
         if (!isMobile || isManuallyNavigating) {
           if (fsRaf) { cancelAnimationFrame(fsRaf); }
+          stopFsSync(); // kill any lerp loop so it doesn't fight the animation
           var startPos = filmstripEl.scrollLeft;
           var startTime = performance.now();
           var duration = 400; // graceful duration
@@ -1736,10 +1778,35 @@
           }
           fsRaf = requestAnimationFrame(step);
         } else {
-          filmstripEl.scrollLeft = fsTarget;
+          startFsSync(fsTarget);
         }
       }
     }
+
+    var isUserInteracting = false;
+    document.getElementById('lightbox').addEventListener('touchstart', function () {
+      isUserInteracting = true;
+      clearTimeout(filmstripHideTimer);
+    }, { passive: true });
+    window.addEventListener('touchend', function () {
+      isUserInteracting = false;
+      if (filmstripWrap.classList.contains('visible')) {
+        clearTimeout(filmstripHideTimer);
+        filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+      }
+    }, { passive: true });
+    
+    document.getElementById('lightbox').addEventListener('mousedown', function () {
+      isUserInteracting = true;
+      clearTimeout(filmstripHideTimer);
+    }, { passive: true });
+    window.addEventListener('mouseup', function () {
+      isUserInteracting = false;
+      if (filmstripWrap.classList.contains('visible')) {
+        clearTimeout(filmstripHideTimer);
+        filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+      }
+    }, { passive: true });
 
     function showFilmstrip() {
       buildFilmstrip();
@@ -1747,7 +1814,9 @@
       filmstripWrap.classList.add('visible');
       document.getElementById('lightbox').classList.add('filmstrip-visible');
       clearTimeout(filmstripHideTimer);
-      filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+      if (!isUserInteracting) {
+        filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+      }
     }
 
     function hideFilmstrip() {
