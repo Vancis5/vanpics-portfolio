@@ -528,71 +528,8 @@ body::after {
 #lightbox-info {
   opacity: 0;
   margin-top: 1.5rem;
+  /* reduced from 2rem */
   flex-shrink: 0;
-}
-
-/* Mobile: pull info out of flex flow entirely so its height CANNOT affect
-   the image position. Image wrap centers itself independently.
-   Info is anchored to a fixed bottom position instead. */
-@media (hover: none) and (max-width: 767px) {
-  :root {
-    --lightbox-info-collapsed-h: 5.1rem;
-  }
-
-  #lightbox-info {
-    position: fixed;
-    bottom: 2rem;
-    left: 1.5rem;
-    right: 1.5rem;
-    margin-top: 0;
-    z-index: 5;
-    /* Fixed height prevents layout shifts when swiping between photos
-       with different title/meta lengths. Content is clamped to fit. */
-    height: var(--lightbox-info-collapsed-h);
-    min-height: var(--lightbox-info-collapsed-h);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    overflow: hidden;
-    transition: bottom 0.18s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  /* Shift info up when filmstrip is visible so they don't overlap */
-  #lightbox.filmstrip-visible #lightbox-info {
-    bottom: 5.5rem;
-  }
-
-  /* Kill the filmstrip-visible padding-bottom shift on mobile —
-     info is fixed so there's nothing in flow to avoid. Without this,
-     the padding change shifts the flex center and moves the image. */
-  #lightbox-content,
-  #lightbox.filmstrip-visible #lightbox-content {
-    padding-bottom: 5rem !important;
-    transition: none !important;
-  }
-
-  /* Clamp title to 1 line — prevents height changes between slides */
-  #lightbox-title {
-    display: block;
-    min-height: 1.2em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  #lightbox-meta {
-    display: block;
-    min-height: 1.2em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* When desc is expanded, release the fixed height so content is visible */
-  #lightbox-content.desc-open #lightbox-info {
-    height: auto;
-    overflow: visible;
-  }
 }
 
 #lightbox-title {
@@ -621,11 +558,10 @@ body::after {
     margin-bottom: 0;
     opacity: 0;
     filter: blur(4px);
-    /* closing: sine-out — smooth deceleration, no clunk */
-    transition: max-height 0.5s cubic-bezier(0.37, 0, 0.63, 1),
-      opacity 0.38s cubic-bezier(0.37, 0, 0.63, 1),
-      filter 0.38s cubic-bezier(0.37, 0, 0.63, 1),
-      margin-bottom 0.38s cubic-bezier(0.37, 0, 0.63, 1);
+    transition: max-height 0.6s cubic-bezier(0.33, 1, 0.68, 1),
+      opacity 0.45s ease,
+      filter 0.45s ease,
+      margin-bottom 0.4s ease;
   }
 
   #lightbox-content.desc-open #lightbox-desc {
@@ -633,11 +569,6 @@ body::after {
     opacity: 1;
     filter: blur(0px);
     margin-bottom: 1rem;
-    /* opening: expo-out — snappy entry */
-    transition: max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-      filter 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-      margin-bottom 0.38s cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 
@@ -647,10 +578,29 @@ body::after {
 }
 
 @media (hover: none) and (max-width: 767px) {
+  #lightbox-info {
+    /* 🎛️ KNOB: Tweak this offset to move the text up or down!
+       Lower values (or negative, like -0.5rem) pull it closer to the image. */
+    --mobile-text-offset: 2rem;
+    margin-top: var(--mobile-text-offset);
+
+    height: 0;
+    overflow: visible;
+    z-index: 10;
+    pointer-events: none;
+    /* Allow swipe to pass through transparent areas */
+  }
+
+  #lightbox-desc-toggle,
+  #lightbox-title,
+  #lightbox-desc {
+    pointer-events: auto;
+    /* Interactive text/buttons capture clicks */
+  }
+
   #lightbox-desc-toggle {
     display: inline-block;
     margin-top: 0.6rem;
-    align-self: flex-start;
     background: none;
     border: none;
     border-bottom: 1px solid var(--border);
@@ -845,9 +795,16 @@ body::after {
   padding: 1.25rem 0 1.5rem;
   background: linear-gradient(to top, rgba(13, 12, 12, 0.92) 0%, transparent 100%);
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
   pointer-events: none;
+}
+
+@media (hover: none) {
+  #filmstrip-wrap {
+    /* Much faster intuitive animation on mobile tap */
+    transition: opacity 0.12s ease, transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 #filmstrip-wrap.visible {
@@ -902,8 +859,7 @@ body::after {
 .filmstrip-thumb.active {
   opacity: 1;
   transform: scaleY(1.12);
-  /* opacity snaps instantly (no ghost trail during scrub), scale eases in nicely */
-  transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0s, transform 0.1s ease-out;
 }
 
 @media (min-width: 640px) {
