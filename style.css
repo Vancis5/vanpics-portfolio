@@ -538,27 +538,27 @@ body::after {
   /* track finger perfectly 1:1 without dragging rubber-band */
 }
 
-/* info pinned below image */
-#lightbox-info {
-  opacity: 0;
+/* wrapper pins height below image */
+#lightbox-info-wrap {
   margin-top: 1.5rem;
-  /* reduced from 2rem */
   flex-shrink: 0;
   min-height: 0;
-  /* prevents flex child from overflowing on short viewports */
+}
+
+#lightbox-info {
+  opacity: 0;
 }
 
 @media (hover: none) and (max-width: 767px) {
-  #lightbox-info {
-    height: 85px;
+  #lightbox-info-wrap {
+    min-height: 85px;
   }
 }
 
 @media (hover: none) and (max-width: 767px) {
-  #lightbox-info {
+  #lightbox-info-wrap {
     margin-top: 1rem;
     padding: 0 0.5rem;
-    /* extra horizontal padding to offset tighter content padding */
   }
 }
 

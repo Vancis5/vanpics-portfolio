@@ -229,7 +229,7 @@ const photos = [
   {
     src: "photos/cafe-window.webp",
     title: "elsewhere",
-    desc: "the warmth will never reach him <br> <br> shot inside jolibee",
+    desc: "the warmth will never reach him <br> shot inside jolibee",
     year: "jan 24, 2024",
     location: "jolibee, maasin city, southern leyte",
     heroSlide: true,
