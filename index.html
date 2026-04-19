@@ -449,13 +449,9 @@
 
       // Mobile: already open — natively smooth scroll while locking UI logic to prevent glitches during rapid passage
       if (lb.classList.contains('open') && isMobile && mobileScrollToSlide) {
-        var info = document.getElementById('lightbox-info');
-        if (info) {
-          info.style.transition = 'opacity 0.15s ease';
-          info.style.opacity = '0';
-        }
-        
-        mobileScrollToSlide(i, true);
+        // Fallback to 1 if direction evaluates to 0 or is mathematically missing
+        var dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
+        mobileScrollToSlide(i, true, dir);
         
         cur = i;
         updateFilmstrip();
@@ -686,7 +682,8 @@
     function toggleLightboxDesc() {
       var content = document.getElementById('lightbox-content');
       var btn = document.getElementById('lightbox-desc-toggle');
-      if (!content || !btn) return;
+      // Abort if the photo physically lacks a description string
+      if (!content || !btn || btn.classList.contains('no-desc')) return;
       var open = content.classList.toggle('desc-open');
       btn.textContent = open ? 'close' : 'read';
     }
@@ -953,7 +950,7 @@
           });
         }
 
-        function scrollToSlide(idx, smooth) {
+        function scrollToSlide(idx, smooth, dir) {
           var w = imgWrap.offsetWidth;
           if (!w) return;
           if (smooth) {
@@ -963,19 +960,52 @@
             var targetPos = idx * w;
             var startTime = performance.now();
             var duration = 380; // mathematically sleek transition (faster than OS default)
+            var slideDir = dir || (targetPos > startPos ? 1 : -1);
+
+            var info = document.getElementById('lightbox-info');
+            // Animate OLD text gracefully exiting and trigger the massive BG blur crossfade immediately
+            var finalP = activePhotos[idx];
+            setLightboxBlur(finalP.src);
+            
+            if (info) {
+              info.style.transition = 'opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease';
+              info.style.opacity = '0';
+              info.style.filter = 'blur(10px)';
+              info.style.transform = 'translate3d(' + (-slideDir * 25) + 'px, 0, 0) scale(0.92)';
+            }
 
             function step(time) {
               var elapsed = time - startTime;
               if (elapsed >= duration) {
                 imgWrap.scrollTo({ left: targetPos, behavior: 'instant' });
                 imgWrap.style.scrollSnapType = ''; // restore OS clamp
-                window.isAutoRapidScrolling = false;
-                onSnapSettle(idx); // officially settle resolution physics
+                
+                // Allow CSS transition to execute without asynchronous scroll intercepts killing inline physics
+                setTimeout(function() { window.isAutoRapidScrolling = false; }, 50);
+                
+                setLightboxContent(finalP);
+                showFilmstrip();
+                if (typeof updateLoading === 'function') updateLoading();
                 
                 var info = document.getElementById('lightbox-info');
                 if (info) {
-                  info.style.transition = 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+                  // Ensure any previous 'transition: none' styles are flushed from memory before snapping
+                  info.style.transition = '';
+                  void info.offsetWidth;
+                  
+                  // Snap inline styles instantly to starting projection position for the new text
+                  info.style.transition = 'none';
+                  info.style.opacity = '0';
+                  info.style.filter = 'blur(12px)';
+                  info.style.transform = 'translate3d(' + (slideDir * 25) + 'px, 0, 0) scale(0.92)';
+                  
+                  // Fire arrival execution flush to completely eliminate the double-frame stutter delay
+                  void info.offsetWidth;
+                  
+                  info.style.transition = 'opacity 0.18s ease, filter 0.18s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1)';
                   info.style.opacity = '1';
+                  info.style.filter = '';
+                  info.style.transform = '';
                 }
                 return;
               }
@@ -1060,6 +1090,7 @@
 
         // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
         imgWrap.addEventListener('scrollend', function () {
+          if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
           clearTimeout(snapTimer);
           onSnapSettle();
         });
