@@ -233,11 +233,13 @@
       <div id="lightbox-img-wrap">
         <img id="lightbox-img" class="zoomable" src="" alt="">
       </div>
-      <div id="lightbox-info" onclick="toggleLightboxDesc()">
-        <div id="lightbox-title"></div>
-        <div id="lightbox-desc"></div>
-        <div id="lightbox-meta"></div>
-        <button id="lightbox-desc-toggle">read</button>
+      <div id="lightbox-info-wrap">
+        <div id="lightbox-info" onclick="toggleLightboxDesc()">
+          <div id="lightbox-title"></div>
+          <div id="lightbox-desc"></div>
+          <div id="lightbox-meta"></div>
+          <button id="lightbox-desc-toggle">read</button>
+        </div>
       </div>
     </div>
 
@@ -353,45 +355,73 @@
       }
 
       if (content && content.classList.contains('desc-open')) {
-        // Mobile: instant collapse — skip FLIP to avoid jitter during swipe
+        // Mobile: GPU FLIP to gracefully and safely collapse without dropping frames natively
         if (isMobile) {
-          descEl.style.transition = 'none';
-          content.classList.remove('desc-open');
-          if (btn) btn.textContent = 'read';
-          requestAnimationFrame(function () { descEl.style.transition = ''; });
-        } else {
-          // Desktop: Hardware accelerated glide down — FLIP animation
           var imgWrap = document.getElementById('lightbox-img-wrap');
-          var info = document.getElementById('lightbox-info');
+          var infoWrap = document.getElementById('lightbox-info-wrap');
 
           var startImg = imgWrap.getBoundingClientRect();
-          var startInfo = info.getBoundingClientRect();
+          var startInfo = infoWrap.getBoundingClientRect();
 
-          descEl.style.transition = 'none'; // skip CSS reflow animation
+          descEl.style.transition = 'none';
           content.classList.remove('desc-open');
           if (btn) btn.textContent = 'read';
 
           var endImg = imgWrap.getBoundingClientRect();
-          var endInfo = info.getBoundingClientRect();
+          var endInfo = infoWrap.getBoundingClientRect();
 
           var dImg = startImg.top - endImg.top;
           var dInfo = startInfo.top - endInfo.top;
 
           imgWrap.style.transition = 'none';
           imgWrap.style.transform = 'translateY(' + dImg + 'px)';
-          info.style.transition = 'none';
-          info.style.transform = 'translateY(' + dInfo + 'px)';
+          infoWrap.style.transition = 'none';
+          infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
 
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
               imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
               imgWrap.style.transform = '';
-              info.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-              info.style.transform = '';
+              infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+              infoWrap.style.transform = '';
               setTimeout(function () {
                 descEl.style.transition = '';
                 imgWrap.style.transition = '';
-                info.style.transition = '';
+                infoWrap.style.transition = '';
+              }, 450);
+            });
+          });
+        } else {
+          // Desktop: Hardware accelerated glide down — FLIP animation
+          var imgWrap = document.getElementById('lightbox-img-wrap');
+          var infoWrap = document.getElementById('lightbox-info-wrap');
+
+          var startImg = imgWrap.getBoundingClientRect();
+          var startInfo = infoWrap.getBoundingClientRect();
+
+          content.classList.remove('desc-open');
+          if (btn) btn.textContent = 'read';
+
+          var endImg = imgWrap.getBoundingClientRect();
+          var endInfo = infoWrap.getBoundingClientRect();
+
+          var dImg = startImg.top - endImg.top;
+          var dInfo = startInfo.top - endInfo.top;
+
+          imgWrap.style.transition = 'none';
+          imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+          infoWrap.style.transition = 'none';
+          infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
+
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+              imgWrap.style.transform = '';
+              infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+              infoWrap.style.transform = '';
+              setTimeout(function () {
+                imgWrap.style.transition = '';
+                infoWrap.style.transition = '';
               }, 450);
             });
           });
@@ -682,8 +712,8 @@
     function toggleLightboxDesc() {
       var content = document.getElementById('lightbox-content');
       var btn = document.getElementById('lightbox-desc-toggle');
-      // Abort if the photo physically lacks a description string
       if (!content || !btn || btn.classList.contains('no-desc')) return;
+      
       var open = content.classList.toggle('desc-open');
       btn.textContent = open ? 'close' : 'read';
     }
