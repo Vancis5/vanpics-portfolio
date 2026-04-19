@@ -337,6 +337,12 @@
       descEl.innerHTML = p.desc;
       document.getElementById('lightbox-meta').textContent = p.year + (p.location ? ' \u2014 ' + p.location : '');
 
+      // Deep Link: Automatically update the URL hash dynamically for routing tracking
+      var slug = slugify(p.title);
+      if (window.location.hash !== '#' + slug) {
+        history.replaceState(null, null, '#' + slug);
+      }
+
       var content = document.getElementById('lightbox-content');
       var btn = document.getElementById('lightbox-desc-toggle');
 
@@ -440,12 +446,6 @@
       var p = activePhotos[i];
       var lb = document.getElementById('lightbox');
       var img = document.getElementById('lightbox-img');
-
-      // Deep Link: Update the URL hash quietly
-      var slug = slugify(p.title);
-      if (window.location.hash !== '#' + slug) {
-        history.replaceState(null, null, '#' + slug);
-      }
 
       // Mobile: already open — natively smooth scroll while locking UI logic to prevent glitches during rapid passage
       if (lb.classList.contains('open') && isMobile && mobileScrollToSlide) {
