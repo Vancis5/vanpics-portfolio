@@ -96,6 +96,12 @@ body::after {
   body .zoomable.zoomed:hover {
     cursor: zoom-out !important;
   }
+
+  /* hide custom cursor when the OS zoom cursor is active */
+  body:has(.zoomable:hover) #cursor,
+  body:has(.zoomable:hover) #cursor-ring {
+    opacity: 0 !important;
+  }
 }
 
 .zoomable {
