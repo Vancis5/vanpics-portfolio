@@ -340,42 +340,56 @@
       var content = document.getElementById('lightbox-content');
       var btn = document.getElementById('lightbox-desc-toggle');
 
+      // conditionally hide the "read" toggle when photo has no description
+      if (btn) {
+        var hasDesc = p.desc && p.desc.replace(/<[^>]*>/g, '').trim().length > 0;
+        btn.classList.toggle('no-desc', !hasDesc);
+      }
+
       if (content && content.classList.contains('desc-open')) {
-        // Hardware accelerated glide down — FLIP animation avoids layout thrashing during heavy swipe blur load
-        var imgWrap = document.getElementById('lightbox-img-wrap');
-        var info = document.getElementById('lightbox-info');
+        // Mobile: instant collapse — skip FLIP to avoid jitter during swipe
+        if (isMobile) {
+          descEl.style.transition = 'none';
+          content.classList.remove('desc-open');
+          if (btn) btn.textContent = 'read';
+          requestAnimationFrame(function () { descEl.style.transition = ''; });
+        } else {
+          // Desktop: Hardware accelerated glide down — FLIP animation
+          var imgWrap = document.getElementById('lightbox-img-wrap');
+          var info = document.getElementById('lightbox-info');
 
-        var startImg = imgWrap.getBoundingClientRect();
-        var startInfo = info.getBoundingClientRect();
+          var startImg = imgWrap.getBoundingClientRect();
+          var startInfo = info.getBoundingClientRect();
 
-        descEl.style.transition = 'none'; // skip CSS reflow animation
-        content.classList.remove('desc-open');
-        if (btn) btn.textContent = 'read';
+          descEl.style.transition = 'none'; // skip CSS reflow animation
+          content.classList.remove('desc-open');
+          if (btn) btn.textContent = 'read';
 
-        var endImg = imgWrap.getBoundingClientRect();
-        var endInfo = info.getBoundingClientRect();
+          var endImg = imgWrap.getBoundingClientRect();
+          var endInfo = info.getBoundingClientRect();
 
-        var dImg = startImg.top - endImg.top;
-        var dInfo = startInfo.top - endInfo.top;
+          var dImg = startImg.top - endImg.top;
+          var dInfo = startInfo.top - endInfo.top;
 
-        imgWrap.style.transition = 'none';
-        imgWrap.style.transform = 'translateY(' + dImg + 'px)';
-        info.style.transition = 'none';
-        info.style.transform = 'translateY(' + dInfo + 'px)';
+          imgWrap.style.transition = 'none';
+          imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+          info.style.transition = 'none';
+          info.style.transform = 'translateY(' + dInfo + 'px)';
 
-        requestAnimationFrame(function () {
           requestAnimationFrame(function () {
-            imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-            imgWrap.style.transform = '';
-            info.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-            info.style.transform = '';
-            setTimeout(function () {
-              descEl.style.transition = '';
-              imgWrap.style.transition = '';
-              info.style.transition = '';
-            }, 450);
+            requestAnimationFrame(function () {
+              imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+              imgWrap.style.transform = '';
+              info.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+              info.style.transform = '';
+              setTimeout(function () {
+                descEl.style.transition = '';
+                imgWrap.style.transition = '';
+                info.style.transition = '';
+              }, 450);
+            });
           });
-        });
+        }
       } else if (btn) {
         btn.textContent = 'read';
       }
@@ -395,6 +409,7 @@
         ghost.style.left = info.offsetLeft + 'px';
         ghost.style.width = info.offsetWidth + 'px';
         ghost.style.pointerEvents = 'none';
+        ghost.removeAttribute('onclick'); // prevent stale tap capture on mobile
         ghost.style.animation = 'lbInfoOut 0.22s ease forwards';
         ghost.style.willChange = 'filter, opacity';
         ghost.style.zIndex = '1';
@@ -410,6 +425,9 @@
       clone.style.setProperty('--lb-from-y', fromY + 'px');
       clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
       clone.style.willChange = 'filter, opacity, transform';
+      // clear any lingering inline transition/filter from swipe scroll handler
+      clone.style.transition = '';
+      clone.style.filter = '';
       info.parentNode.replaceChild(clone, info);
     }
 
@@ -583,28 +601,78 @@
     function closeLightbox() {
       var lb = document.getElementById('lightbox');
       var img = document.getElementById('lightbox-img');
-      ++navGen; // invalidates all pending callbacks
+      var activeGen = ++navGen; // invalidates all pending callbacks
       lb.classList.remove('open');
       document.body.style.overflow = '';
       clearTimeout(filmstripHideTimer);
       hideFilmstrip();
       if (liftZone) liftZone.style.display = 'none';
-      img.onerror = null;
-      img.src = '';
-      img.classList.remove('zoomed');
-      img.style.transition = '';
-      img.style.transform = '';
-      img.style.transformOrigin = '';
-      img.style.opacity = '';
-      // re-query info — animateInfo clone-replaces the node so a cached ref would be stale
-      var info = document.getElementById('lightbox-info');
-      if (info) { info.style.animation = 'none'; info.style.opacity = '0'; }
+
       document.getElementById('blur-layer-a').classList.remove('active');
       document.getElementById('blur-layer-b').classList.remove('active');
       // Clear hash on close
       if (window.location.hash) {
         history.replaceState(null, null, window.location.pathname + window.location.search);
       }
+
+      // Delay DOM teardown until the opacity fade finishes
+      setTimeout(function() {
+        if (activeGen !== navGen) return; // Abort if user reopened lightbox quickly
+        img.onerror = null;
+        img.src = '';
+        img.classList.remove('zoomed');
+        img.style.transition = '';
+        img.style.transform = '';
+        img.style.transformOrigin = '';
+        img.style.opacity = '';
+        
+        var info = document.getElementById('lightbox-info');
+        if (info) {
+          info.style.animation = 'none';
+          info.style.opacity = '0';
+          info.style.transition = '';
+          info.style.filter = '';
+          info.style.transform = '';
+        }
+        
+        var content = document.getElementById('lightbox-content');
+        if (content) {
+          content.classList.remove('desc-open');
+          content.style.transition = '';
+          content.style.transform = '';
+          content.style.transformOrigin = '';
+          content.style.opacity = '';
+        }
+
+        if (isMobile) {
+          var mWrap = document.getElementById('lightbox-img-wrap');
+          if (mWrap) {
+            mWrap.style.transform = '';
+            mWrap.style.overflowX = '';
+            mWrap.style.overflowY = '';
+          }
+          lbZoomLevel = 1;
+          lbZoomPanX = 0;
+          lbZoomPanY = 0;
+          var slides = mWrap ? mWrap.querySelectorAll('.snap-slide') : [];
+          for (var si = 0; si < slides.length; si++) {
+            slides[si].style.opacity = '';
+            slides[si].style.transition = '';
+            var slideImg = slides[si].querySelector('img');
+            if (slideImg) {
+              slideImg.classList.remove('zoomed');
+              slideImg.style.transform = '';
+              slideImg.style.position = '';
+              slideImg.style.zIndex = '';
+              slideImg.style.cursor = '';
+              delete slideImg.dataset.zoomAnimated;
+            }
+          }
+        }
+        
+        var dark = document.getElementById('lightbox-zoom-darken');
+        if (dark) dark.style.opacity = '0';
+      }, 400);
     }
 
     function toggleLightboxDesc() {
@@ -735,6 +803,7 @@
     }
 
     function toggleImageZoom(e) {
+      if (isMobile) return; // Mobile tap logic is strictly handled in lbEl click listener
       var img = e.target;
       if (!img.classList.contains('zoomable')) return;
       e.stopPropagation();
@@ -815,7 +884,7 @@
     lbEl.addEventListener('click', function (e) {
       if (!isMobile) return;
       if (swipeHappened) { swipeHappened = false; return; }
-      if (e.target.closest('button, .filmstrip-thumb, #filmstrip-wrap')) return;
+      if (e.target.closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info')) return;
 
       var now = Date.now();
       if (e.target.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
@@ -917,11 +986,18 @@
           if (typeof targetIdx !== 'number') {
             var info = document.getElementById('lightbox-info');
             if (info) {
+              // clear all lingering inline styles to prevent conflicts
               info.style.animation = 'none';
               info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
               info.style.opacity = '1';
-              info.style.filter = 'blur(0px)';
-              info.style.transform = 'translateX(0px)';
+              info.style.filter = '';
+              info.style.transform = '';
+              // clean up inline overrides after transition completes
+              setTimeout(function () {
+                if (!info.parentNode) return;
+                info.style.animation = '';
+                info.style.transition = '';
+              }, 400);
             }
           }
         }
@@ -931,7 +1007,6 @@
           clearTimeout(snapTimer);
           onSnapSettle();
         });
-        // fallback for older browsers + continuous tracking
         imgWrap.addEventListener('scroll', function () {
           clearTimeout(snapTimer);
           snapTimer = setTimeout(onSnapSettle, 150);
@@ -963,17 +1038,23 @@
           var info = document.getElementById('lightbox-info');
           if (info) {
             info.style.animation = 'none';
+            info.style.transition = 'none';
             var swipeDelta = imgWrap.scrollLeft - cur * w;
-            if (dist > 0.05) {
-              info.style.transition = 'opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease';
-              info.style.opacity = '0';
-              info.style.filter = 'blur(6px)';
-              info.style.transform = swipeDelta > 0 ? 'translateX(-16px)' : 'translateX(16px)';
-            } else {
-              info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
+            
+            if (dist === 0) {
               info.style.opacity = '1';
-              info.style.filter = 'blur(0px)';
-              info.style.transform = 'translateX(0px)';
+              info.style.filter = '';
+              info.style.transform = '';
+            } else {
+              // 1:1 physical mapping — fades completely out by 16% scroll distance
+              var op = Math.max(0, 1 - dist * 6.25); 
+              var bl = Math.min(10, dist * 40);
+              // Calculate slide direction offset
+              var tx = swipeDelta > 0 ? Math.max(-20, -dist * 80) : Math.min(20, dist * 80);
+              
+              info.style.opacity = op.toString();
+              info.style.filter = 'blur(' + bl + 'px)';
+              info.style.transform = 'translateX(' + tx + 'px)';
             }
           }
         }, { passive: true });
@@ -1171,27 +1252,29 @@
 
             setTimeout(function () {
               closeLightbox();
-              setTimeout(function () {
-                content.style.transition = '';
-                content.style.transform = '';
-                content.style.transformOrigin = '';
-                content.style.opacity = '';
-              }, 450);
             }, 280);
           } else {
             var content = document.getElementById('lightbox-content');
-            content.style.transition = 'transform 0.3s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease';
+            content.style.transition = 'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease';
             content.style.transform = '';
             content.style.opacity = '1';
 
             var info = document.getElementById('lightbox-info');
             if (info) {
-              info.style.transition = 'opacity 0.3s ease, filter 0.3s ease';
-              info.style.filter = 'blur(0px)';
+              info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+              info.style.filter = '';
               info.style.opacity = '1';
             }
 
-            setTimeout(function () { content.style.transition = ''; content.style.transformOrigin = ''; }, 320);
+            setTimeout(function () { 
+              if (content) {
+                content.style.transition = ''; 
+                content.style.transformOrigin = '';
+              }
+              if (info) {
+                info.style.transition = '';
+              }
+            }, 360);
           }
           dLocked = false;
           dChecked = false;
