@@ -551,7 +551,11 @@ body::after {
 
 @media (hover: none) and (max-width: 767px) {
   #lightbox-info-wrap {
-    min-height: 85px;
+    height: 95px;
+  }
+  #lightbox-content.desc-open #lightbox-info-wrap {
+    height: auto;
+    min-height: 95px;
   }
 }
 
