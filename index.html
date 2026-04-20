@@ -530,8 +530,7 @@
         }
 
         // update blur bg immediately (visual polish) — text stays hidden until image ready
-        setLightboxBlur(p.src);
-
+        // MOVED to afterLoad() to prevent network progressive rendering from lagging JS animations
         showFilmstrip();
 
         var entered = false;
@@ -553,6 +552,8 @@
             if (loadFired || gen !== navGen) return;
             loadFired = true;
             img.onload = null; img.onerror = null;
+            // set blur background only now that image is fully cached in memory, preventing thread locking
+            setLightboxBlur(p.src);
             // update text content now — invisible, correct position, layout settled
             setLightboxContent(p);
             loadSwipeNeighbors();
@@ -593,9 +594,7 @@
       } else {
         // INITIAL OPEN
         var openGen = ++navGen;
-
-        // pre-load blur layer so it crossfades in with the image
-        setLightboxBlur(p.src);
+        // background blur moved to afterOpenLoad
 
         // image starts invisible — no content yet
         img.onload = null; img.onerror = null;
@@ -631,6 +630,7 @@
           // Mobile: scroll-snap IIFE handles content — skip
           if (isMobile && mobileScrollToSlide) return;
           // text content set now — invisible, layout settled
+          setLightboxBlur(p.src);
           setLightboxContent(p);
           loadSwipeNeighbors();
           requestAnimationFrame(function () {
