@@ -1771,12 +1771,12 @@
     }
 
     function updateFilmstrip() {
-      var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
-      thumbs.forEach(function (t) {
-        t.classList.toggle('active', parseInt(t.dataset.idx) === cur);
-      });
-      var active = filmstripEl.querySelector('.filmstrip-thumb.active');
+      var oldActive = filmstripEl.querySelector('.filmstrip-thumb.active');
+      if (oldActive) oldActive.classList.remove('active');
+      
+      var active = filmstripEl.querySelector('.filmstrip-thumb[data-idx="' + cur + '"]');
       if (active) {
+        active.classList.add('active');
         var wrapW = filmstripEl.offsetWidth;
         var thumbL = active.offsetLeft;
         var thumbW = active.offsetWidth;
