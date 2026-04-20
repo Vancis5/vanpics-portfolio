@@ -1477,7 +1477,8 @@
         var card = document.createElement('div');
         card.className = 'photo-card';
         var imgEl = document.createElement('img');
-        imgEl.src = p.src;
+        var thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+        imgEl.src = thumbPath;
         imgEl.alt = p.title;
         imgEl.loading = 'lazy';
 
@@ -1563,7 +1564,8 @@
         for (var c = 0; c < copies * 2; c++) {
           group.forEach(function (p) {
             var img = document.createElement('img');
-            img.src = p.src; img.alt = p.title; img.draggable = false;
+            var thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+            img.src = thumbPath; img.alt = p.title; img.draggable = false;
             if (c === 0) {
               img.loading = 'eager';
               // start invisible — fade in on load so images don't cut in on cold load
@@ -1711,7 +1713,8 @@
         thumb.className = 'filmstrip-thumb';
         thumb.dataset.idx = i;
         var img = document.createElement('img');
-        img.src = p.src;
+        var thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+        img.src = thumbPath;
         img.alt = p.title;
         img.loading = 'lazy';
         thumb.appendChild(img);
@@ -1779,27 +1782,37 @@
         var thumbW = active.offsetWidth;
         fsTarget = thumbL - wrapW / 2 + thumbW / 2;
         if (!isMobile || isManuallyNavigating) {
-          if (fsRaf) { cancelAnimationFrame(fsRaf); }
-          stopFsSync(); // kill any lerp loop so it doesn't fight the animation
-          var startPos = filmstripEl.scrollLeft;
-          var startTime = performance.now();
-          var duration = 400; // graceful duration
-
-          function step(time) {
-            var elapsed = time - startTime;
-            if (elapsed >= duration) {
-              filmstripEl.scrollLeft = fsTarget;
+          if (fsRaf || fsSyncRaf) {
+            // If already animating, drop into lerp mode for smooth continuous chasing
+            if (fsRaf) {
+              cancelAnimationFrame(fsRaf);
               fsRaf = null;
-              isManuallyNavigating = false;
-              return;
             }
-            var t = Math.min(1, elapsed / duration);
-            // silky ease-out-quart
-            var ease = 1 - Math.pow(1 - t, 4);
-            filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
+            startFsSync(fsTarget);
+          } else {
+            // Cold start: play strict smooth cubic ease 
+            stopFsSync();
+            var startPos = filmstripEl.scrollLeft;
+            var startTime = null;
+            var duration = 400; // graceful duration
+
+            function step(time) {
+              if (!startTime) startTime = time;
+              var elapsed = time - startTime;
+              if (elapsed >= duration) {
+                filmstripEl.scrollLeft = fsTarget;
+                fsRaf = null;
+                isManuallyNavigating = false;
+                return;
+              }
+              var t = Math.min(1, elapsed / duration);
+              // silky ease-out-quart
+              var ease = 1 - Math.pow(1 - t, 4);
+              filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
+              fsRaf = requestAnimationFrame(step);
+            }
             fsRaf = requestAnimationFrame(step);
           }
-          fsRaf = requestAnimationFrame(step);
         } else {
           startFsSync(fsTarget);
         }
