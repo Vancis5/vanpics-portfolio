@@ -100,7 +100,7 @@ const photos = [
     desc: "isda black and white",
     year: "2023",
     location: "maasin city, southern leyte",
-    heroSlide: FontFaceSetLoadEvent,
+    heroSlide: false
   },
   {
     src: "photos/ray-of-light-bw.webp", // black and white
