@@ -640,10 +640,31 @@ body::after {
 #lightbox-meta {
   font-family: 'DM Mono', monospace;
   font-weight: 400;
-  font-size: 0.57rem;
-  letter-spacing: 0.18em;
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
   color: var(--text-faint);
   text-transform: lowercase;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.meta-item i,
+.meta-item svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex-shrink: 0;
+  stroke-width: 1.5;
+  opacity: 0.6;
 }
 
 @media (min-width: 640px) and (orientation: landscape),
@@ -767,7 +788,8 @@ body::after {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     height: 46svh;
-    flex-shrink: 0; /* prevent height from collapsing between aspect ratios */
+    flex-shrink: 0;
+    /* prevent height from collapsing between aspect ratios */
     position: relative;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
