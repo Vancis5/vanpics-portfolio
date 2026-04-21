@@ -247,7 +247,7 @@
               </svg>
               <span id="meta-location-text"></span>
             </span>
-            <span class="meta-item" id="meta-year" style="display: none;">
+            <span class="meta-item" id="meta-date" style="display: none;">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M8 2v4" />
@@ -255,7 +255,7 @@
                 <rect width="18" height="18" x="3" y="4" rx="2" />
                 <path d="M3 10h18" />
               </svg>
-              <span id="meta-year-text"></span>
+              <span id="meta-date-text"></span>
             </span>
           </div>
           <button id="lightbox-desc-toggle">read</button>
@@ -365,12 +365,12 @@
         locItem.style.display = 'none';
       }
 
-      var yearItem = document.getElementById('meta-year');
-      if (p.year) {
-        document.getElementById('meta-year-text').textContent = p.year;
-        yearItem.style.display = 'inline-flex';
+      var dateItem = document.getElementById('meta-date');
+      if (p.date) {
+        document.getElementById('meta-date-text').textContent = p.date;
+        dateItem.style.display = 'inline-flex';
       } else {
-        yearItem.style.display = 'none';
+        dateItem.style.display = 'none';
       }
 
       // Deep Link: Automatically update the URL hash dynamically for routing tracking
@@ -1484,7 +1484,20 @@
 
     function buildMasonry() {
       var m = document.getElementById('masonry');
+      var lastYear = null;
+
       activePhotos.forEach(function (p, i) {
+        // Extract year (e.g., "2026" from "jan 9, 2026")
+        var currentYear = p.date ? (p.date.match(/\d{4}/) || ["undated"])[0] : "undated";
+
+        if (currentYear !== lastYear) {
+          var header = document.createElement('div');
+          header.className = 'date-header';
+          header.textContent = currentYear;
+          m.appendChild(header);
+          lastYear = currentYear;
+        }
+
         var card = document.createElement('div');
         card.className = 'photo-card';
         var imgEl = document.createElement('img');
@@ -1511,7 +1524,7 @@
 
         var overlay = document.createElement('div');
         overlay.className = 'photo-card-overlay';
-        overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-year">' + p.year + '</div>';
+        overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-date">' + p.date + '</div>';
         card.appendChild(imgEl);
         card.appendChild(overlay);
         card.addEventListener('click', (function (idx) {
