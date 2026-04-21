@@ -83,6 +83,7 @@ async function addRatios() {
     date: ${JSON.stringify(p.date || '')},
     location: ${JSON.stringify(p.location || '')},
     aspectRatio: ${p.aspectRatio || 0},
+    category: ${JSON.stringify(p.category || '')},
     heroSlide: ${p.heroSlide || false},
   },`;
   }).join('\n');

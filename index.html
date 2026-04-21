@@ -107,11 +107,13 @@
       }
     }
 
+
+
     /* scroll reveal for gallery cards */
     .photo-card {
       opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      transform: translateX(var(--slide-x, 30px));
+      transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .photo-card.revealed {
@@ -213,9 +215,13 @@
   </section>
 
   <section id="gallery-section">
-    <div id="gallery-header">
-      <p>photographs</p>
-    </div>
+      <header id="gallery-header">
+        <p>
+            <span class="active photographs-btn">photographs</span> 
+            <span class="nav-divider">|</span> 
+            <span class="inactive portraits-btn">portraits</span>
+        </p>
+      </header>
     <div id="masonry"></div>
   </section>
 
@@ -286,9 +292,21 @@
         .replace(/[^\w-]+/g, '')  // Remove all non-word chars
         .replace(/--+/g, '-');    // Replace multiple - with single -
     }
-    var activePhotos = photos.filter(function (p) { return p.title !== ''; });
-    var carouselPhotos = activePhotos.filter(function (p) { return p.heroSlide === true; });
-    if (carouselPhotos.length === 0) carouselPhotos = activePhotos;
+    var currentCategory = 'all';
+    var activePhotos = [];
+    var carouselPhotos = [];
+
+    function updateActivePhotos() {
+        activePhotos = photos.filter(function (p) {
+            if (!p.title) return false;
+            if (currentCategory === 'all') return true;
+            return p.category === currentCategory;
+        });
+    }
+
+    updateActivePhotos();
+    carouselPhotos = photos.filter(function (p) { return p.heroSlide === true && p.title !== ''; });
+    if (carouselPhotos.length === 0) carouselPhotos = photos.filter(function(p) { return p.title !== ''; });
 
     // preload first 6 carousel images — browser discovers them before JS fully executes
     carouselPhotos.slice(0, 6).forEach(function (p) {
@@ -1460,7 +1478,7 @@
             img.dataset.loadListenerAttached = "true";
             img.addEventListener('load', function () {
               var r = card.getBoundingClientRect();
-              if (r.top < window.innerHeight - 60) card.classList.add('revealed');
+              if (r.top < window.innerHeight - 30) card.classList.add('revealed');
             });
           }
         }
@@ -1480,6 +1498,59 @@
 
     function saveRatioCache() {
       try { localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCache)); } catch (e) { }
+    }
+
+    function rebuildGallery(direction) {
+      var slideX = direction === 'left' ? '-30px' : '30px';
+      // 1. Update filter
+      updateActivePhotos();
+      
+      // 2. Clear masonry
+      var m = document.getElementById('masonry');
+      m.innerHTML = '';
+      
+      // 3. Set direction variable for all future cards in this batch
+      m.style.setProperty('--slide-x', slideX);
+      
+      // 4. Rebuild
+      buildMasonry();
+      
+      // 4. Update Nav UI
+      var photoBtn = document.querySelector('#gallery-header .photographs-btn');
+      var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
+
+      if (currentCategory === 'all') {
+          photoBtn.classList.add('active');
+          photoBtn.classList.remove('inactive');
+          portraitBtn.classList.add('inactive');
+          portraitBtn.classList.remove('active');
+      } else {
+          photoBtn.classList.add('inactive');
+          photoBtn.classList.remove('active');
+          portraitBtn.classList.add('active');
+          portraitBtn.classList.remove('inactive');
+      }
+    }
+
+    function initFilters() {
+      var photoBtn = document.querySelector('#gallery-header .photographs-btn');
+      var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
+
+      if (photoBtn) {
+          photoBtn.addEventListener('click', function() {
+              if (currentCategory === 'all') return;
+              currentCategory = 'all';
+              rebuildGallery('left');
+          });
+      }
+
+      if (portraitBtn) {
+          portraitBtn.addEventListener('click', function() {
+              if (currentCategory === 'portrait') return;
+              currentCategory = 'portrait';
+              rebuildGallery('right');
+          });
+      }
     }
 
     function buildMasonry() {
@@ -1529,7 +1600,7 @@
 
         var overlay = document.createElement('div');
         overlay.className = 'photo-card-overlay';
-        overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-date">' + p.date + '</div>';
+        overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-date">' + (p.date || "undated") + '</div>';
         card.appendChild(imgEl);
         card.appendChild(overlay);
         card.addEventListener('click', (function (idx) {
@@ -1985,6 +2056,7 @@
 
     buildCarousel();
     buildMasonry();
+    initFilters();
 
     // Visibility & Animation Loop Management
     function startLoops() {

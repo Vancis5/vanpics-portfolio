@@ -76,6 +76,7 @@ const photos = [
     date: "aug 22, 2025",
     location: "macrohon, maasin city",
     aspectRatio: 0.75,
+    category: "portrait",
     heroSlide: true,
   },
   {
@@ -166,6 +167,7 @@ const photos = [
     date: "jun 29, 2024",
     location: "tagnipa, maasin city",
     aspectRatio: 1,
+    category: "portrait",
     heroSlide: true,
   },
   {
@@ -202,6 +204,7 @@ const photos = [
     date: "june 11, 2023",
     location: "punta beach, macrohon, southern leyte",
     aspectRatio: 1.3342,
+    category: "portrait",
     heroSlide: true,
   },
   {
@@ -247,6 +250,7 @@ const photos = [
     date: "feb 17, 2020",
     location: "maasin city, southern leyte",
     aspectRatio: 0.75,
+    category: "portrait",
     heroSlide: true,
   },
   {
@@ -283,6 +287,7 @@ const photos = [
     date: "",
     location: "",
     aspectRatio: 1.0005,
+    category: "portrait",
     heroSlide: false,
   },
   {
@@ -292,6 +297,7 @@ const photos = [
     date: "",
     location: "",
     aspectRatio: 1.3333,
+    category: "portrait",
     heroSlide: false,
   },
   {
