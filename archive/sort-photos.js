@@ -5,9 +5,9 @@
  * This script automatically sorts photos.js by date (newest first).
  * 
  * Logic:
- * 1. Checks 'year' field (e.g., "Oct 19, 2025" or "2023").
- * 2. If 'year' is empty, it uses the file's modification time as a fallback.
- * 3. Untitled/Undated photos are pushed to the bottom.
+ * 1. Checks 'date' field (e.g., "Oct 19, 2025" or "2023").
+ * 2. If 'date' is empty, it uses the file's modification time as a fallback.
+ * 3. Undated photos are pushed to the bottom.
  * 
  * Usage: node sort-photos.js
  * ─────────────────────────────────────────────────────────────────────────────
@@ -16,10 +16,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const PHOTOS_FILE = path.join(__dirname, 'photos.js');
+const PHOTOS_FILE = path.join(__dirname, '..', 'photos.js');
 
 function getPhotoDate(photo) {
-  const dateStr = photo.year ? photo.year.trim().toLowerCase() : '';
+  const dateStr = photo.date ? photo.date.trim().toLowerCase() : '';
   
   if (dateStr) {
     // Try full date: "oct 19, 2025"
@@ -34,7 +34,7 @@ function getPhotoDate(photo) {
 
   // Fallback to file system modification time
   try {
-    const fullPath = path.join(__dirname, photo.src);
+    const fullPath = path.join(__dirname, '..', photo.src);
     if (fs.existsSync(fullPath)) {
       return fs.statSync(fullPath).mtime;
     }
@@ -95,7 +95,7 @@ function sortPhotos() {
     src: ${JSON.stringify(p.src)},
     title: ${JSON.stringify(p.title || '')},
     desc: ${JSON.stringify(p.desc || '')},
-    year: ${JSON.stringify(p.year || '')},
+    date: ${JSON.stringify(p.date || '')},
     location: ${JSON.stringify(p.location || '')},
     heroSlide: ${p.heroSlide || false},
   },`;
