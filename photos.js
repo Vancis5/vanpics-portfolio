@@ -12,6 +12,7 @@ const photos = [
     desc: "its the railing in a college building. they have this stair-looking holes spaced a few meters apart as part of its design. i essentially took a pic of that \"hole\" and copy-pasted it to look like a neverending abyss",
     date: "mar 29, 2026",
     location: "saint joseph college 4th floor, maasin city",
+    aspectRatio: 1.0005,
     heroSlide: true,
   },
   {
@@ -20,6 +21,7 @@ const photos = [
     desc: "a friend took this, he was driving through the mountains and the fog was so thick that every photo he took was already atmospheric. i picked this one and edited it",
     date: "jan 22, 2026",
     location: "cebu",
+    aspectRatio: 0.75,
     heroSlide: true,
   },
   {
@@ -28,6 +30,7 @@ const photos = [
     desc: "it's a small hut atop a hill. nobody lives there. i think it's just used as a hangout/picnic spot. it still feels lonely regardless because of where it's placed. i really like how the lines lead along the hut <br> <br> also first pic in 2026",
     date: "jan 9, 2026",
     location: "noah's ark, maasin city",
+    aspectRatio: 0.75,
     heroSlide: true,
   },
   {
@@ -36,6 +39,7 @@ const photos = [
     desc: "used to be a rainbow. desaturated it as part of the 2025 black-and-white edit. the rainbow became a shaft of light breaking through overcast grey onto the treeline. <br> <br> god is reaching down but maybe not for good reasons",
     date: "dec 29, 2025",
     location: "maasin city, southern leyte",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -44,6 +48,7 @@ const photos = [
     desc: "it was raining at night when i took this. i went outside and there was literally 200 moths flocking near the light bulb in our shed",
     date: "dec 22, 2025",
     location: "my house",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -52,6 +57,7 @@ const photos = [
     desc: "was taken while i was strolling around in bontoc. i spotted a rainbow with a short, faint-ish arc and it landed in-between mountains far away",
     date: "dec 17, 2025",
     location: "bontoc, southern leyte",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -60,6 +66,7 @@ const photos = [
     desc: "this is an eye of a huge fish i found in the wet market. it was fresh and it was still pulsating. i stared at it for 5 seconds and realized i needed to take a pic of it. <br><br> i took the photo 2023 and only edited it recently at 2025",
     date: "oct 19, 2025",
     location: "maasin city public market",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -68,6 +75,7 @@ const photos = [
     desc: "",
     date: "aug 22, 2025",
     location: "macrohon, maasin city",
+    aspectRatio: 0.75,
     heroSlide: true,
   },
   {
@@ -76,6 +84,7 @@ const photos = [
     desc: "i was at a friend's sleepover but we were too alive to fall asleep, so we strolled around the neighborhood at midnight. <br> <br> one particular house felt mysterious, it was this",
     date: "aug 10, 2025",
     location: "tagnipa, maasin city",
+    aspectRatio: 0.75,
     heroSlide: true,
   },
   {
@@ -84,6 +93,7 @@ const photos = [
     desc: "",
     date: "may 25, 2025",
     location: "libhu hill resort",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -92,6 +102,7 @@ const photos = [
     desc: "taken in hanginan at 4:30am. it's a view of my entire hometown (or city) just before you climb the stairs towards the shrine",
     date: "mar 14, 2025",
     location: "hanginan, maasin city",
+    aspectRatio: 1.3333,
     heroSlide: true,
   },
   {
@@ -100,6 +111,7 @@ const photos = [
     desc: "the moon just happened to align in a cell tower and the sky had a good gradient going",
     date: "feb 17, 2025",
     location: "baybay",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -108,6 +120,7 @@ const photos = [
     desc: "i saw a stranger things edit on pinterest with this huge red object floating in an ocean. i liked how ominous and mysterious it felt so i recreated it",
     date: "feb 2, 2025",
     location: "maasin city reclaimation",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -116,6 +129,7 @@ const photos = [
     desc: "its a bell tower from a church that's several decades old. the birds were pure luck, they fled the moment i took it ",
     date: "dec 18, 2024",
     location: "maasin cathedral",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -124,6 +138,7 @@ const photos = [
     desc: "birds on a feather, we should stick together, i know <br> i said i'd never think i wasn't better alone <br> can't change the weather, might not be forever <br> but if it's forever, it's even better",
     date: "oct 23, 2024",
     location: "sjc extension, mambajao, maasin city",
+    aspectRatio: 1.5004,
     heroSlide: false,
   },
   {
@@ -132,6 +147,7 @@ const photos = [
     desc: "shot during a parade for our school's intramurals. somebody was holding this up and the sun came through the fabric at exactly the right angle. <br> <br> the fleur-de-lis became a shadow",
     date: "oct 17, 2024",
     location: "abgao, maasin city",
+    aspectRatio: 1.5004,
     heroSlide: true,
   },
   {
@@ -140,6 +156,7 @@ const photos = [
     desc: "this was taken inside a utility room next to an office. i just finished cleaning, but when i turned back, the light outside was seeping through the door in a slightly cinematic way. got on the floor to take this",
     date: "aug 17, 2024",
     location: "saint joseph college, media office",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -148,6 +165,7 @@ const photos = [
     desc: "it was my friend's school project wherein they needed to make a really fashionable outfit made from recycled materials. her dress was basically a trash bag, her headband is made with cellophane. they chose me to do a photoshoot. this one was where she faced sideways",
     date: "jun 29, 2024",
     location: "tagnipa, maasin city",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -156,6 +174,7 @@ const photos = [
     desc: "the warmth will never reach him <br> shot inside jolibee",
     date: "jan 24, 2024",
     location: "jolibee, maasin city, southern leyte",
+    aspectRatio: 0.75,
     heroSlide: true,
   },
   {
@@ -164,6 +183,7 @@ const photos = [
     desc: "the color gradient was beautiful but this version has more weight. the grain adds to it. the alignment reads almost sacred now — like a signal going both ways.",
     date: "2024",
     location: "maasin city, southern leyte",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -172,6 +192,7 @@ const photos = [
     desc: "everything and everyone is studied. pinned down. observed <br> <br> anyway it's a really tense shot during a chess competition during our school's intramurals. it was held in the high school biology room. <br> <br> i was mostly there to hype up my friend, but i also ended up with shots of the other players too",
     date: "oct 25, 2023",
     location: "sjc high school, maasin city",
+    aspectRatio: 1.7778,
     heroSlide: false,
   },
   {
@@ -180,6 +201,7 @@ const photos = [
     desc: "it was our culmination gathering that was held by our class. there was this one girl who really liked me taking pics of her. this was one of the best shots we've taken, and she literally jumped for joy when she saw it",
     date: "june 11, 2023",
     location: "punta beach, macrohon, southern leyte",
+    aspectRatio: 1.3342,
     heroSlide: true,
   },
   {
@@ -188,6 +210,7 @@ const photos = [
     desc: "pic sa reklem na edited pero black and white",
     date: "2023",
     location: "maasin city, southern leyte",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -196,6 +219,7 @@ const photos = [
     desc: "isda black and white",
     date: "2023",
     location: "maasin city, southern leyte",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -204,6 +228,7 @@ const photos = [
     desc: "",
     date: "oct 19, 2022",
     location: "maasin city",
+    aspectRatio: 1,
     heroSlide: true,
   },
   {
@@ -212,6 +237,7 @@ const photos = [
     desc: "taken inside jolibee. my friend was falling in line and it was like 5:30pm. she's the one in the silhouette",
     date: "april 30, 2022",
     location: "jolibee, maasin city, southern leyte",
+    aspectRatio: 1.3333,
     heroSlide: true,
   },
   {
@@ -220,19 +246,16 @@ const photos = [
     desc: "taken at 2019 in our room after a parade",
     date: "feb 17, 2020",
     location: "maasin city, southern leyte",
+    aspectRatio: 0.75,
     heroSlide: true,
   },
-
-  // ─────────────────────────────────────────────
-  //  PENDING / UNTITLED (Placed at bottom)
-  // ─────────────────────────────────────────────
-
   {
     src: "photos/bsod-building.webp",
     title: "",
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 1.2945,
     heroSlide: false,
   },
   {
@@ -241,14 +264,16 @@ const photos = [
     desc: "everything's in-between: the rider paused mid-crossing, the bridge suspended over water, the bird perched on a wire between two points, sky that's neither storm nor clear <br> <br> nobody's arrived anywhere yet. they're all just... between.. get it get it?",
     date: "",
     location: "",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
     src: "photos/floating-hut-sunrise.webp",
     title: "",
-    desc: "my sister was pregnant and wanted to do walking exercises so i tagged along with her. we went to the bontoc coast around 6am. the sea was pretty much filled with...", // unfinished
+    desc: "my sister was pregnant and wanted to do walking exercises so i tagged along with her. we went to the bontoc coast around 6am. the sea was pretty much filled with...",
     date: "",
     location: "",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -257,6 +282,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 1.0005,
     heroSlide: false,
   },
   {
@@ -265,6 +291,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 1.3333,
     heroSlide: false,
   },
   {
@@ -273,6 +300,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 1.2508,
     heroSlide: false,
   },
   {
@@ -281,6 +309,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 1.3369,
     heroSlide: false,
   },
   {
@@ -289,6 +318,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 0.7495,
     heroSlide: false,
   },
   {
@@ -297,6 +327,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 0.75,
     heroSlide: false,
   },
   {
@@ -305,6 +336,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 0.9995,
     heroSlide: false,
   },
   {
@@ -313,6 +345,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 0.9987,
     heroSlide: false,
   },
   {
@@ -321,6 +354,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 1,
     heroSlide: false,
   },
   {
@@ -329,6 +363,7 @@ const photos = [
     desc: "",
     date: "",
     location: "",
+    aspectRatio: 0.75,
     heroSlide: false,
   },
 ];

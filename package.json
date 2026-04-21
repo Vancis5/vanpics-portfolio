@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "sort": "node archive/sort-photos.js"
+    "sort": "node scripts/sort-photos.js"
   }
   
 }

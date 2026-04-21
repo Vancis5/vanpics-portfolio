@@ -1506,20 +1506,25 @@
         imgEl.alt = p.title;
         imgEl.loading = 'lazy';
 
-        // apply cached ratio immediately — prevents layout shift on repeat visits
-        var cached = ratioCache[p.src];
-        if (cached) {
-          imgEl.style.aspectRatio = cached;
+        // apply pre-calculated ratio immediately — kills CLS on first visit
+        if (p.aspectRatio && p.aspectRatio !== 0) {
+          imgEl.style.aspectRatio = p.aspectRatio;
         } else {
-          // first visit: read ratio after load, cache it
-          imgEl.addEventListener('load', function () {
-            if (imgEl.naturalWidth && imgEl.naturalHeight) {
-              var r = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(4);
-              ratioCache[p.src] = r;
-              imgEl.style.aspectRatio = r;
-              saveRatioCache();
-            }
-          });
+          // fallback: check localStorage cache
+          var cached = ratioCache[p.src];
+          if (cached) {
+            imgEl.style.aspectRatio = cached;
+          } else {
+            // first visit (no hardcoded ratio): read after load and cache it
+            imgEl.addEventListener('load', function () {
+              if (imgEl.naturalWidth && imgEl.naturalHeight) {
+                var r = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(4);
+                ratioCache[p.src] = r;
+                imgEl.style.aspectRatio = r;
+                saveRatioCache();
+              }
+            });
+          }
         }
 
         var overlay = document.createElement('div');
