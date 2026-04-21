@@ -36,6 +36,33 @@
       pointer-events: none;
     }
 
+    #gallery-header .active {
+      color: var(--text);
+      cursor: default;
+    }
+
+    .empty-state {
+        column-span: all;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15vh 0;
+        min-height: 40vh;
+        opacity: 0;
+        animation: fadeup 0.8s ease 0.3s forwards;
+    }
+
+    .empty-state p {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.55rem;
+        letter-spacing: 0.2em;
+        color: var(--text-faint);
+        opacity: 0.6;
+        text-transform: uppercase;
+    }
+
     #loader-dot {
       width: 5px;
       height: 5px;
@@ -112,7 +139,7 @@
     /* scroll reveal for gallery cards */
     .photo-card {
       opacity: 0;
-      transform: translateX(var(--slide-x, 30px));
+      transform: translate(var(--slide-x, 0), var(--slide-y, 40px));
       transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
@@ -220,6 +247,8 @@
             <span class="active photographs-btn">photographs</span> 
             <span class="nav-divider">|</span> 
             <span class="inactive portraits-btn">portraits</span>
+            <span class="nav-divider">|</span> 
+            <span class="inactive motion-btn">motion</span>
         </p>
       </header>
     <div id="masonry"></div>
@@ -1500,55 +1529,95 @@
       try { localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCache)); } catch (e) { }
     }
 
-    function rebuildGallery(direction) {
-      var slideX = direction === 'left' ? '-30px' : '30px';
-      // 1. Update filter
-      updateActivePhotos();
-      
-      // 2. Clear masonry
+    function rebuildGallery(newCategory) {
       var m = document.getElementById('masonry');
-      m.innerHTML = '';
+      var gallerySection = document.getElementById('gallery-section');
       
-      // 3. Set direction variable for all future cards in this batch
-      m.style.setProperty('--slide-x', slideX);
-      
-      // 4. Rebuild
-      buildMasonry();
-      
-      // 4. Update Nav UI
-      var photoBtn = document.querySelector('#gallery-header .photographs-btn');
-      var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
+      // 1. Height Lock: Prevent the page from collapsing instantly
+      var currentHeight = m.offsetHeight;
+      m.style.minHeight = currentHeight + 'px';
 
-      if (currentCategory === 'all') {
-          photoBtn.classList.add('active');
-          photoBtn.classList.remove('inactive');
-          portraitBtn.classList.add('inactive');
-          portraitBtn.classList.remove('active');
-      } else {
-          photoBtn.classList.add('inactive');
-          photoBtn.classList.remove('active');
-          portraitBtn.classList.add('active');
-          portraitBtn.classList.remove('inactive');
-      }
+      // 2. Smooth Ascent
+      var targetScroll = gallerySection.offsetTop - 80;
+      window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+
+      // 3. Delayed Swap: Let the scroll start before we change the contents
+      setTimeout(function() {
+          var order = ['all', 'portrait', 'motion'];
+          var oldIdx = order.indexOf(currentCategory);
+          var newIdx = order.indexOf(newCategory);
+          var direction = newIdx > oldIdx ? 'right' : 'left';
+          var slideX = direction === 'left' ? '-30px' : '30px';
+
+          currentCategory = newCategory;
+          updateActivePhotos();
+
+          m.innerHTML = '';
+          
+          if (activePhotos.length === 0) {
+              var empty = document.createElement('div');
+              empty.className = 'empty-state';
+              empty.innerHTML = '<p>[ nothing here yet ]</p>';
+              m.appendChild(empty);
+          } else {
+              // 5. Use Horizontal energy for the switch
+              m.style.setProperty('--slide-x', slideX.replace('30px', '40px').replace('60px', '40px'));
+              m.style.setProperty('--slide-y', '0px');
+              buildMasonry();
+
+              // 6. Reset back to Vertical energy for future scrolls
+              setTimeout(function() {
+                  m.style.setProperty('--slide-x', '0px');
+                  m.style.setProperty('--slide-y', '40px');
+              }, 1000);
+          }
+
+          // 4. Release Lock: Allow the height to settle into the new content
+          requestAnimationFrame(function() {
+              m.style.minHeight = '40vh'; 
+          });
+
+          // 5. Update Nav UI
+          var photoBtn = document.querySelector('#gallery-header .photographs-btn');
+          var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
+          var motionBtn = document.querySelector('#gallery-header .motion-btn');
+
+          [photoBtn, portraitBtn, motionBtn].forEach(function(btn) {
+              if (btn) {
+                  btn.classList.remove('active', 'inactive');
+                  btn.classList.add('inactive');
+              }
+          });
+
+          if (currentCategory === 'all') photoBtn.className = 'active photographs-btn';
+          else if (currentCategory === 'portrait') portraitBtn.className = 'active portraits-btn';
+          else if (currentCategory === 'motion') motionBtn.className = 'active motion-btn';
+      }, 50);
     }
 
     function initFilters() {
       var photoBtn = document.querySelector('#gallery-header .photographs-btn');
       var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
+      var motionBtn = document.querySelector('#gallery-header .motion-btn');
 
       if (photoBtn) {
           photoBtn.addEventListener('click', function() {
               if (currentCategory === 'all') return;
-              currentCategory = 'all';
-              rebuildGallery('left');
+              rebuildGallery('all');
           });
       }
 
       if (portraitBtn) {
           portraitBtn.addEventListener('click', function() {
               if (currentCategory === 'portrait') return;
-              currentCategory = 'portrait';
-              rebuildGallery('right');
+              rebuildGallery('portrait');
+          });
+      }
+
+      if (motionBtn) {
+          motionBtn.addEventListener('click', function() {
+              if (currentCategory === 'motion') return;
+              rebuildGallery('motion');
           });
       }
     }
@@ -1603,12 +1672,14 @@
         overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-date">' + (p.date || "undated") + '</div>';
         card.appendChild(imgEl);
         card.appendChild(overlay);
+        card.style.transitionDelay = (i % 8) * 0.03 + 's';
         card.addEventListener('click', (function (idx) {
           return function () { openLightbox(idx); };
         })(i));
         m.appendChild(card);
       });
-      setTimeout(revealCards, 100);
+      // Small buffer to allow the DOM to breathe before revealing
+      setTimeout(revealCards, 150);
     }
 
     // PARALLAX
