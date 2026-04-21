@@ -1,0 +1,37 @@
+─────────────────────────────────────────────────────────────────────────────
+FRANCIS EVAN — PORTFOLIO UTILITY COMMANDS
+─────────────────────────────────────────────────────────────────────────────
+
+1. LOCAL DEVELOPMENT SERVERS
+   ─────────────────────────
+   - npm run dev -- --host
+     (Starts the Vite dev server and makes it accessible on your local network)
+
+   - py -m http.server 5173 --bind 0.0.0.0
+     (Python fallback server on port 5173, accessible to other devices)
+
+   - npm run build
+     (Optimizes the site and creates a 'dist' folder for final production)
+
+
+2. DATA & MAINTENANCE SCRIPTS
+   ──────────────────────────
+   - npm run sort
+     (Sorts photos.js chronologically from newest to oldest)
+
+   - node scripts/add-ratios.js
+     (Scans your photos and adds / updates 'aspectRatio' in photos.js to kill CLS)
+
+   - node scripts/generate-thumbs.js
+     (Generates thumbnails and blur placeholders for the gallery and lightbox)
+
+
+3. BROWSER UTILS
+   ─────────────
+   - node scripts/firefox.js
+     (Utility for Firefox-specific optimizations/testing)
+
+
+─────────────────────────────────────────────────────────────────────────────
+NOTE: Run these from the project root directory.
+─────────────────────────────────────────────────────────────────────────────
