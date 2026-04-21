@@ -329,13 +329,37 @@ body::after {
 }
 
 #gallery-header p {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: var(--text);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+#gallery-header .nav-divider {
+  color: var(--border);
   font-weight: 300;
-  font-style: italic;
-  font-size: 1.15rem;
-  letter-spacing: 0.02em;
+  font-size: 0.6rem;
+  opacity: 0.5;
+}
+
+#gallery-header .inactive {
   color: var(--text-faint);
-  text-transform: lowercase;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+#gallery-header .inactive:hover {
+  color: var(--text-muted);
+}
+
+#gallery-header .active {
+  color: var(--text);
+  cursor: default;
 }
 
 /* MASONRY */
