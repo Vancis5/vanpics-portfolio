@@ -1,0 +1,110 @@
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PHOTO SORTER UTILITY
+ * ─────────────────────────────────────────────────────────────────────────────
+ * This script automatically sorts photos.js by date (newest first).
+ * 
+ * Logic:
+ * 1. Checks 'year' field (e.g., "Oct 19, 2025" or "2023").
+ * 2. If 'year' is empty, it uses the file's modification time as a fallback.
+ * 3. Untitled/Undated photos are pushed to the bottom.
+ * 
+ * Usage: node sort-photos.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const PHOTOS_FILE = path.join(__dirname, 'photos.js');
+
+function getPhotoDate(photo) {
+  const dateStr = photo.year ? photo.year.trim().toLowerCase() : '';
+  
+  if (dateStr) {
+    // Try full date: "oct 19, 2025"
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    
+    // Try just year: "2023" -> Jan 1 of that year
+    if (/^\d{4}$/.test(dateStr)) {
+      return new Date(`${dateStr}-01-01`);
+    }
+  }
+
+  // Fallback to file system modification time
+  try {
+    const fullPath = path.join(__dirname, photo.src);
+    if (fs.existsSync(fullPath)) {
+      return fs.statSync(fullPath).mtime;
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+
+  return new Date(0); // Oldest fallback
+}
+
+function sortPhotos() {
+  if (!fs.existsSync(PHOTOS_FILE)) {
+    console.error('Error: photos.js not found!');
+    return;
+  }
+
+  console.log('Reading photos.js...');
+  const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
+
+  // Extract array using markers
+  const startMarker = 'const photos = [';
+  const endMarker = '];';
+  
+  const startIndex = content.indexOf(startMarker);
+  const endIndex = content.lastIndexOf(endMarker);
+
+  if (startIndex === -1 || endIndex === -1) {
+    console.error('Error: Could not locate "const photos = [" or "];" markers.');
+    return;
+  }
+
+  const header = content.substring(0, startIndex + startMarker.length);
+  const footer = content.substring(endIndex);
+  const arrayContent = content.substring(startIndex + startMarker.length, endIndex);
+
+  // Parse the array safely
+  let photos;
+  try {
+    // We wrap it in brackets to treat it as a literal array
+    photos = eval(`[${arrayContent}]`);
+  } catch (e) {
+    console.error('Error parsing photos array:', e.message);
+    return;
+  }
+
+  console.log(`Analyzing ${photos.length} photos...`);
+
+  // Sort: Newest First
+  photos.sort((a, b) => {
+    const dateA = getPhotoDate(a);
+    const dateB = getPhotoDate(b);
+    return dateB - dateA;
+  });
+
+  // Re-generate the array content with clean formatting
+  const serializedPhotos = photos.map(p => {
+    return `  {
+    src: ${JSON.stringify(p.src)},
+    title: ${JSON.stringify(p.title || '')},
+    desc: ${JSON.stringify(p.desc || '')},
+    year: ${JSON.stringify(p.year || '')},
+    location: ${JSON.stringify(p.location || '')},
+    heroSlide: ${p.heroSlide || false},
+  },`;
+  }).join('\n');
+
+  const finalOutput = `${header}\n${serializedPhotos}\n${footer}`;
+
+  fs.writeFileSync(PHOTOS_FILE, finalOutput, 'utf8');
+  console.log('Done! photos.js has been sorted by date.');
+}
+
+sortPhotos();
