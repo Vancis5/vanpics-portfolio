@@ -1,51 +1,23 @@
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- * PHOTO SORTER UTILITY
+ * ASPECT RATIO GENERATOR
  * ─────────────────────────────────────────────────────────────────────────────
- * This script automatically sorts photos.js by date (newest first).
+ * This script detects the width/height of every image in photos.js
+ * and adds an 'aspectRatio' field to the object.
  * 
- * Logic:
- * 1. Checks 'date' field (e.g., "Oct 19, 2025" or "2023").
- * 2. If 'date' is empty, it uses the file's modification time as a fallback.
- * 3. Undated photos are pushed to the bottom.
+ * This prevents Cumulative Layout Shift (CLS) in the masonry gallery.
  * 
- * Usage: node sort-photos.js
+ * Usage: node scripts/add-ratios.js
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 const PHOTOS_FILE = path.join(__dirname, '..', 'photos.js');
 
-function getPhotoDate(photo) {
-  const dateStr = photo.date ? photo.date.trim().toLowerCase() : '';
-  
-  if (dateStr) {
-    // Try full date: "oct 19, 2025"
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d;
-    
-    // Try just year: "2023" -> Jan 1 of that year
-    if (/^\d{4}$/.test(dateStr)) {
-      return new Date(`${dateStr}-01-01`);
-    }
-  }
-
-  // Fallback to file system modification time
-  try {
-    const fullPath = path.join(__dirname, '..', photo.src);
-    if (fs.existsSync(fullPath)) {
-      return fs.statSync(fullPath).mtime;
-    }
-  } catch (e) {
-    // Ignore errors
-  }
-
-  return new Date(0); // Oldest fallback
-}
-
-function sortPhotos() {
+async function addRatios() {
   if (!fs.existsSync(PHOTOS_FILE)) {
     console.error('Error: photos.js not found!');
     return;
@@ -73,23 +45,36 @@ function sortPhotos() {
   // Parse the array safely
   let photos;
   try {
-    // We wrap it in brackets to treat it as a literal array
     photos = eval(`[${arrayContent}]`);
   } catch (e) {
     console.error('Error parsing photos array:', e.message);
     return;
   }
 
-  console.log(`Analyzing ${photos.length} photos...`);
+  console.log(`Analyzing ${photos.length} photos for dimensions...`);
 
-  // Sort: Newest First
-  photos.sort((a, b) => {
-    const dateA = getPhotoDate(a);
-    const dateB = getPhotoDate(b);
-    return dateB - dateA;
-  });
+  for (let p of photos) {
+    if (p.aspectRatio && p.aspectRatio !== 0) {
+      // Skip if already has a ratio (unless you want to force update)
+      // continue; 
+    }
 
-  // Re-generate the array content with clean formatting
+    try {
+      const fullPath = path.join(__dirname, '..', p.src);
+      if (fs.existsSync(fullPath)) {
+        const metadata = await sharp(fullPath).metadata();
+        if (metadata.width && metadata.height) {
+          p.aspectRatio = parseFloat((metadata.width / metadata.height).toFixed(4));
+        }
+      } else {
+        console.warn(`Warning: File not found: ${p.src}`);
+      }
+    } catch (e) {
+      console.error(`Error detecting ratio for ${p.src}:`, e.message);
+    }
+  }
+
+  // Re-generate the array content
   const serializedPhotos = photos.map(p => {
     return `  {
     src: ${JSON.stringify(p.src)},
@@ -97,6 +82,7 @@ function sortPhotos() {
     desc: ${JSON.stringify(p.desc || '')},
     date: ${JSON.stringify(p.date || '')},
     location: ${JSON.stringify(p.location || '')},
+    aspectRatio: ${p.aspectRatio || 0},
     heroSlide: ${p.heroSlide || false},
   },`;
   }).join('\n');
@@ -104,7 +90,7 @@ function sortPhotos() {
   const finalOutput = `${header}\n${serializedPhotos}\n${footer}`;
 
   fs.writeFileSync(PHOTOS_FILE, finalOutput, 'utf8');
-  console.log('Done! photos.js has been sorted by date.');
+  console.log('Done! aspectRatios added to photos.js.');
 }
 
-sortPhotos();
+addRatios();
