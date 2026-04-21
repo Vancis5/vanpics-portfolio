@@ -48,8 +48,8 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 15vh 0;
-        min-height: 40vh;
+        padding: 20vh 0;
+        min-height: 100vh; /* Prevents height snapping from bottom of long lists */
         opacity: 0;
         animation: fadeup 0.8s ease 0.3s forwards;
     }
@@ -137,15 +137,33 @@
 
 
     /* scroll reveal for gallery cards */
+    /* !!! DONT TOUCH !!! - Handles the complex X/Y reveal logic */
+    /* Vertical lift for standard scrolling */
     .photo-card {
       opacity: 0;
-      transform: translate(var(--slide-x, 0), var(--slide-y, 40px));
+      transform: translateY(30px);
       transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .photo-card.revealed {
       opacity: 1;
       transform: translateY(0);
+    }
+
+    /* Horizontal slide for subnav category switching */
+    #masonry.switching {
+        animation: masonrySlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes masonrySlide {
+        from {
+            opacity: 0;
+            transform: translateX(var(--masonry-x, 30px));
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
 
     /* lightbox image — transitions handled via inline JS for directional control */
@@ -1533,21 +1551,17 @@
       var m = document.getElementById('masonry');
       var gallerySection = document.getElementById('gallery-section');
       
-      // 1. Height Lock: Prevent the page from collapsing instantly
+      // 1. Height Lock: Keep the page at its current length so the scrollbar doesn't jump
       var currentHeight = m.offsetHeight;
       m.style.minHeight = currentHeight + 'px';
 
-      // 2. Smooth Ascent
-      var targetScroll = gallerySection.offsetTop - 80;
-      window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-
-      // 3. Delayed Swap: Let the scroll start before we change the contents
+      // 2. Fast Swap (No Scroll)
       setTimeout(function() {
           var order = ['all', 'portrait', 'motion'];
           var oldIdx = order.indexOf(currentCategory);
           var newIdx = order.indexOf(newCategory);
           var direction = newIdx > oldIdx ? 'right' : 'left';
-          var slideX = direction === 'left' ? '-30px' : '30px';
+          var slideX = direction === 'left' ? '-40px' : '40px';
 
           currentCategory = newCategory;
           updateActivePhotos();
@@ -1559,17 +1573,19 @@
               empty.className = 'empty-state';
               empty.innerHTML = '<p>[ nothing here yet ]</p>';
               m.appendChild(empty);
-          } else {
-              // 5. Use Horizontal energy for the switch
-              m.style.setProperty('--slide-x', slideX.replace('30px', '40px').replace('60px', '40px'));
-              m.style.setProperty('--slide-y', '0px');
-              buildMasonry();
 
-              // 6. Reset back to Vertical energy for future scrolls
-              setTimeout(function() {
-                  m.style.setProperty('--slide-x', '0px');
-                  m.style.setProperty('--slide-y', '40px');
-              }, 1000);
+              var targetScroll = gallerySection.offsetTop - 80;
+              if (window.scrollY > targetScroll) {
+                  window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+              }
+          } else {
+              // Trigger the whole-grid animation
+              m.style.setProperty('--masonry-x', direction === 'left' ? '-40px' : '40px');
+              m.classList.remove('switching');
+              void m.offsetWidth; // Force reflow
+              m.classList.add('switching');
+              
+              buildMasonry();
           }
 
           // 4. Release Lock: Allow the height to settle into the new content
@@ -1592,7 +1608,7 @@
           if (currentCategory === 'all') photoBtn.className = 'active photographs-btn';
           else if (currentCategory === 'portrait') portraitBtn.className = 'active portraits-btn';
           else if (currentCategory === 'motion') motionBtn.className = 'active motion-btn';
-      }, 50);
+      }, 20);
     }
 
     function initFilters() {
@@ -1672,13 +1688,39 @@
         overlay.innerHTML = '<div class="photo-card-title">' + p.title + '</div><div class="photo-card-date">' + (p.date || "undated") + '</div>';
         card.appendChild(imgEl);
         card.appendChild(overlay);
-        card.style.transitionDelay = (i % 8) * 0.03 + 's';
+        card.style.transitionDelay = '0s'; 
+
+        // If we just switched categories, reveal the on-screen cards instantly 
+        // to ensure the transition is purely Horizontal (Masonry slide)
+        var rect = card.getBoundingClientRect();
+        var isVisible = (i < 12); // Heuristic for initial screen batch
+        if (currentCategory !== 'all' || i < 20) { 
+           // We'll let revealCards handle the actual intersection, 
+           // but we can bypass the animation for the initial switch.
+        }
+
         card.addEventListener('click', (function (idx) {
           return function () { openLightbox(idx); };
         })(i));
         m.appendChild(card);
       });
-      // Small buffer to allow the DOM to breathe before revealing
+
+      // Special handling for the switch reveal
+      if (m.classList.contains('switching')) {
+          // Force instant reveal for top cards so they ONLY slide horizontally
+          setTimeout(function() {
+              var topCards = m.querySelectorAll('.photo-card');
+              topCards.forEach(function(c, idx) {
+                  var r = c.getBoundingClientRect();
+                  if (r.top < window.innerHeight) {
+                      c.style.transition = 'none'; // Kill vertical lift
+                      c.classList.add('revealed');
+                      setTimeout(function() { c.style.transition = ''; }, 100);
+                  }
+              });
+          }, 0);
+      }
+      
       setTimeout(revealCards, 150);
     }
 
