@@ -1371,6 +1371,7 @@
       cur = i;
       isManuallyNavigating = true;
       var p = activePhotos[i];
+      if (!p) return;
       var lb = document.getElementById('lightbox');
       var img = document.getElementById('lightbox-img');
 
@@ -1859,6 +1860,17 @@
       (function () {
         var slidesBuilt = false;
         var snapTimer = null;
+        window.addEventListener('category-change', function () {
+          slidesBuilt = false;
+          filmstripBuilt = false; 
+          if (imgWrap) {
+            var slides = imgWrap.querySelectorAll('.snap-slide');
+            for (var i = 0; i < slides.length; i++) slides[i].remove();
+          }
+          if (typeof filmstripEl !== 'undefined' && filmstripEl) {
+            filmstripEl.innerHTML = '';
+          }
+        });
 
         // ── Build slides ──
         function buildSlides() {
@@ -2368,6 +2380,7 @@
 
         currentCategory = newCategory;
         updateActivePhotos();
+        window.dispatchEvent(new Event('category-change'));
 
         m.innerHTML = '';
         m.classList.toggle('motion-grid-active', newCategory === 'motion');
@@ -2773,7 +2786,16 @@
             }
             var idx = activePhotos.indexOf(p);
             img.addEventListener('click', (function (capturedIdx) {
-              return function () { openLightbox(capturedIdx >= 0 ? capturedIdx : 0); };
+              return function () {
+                if (currentCategory === 'motion') {
+                  rebuildGallery('all');
+                  setTimeout(function () {
+                    openLightbox(capturedIdx >= 0 ? capturedIdx : 0);
+                  }, 50);
+                } else {
+                  openLightbox(capturedIdx >= 0 ? capturedIdx : 0);
+                }
+              };
             })(idx));
             row.appendChild(img);
           });
@@ -3184,7 +3206,11 @@
     // Defer slightly to ensure layout is ready
     setTimeout(checkHash, 300);
   </script>
-  <script src="scripts/firefox-patch.js"></script>
+  <script>
+    if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
+      document.write('<script src="scripts/firefox.js"><\/script>');
+    }
+  </script>
 </body>
 
 </html>

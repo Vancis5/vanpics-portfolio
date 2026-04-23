@@ -28,40 +28,41 @@
   window.isLightboxOpen = false;
   const originalStartLoops = window.startLoops;
   window.startLoops = () => {
-      if (!window.isLightboxOpen) originalStartLoops?.();
+    if (!window.isLightboxOpen) originalStartLoops?.();
   };
 
   const originalOpen = window.openLightbox;
   window.openLightbox = (idx, direction) => {
-      window.isLightboxOpen = true;
-      if (window.heroRafId) { cancelAnimationFrame(window.heroRafId); window.heroRafId = null; }
-      if (window.glowRafId) { cancelAnimationFrame(window.glowRafId); window.glowRafId = null; }
-      
-      const p = activePhotos[idx];
-      const img = document.getElementById('lightbox-img');
-      const thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+    window.isLightboxOpen = true;
+    if (window.heroRafId) { cancelAnimationFrame(window.heroRafId); window.heroRafId = null; }
+    if (window.glowRafId) { cancelAnimationFrame(window.glowRafId); window.glowRafId = null; }
 
-      // The Hijack: Load thumb first for animation speed
-      // We pass a modified photo object to the original openLightbox or just let it run
-      // Actually, since originalOpen sets img.src, we'll let it finish then instantly overwrite it.
-      originalOpen(idx, direction);
-      
-      // Force the thumbnail for the animation period
-      img.src = thumbPath;
+    const p = activePhotos[idx];
+    if (!p) return;
+    const img = document.getElementById('lightbox-img');
+    const thumbPath = p.src.replace('photos/', 'photos/thumbs/');
 
-      // After the animation ends (400ms is your img transition), swap to high-res
-      setTimeout(() => {
-          if (window.isLightboxOpen && cur === idx) {
-              img.src = p.src;
-          }
-      }, 500);
+    // The Hijack: Load thumb first for animation speed
+    // We pass a modified photo object to the original openLightbox or just let it run
+    // Actually, since originalOpen sets img.src, we'll let it finish then instantly overwrite it.
+    originalOpen(idx, direction);
+
+    // Force the thumbnail for the animation period
+    img.src = thumbPath;
+
+    // After the animation ends (400ms is your img transition), swap to high-res
+    setTimeout(() => {
+      if (window.isLightboxOpen && cur === idx) {
+        img.src = p.src;
+      }
+    }, 500);
   };
 
   const originalClose = window.closeLightbox;
   window.closeLightbox = () => {
-      window.isLightboxOpen = false;
-      originalClose();
-      window.startLoops();
+    window.isLightboxOpen = false;
+    originalClose();
+    window.startLoops();
   };
 
   // 5. JS: Override animateInfo to delay the 'Ghost Removal' jank
