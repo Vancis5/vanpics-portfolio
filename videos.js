@@ -11,7 +11,7 @@ const videos = [
     id: "motion-001",
     title: "after hours",
     desc: "",
-    year: "2026",
+    year: "2025",
     videoUrl: "https://pub-80afe3481b3641e59d4fefe204ace935.r2.dev/after-hours.mp4",
     thumbnailUrl: "photos/thumbs/after-hours.webp",
   },
