@@ -20,6 +20,8 @@
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 body {
@@ -27,6 +29,8 @@ body {
   color: var(--text);
   font-family: 'Cormorant Garamond', serif;
   overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* grain texture overlay */
@@ -41,21 +45,15 @@ body::after {
   background-size: 256px 256px;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.12);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(221, 216, 207, 0.22);
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -412,6 +410,8 @@ body::after {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  align-items: start;
+  padding-bottom: 10rem;
 }
 
 @media (min-width: 500px) {
@@ -636,6 +636,9 @@ body::after {
 #motion-player-shell video,
 #motion-player-shell media-container {
   border-radius: inherit !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 #motion-player-shell .media-minimal-skin,
@@ -1063,6 +1066,25 @@ body::after {
     scrollbar-width: none;
     overscroll-behavior-x: contain;
     justify-content: flex-start;
+  }
+
+  #lightbox.mode-motion #lightbox-content {
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  #lightbox.mode-motion #lightbox-img-wrap {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #lightbox.mode-motion #motion-player-shell {
+    width: min(100%, calc((100svh - 15rem) * 16 / 9));
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
   }
 
   #lightbox-img-wrap::-webkit-scrollbar {
