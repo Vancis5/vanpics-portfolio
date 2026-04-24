@@ -1134,11 +1134,10 @@
     carouselPhotos = photos.filter(function (p) { return p.heroSlide === true && p.title !== ''; });
     if (carouselPhotos.length === 0) carouselPhotos = photos.filter(function (p) { return p.title !== ''; });
 
-    // preload first 6 carousel images — browser discovers them before JS fully executes
+    // Pre-cache first 6 carousel images to warm up the browser cache without triggering "unused preload" warnings
     carouselPhotos.slice(0, 6).forEach(function (p) {
-      var link = document.createElement('link');
-      link.rel = 'preload'; link.as = 'image'; link.href = p.src;
-      document.head.appendChild(link);
+      var img = new Image();
+      img.src = p.src;
     });
     var cur = 0;
     var isMobile = window.matchMedia('(hover: none)').matches;
@@ -1427,18 +1426,18 @@
             if (loadFired || gen !== navGen) return;
             loadFired = true;
             img.onload = null; img.onerror = null;
-            
+
             var bSrc = isMotion ? p.thumbnailUrl : p.src;
             setLightboxBlur(bSrc);
             setLightboxContent(p);
-            
+
             if (!isMotion) loadSwipeNeighbors();
-            
+
             requestAnimationFrame(function () {
               if (gen !== navGen) return;
               animateInfo(dir);
               void img.offsetWidth; // force reflow
-              
+
               if (isMotion) {
                 renderVideoInLightbox(p);
                 playerShell.style.transition = 'opacity 0.35s ease';
@@ -1515,17 +1514,17 @@
           if (openLoadFired || openGen !== navGen) return;
           openLoadFired = true;
           img.onload = null; img.onerror = null;
-          
+
           var bSrc = isMotion ? p.thumbnailUrl : p.src;
           setLightboxBlur(bSrc);
           setLightboxContent(p);
           if (!isMotion) loadSwipeNeighbors();
-          
+
           requestAnimationFrame(function () {
             if (openGen !== navGen) return;
             animateInfo(0);
             void img.offsetWidth; // force reflow — Firefox transition fix
-            
+
             if (isMotion) {
               renderVideoInLightbox(p);
               playerShell.style.transition = 'opacity 0.45s ease';
@@ -1579,8 +1578,9 @@
 
     function closeLightbox() {
       var lb = document.getElementById('lightbox');
+      var img = document.getElementById('lightbox-img');
       if (!lb.classList.contains('open')) return;
-      
+
       var activeGen = ++navGen; // invalidates all pending callbacks
       lb.classList.remove('open');
       document.body.style.overflow = '';
@@ -2007,10 +2007,13 @@
 
         // Over-scroll loop detection bounds
         var wrapTouchX = 0;
+        var isUserTouching = false;
         imgWrap.addEventListener('touchstart', function (e) {
+          isUserTouching = true;
           if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
         }, { passive: true });
         imgWrap.addEventListener('touchend', function (e) {
+          isUserTouching = false;
           if (Math.abs(lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
           var dx = e.changedTouches[0].clientX - wrapTouchX;
           var maxScroll = imgWrap.scrollWidth - imgWrap.offsetWidth;
@@ -2020,6 +2023,9 @@
           } else if (imgWrap.scrollLeft <= 5 && dx > 45) {
             // Pulled right while on the first slide -> Loop to end
             openLightbox(activePhotos.length - 1, -1);
+          } else {
+            // Trigger final settle for current position
+            onSnapSettle();
           }
         }, { passive: true });
 
@@ -2033,6 +2039,7 @@
 
         // ── Scroll settle — detect new active slide ──
         function onSnapSettle(targetIdx) {
+          if (isUserTouching && typeof targetIdx === 'undefined') return;
           isManuallyNavigating = false; // Reset navigation flag on settle
           var w = imgWrap.offsetWidth;
           if (!w) return;
@@ -2111,8 +2118,8 @@
             return;
           }
 
-          // preload text underneath if we cross 50% mark
-          if (nearest !== cur) {
+          // preload text underneath if we cross 50% mark — but ONLY if not currently holding
+          if (nearest !== cur && !isUserTouching) {
             onSnapSettle(nearest);
           }
 
@@ -2437,10 +2444,10 @@
         var photoBtn = document.querySelector('.photographs-btn');
         var portraitBtn = document.querySelector('.portraits-btn');
         var motionBtn = document.querySelector('.motion-btn');
-        [photoBtn, portraitBtn, motionBtn].forEach(function(b){ if(b) { b.classList.remove('active'); b.classList.add('inactive'); } });
-        if(newCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
-        if(newCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
-        if(newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
+        [photoBtn, portraitBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
+        if (newCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
+        if (newCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
+        if (newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
         // 4. Cleanup
         setTimeout(function () {
@@ -2798,7 +2805,7 @@
       filmstripBuilt = true;
 
       var currentSet = currentLightboxIsMotion ? motionProjects : activePhotos;
-      
+
       // Photos: 52px thumb + gap, Motion: 78px thumb
       var THUMB_W = currentLightboxIsMotion ? (window.innerWidth >= 640 ? 78 : 68) : (window.innerWidth >= 640 ? 62 : 52);
       var pad = (window.innerWidth / 2) - (THUMB_W / 2);
