@@ -642,7 +642,7 @@ body::after {
   background: #000;
 }
 
-/* Seek Icon Labels & Mirroring */
+/* Seek Icon Labels & Mirroring Restoration */
 .media-icon--backward {
   transform: scaleX(-1);
 }
@@ -652,18 +652,22 @@ body::after {
   align-items: center;
   justify-content: center;
   position: relative;
+  width: 18px;
+  height: 18px;
 }
 
 .media-icon__label {
   position: absolute;
-  font-size: 8px;
+  font-size: 10px; /* Larger as requested */
   font-weight: 700;
   color: var(--text);
   line-height: 1;
-  top: 54%; /* Nudged lower for optical balance */
+  top: 56%; /* Pushed down to avoid sticking to the top arc */
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-mono);
+  z-index: 2;
+  pointer-events: none;
 }
 
 #motion-player-shell .media-minimal-skin,
