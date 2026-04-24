@@ -1004,6 +1004,7 @@
       <div id="lightbox-zoom-darken"></div>
       <div id="lightbox-img-wrap">
         <img id="lightbox-img" class="zoomable" src="" alt="">
+        <div id="motion-player-shell"></div>
       </div>
       <div id="lightbox-info-wrap">
         <div id="lightbox-info" onclick="toggleLightboxDesc()">
@@ -1045,26 +1046,6 @@
     </div>
   </div>
 
-  <div id="motion-lightbox">
-    <div id="motion-lightbox-bg"></div>
-    <div id="motion-blur-layer" class="lightbox-bg-blur">
-      <div id="motion-blur-inner" class="lightbox-bg-blur-inner"></div>
-    </div>
-    <button id="motion-lightbox-close" type="button" onclick="closeMotionLightbox()">close</button>
-    <div id="motion-lightbox-content">
-      <div id="motion-lightbox-stage">
-        <div id="motion-player-shell"></div>
-        <div id="motion-lightbox-info">
-          <div id="motion-lightbox-title"></div>
-          <div id="motion-lightbox-desc"></div>
-          <div id="motion-lightbox-meta"></div>
-        </div>
-      </div>
-    </div>
-    <div id="motion-filmstrip-wrap">
-      <div id="motion-filmstrip"></div>
-    </div>
-  </div>
 
   <footer>
     <p>francis evan lorzano &mdash; maasin city, southern leyte</p>
@@ -1367,16 +1348,32 @@
     // increments each navigation so stale callbacks from aborted navigations are ignored
     var navGen = 0;
 
-    function openLightbox(i, direction) {
+    var currentLightboxIsMotion = false;
+    function openLightbox(i, direction, isMotion) {
       cur = i;
       isManuallyNavigating = true;
-      var p = activePhotos[i];
+      currentLightboxIsMotion = !!isMotion;
+      var p = isMotion ? motionProjects[i] : activePhotos[i];
+
+      if (!p && typeof i === 'number') {
+        // Find by object if we can, or just switch context if it's likely a carousel click
+        // For now, if i is out of bounds, it's almost certainly a carousel click from a filtered view.
+        currentCategory = 'all';
+        updateActivePhotos();
+        window.dispatchEvent(new Event('category-change'));
+        p = activePhotos[i];
+      }
+
       if (!p) return;
       var lb = document.getElementById('lightbox');
       var img = document.getElementById('lightbox-img');
+      var playerShell = document.getElementById('motion-player-shell');
 
-      // Mobile: already open — natively smooth scroll while locking UI logic to prevent glitches during rapid passage
-      if (lb.classList.contains('open') && isMobile && mobileScrollToSlide) {
+      if (isMotion) lb.classList.add('mode-motion');
+      else lb.classList.remove('mode-motion');
+
+      // Mobile: already open — natively smooth scroll
+      if (lb.classList.contains('open') && isMobile && mobileScrollToSlide && !isMotion) {
         // Fallback to 1 if direction evaluates to 0 or is mathematically missing
         var dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
         mobileScrollToSlide(i, true, dir);
@@ -1392,10 +1389,11 @@
         var enterX = dir > 0 ? '6%' : '-6%';
         var gen = ++navGen;
 
-        // exit current image immediately — snappy
+        // exit current media immediately — snappy
         img.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
         img.style.opacity = '0';
         img.style.transform = 'translateX(' + exitX + ') scale(0.98)';
+        playerShell.style.opacity = '0';
 
         // hide info panel immediately so old text isn't visible
         var infoEl = document.getElementById('lightbox-info');
@@ -1420,6 +1418,8 @@
           img.style.transition = 'none';
           img.style.transform = 'translateX(' + enterX + ') scale(0.98)';
           img.style.opacity = '0';
+          playerShell.innerHTML = '';
+          playerShell.style.opacity = '0';
 
           // assign handlers BEFORE setting src — Firefox fires load before handler if src set first
           var loadFired = false;
@@ -1427,30 +1427,42 @@
             if (loadFired || gen !== navGen) return;
             loadFired = true;
             img.onload = null; img.onerror = null;
-            // set blur background only now that image is fully cached in memory, preventing thread locking
-            setLightboxBlur(p.src);
-            // update text content now — invisible, correct position, layout settled
+            
+            var bSrc = isMotion ? p.thumbnailUrl : p.src;
+            setLightboxBlur(bSrc);
             setLightboxContent(p);
-            loadSwipeNeighbors();
+            
+            if (!isMotion) loadSwipeNeighbors();
+            
             requestAnimationFrame(function () {
               if (gen !== navGen) return;
-              // one frame for layout to commit image dimensions — then animate both together
               animateInfo(dir);
-              void img.offsetWidth; // force reflow — Firefox needs this to honour opacity transition
-              img.style.transition = 'opacity 0.32s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)';
-              img.style.opacity = '1';
-              img.style.transform = 'translateX(0) scale(1)';
+              void img.offsetWidth; // force reflow
+              
+              if (isMotion) {
+                renderVideoInLightbox(p);
+                playerShell.style.transition = 'opacity 0.35s ease';
+                playerShell.style.opacity = '1';
+              } else {
+                img.style.transition = 'opacity 0.32s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+                img.style.opacity = '1';
+                img.style.transform = 'translateX(0) scale(1)';
+              }
             });
           }
 
           requestAnimationFrame(function () {
             if (gen !== navGen) return;
-            img.onload = function () { clearTimeout(loadFallback); afterLoad(); };
-            img.onerror = function () { clearTimeout(loadFallback); afterLoad(); };
-            img.src = p.src;
-            var loadFallback = setTimeout(afterLoad, 700);
-            // decode() waits for full pixel decode — reliable in Firefox unlike img.complete
-            if (img.decode) img.decode().then(function () { clearTimeout(loadFallback); afterLoad(); }).catch(function () { });
+            if (isMotion) {
+              afterLoad();
+            } else {
+              img.onload = function () { clearTimeout(loadFallback); afterLoad(); };
+              img.onerror = function () { clearTimeout(loadFallback); afterLoad(); };
+              img.src = p.src;
+              var loadFallback = setTimeout(afterLoad, 700);
+              // decode() waits for full pixel decode — reliable in Firefox unlike img.complete
+              if (img.decode) img.decode().then(function () { clearTimeout(loadFallback); afterLoad(); }).catch(function () { });
+            }
           });
         }
 
@@ -1469,14 +1481,15 @@
       } else {
         // INITIAL OPEN
         var openGen = ++navGen;
-        // background blur moved to afterOpenLoad
 
-        // image starts invisible — no content yet
+        // media starts invisible — no content yet
         img.onload = null; img.onerror = null;
         img.src = '';
         img.style.transition = 'none';
         img.style.opacity = '0';
         img.style.transform = '';
+        playerShell.innerHTML = '';
+        playerShell.style.opacity = '0';
 
         // info panel fully hidden — no stale text visible
         var infoEl2 = document.getElementById('lightbox-info');
@@ -1486,7 +1499,7 @@
         lb.classList.add('open');
         lb.scrollTop = 0;
         document.body.style.overflow = 'hidden';
-        if (liftZone) liftZone.style.display = 'block';
+        if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'block';
         // allow other UI (cursor ring) to reset on lightbox open
         window.dispatchEvent(new Event('lightbox-open'));
         setTimeout(showFilmstrip, 300);
@@ -1502,43 +1515,81 @@
           if (openLoadFired || openGen !== navGen) return;
           openLoadFired = true;
           img.onload = null; img.onerror = null;
-          // Mobile: scroll-snap IIFE handles content — skip
-          if (isMobile && mobileScrollToSlide) return;
-          // text content set now — invisible, layout settled
-          setLightboxBlur(p.src);
+          
+          var bSrc = isMotion ? p.thumbnailUrl : p.src;
+          setLightboxBlur(bSrc);
           setLightboxContent(p);
-          loadSwipeNeighbors();
+          if (!isMotion) loadSwipeNeighbors();
+          
           requestAnimationFrame(function () {
             if (openGen !== navGen) return;
             animateInfo(0);
             void img.offsetWidth; // force reflow — Firefox transition fix
-            img.style.transition = 'opacity 0.45s ease';
-            img.style.opacity = '1';
+            
+            if (isMotion) {
+              renderVideoInLightbox(p);
+              playerShell.style.transition = 'opacity 0.45s ease';
+              playerShell.style.opacity = '1';
+            } else {
+              img.style.transition = 'opacity 0.45s ease';
+              img.style.opacity = '1';
+            }
           });
         }
 
         // handlers BEFORE src — Firefox-safe
         var openFallback;
         requestAnimationFrame(function () {
-          img.onload = function () { clearTimeout(openFallback); afterOpenLoad(); };
-          img.onerror = function () { clearTimeout(openFallback); afterOpenLoad(); };
-          img.src = p.src;
-          openFallback = setTimeout(afterOpenLoad, 700);
-          // decode() waits for pixel decode — reliable in Firefox unlike img.complete
-          if (img.decode) img.decode().then(function () { clearTimeout(openFallback); afterOpenLoad(); }).catch(function () { });
+          if (isMotion) {
+            afterOpenLoad();
+          } else {
+            img.onload = function () { clearTimeout(openFallback); afterOpenLoad(); };
+            img.onerror = function () { clearTimeout(openFallback); afterOpenLoad(); };
+            img.src = p.src;
+            openFallback = setTimeout(afterOpenLoad, 700);
+            // decode() waits for pixel decode — reliable in Firefox unlike img.complete
+            if (img.decode) img.decode().then(function () { clearTimeout(openFallback); afterOpenLoad(); }).catch(function () { });
+          }
         });
       }
     }
 
+    function renderVideoInLightbox(p) {
+      var shell = document.getElementById('motion-player-shell');
+      shell.innerHTML = [
+        '<div class="motion-player-prime" id="player-' + p.id + '">',
+        '  <video class="video-js media-minimal-skin--video" playsinline preload="auto" poster="' + (p.thumbnailUrl || '') + '">',
+        '    <source src="' + p.videoUrl + '" type="video/mp4">',
+        '  </video>',
+        '  <div class="motion-start-button" onclick="startUnifiedMotionPlayer(\'player-' + p.id + '\')">',
+        '    <svg class="motion-start-button__icon" viewBox="0 0 24 24" fill="currentColor">',
+        '       <path d="M8 5v14l11-7z"/>',
+        '    </svg>',
+        '  </div>',
+        '</div>'
+      ].join('');
+    }
+
+    function startUnifiedMotionPlayer(id) {
+      var prime = document.getElementById(id);
+      var video = prime.querySelector('video');
+      prime.classList.add('is-started');
+      video.play().catch(function () { });
+    }
+
     function closeLightbox() {
       var lb = document.getElementById('lightbox');
-      var img = document.getElementById('lightbox-img');
+      if (!lb.classList.contains('open')) return;
+      
       var activeGen = ++navGen; // invalidates all pending callbacks
       lb.classList.remove('open');
       document.body.style.overflow = '';
       clearTimeout(filmstripHideTimer);
       hideFilmstrip();
-      if (liftZone) liftZone.style.display = 'none';
+      if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'none';
+
+      var playerShell = document.getElementById('motion-player-shell');
+      if (playerShell) playerShell.innerHTML = '';
 
       document.getElementById('blur-layer-a').classList.remove('active');
       document.getElementById('blur-layer-b').classList.remove('active');
@@ -1625,15 +1676,15 @@
     }
 
     function navigateLightbox(d) {
-      if (lbZoomLevel > 1) resetZoom();
-      cur = (cur + d + activePhotos.length) % activePhotos.length;
-      openLightbox(cur, d);
+      if (typeof lbZoomLevel !== 'undefined' && lbZoomLevel > 1) resetZoom();
+      var currentSet = currentLightboxIsMotion ? motionProjects : activePhotos;
+      cur = (cur + d + currentSet.length) % currentSet.length;
+      openLightbox(cur, d, currentLightboxIsMotion);
     }
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         closeLightbox();
-        closeMotionLightbox();
       }
       if (e.key === 'ArrowRight') navigateLightbox(1);
       if (e.key === 'ArrowLeft') navigateLightbox(-1);
@@ -1641,7 +1692,6 @@
 
     // desktop: click bg to close
     if (!isMobile) document.getElementById('lightbox-bg').addEventListener('click', closeLightbox);
-    document.getElementById('motion-lightbox-bg').addEventListener('click', closeMotionLightbox);
 
     // Continuous Zoom Physics Framework
     var lbZoomLevel = 1;
@@ -1860,17 +1910,6 @@
       (function () {
         var slidesBuilt = false;
         var snapTimer = null;
-        window.addEventListener('category-change', function () {
-          slidesBuilt = false;
-          filmstripBuilt = false; 
-          if (imgWrap) {
-            var slides = imgWrap.querySelectorAll('.snap-slide');
-            for (var i = 0; i < slides.length; i++) slides[i].remove();
-          }
-          if (typeof filmstripEl !== 'undefined' && filmstripEl) {
-            filmstripEl.innerHTML = '';
-          }
-        });
 
         // ── Build slides ──
         function buildSlides() {
@@ -2363,15 +2402,14 @@
 
     function rebuildGallery(newCategory) {
       var m = document.getElementById('masonry');
-      var gallerySection = document.getElementById('gallery-section');
+      if (!m) return;
 
-      // 1. Height Lock: Keep the page at its current length so the scrollbar doesn't jump
+      // 1. Height Lock: Keep the page at its current length
       var currentHeight = m.offsetHeight;
       m.style.minHeight = currentHeight + 'px';
 
-      // 2. Fast Swap (No Scroll)
+      // 2. Fast Swap
       setTimeout(function () {
-        closeMotionLightbox();
         var order = ['all', 'portrait', 'motion'];
         var oldIdx = order.indexOf(currentCategory);
         var newIdx = order.indexOf(newCategory);
@@ -2384,124 +2422,31 @@
 
         m.innerHTML = '';
         m.classList.toggle('motion-grid-active', newCategory === 'motion');
+        m.style.setProperty('--masonry-x', slideX);
+        m.classList.remove('switching');
+        void m.offsetWidth;
+        m.classList.add('switching');
 
         if (newCategory === 'motion') {
-          m.style.setProperty('--masonry-x', slideX);
-          m.classList.remove('switching');
-          void m.offsetWidth;
-          m.classList.add('switching');
           buildMotionGrid();
-        }
-
-        if (false && newCategory === 'motion') {
-          // ── Motion: show video player ──
-          var slideX = direction === 'left' ? '-40px' : '40px';
-          m.style.setProperty('--masonry-x', slideX);
-          m.classList.remove('switching');
-          void m.offsetWidth;
-          m.classList.add('switching');
-
-          var motionDiv = document.createElement('div');
-          motionDiv.id = 'motion-section';
-          motionDiv.innerHTML = [
-            '<div class="motion-player-wrap">',
-            '<video-player>',
-            '<media-container class="media-minimal-skin media-minimal-skin--video">',
-            '<video src="' + (motionProjects[0] ? motionProjects[0].videoUrl : '') + '" playsinline></video>',
-            '<media-buffering-indicator class="media-buffering-indicator">',
-            '<svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 18 18"><rect width="2" height="5" x="8" y=".5" opacity=".5" rx="1"><animate attributeName="opacity" begin="0s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="12.243" y="2.257" opacity=".45" rx="1" transform="rotate(45 13.243 4.757)"><animate attributeName="opacity" begin="0.125s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="12.5" y="8" opacity=".4" rx="1"><animate attributeName="opacity" begin="0.25s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="10.743" y="12.243" opacity=".35" rx="1" transform="rotate(45 13.243 13.243)"><animate attributeName="opacity" begin="0.375s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="8" y="12.5" opacity=".3" rx="1"><animate attributeName="opacity" begin="0.5s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="3.757" y="10.743" opacity=".25" rx="1" transform="rotate(45 4.757 13.243)"><animate attributeName="opacity" begin="0.625s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x=".5" y="8" opacity=".15" rx="1"><animate attributeName="opacity" begin="0.75s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="2.257" y="3.757" opacity=".1" rx="1" transform="rotate(45 4.757 4.757)"><animate attributeName="opacity" begin="0.875s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect></svg>',
-            '</media-buffering-indicator>',
-            '<media-controls class="media-controls">',
-            '<media-tooltip-group>',
-            '<div class="media-button-group">',
-            '<media-play-button commandfor="play-tooltip" class="media-button media-button--subtle media-button--icon media-button--play">',
-            '<svg class="media-icon media-icon--restart" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M9 17a8 8 0 0 1-8-8h1.5a6.5 6.5 0 1 0 1.43-4.07l1.643 1.643A.25.25 0 0 1 5.396 7H1.25A.25.25 0 0 1 1 6.75V2.604a.25.25 0 0 1 .427-.177l1.438 1.438A8 8 0 1 1 9 17"/><path fill="currentColor" d="m11.61 9.639-3.331 2.07a.826.826 0 0 1-1.15-.266.86.86 0 0 1-.129-.452V6.849C7 6.38 7.374 6 7.834 6c.158 0 .312.045.445.13l3.331 2.071a.858.858 0 0 1 0 1.438"/></svg>',
-            '<svg class="media-icon media-icon--play" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="m13.473 10.476-6.845 4.256a1.697 1.697 0 0 1-2.364-.547 1.77 1.77 0 0 1-.264-.93v-8.51C4 3.78 4.768 3 5.714 3c.324 0 .64.093.914.268l6.845 4.255a1.763 1.763 0 0 1 0 2.953"/></svg>',
-            '<svg class="media-icon media-icon--pause" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><rect width="4" height="12" x="3" y="3" fill="currentColor" rx="1.75"/><rect width="4" height="12" x="11" y="3" fill="currentColor" rx="1.75"/></svg>',
-            '</media-play-button>',
-            '<media-tooltip id="play-tooltip" side="top" class="media-tooltip"></media-tooltip>',
-            '<media-seek-button commandfor="seek-backward-tooltip" seconds="-10" class="media-button media-button--subtle media-button--icon media-button--seek"><span class="media-icon__container"><svg class="media-icon media-icon--flipped" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></span></media-seek-button>',
-            '<media-tooltip id="seek-backward-tooltip" side="top" class="media-tooltip">Seek backward 10 seconds</media-tooltip>',
-            '<media-seek-button commandfor="seek-forward-tooltip" seconds="10" class="media-button media-button--subtle media-button--icon media-button--seek"><span class="media-icon__container"><svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></span></media-seek-button>',
-            '<media-tooltip id="seek-forward-tooltip" side="top" class="media-tooltip">Seek forward 10 seconds</media-tooltip>',
-            '</div>',
-            '<div class="media-time-controls">',
-            '<media-time-group class="media-time-group"><media-time type="current" class="media-time media-time--current"></media-time><media-time-separator class="media-time-separator"></media-time-separator><media-time type="duration" class="media-time media-time--duration"></media-time></media-time-group>',
-            '<media-time-slider class="media-slider"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill><media-slider-buffer class="media-slider__buffer"></media-slider-buffer></media-slider-track><media-slider-thumb class="media-slider__thumb"></media-slider-thumb></media-time-slider>',
-            '</div>',
-            '<div class="media-button-group">',
-            '<media-playback-rate-button commandfor="playback-rate-tooltip" class="media-button media-button--subtle media-button--icon media-button--playback-rate"></media-playback-rate-button>',
-            '<media-tooltip id="playback-rate-tooltip" side="top" class="media-tooltip">Toggle playback rate</media-tooltip>',
-            '<media-mute-button commandfor="video-volume-popover" class="media-button media-button--subtle media-button--icon media-button--mute">',
-            '<svg class="media-icon media-icon--volume-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752M14.5 7.586l-1.768-1.768a1 1 0 1 0-1.414 1.414L13.085 9l-1.767 1.768a1 1 0 0 0 1.414 1.414l1.768-1.768 1.768 1.768a1 1 0 0 0 1.414-1.414L15.914 9l1.768-1.768a1 1 0 0 0-1.414-1.414z"/></svg>',
-            '<svg class="media-icon media-icon--volume-low" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg>',
-            '<svg class="media-icon media-icon--volume-high" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M15.6 3.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4C15.4 5.9 16 7.4 16 9s-.6 3.1-1.8 4.3c-.4.4-.4 1 0 1.4.2.2.5.3.7.3.3 0 .5-.1.7-.3C17.1 13.2 18 11.2 18 9s-.9-4.2-2.4-5.7"/><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg>',
-            '</media-mute-button>',
-            '<media-popover id="video-volume-popover" open-on-hover delay="200" close-delay="100" side="top" class="media-popover media-popover--volume"><media-volume-slider class="media-slider" orientation="vertical" thumb-alignment="edge"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill></media-slider-track><media-slider-thumb class="media-slider__thumb media-slider__thumb--persistent"></media-slider-thumb></media-volume-slider></media-popover>',
-            '<media-fullscreen-button commandfor="fullscreen-tooltip" class="media-button media-button--subtle media-button--icon media-button--fullscreen">',
-            '<svg class="media-icon media-icon--fullscreen-enter" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M15.25 2a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V3.5h-3.75a.75.75 0 0 1-.743-.648L10 2.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM2.75 10a.75.75 0 0 1 .75.75v3.75h3.75a.75.75 0 0 1 .743.648L8 15.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg>',
-            '<svg class="media-icon media-icon--fullscreen-exit" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="currentColor" d="M10.75 2a.75.75 0 0 1 .75.75V6.5h3.75a.75.75 0 0 1 .743.648L16 7.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM7.25 10a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V11.5H2.75a.75.75 0 0 1-.743-.648L2 10.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg>',
-            '</media-fullscreen-button>',
-            '<media-tooltip id="fullscreen-tooltip" side="top" class="media-tooltip"></media-tooltip>',
-            '</div>',
-            '</media-tooltip-group>',
-            '</media-controls>',
-            '<div class="media-overlay"></div>',
-            '</media-container>',
-            '</video-player>',
-            '</div>',
-            '<p class="motion-label">motion — 001</p>'
-          ].join('');
-          m.appendChild(motionDiv);
-
-          // Load Video.js module if not already loaded
-          if (!document.querySelector('script[src*="video-minimal-ui"]')) {
-            var vjsScript = document.createElement('script');
-            vjsScript.type = 'module';
-            vjsScript.src = 'https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js';
-            document.head.appendChild(vjsScript);
-          }
-        } else if (newCategory !== 'motion' && activePhotos.length === 0) {
-          var empty = document.createElement('div');
-          empty.className = 'empty-state';
-          empty.innerHTML = '<p>[ nothing here yet ]</p>';
-          m.appendChild(empty);
-
-          var targetScroll = gallerySection.offsetTop - 80;
-          if (window.scrollY > targetScroll) {
-            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-          }
-        } else if (newCategory !== 'motion') {
-          // Trigger the whole-grid animation
-          m.style.setProperty('--masonry-x', direction === 'left' ? '-40px' : '40px');
-          m.classList.remove('switching');
-          void m.offsetWidth; // Force reflow
-          m.classList.add('switching');
-
+        } else {
           buildMasonry();
         }
 
-        // 4. Release Lock: Allow the height to settle into the new content
-        requestAnimationFrame(function () {
-          m.style.minHeight = '40vh';
-        });
+        // 3. Update Nav UI
+        var photoBtn = document.querySelector('.photographs-btn');
+        var portraitBtn = document.querySelector('.portraits-btn');
+        var motionBtn = document.querySelector('.motion-btn');
+        [photoBtn, portraitBtn, motionBtn].forEach(function(b){ if(b) { b.classList.remove('active'); b.classList.add('inactive'); } });
+        if(newCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
+        if(newCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
+        if(newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
-        // 5. Update Nav UI
-        var photoBtn = document.querySelector('#gallery-header .photographs-btn');
-        var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
-        var motionBtn = document.querySelector('#gallery-header .motion-btn');
-
-        [photoBtn, portraitBtn, motionBtn].forEach(function (btn) {
-          if (btn) {
-            btn.classList.remove('active', 'inactive');
-            btn.classList.add('inactive');
-          }
-        });
-
-        if (currentCategory === 'all') photoBtn.className = 'active photographs-btn';
-        else if (currentCategory === 'portrait') portraitBtn.className = 'active portraits-btn';
-        else if (currentCategory === 'motion') motionBtn.className = 'active motion-btn';
-      }, 20);
+        // 4. Cleanup
+        setTimeout(function () {
+          m.style.minHeight = '';
+        }, 600);
+      }, 0);
     }
 
     function initFilters() {
@@ -2639,85 +2584,12 @@
           '<div class="motion-card-overlay"><div class="motion-card-title">' + escapeHtml(item.title) + '</div></div>'
         ].join('');
         card.addEventListener('click', function () {
-          openMotionLightbox(idx);
+          openLightbox(idx, 0, true);
         });
         m.appendChild(card);
       });
     }
 
-    function renderMotionFilmstrip() {
-      var filmstrip = document.getElementById('motion-filmstrip');
-      if (!filmstrip) return;
-      filmstrip.innerHTML = '';
-
-      motionProjects.forEach(function (item, idx) {
-        var thumb = document.createElement('button');
-        thumb.type = 'button';
-        thumb.className = 'filmstrip-thumb' + (idx === currentMotionIndex ? ' active' : '');
-        thumb.setAttribute('aria-label', 'Play ' + item.title);
-        thumb.innerHTML = getMotionThumbnailMarkup(item);
-        thumb.addEventListener('click', function () {
-          openMotionLightbox(idx);
-        });
-        filmstrip.appendChild(thumb);
-      });
-    }
-
-    function bindMotionPlayerStart() {
-      var shell = document.getElementById('motion-player-shell');
-      if (!shell) return;
-      var prime = shell.querySelector('.motion-player-prime');
-      var video = shell.querySelector('video');
-      var startButton = shell.querySelector('.motion-start-button');
-      if (!prime || !video || !startButton) return;
-
-      function markStarted() {
-        prime.classList.add('is-started');
-      }
-
-      startButton.addEventListener('click', function () {
-        markStarted();
-        video.play().catch(function () { });
-      });
-
-      video.addEventListener('play', markStarted);
-    }
-
-    function renderMotionLightbox(index) {
-      var item = motionProjects[index];
-      if (!item) return;
-
-      currentMotionIndex = index;
-      document.getElementById('motion-player-shell').innerHTML = getVideoPlayerMarkup(item);
-      bindMotionPlayerStart();
-      document.getElementById('motion-lightbox-title').textContent = item.title;
-      document.getElementById('motion-lightbox-desc').textContent = item.desc || '';
-      document.getElementById('motion-lightbox-desc').style.display = item.desc ? 'block' : 'none';
-      document.getElementById('motion-lightbox-meta').textContent = (item.year || '') + ' / motion';
-      // Automate blur path: if thumbnailUrl is "photos/thumbs/img.webp", blurUrl becomes "photos/blur/img.webp"
-      var blurUrl = item.thumbnailUrl ? item.thumbnailUrl.replace('/thumbs/', '/blur/') : '';
-
-      document.getElementById('motion-blur-layer').classList.toggle('active', !!blurUrl);
-      document.getElementById('motion-blur-inner').style.backgroundImage = blurUrl ? 'url("' + blurUrl + '")' : '';
-      renderMotionFilmstrip();
-    }
-
-    function openMotionLightbox(index) {
-      renderMotionLightbox(index);
-      var lb = document.getElementById('motion-lightbox');
-      lb.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeMotionLightbox() {
-      var lb = document.getElementById('motion-lightbox');
-      if (!lb.classList.contains('open')) return;
-      lb.classList.remove('open');
-      document.body.style.overflow = '';
-      document.getElementById('motion-player-shell').innerHTML = '';
-      document.getElementById('motion-blur-layer').classList.remove('active');
-      document.getElementById('motion-blur-inner').style.backgroundImage = '';
-    }
 
     // PARALLAX
     var scrollY = 0;
@@ -2787,14 +2659,7 @@
             var idx = activePhotos.indexOf(p);
             img.addEventListener('click', (function (capturedIdx) {
               return function () {
-                if (currentCategory === 'motion') {
-                  rebuildGallery('all');
-                  setTimeout(function () {
-                    openLightbox(capturedIdx >= 0 ? capturedIdx : 0);
-                  }, 50);
-                } else {
-                  openLightbox(capturedIdx >= 0 ? capturedIdx : 0);
-                }
+                openLightbox(capturedIdx >= 0 ? capturedIdx : 0);
               };
             })(idx));
             row.appendChild(img);
@@ -2914,23 +2779,40 @@
     var filmstripEl = document.getElementById('filmstrip');
     var filmstripHideTimer = null;
     var filmstripBuilt = false;
+    window.addEventListener('category-change', function () {
+      filmstripBuilt = false;
+      if (typeof filmstripEl !== 'undefined' && filmstripEl) {
+        filmstripEl.innerHTML = '';
+      }
+      // Also reset mobile slides if they exist
+      var imgWrap = document.getElementById('lightbox-img-wrap');
+      if (imgWrap) {
+        var slides = imgWrap.querySelectorAll('.snap-slide');
+        for (var i = 0; i < slides.length; i++) slides[i].remove();
+      }
+    });
     var liftZone = document.getElementById('filmstrip-lift-zone');
 
     function buildFilmstrip() {
       if (filmstripBuilt) return;
       filmstripBuilt = true;
 
-      var THUMB_W = window.innerWidth >= 640 ? 62 : 52;
+      var currentSet = currentLightboxIsMotion ? motionProjects : activePhotos;
+      
+      // Photos: 52px thumb + gap, Motion: 78px thumb
+      var THUMB_W = currentLightboxIsMotion ? (window.innerWidth >= 640 ? 78 : 68) : (window.innerWidth >= 640 ? 62 : 52);
       var pad = (window.innerWidth / 2) - (THUMB_W / 2);
       filmstripEl.style.paddingLeft = pad + 'px';
       filmstripEl.style.paddingRight = pad + 'px';
+      filmstripEl.innerHTML = '';
 
-      activePhotos.forEach(function (p, i) {
+      currentSet.forEach(function (p, i) {
         var thumb = document.createElement('div');
         thumb.className = 'filmstrip-thumb';
+        if (currentLightboxIsMotion) thumb.classList.add('mode-motion');
         thumb.dataset.idx = i;
         var img = document.createElement('img');
-        var thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+        var thumbPath = currentLightboxIsMotion ? p.thumbnailUrl : p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath;
         img.alt = p.title;
         img.loading = 'lazy';
@@ -2939,7 +2821,7 @@
           return function () {
             var d = idx === cur ? 0 : (idx > cur ? 1 : -1);
             cur = idx;
-            openLightbox(idx, d);
+            openLightbox(idx, d, currentLightboxIsMotion);
           };
         })(i));
         filmstripEl.appendChild(thumb);
