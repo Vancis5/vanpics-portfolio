@@ -611,12 +611,23 @@ body::after {
 
 #motion-player-shell {
   position: relative;
-  width: min(100%, calc((100svh - 16rem) * 16 / 9), 700px);
+  width: min(100%, calc((100svh - 16rem) * 16 / 9), 1080px);
+  /* slightly larger max for desktop */
   aspect-ratio: 16 / 9;
   background: transparent;
   border-radius: var(--motion-player-radius, 0.75rem);
   overflow: hidden;
   margin: 0 auto;
+}
+
+#lightbox.mode-motion #lightbox-img-wrap {
+  height: auto;
+  min-height: 0;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  /* Critical: prevent collapse on desktop row layout */
 }
 
 #motion-player-shell video-player {
@@ -629,6 +640,30 @@ body::after {
   width: 100%;
   height: 100%;
   background: #000;
+}
+
+/* Seek Icon Labels & Mirroring */
+.media-icon--backward {
+  transform: scaleX(-1);
+}
+
+.media-icon__container {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.media-icon__label {
+  position: absolute;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  top: 54%; /* Nudged lower for optical balance */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
 }
 
 #motion-player-shell .media-minimal-skin,
@@ -1074,17 +1109,7 @@ body::after {
   }
 
   #lightbox.mode-motion #lightbox-img-wrap {
-    height: auto;
-    min-height: 0;
     overflow: visible;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #lightbox.mode-motion #motion-player-shell {
-    width: min(100%, calc((100svh - 15rem) * 16 / 9));
-    max-width: 100%;
-    aspect-ratio: 16 / 9;
   }
 
   #lightbox-img-wrap::-webkit-scrollbar {
@@ -1278,4 +1303,3 @@ footer p {
   color: var(--text-faint);
   text-transform: lowercase;
 }
-

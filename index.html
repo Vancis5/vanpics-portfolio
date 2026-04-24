@@ -1082,7 +1082,7 @@
 
     function getVideoPlayerMarkup(item) {
       return [
-        '<div class="motion-player-prime">',
+        '<div class="motion-player-prime" id="motion-player-instance">',
         '<video-player>',
         '<media-container class="media-minimal-skin media-minimal-skin--video">',
         '<video src="' + item.videoUrl + '" playsinline controlslist="nodownload"></video>',
@@ -1095,19 +1095,19 @@
         '<div class="media-button-group">',
         '<media-play-button commandfor="motion-play-tooltip" class="media-button media-button--subtle media-button--icon media-button--play"><svg class="media-icon media-icon--restart" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M9 17a8 8 0 0 1-8-8h1.5a6.5 6.5 0 1 0 1.43-4.07l1.643 1.643A.25.25 0 0 1 5.396 7H1.25A.25.25 0 0 1 1 6.75V2.604a.25.25 0 0 1 .427-.177l1.438 1.438A8 8 0 1 1 9 17"/><path fill="currentColor" d="m11.61 9.639-3.331 2.07a.826.826 0 0 1-1.15-.266.86.86 0 0 1-.129-.452V6.849C7 6.38 7.374 6 7.834 6c.158 0 .312.045.445.13l3.331 2.071a.858.858 0 0 1 0 1.438"/></svg><svg class="media-icon media-icon--play" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="m13.473 10.476-6.845 4.256a1.697 1.697 0 0 1-2.364-.547 1.77 1.77 0 0 1-.264-.93v-8.51C4 3.78 4.768 3 5.714 3c.324 0 .64.093.914.268l6.845 4.255a1.763 1.763 0 0 1 0 2.953"/></svg><svg class="media-icon media-icon--pause" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><rect width="4" height="12" x="3" y="3" fill="currentColor" rx="1.75"/><rect width="4" height="12" x="11" y="3" fill="currentColor" rx="1.75"/></svg></media-play-button>',
         '<media-tooltip id="motion-play-tooltip" side="top" class="media-tooltip"></media-tooltip>',
-        '<media-seek-button commandfor="motion-seek-backward-tooltip" seconds="-10" class="media-button media-button--subtle media-button--icon media-button--seek"><span class="media-icon__container"><svg class="media-icon media-icon--flipped" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></span></media-seek-button>',
+        '<media-seek-button commandfor="motion-seek-backward-tooltip" seconds="-10" class="media-button media-button--subtle media-button--icon media-button--seek"><span class="media-icon__container"><svg class="media-icon media-icon--backward" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></span></media-seek-button>',
         '<media-tooltip id="motion-seek-backward-tooltip" side="top" class="media-tooltip">Seek backward 10 seconds</media-tooltip>',
         '<media-seek-button commandfor="motion-seek-forward-tooltip" seconds="10" class="media-button media-button--subtle media-button--icon media-button--seek"><span class="media-icon__container"><svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></span></media-seek-button>',
         '<media-tooltip id="motion-seek-forward-tooltip" side="top" class="media-tooltip">Seek forward 10 seconds</media-tooltip>',
         '</div>',
         '<div class="media-time-controls"><media-time-group class="media-time-group"><media-time type="current" class="media-time media-time--current"></media-time><media-time-separator class="media-time-separator"></media-time-separator><media-time type="duration" class="media-time media-time--duration"></media-time></media-time-group><media-time-slider class="media-slider"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill><media-slider-buffer class="media-slider__buffer"></media-slider-buffer></media-slider-track><media-slider-thumb class="media-slider__thumb"></media-slider-thumb></media-time-slider></div>',
-        '<div class="media-button-group"><media-playback-rate-button commandfor="motion-rate-tooltip" class="media-button media-button--subtle media-button--icon media-button--playback-rate"></media-playback-rate-button><media-tooltip id="motion-rate-tooltip" side="top" class="media-tooltip">Toggle playback rate</media-tooltip><media-mute-button commandfor="motion-volume-popover" class="media-button media-button--subtle media-button--icon media-button--mute"><svg class="media-icon media-icon--volume-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752M14.5 7.586l-1.768-1.768a1 1 0 1 0-1.414 1.414L13.085 9l-1.767 1.768a1 1 0 0 0 1.414 1.414l1.768-1.768 1.768 1.768a1 1 0 0 0 1.414-1.414L15.914 9l1.768-1.768a1 1 0 0 0-1.414-1.414z"/></svg><svg class="media-icon media-icon--volume-low" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg><svg class="media-icon media-icon--volume-high" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M15.6 3.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4C15.4 5.9 16 7.4 16 9s-.6 3.1-1.8 4.3c-.4.4-.4 1 0 1.4.2.2.5.3.7.3.3 0 .5-.1.7-.3C17.1 13.2 18 11.2 18 9s-.9-4.2-2.4-5.7"/><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg></media-mute-button><media-popover id="motion-volume-popover" open-on-hover delay="200" close-delay="100" side="top" class="media-popover media-popover--volume"><media-volume-slider class="media-slider" orientation="vertical" thumb-alignment="edge"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill></media-slider-track><media-slider-thumb class="media-slider__thumb media-slider__thumb--persistent"></media-slider-thumb></media-volume-slider></media-popover><media-fullscreen-button commandfor="motion-fullscreen-tooltip" class="media-button media-button--subtle media-button--icon media-button--fullscreen"><svg class="media-icon media-icon--fullscreen-enter" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M15.25 2a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V3.5h-3.75a.75.75 0 0 1-.743-.648L10 2.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM2.75 10a.75.75 0 0 1 .75.75v3.75h3.75a.75.75 0 0 1 .743.648L8 15.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg><svg class="media-icon media-icon--fullscreen-exit" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M10.75 2a.75.75 0 0 1 .75.75V6.5h3.75a.75.75 0 0 1 .743.648L16 7.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM7.25 10a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V11.5H2.75a.75.75 0 0 1-.743-.648L2 10.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg></media-fullscreen-button><media-tooltip id="motion-fullscreen-tooltip" side="top" class="media-tooltip"></media-tooltip></div>',
+        '<div class="media-button-group"><media-playback-rate-button commandfor="motion-rate-tooltip" class="media-button media-button--subtle media-button--icon media-button--playback-rate"></media-playback-rate-button><media-tooltip id="motion-rate-tooltip" side="top" class="media-tooltip">Toggle playback rate</media-tooltip><media-mute-button commandfor="motion-volume-popover" class="media-button media-button--subtle media-button--icon media-button--mute"><svg class="media-icon media-icon--volume-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752M14.5 7.586l-1.768-1.768a1 1 0 1 0-1.414 1.414L13.085 9l-1.767 1.768a1 1 0 0 0 1.414 1.414l1.768-1.768 1.768 1.768a1 1 0 0 0 1.414-1.414z"/></svg><svg class="media-icon media-icon--volume-low" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg><svg class="media-icon media-icon--volume-high" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M15.6 3.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4C15.4 5.9 16 7.4 16 9s-.6 3.1-1.8 4.3c-.4.4-.4 1 0 1.4.2.2.5.3.7.3.3 0 .5-.1.7-.3C17.1 13.2 18 11.2 18 9s-.9-4.2-2.4-5.7"/><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg></media-mute-button><media-popover id="motion-volume-popover" open-on-hover delay="200" close-delay="100" side="top" class="media-popover media-popover--volume"><media-volume-slider class="media-slider" orientation="vertical" thumb-alignment="edge"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill></media-slider-track><media-slider-thumb class="media-slider__thumb media-slider__thumb--persistent"></media-slider-thumb></media-volume-slider></media-popover><media-fullscreen-button commandfor="motion-fullscreen-tooltip" class="media-button media-button--subtle media-button--icon media-button--fullscreen"><svg class="media-icon media-icon--fullscreen-enter" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M15.25 2a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V3.5h-3.75a.75.75 0 0 1-.743-.648L10 2.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM2.75 10a.75.75 0 0 1 .75.75v3.75h3.75a.75.75 0 0 1 .743.648L8 15.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg><svg class="media-icon media-icon--fullscreen-exit" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M10.75 2a.75.75 0 0 1 .75.75V6.5h3.75a.75.75 0 0 1 .743.648L16 7.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1-.75-.75"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM7.25 10a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V11.5H2.75a.75.75 0 0 1-.743-.648L2 10.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg></media-fullscreen-button><media-tooltip id="motion-fullscreen-tooltip" side="top" class="media-tooltip"></media-tooltip></div>',
         '</media-tooltip-group>',
         '</media-controls>',
         '<div class="media-overlay"></div>',
         '</media-container>',
         '</video-player>',
-        '<button type="button" class="motion-start-button" aria-label="Play video"><span class="motion-start-button__icon"></span></button>',
+        '<button type="button" class="motion-start-button" aria-label="Play video" onclick="startUnifiedMotionPlayer(\'motion-player-instance\')"><svg class="motion-start-button__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>',
         '</div>'
       ].join('');
     }
@@ -1430,18 +1430,18 @@
             if (loadFired || gen !== navGen) return;
             loadFired = true;
             img.onload = null; img.onerror = null;
-            
+
             var bSrc = isMotion ? p.thumbnailUrl : p.src;
             setLightboxBlur(bSrc);
             setLightboxContent(p);
-            
+
             if (!isMotion) loadSwipeNeighbors();
-            
+
             requestAnimationFrame(function () {
               if (gen !== navGen) return;
               animateInfo(dir);
               void img.offsetWidth; // force reflow
-              
+
               if (isMotion) {
                 renderVideoInLightbox(p);
                 playerShell.style.transition = 'opacity 0.35s ease';
@@ -1518,17 +1518,17 @@
           if (openLoadFired || openGen !== navGen) return;
           openLoadFired = true;
           img.onload = null; img.onerror = null;
-          
+
           var bSrc = isMotion ? p.thumbnailUrl : p.src;
           setLightboxBlur(bSrc);
           setLightboxContent(p);
           if (!isMotion) loadSwipeNeighbors();
-          
+
           requestAnimationFrame(function () {
             if (openGen !== navGen) return;
             animateInfo(0);
             void img.offsetWidth; // force reflow — Firefox transition fix
-            
+
             if (isMotion) {
               renderVideoInLightbox(p);
               playerShell.style.transition = 'opacity 0.45s ease';
@@ -1559,32 +1559,25 @@
 
     function renderVideoInLightbox(p) {
       var shell = document.getElementById('motion-player-shell');
-      shell.innerHTML = [
-        '<div class="motion-player-prime" id="player-' + p.id + '">',
-        '  <video class="video-js media-minimal-skin--video" playsinline preload="auto" poster="' + (p.thumbnailUrl || '') + '">',
-        '    <source src="' + p.videoUrl + '" type="video/mp4">',
-        '  </video>',
-        '  <div class="motion-start-button" onclick="startUnifiedMotionPlayer(\'player-' + p.id + '\')">',
-        '    <svg class="motion-start-button__icon" viewBox="0 0 24 24" fill="currentColor">',
-        '       <path d="M8 5v14l11-7z"/>',
-        '    </svg>',
-        '  </div>',
-        '</div>'
-      ].join('');
+      var ratio = p.aspectRatio || (16 / 9);
+      shell.style.aspectRatio = ratio;
+      shell.style.width = 'min(100%, calc((100svh - 15rem) * ' + ratio + '))';
+      shell.innerHTML = getVideoPlayerMarkup(p);
+      shell.style.opacity = '1';
     }
 
     function startUnifiedMotionPlayer(id) {
       var prime = document.getElementById(id);
+      if (!prime) return;
       var video = prime.querySelector('video');
       prime.classList.add('is-started');
-      video.play().catch(function () { });
+      if (video) video.play().catch(function () { });
     }
 
     function closeLightbox() {
       var lb = document.getElementById('lightbox');
       if (!lb.classList.contains('open')) return;
       var img = document.getElementById('lightbox-img');
-      
       var activeGen = ++navGen; // invalidates all pending callbacks
       lb.classList.remove('open');
       document.body.style.overflow = '';
@@ -2494,10 +2487,10 @@
         var photoBtn = document.querySelector('.photographs-btn');
         var portraitBtn = document.querySelector('.portraits-btn');
         var motionBtn = document.querySelector('.motion-btn');
-        [photoBtn, portraitBtn, motionBtn].forEach(function(b){ if(b) { b.classList.remove('active'); b.classList.add('inactive'); } });
-        if(newCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
-        if(newCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
-        if(newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
+        [photoBtn, portraitBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
+        if (newCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
+        if (newCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
+        if (newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
         // 4. Cleanup
         setTimeout(function () {
@@ -2637,8 +2630,17 @@
         card.type = 'button';
         card.className = 'motion-card';
         card.setAttribute('aria-label', 'Open video ' + item.title);
+
+        var thumbMarkup;
+        if (item.thumbnailUrl) {
+          var ratio = item.aspectRatio || (16 / 9);
+          thumbMarkup = '<img src="' + item.thumbnailUrl + '" alt="' + escapeHtml(item.title) + '" loading="lazy" style="aspect-ratio:' + ratio + ';width:100%;display:block;">';
+        } else {
+          thumbMarkup = '<div class="motion-card-fallback" style="aspect-ratio:' + (item.aspectRatio || (16 / 9)) + ';" aria-hidden="true"></div>';
+        }
+
         card.innerHTML = [
-          getMotionThumbnailMarkup(item),
+          thumbMarkup,
           '<div class="motion-card-overlay"><div class="motion-card-title">' + escapeHtml(item.title) + '</div></div>'
         ].join('');
         card.addEventListener('click', function () {
@@ -2856,7 +2858,7 @@
       filmstripBuilt = true;
 
       var currentSet = currentLightboxIsMotion ? motionProjects : activePhotos;
-      
+
       // Photos: 52px thumb + gap, Motion: 78px thumb
       var THUMB_W = currentLightboxIsMotion ? (window.innerWidth >= 640 ? 78 : 68) : (window.innerWidth >= 640 ? 62 : 52);
       var pad = (window.innerWidth / 2) - (THUMB_W / 2);
