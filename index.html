@@ -2797,38 +2797,91 @@
       var mx = 0, my = 0, rx = 0, ry = 0;
       var cursorVisible = false;
 
-      document.addEventListener('mousemove', function (e) {
+      var lastPointerTime = 0;
+      // Use CAPTURE to get events before the scrollbar chrome can swallow them
+      window.addEventListener('pointermove', function (e) {
         mx = e.clientX; my = e.clientY;
-        cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+        lastPointerTime = Date.now();
         if (!cursorVisible) {
           cursorVisible = true;
           cursor.style.opacity = '1'; ring.style.opacity = '1';
         }
+      }, true);
+
+      // Sync cursor during scroll (prevents lag when dragging scrollbar)
+      window.addEventListener('scroll', function () {
+        if (!cursorVisible) return;
+        var now = Date.now();
+        // If we're scrolling but haven't had a pointer move recently, assume scrollbar drag
+        if (now - lastPointerTime > 60) {
+          var docH = document.documentElement.scrollHeight;
+          var winH = window.innerHeight;
+          var curS = window.scrollY || document.documentElement.scrollTop;
+          var maxS = docH - winH;
+          if (maxS <= 0) return;
+
+          var scrollPct = curS / maxS;
+          // Calculate approximate physical thumb position
+          var thumbH = Math.max(20, winH * (winH / docH));
+          mx = window.innerWidth - 8;
+          my = (scrollPct * (winH - thumbH)) + (thumbH / 2);
+        }
+      }, { passive: true });
+
+      var dx = 0, dy = 0;
+      (function animateCursor() {
+        // High-speed interpolation for the dot (prevents jumps after scrollbar release)
+        dx += (mx - dx) * 0.55;
+        dy += (my - dy) * 0.55;
+        cursor.style.left = dx + 'px';
+        cursor.style.top = dy + 'px';
+        
+        // Liquid interpolation for the ring
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.left = rx + 'px';
+        ring.style.top = ry + 'px';
+        requestAnimationFrame(animateCursor);
+      })();
+
+      // Respond to hold (mousedown)
+      window.addEventListener('mousedown', function () {
+        cursor.style.transform = 'translate(-50%,-50%) scale(0.65)';
+        ring.style.transform = 'translate(-50%,-50%) scale(0.9)';
       });
-      (function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
-      document.addEventListener('click', function () { cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; setTimeout(function () { cursor.style.transform = 'translate(-50%,-50%) scale(1)'; }, 150); });
-      // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
+      window.addEventListener('mouseup', function () {
+        cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+        ring.style.transform = 'translate(-50%,-50%) scale(1)';
+      });
+
+      // Fade out when cursor leaves the viewport
       function hideCursor() { cursor.style.opacity = '0'; ring.style.opacity = '0'; cursorVisible = false; }
       function showCursor() { if (cursorVisible) return; cursorVisible = true; cursor.style.opacity = '1'; ring.style.opacity = '1'; }
+      
       document.addEventListener('mouseleave', hideCursor);
-      document.documentElement.addEventListener('mouseleave', hideCursor);
+      window.addEventListener('blur', hideCursor); // Hide when switching tabs
       document.addEventListener('mouseenter', showCursor);
-      document.documentElement.addEventListener('mouseenter', showCursor);
-      document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
-      // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
-      var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img';
+
+      document.addEventListener('contextmenu', function () {
+        hideCursor();
+        cursor.style.transform = 'translate(-50%,-50%) scale(0.6)';
+      });
+
+      // Delegated hover for cursor ring
+      var interactiveSelector = 'button, .child-link, .photo-card, #scroll-hint, .carousel-row img, a, [role="button"]';
       document.addEventListener('mouseover', function (e) {
-        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+        var target = e.target.closest(interactiveSelector);
+        if (target) {
           ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';
         }
       });
       document.addEventListener('mouseout', function (e) {
-        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+        var target = e.target.closest(interactiveSelector);
+        if (target) {
           ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
         }
       });
 
-      // reset ring when lightbox opens — hover context is lost when carousel img is covered
       window.addEventListener('lightbox-open', function () {
         ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
       });
@@ -3145,6 +3198,24 @@
         }
       }
     }
+    // Fullscreen Custom Cursor Support
+    document.addEventListener('fullscreenchange', function () {
+      var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      var cursor = document.getElementById('cursor');
+      var ring = document.getElementById('cursor-ring');
+      if (!cursor || !ring) return;
+
+      if (fsEl) {
+        // Move cursor elements into the fullscreen container so they remain visible
+        fsEl.appendChild(cursor);
+        fsEl.appendChild(ring);
+      } else {
+        // Move back to body when exiting
+        document.body.appendChild(cursor);
+        document.body.appendChild(ring);
+      }
+    });
+
     // Defer slightly to ensure layout is ready
     setTimeout(checkHash, 300);
   </script>

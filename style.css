@@ -20,8 +20,6 @@
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 body {
@@ -29,8 +27,6 @@ body {
   color: var(--text);
   font-family: 'Cormorant Garamond', serif;
   overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 /* grain texture overlay */
@@ -45,14 +41,45 @@ body::after {
   background-size: 256px 256px;
 }
 
-* {
+/* Premium Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(221, 216, 207, 0.12);
+  border-radius: 10px;
+  cursor: none !important;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  cursor: none !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(221, 216, 207, 0.25);
+}
+
+/* Maintain suppression for specific UI components only */
+.carousel-row,
+#filmstrip,
+#motion-filmstrip,
+#lightbox-img-wrap {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+.carousel-row::-webkit-scrollbar,
+#filmstrip::-webkit-scrollbar,
+#motion-filmstrip::-webkit-scrollbar,
+#lightbox-img-wrap::-webkit-scrollbar {
   display: none;
 }
 
