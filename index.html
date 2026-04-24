@@ -1122,12 +1122,16 @@
     var activePhotos = [];
     var carouselPhotos = [];
 
-    function updateActivePhotos() {
-      activePhotos = photos.filter(function (p) {
+    function getPhotoLibrary(category) {
+      return photos.filter(function (p) {
         if (!p.title) return false;
-        if (currentCategory === 'all') return true;
-        return p.category === currentCategory;
+        if (category === 'portrait') return p.category === 'portrait';
+        return p.category !== 'portrait';
       });
+    }
+
+    function updateActivePhotos() {
+      activePhotos = getPhotoLibrary(currentCategory);
     }
 
     updateActivePhotos();
@@ -1197,9 +1201,14 @@
 
     // updates text + blur bg only — image src is set separately to avoid double-load
     function setLightboxContent(p) {
-      document.getElementById('lightbox-title').textContent = p.title;
+      if (!p) return;
+
+      var safeTitle = p.title || '';
+      var safeDesc = p.desc || '';
+
+      document.getElementById('lightbox-title').textContent = safeTitle;
       var descEl = document.getElementById('lightbox-desc');
-      descEl.innerHTML = p.desc;
+      descEl.innerHTML = safeDesc;
       var locItem = document.getElementById('meta-location');
       if (p.location) {
         document.getElementById('meta-location-text').textContent = p.location;
@@ -1217,8 +1226,8 @@
       }
 
       // Deep Link: Automatically update the URL hash dynamically for routing tracking
-      var slug = slugify(p.title);
-      if (window.location.hash !== '#' + slug) {
+      var slug = slugify(safeTitle);
+      if (slug && window.location.hash !== '#' + slug) {
         history.replaceState(null, null, '#' + slug);
       }
 
@@ -1227,7 +1236,7 @@
 
       // conditionally hide the "read" toggle when photo has no description
       if (btn) {
-        var hasDesc = p.desc && p.desc.replace(/<[^>]*>/g, '').trim().length > 0;
+        var hasDesc = safeDesc.replace(/<[^>]*>/g, '').trim().length > 0;
         btn.classList.toggle('no-desc', !hasDesc);
       }
 
@@ -1348,20 +1357,15 @@
     var navGen = 0;
 
     var currentLightboxIsMotion = false;
+    function getCurrentLightboxItems() {
+      return currentLightboxIsMotion ? motionProjects : activePhotos;
+    }
+
     function openLightbox(i, direction, isMotion) {
       cur = i;
       isManuallyNavigating = true;
       currentLightboxIsMotion = !!isMotion;
-      var p = isMotion ? motionProjects[i] : activePhotos[i];
-
-      if (!p && typeof i === 'number') {
-        // Find by object if we can, or just switch context if it's likely a carousel click
-        // For now, if i is out of bounds, it's almost certainly a carousel click from a filtered view.
-        currentCategory = 'all';
-        updateActivePhotos();
-        window.dispatchEvent(new Event('category-change'));
-        p = activePhotos[i];
-      }
+      var p = getCurrentLightboxItems()[i];
 
       if (!p) return;
       var lb = document.getElementById('lightbox');
@@ -1579,6 +1583,7 @@
     function closeLightbox() {
       var lb = document.getElementById('lightbox');
       if (!lb.classList.contains('open')) return;
+      var img = document.getElementById('lightbox-img');
       
       var activeGen = ++navGen; // invalidates all pending callbacks
       lb.classList.remove('open');
@@ -1600,13 +1605,16 @@
       // Delay DOM teardown until the opacity fade finishes
       setTimeout(function () {
         if (activeGen !== navGen) return; // Abort if user reopened lightbox quickly
-        img.onerror = null;
-        img.src = '';
-        img.classList.remove('zoomed');
-        img.style.transition = '';
-        img.style.transform = '';
-        img.style.transformOrigin = '';
-        img.style.opacity = '';
+        if (img) {
+          img.onload = null;
+          img.onerror = null;
+          img.src = '';
+          img.classList.remove('zoomed');
+          img.style.transition = '';
+          img.style.transform = '';
+          img.style.transformOrigin = '';
+          img.style.opacity = '';
+        }
 
         var info = document.getElementById('lightbox-info');
         if (info) {
@@ -1676,7 +1684,7 @@
 
     function navigateLightbox(d) {
       if (typeof lbZoomLevel !== 'undefined' && lbZoomLevel > 1) resetZoom();
-      var currentSet = currentLightboxIsMotion ? motionProjects : activePhotos;
+      var currentSet = getCurrentLightboxItems();
       cur = (cur + d + currentSet.length) % currentSet.length;
       openLightbox(cur, d, currentLightboxIsMotion);
     }
@@ -1909,9 +1917,17 @@
       (function () {
         var slidesBuilt = false;
         var snapTimer = null;
+        function clearSlides() {
+          var slides = imgWrap.querySelectorAll('.snap-slide');
+          slides.forEach(function (slide) { slide.remove(); });
+          slidesBuilt = false;
+          imgWrap.scrollLeft = 0;
+        }
 
         // ── Build slides ──
         function buildSlides() {
+          clearSlides();
+          if (currentLightboxIsMotion) return;
           if (slidesBuilt) return;
           slidesBuilt = true;
           // Remove old #lightbox-img from flow (CSS hides it, but clear src too)
@@ -1934,6 +1950,7 @@
         }
 
         function scrollToSlide(idx, smooth, dir) {
+          if (currentLightboxIsMotion) return;
           var w = imgWrap.offsetWidth;
           if (!w) return;
           if (smooth) {
@@ -2008,10 +2025,12 @@
         var wrapTouchX = 0;
         var isUserTouching = false;
         imgWrap.addEventListener('touchstart', function (e) {
+          if (currentLightboxIsMotion) return;
           isUserTouching = true;
           if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
         }, { passive: true });
         imgWrap.addEventListener('touchend', function (e) {
+          if (currentLightboxIsMotion) return;
           isUserTouching = false;
           if (Math.abs(lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
           var dx = e.changedTouches[0].clientX - wrapTouchX;
@@ -2030,6 +2049,7 @@
 
         // ── Eager-load nearby slides ──
         function updateLoading() {
+          if (currentLightboxIsMotion) return;
           var imgs = imgWrap.querySelectorAll('.snap-slide img');
           for (var i = 0; i < imgs.length; i++) {
             imgs[i].loading = (Math.abs(i - cur) <= 2) ? 'eager' : 'lazy';
@@ -2038,6 +2058,7 @@
 
         // ── Scroll settle — detect new active slide ──
         function onSnapSettle(targetIdx) {
+          if (currentLightboxIsMotion) return;
           if (isUserTouching && typeof targetIdx === 'undefined') return;
           isManuallyNavigating = false; // Reset navigation flag on settle
           var w = imgWrap.offsetWidth;
@@ -2080,11 +2101,13 @@
 
         // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
         imgWrap.addEventListener('scrollend', function () {
+          if (currentLightboxIsMotion) return;
           if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
           clearTimeout(snapTimer);
           onSnapSettle();
         });
         imgWrap.addEventListener('scroll', function () {
+          if (currentLightboxIsMotion) return;
           clearTimeout(snapTimer);
           snapTimer = setTimeout(onSnapSettle, 150);
           var w = imgWrap.offsetWidth;
@@ -2149,6 +2172,17 @@
 
         // ── Setup on lightbox open ──
         window.addEventListener('lightbox-open', function () {
+          if (currentLightboxIsMotion) {
+            clearSlides();
+            requestAnimationFrame(function () {
+              var motionItem = motionProjects[cur];
+              if (motionItem) {
+                setLightboxContent(motionItem);
+                animateInfo(0);
+              }
+            });
+            return;
+          }
           buildSlides();
           requestAnimationFrame(function () {
             scrollToSlide(cur, false);
@@ -2369,6 +2403,19 @@
           dLocked = false;
           dChecked = false;
         }, { passive: true });
+
+        lbEl.addEventListener('touchend', function (e) {
+          if (!lbEl.classList.contains('open') || !currentLightboxIsMotion) return;
+          if (isPinching || dLocked || e.changedTouches.length !== 1 || lbZoomLevel > 1) return;
+          if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, button')) return;
+
+          var dx = e.changedTouches[0].clientX - dStartX;
+          var dy = e.changedTouches[0].clientY - dStartY;
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+            swipeHappened = true;
+            navigateLightbox(dx < 0 ? 1 : -1);
+          }
+        }, { passive: true });
       })();
     }
 
@@ -2438,6 +2485,10 @@
         } else {
           buildMasonry();
         }
+
+        requestAnimationFrame(function () {
+          m.style.minHeight = Math.max(currentHeight, m.offsetHeight) + 'px';
+        });
 
         // 3. Update Nav UI
         var photoBtn = document.querySelector('.photographs-btn');
@@ -2573,12 +2624,13 @@
       var lastYear = null;
 
       motionProjects.forEach(function (item, idx) {
-        if (item.year !== lastYear) {
+        var motionYear = item.date ? (item.date.match(/\d{4}/) || ['undated'])[0] : 'undated';
+        if (motionYear !== lastYear) {
           var header = document.createElement('div');
           header.className = 'date-header motion-year-header';
-          header.textContent = item.year || 'undated';
+          header.textContent = motionYear;
           m.appendChild(header);
-          lastYear = item.year;
+          lastYear = motionYear;
         }
 
         var card = document.createElement('button');
