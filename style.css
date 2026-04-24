@@ -642,32 +642,35 @@ body::after {
   background: #000;
 }
 
-/* Seek Icon Labels & Mirroring Restoration */
-.media-icon--backward {
-  transform: scaleX(-1);
+/* Seek Icon & Label Restoration — Library Style */
+.media-icon--flipped {
+  scale: -1 1;
 }
 
 .media-icon__container {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   position: relative;
-  width: 18px;
-  height: 18px;
 }
 
 .media-icon__label {
   position: absolute;
-  font-size: 10px; /* Larger as requested */
-  font-weight: 700;
+  right: -1px;
+  bottom: -3.5px;
+  font-size: 10px;
+  font-weight: 480;
   color: var(--text);
   line-height: 1;
-  top: 56%; /* Pushed down to avoid sticking to the top arc */
-  left: 50%;
-  transform: translate(-50%, -50%);
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   z-index: 2;
   pointer-events: none;
+}
+
+/* For flipped icon, move label to the left */
+.media-button--seek:has(.media-icon--flipped) .media-icon__label {
+  right: unset;
+  left: -2px;
 }
 
 #motion-player-shell .media-minimal-skin,
