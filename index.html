@@ -1123,6 +1123,7 @@
     var carouselPhotos = [];
 
     function getPhotoLibrary(category) {
+      if (category === 'motion') return [];
       return photos.filter(function (p) {
         if (!p.title) return false;
         if (category === 'portrait') return p.category === 'portrait';
@@ -1469,17 +1470,21 @@
           });
         }
 
-        // probe starts the network request — doEnter fires after min 150ms exit time
-        var probe = new Image();
-        var probeReady = false;
-        var minWaitDone = false;
-        function maybeEnter() { if (probeReady && minWaitDone) doEnter(); }
-        probe.onload = probe.onerror = function () { probeReady = true; maybeEnter(); };
-        probe.src = p.src;
-        // decode() fires after pixel decode — reliable Firefox alternative to img.complete
-        if (probe.decode) probe.decode().then(function () { probeReady = true; maybeEnter(); }).catch(function () { });
-        setTimeout(function () { minWaitDone = true; maybeEnter(); }, 150);
-        setTimeout(doEnter, 600); // hard fallback
+        if (isMotion) {
+          doEnter();
+        } else {
+          // probe starts the network request — doEnter fires after min 150ms exit time
+          var probe = new Image();
+          var probeReady = false;
+          var minWaitDone = false;
+          function maybeEnter() { if (probeReady && minWaitDone) doEnter(); }
+          probe.onload = probe.onerror = function () { probeReady = true; maybeEnter(); };
+          probe.src = p.src;
+          // decode() fires after pixel decode — reliable Firefox alternative to img.complete
+          if (probe.decode) probe.decode().then(function () { probeReady = true; maybeEnter(); }).catch(function () { });
+          setTimeout(function () { minWaitDone = true; maybeEnter(); }, 150);
+          setTimeout(doEnter, 600); // hard fallback
+        }
 
       } else {
         // INITIAL OPEN
@@ -1559,11 +1564,13 @@
 
     function renderVideoInLightbox(p) {
       var shell = document.getElementById('motion-player-shell');
+      if (!shell) return;
       var ratio = p.aspectRatio || (16 / 9);
       shell.style.aspectRatio = ratio;
       shell.style.width = 'min(100%, calc((100svh - 15rem) * ' + ratio + '))';
       shell.innerHTML = getVideoPlayerMarkup(p);
       shell.style.opacity = '1';
+      shell.style.display = 'block'; // Ensure it's not hidden
     }
 
     function startUnifiedMotionPlayer(id) {
@@ -3138,10 +3145,18 @@
     function checkHash() {
       var hash = window.location.hash.substring(1);
       if (!hash) return;
+      // Check photos
       for (var i = 0; i < activePhotos.length; i++) {
         if (slugify(activePhotos[i].title) === hash) {
           openLightbox(i);
-          break;
+          return;
+        }
+      }
+      // Check motion
+      for (var j = 0; j < motionProjects.length; j++) {
+        if (slugify(motionProjects[j].title) === hash) {
+          openLightbox(j, 0, true);
+          return;
         }
       }
     }
