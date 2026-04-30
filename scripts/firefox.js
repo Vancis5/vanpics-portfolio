@@ -1,94 +1,118 @@
 (function () {
-  console.log("🚀 Applying Firefox Super-Switch + Hero Pause + Thumb Hand-off...");
-
-  // 1. CSS: Kill all blurs and hide the background layers entirely
+  // 1. CSS Injection — hide native scrollbar + native cursor in Firefox
   const style = document.createElement('style');
   style.innerHTML = `
-        .lightbox-bg-blur, .lightbox-bg-blur-inner, #lightbox-bg { display: none !important; }
-        #lightbox { background: #000 !important; }
-        #lightbox-desc { filter: none !important; }
-        @keyframes lbInfoIn { 
-            from { opacity: 0; transform: translateX(var(--lb-from-x)) translateY(var(--lb-from-y)); } 
-            to { opacity: 1; transform: translateX(0) translateY(0); } 
-        }
-        @keyframes lbInfoOut { from { opacity: 1; } to { opacity: 0; } }
-    `;
+    html { scrollbar-width: none !important; }
+    html, html *, html *::before, html *::after { cursor: none !important; }
+    .lightbox-bg-blur, .lightbox-bg-blur-inner, #lightbox-bg { display: none !important; }
+    #lightbox { background: #000 !important; }
+    #lightbox-desc { filter: none !important; }
+  `;
   document.head.appendChild(style);
 
-  // 2. JS: Disable the blur logic (no-op)
-  window.setLightboxBlur = () => { };
-
-  // 3. JS: Delay Preloading (wait until after the 1200ms mark)
-  const originalPreload = window.loadSwipeNeighbors;
-  window.loadSwipeNeighbors = () => {
-    setTimeout(originalPreload, 1200);
-  };
-
-  // 4. JS: Loop Management & Hero Pause
-  window.isLightboxOpen = false;
-  const originalStartLoops = window.startLoops;
-  window.startLoops = () => {
-    if (!window.isLightboxOpen) originalStartLoops?.();
-  };
-
+  // 2. JS Overrides
+  window.setLightboxBlur = () => {};
   const originalOpen = window.openLightbox;
-  window.openLightbox = (idx, direction) => {
-    window.isLightboxOpen = true;
-    if (window.heroRafId) { cancelAnimationFrame(window.heroRafId); window.heroRafId = null; }
-    if (window.glowRafId) { cancelAnimationFrame(window.glowRafId); window.glowRafId = null; }
-
+  window.openLightbox = (idx, dir) => {
+    originalOpen(idx, dir);
     const p = activePhotos[idx];
     if (!p) return;
     const img = document.getElementById('lightbox-img');
-    const thumbPath = p.src.replace('photos/', 'photos/thumbs/');
-
-    // The Hijack: Load thumb first for animation speed
-    // We pass a modified photo object to the original openLightbox or just let it run
-    // Actually, since originalOpen sets img.src, we'll let it finish then instantly overwrite it.
-    originalOpen(idx, direction);
-
-    // Force the thumbnail for the animation period
-    img.src = thumbPath;
-
-    // After the animation ends (400ms is your img transition), swap to high-res
-    setTimeout(() => {
-      if (window.isLightboxOpen && cur === idx) {
-        img.src = p.src;
-      }
-    }, 500);
+    img.src = p.src.replace('photos/', 'photos/thumbs/');
+    setTimeout(() => { if (cur === idx) img.src = p.src; }, 500);
   };
 
-  const originalClose = window.closeLightbox;
-  window.closeLightbox = () => {
-    window.isLightboxOpen = false;
-    originalClose();
-    window.startLoops();
+  // 3. CUSTOM DRAGGABLE SCROLLBAR (Optimised — no layout thrash)
+  const vanTrack = document.createElement('div');
+  const vanThumb = document.createElement('div');
+
+  Object.assign(vanTrack.style, {
+    position: 'fixed', right: '0', top: '0', bottom: '0', width: '40px',
+    zIndex: '2147483647', pointerEvents: 'auto', background: 'transparent', cursor: 'none'
+  });
+  Object.assign(vanThumb.style, {
+    position: 'absolute', right: '2px', width: '5px',
+    backgroundColor: 'rgba(221, 216, 207, 0.18)', borderRadius: '10px',
+    pointerEvents: 'none', transition: 'background 0.2s, width 0.1s'
+  });
+
+  document.documentElement.appendChild(vanTrack);
+  vanTrack.appendChild(vanThumb);
+
+  // Cache dimensions — only update on resize, not every frame
+  let winH = window.innerHeight;
+  let docH = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+  let thumbH = Math.max(40, winH * (winH / docH));
+
+  const refreshCache = () => {
+    winH = window.innerHeight;
+    docH = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    thumbH = Math.max(40, winH * (winH / docH));
   };
 
-  // 5. JS: Override animateInfo to delay the 'Ghost Removal' jank
-  window.animateInfo = (dir) => {
-    var info = document.getElementById('lightbox-info');
-    var hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
-    if (hasContent) {
-      var ghost = info.cloneNode(true);
-      ghost.style.position = 'absolute';
-      ghost.style.top = info.offsetTop + 'px';
-      ghost.style.left = info.offsetLeft + 'px';
-      ghost.style.width = info.offsetWidth + 'px';
-      ghost.style.pointerEvents = 'none';
-      ghost.style.animation = 'lbInfoOut 0.22s ease forwards';
-      ghost.style.zIndex = '1';
-      info.parentNode.appendChild(ghost);
-      setTimeout(() => { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 1500);
-    }
-    var fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
-    var fromY = dir === 0 ? 16 : 0;
-    var clone = info.cloneNode(true);
-    clone.style.setProperty('--lb-from-x', fromX + 'px');
-    clone.style.setProperty('--lb-from-y', fromY + 'px');
-    clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
-    info.parentNode.replaceChild(clone, info);
+  let isDrag = false, sY, sS;
+  let rafPending = false;
+
+  const syncUI = () => {
+    rafPending = false;
+    if (isDrag) return;
+    const st = window.pageYOffset || document.documentElement.scrollTop || 0;
+    if (docH <= winH + 10) { vanTrack.style.display = 'none'; return; }
+    vanTrack.style.display = 'block';
+    const availableTrack = winH - thumbH;
+    const scrollPct = Math.min(1, Math.max(0, st / (docH - winH)));
+    vanThumb.style.height = thumbH + 'px';
+    vanThumb.style.transform = `translateY(${scrollPct * availableTrack}px)`;
   };
 
-  console.log("✅ Firefox Thumb-Handoff active. 100% smooth target.");
+  // Only sync on actual scroll, not on a timer
+  window.addEventListener('scroll', () => {
+    if (!rafPending) { rafPending = true; requestAnimationFrame(syncUI); }
+  }, { passive: true });
+
+  window.addEventListener('resize', () => { refreshCache(); syncUI(); });
+  window.addEventListener('category-change', () => { setTimeout(() => { refreshCache(); syncUI(); }, 600); });
+
+  // Drag interaction
+  vanTrack.addEventListener('mousedown', (e) => {
+    isDrag = true;
+    sY = e.clientY;
+    sS = window.pageYOffset || document.documentElement.scrollTop || 0;
+    document.documentElement.style.setProperty('scroll-behavior', 'auto', 'important');
+    vanThumb.style.backgroundColor = 'rgba(221, 216, 207, 0.6)';
+    vanThumb.style.width = '7px';
+    document.body.style.userSelect = 'none';
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDrag) return;
+    const availableScroll = docH - winH;
+    const availableTrack = winH - thumbH;
+    const target = sS + (e.clientY - sY) * (availableScroll / availableTrack);
+    document.documentElement.scrollTop = target;
+    document.body.scrollTop = target;
+
+    // Sync thumb visually during drag without calling syncUI (avoids read)
+    const movePct = Math.min(1, Math.max(0, document.documentElement.scrollTop / availableScroll));
+    vanThumb.style.transform = `translateY(${movePct * availableTrack}px)`;
+  }, true);
+
+  window.addEventListener('mouseup', () => {
+    if (!isDrag) return;
+    isDrag = false;
+    document.documentElement.style.removeProperty('scroll-behavior');
+    vanThumb.style.backgroundColor = 'rgba(221, 216, 207, 0.18)';
+    vanThumb.style.width = '5px';
+    document.body.style.userSelect = '';
+  }, true);
+
+  vanTrack.onmouseenter = () => { vanThumb.style.backgroundColor = 'rgba(221, 216, 207, 0.25)'; };
+  vanTrack.onmouseleave = () => { if (!isDrag) vanThumb.style.backgroundColor = 'rgba(221, 216, 207, 0.18)'; };
+
+  // Initial render
+  refreshCache();
+  syncUI();
+
+  console.log('✅ Firefox: native cursor hidden, optimised scrollbar active.');
 })();

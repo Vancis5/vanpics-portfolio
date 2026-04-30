@@ -85,9 +85,8 @@ body::after {
 
 @media (hover: hover) and (pointer: fine) {
 
-  html,
-  body,
-  body *:not(.zoomable) {
+  /* Nuclear cursor suppression — covers html, body, and every descendant */
+  html, html *, html *::before, html *::after {
     cursor: none !important;
   }
 
@@ -117,12 +116,15 @@ body::after {
     opacity: 0;
   }
 
-  body .zoomable:hover {
+  /* .zoomable cursor rules scoped inside media query so they can't leak out */
+  .zoomable {
     cursor: zoom-in !important;
   }
 
-  body .zoomable.zoomed:hover {
+  .zoomable.zoomed {
     cursor: zoom-out !important;
+    z-index: 50;
+    position: relative;
   }
 
   /* hide custom cursor when the OS zoom cursor is active */
@@ -130,16 +132,6 @@ body::after {
   body:has(.zoomable:hover) #cursor-ring {
     opacity: 0 !important;
   }
-}
-
-.zoomable {
-  cursor: zoom-in !important;
-}
-
-.zoomable.zoomed {
-  cursor: zoom-out !important;
-  z-index: 50;
-  position: relative;
 }
 
 /* HERO */
@@ -553,6 +545,8 @@ body::after {
 
 .motion-year-header {
   grid-column: 1 / -1;
+  margin-bottom: 0.5rem;
+  /* 0.5rem margin + 1rem grid-gap = 1.5rem total, matching photographs */
 }
 
 .motion-card {
