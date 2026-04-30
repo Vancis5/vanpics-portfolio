@@ -1248,7 +1248,7 @@ body::after {
   opacity: 0.55;
 }
 
-#motion-filmstrip .filmstrip-thumb.active {
+#lightbox.mode-motion #filmstrip .filmstrip-thumb.active {
   opacity: 1;
   transform: scale(1.04);
 }
