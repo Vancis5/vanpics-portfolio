@@ -5,7 +5,7 @@
 //  thumbnailUrl -> gallery / filmstrip thumb
 // -------------------------------------------------------------
 
-const videos = [
+var videos = [
   {
     id: "motion-001",
     title: "after hours",
