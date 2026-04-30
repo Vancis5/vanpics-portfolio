@@ -1056,7 +1056,7 @@
   <script src="videos.js"></script>
   <script>
     // ── MOTION: swap this to change which video plays ──
-    var motionProjects = Array.isArray(videos) ? videos.filter(function (v) {
+    var motionProjects = (typeof videos !== 'undefined' && Array.isArray(videos)) ? videos.filter(function (v) {
       return !!v.title;
     }) : [];
     var currentMotionIndex = 0;
@@ -1207,12 +1207,15 @@
 
     var blurFlip = false;
     function setLightboxBlur(src) {
-      var a = document.getElementById('blur-layer-a');
-      var b = document.getElementById('blur-layer-b');
-      var active = blurFlip ? b : a;
-      var inactive = blurFlip ? a : b;
+      if (!src) return;
+      var active = document.getElementById('blur-layer-a').classList.contains('active') ? document.getElementById('blur-layer-b') : document.getElementById('blur-layer-a');
+      var inactive = active.id === 'blur-layer-a' ? document.getElementById('blur-layer-b') : document.getElementById('blur-layer-a');
 
-      active.querySelector('.lightbox-bg-blur-inner').style.backgroundImage = 'url(' + src.replace('photos/', 'photos/blur/') + ')';
+      // Resolve blur path: strip 'thumbs/' if present so it points to the correct blur asset
+      var blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+      var inner = active.querySelector('.lightbox-bg-blur-inner');
+      if (inner) inner.style.backgroundImage = 'url(' + blurPath + ')';
+
       active.classList.add('active');
       inactive.classList.remove('active');
 
@@ -1522,8 +1525,10 @@
 
         // info panel fully hidden — no stale text visible
         var infoEl2 = document.getElementById('lightbox-info');
-        infoEl2.style.animation = 'none';
-        infoEl2.style.opacity = '0';
+        if (infoEl2) {
+          infoEl2.style.animation = 'none';
+          infoEl2.style.opacity = '0';
+        }
 
         lb.classList.add('open');
         lb.scrollTop = 0;
@@ -3177,6 +3182,8 @@
 
     buildCarousel();
     if (currentCategory === 'motion') {
+      var m = document.getElementById('masonry');
+      if (m) m.classList.add('motion-grid-active');
       buildMotionGrid();
     } else {
       buildMasonry();
