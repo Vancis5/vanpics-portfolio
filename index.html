@@ -2723,12 +2723,20 @@
             } else {
               img.loading = 'lazy';
             }
-            var idx = activePhotos.indexOf(p);
-            img.addEventListener('click', (function (capturedIdx) {
-              return function () {
-                openLightbox(capturedIdx >= 0 ? capturedIdx : 0);
-              };
-            })(idx));
+            img.addEventListener('click', function () {
+              var targetCat = (p.category === 'portrait') ? 'portrait' : 'all';
+              if (currentCategory === targetCat) {
+                var idx = activePhotos.indexOf(p);
+                if (idx >= 0) openLightbox(idx);
+              } else {
+                rebuildGallery(targetCat);
+                // Wait for the async rebuildGallery to update activePhotos
+                setTimeout(function () {
+                  var idx = activePhotos.indexOf(p);
+                  if (idx >= 0) openLightbox(idx);
+                }, 100);
+              }
+            });
             row.appendChild(img);
           });
         }
