@@ -1119,8 +1119,27 @@
         .replace(/--+/g, '-');    // Replace multiple - with single -
     }
     var currentCategory = 'all';
+    // Initial Route Detection: Determine category before building UI to prevent transition flicker
+    if (window.location.hash) {
+      var initialHash = window.location.hash.substring(1).split('/')[0];
+      if (initialHash === 'portraits') currentCategory = 'portrait';
+      if (initialHash === 'motion') currentCategory = 'motion';
+    }
+    
     var activePhotos = [];
     var carouselPhotos = [];
+
+    function getCategorySlug(cat) {
+      if (cat === 'all') return 'photographs';
+      if (cat === 'portrait') return 'portraits';
+      return 'motion';
+    }
+
+    function getInternalCategory(slug) {
+      if (slug === 'portraits') return 'portrait';
+      if (slug === 'motion') return 'motion';
+      return 'all';
+    }
 
     function getPhotoLibrary(category) {
       if (category === 'motion') return [];
@@ -1227,9 +1246,11 @@
       }
 
       // Deep Link: Automatically update the URL hash dynamically for routing tracking
+      var catSlug = getCategorySlug(currentCategory);
       var slug = slugify(safeTitle);
-      if (slug && window.location.hash !== '#' + slug) {
-        history.replaceState(null, null, '#' + slug);
+      var newHash = '#' + catSlug + '/' + slug;
+      if (slug && window.location.hash !== newHash) {
+        history.replaceState(null, null, newHash);
       }
 
       var content = document.getElementById('lightbox-content');
@@ -1597,9 +1618,10 @@
 
       document.getElementById('blur-layer-a').classList.remove('active');
       document.getElementById('blur-layer-b').classList.remove('active');
-      // Clear hash on close
+      // Reset hash to category on close
       if (window.location.hash) {
-        history.replaceState(null, null, window.location.pathname + window.location.search);
+        var catSlug = getCategorySlug(currentCategory);
+        history.replaceState(null, null, '#' + catSlug);
       }
 
       // Delay DOM teardown until the opacity fade finishes
@@ -2471,6 +2493,17 @@
 
         currentCategory = newCategory;
         updateActivePhotos();
+        
+        // Update URL hash for category if lightbox not open
+        if (!document.getElementById('lightbox').classList.contains('open')) {
+          var catSlug = getCategorySlug(newCategory);
+          var curHash = window.location.hash.substring(1);
+          // Only update if the hash doesn't already start with this category slug (prevents wiping item slugs)
+          if (!curHash.startsWith(catSlug)) {
+            history.replaceState(null, null, '#' + catSlug);
+          }
+        }
+        
         window.dispatchEvent(new Event('category-change'));
 
         m.innerHTML = '';
@@ -2510,6 +2543,12 @@
       var photoBtn = document.querySelector('#gallery-header .photographs-btn');
       var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
       var motionBtn = document.querySelector('#gallery-header .motion-btn');
+
+      // Highlight initial category based on detected route
+      [photoBtn, portraitBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
+      if (currentCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
+      if (currentCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
+      if (currentCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
       if (photoBtn) {
         photoBtn.addEventListener('click', function () {
@@ -3137,7 +3176,11 @@
     window.__onCarouselReady = function () { setTimeout(safeLift, 120); };
 
     buildCarousel();
-    buildMasonry();
+    if (currentCategory === 'motion') {
+      buildMotionGrid();
+    } else {
+      buildMasonry();
+    }
     initFilters();
 
     // Visibility & Animation Loop Management
@@ -3159,20 +3202,38 @@
 
     // Deep Link Initial Load
     function checkHash() {
-      var hash = window.location.hash.substring(1);
-      if (!hash) return;
-      // Check photos
-      for (var i = 0; i < activePhotos.length; i++) {
-        if (slugify(activePhotos[i].title) === hash) {
-          openLightbox(i);
+      var fullHash = window.location.hash.substring(1);
+      if (!fullHash) return;
+
+      var parts = fullHash.split('/');
+      var catSlug = parts[0];
+      var itemSlug = parts[1];
+
+      var targetCat = getInternalCategory(catSlug);
+
+      // 1. If we're not in the right category, switch it first
+      if (currentCategory !== targetCat) {
+        rebuildGallery(targetCat);
+        // Wait for rebuild, then re-check for the item
+        // We use a longer timeout and check for the presence of items
+        setTimeout(checkHash, 300);
+        return;
+      }
+
+      // 2. If we are in the right category, check for the specific item
+      if (itemSlug) {
+        var items = currentCategory === 'motion' ? motionProjects : activePhotos;
+        // Safety check: if items haven't populated yet, wait a bit longer
+        if (items.length === 0 && currentCategory !== 'motion') {
+          setTimeout(checkHash, 100);
           return;
         }
-      }
-      // Check motion
-      for (var j = 0; j < motionProjects.length; j++) {
-        if (slugify(motionProjects[j].title) === hash) {
-          openLightbox(j, 0, true);
-          return;
+
+        for (var i = 0; i < items.length; i++) {
+          if (slugify(items[i].title) === itemSlug) {
+            openLightbox(i, 0, currentCategory === 'motion');
+            return;
+          }
         }
       }
     }
