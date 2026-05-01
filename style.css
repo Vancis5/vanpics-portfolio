@@ -169,7 +169,8 @@ body::after {
   cursor: pointer;
   display: block;
   filter: brightness(0.78) saturate(0.85);
-  transition: opacity 0.5s ease, filter 0.35s ease, transform 0.35s ease;
+  transition: opacity 1.2s ease, filter 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: filter, transform;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-drag: none;
@@ -460,14 +461,14 @@ body::after {
 .photo-card img {
   width: 100%;
   display: block;
-  transition: transform 0.7s ease, filter 0.35s ease;
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1), filter 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: filter, transform;
   filter: brightness(0.82) saturate(0.88);
 }
 
 @media (hover: hover) {
   .photo-card:hover img {
     transform: scale(1.03);
-    filter: brightness(1) saturate(1);
   }
 
   .photo-card:hover .photo-card-overlay {
@@ -488,9 +489,10 @@ body::after {
 .photo-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(17, 16, 16, 0.92) 0%, transparent 52%);
-  opacity: 0;
-  transition: opacity 0.32s ease;
+  background: linear-gradient(to top, rgba(17, 16, 16, 0.9) 0%, transparent 52%);
+  opacity: 0.25;
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -514,9 +516,47 @@ body::after {
   margin-top: 0.15rem;
 }
 
+/* MOTION CARD OVERRIDES (within unified masonry) */
+.motion-card .photo-card-overlay {
+  justify-content: center;
+  align-items: center;
+  background: rgba(17, 16, 16, 0.75);
+  text-align: center;
+}
 
+.motion-card .photo-card-date {
+  display: none;
+}
 
+.motion-card .photo-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.1rem, 3vw, 1.8rem);
+  font-style: italic;
+  text-align: center;
+  color: rgba(221, 216, 207, 0.85);
+  transition: color 0.8s cubic-bezier(0.16, 1, 0.3, 1), text-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1.1;
+  padding: 0 1rem;
+}
 
+@media (hover: hover) {
+  .motion-card:hover img {
+    transform: scale(1.05);
+    filter: brightness(0.82) saturate(0.88) blur(4px);
+  }
+
+  .motion-card:hover .photo-card-title {
+    color: rgba(242, 238, 231, 1);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* mobile specific motion card adjustments */
+@media (max-width: 640px) {
+  .motion-card .photo-card-title {
+    font-size: 1.25rem;
+  }
+}
 
 
 /* SHARED LIGHTBOX MEDIA STAGE */

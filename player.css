@@ -79,12 +79,12 @@ media-tooltip-group {
   outline-color: currentColor;
 }
 
-.media-minimal-skin > * {
+.media-minimal-skin>* {
   font-size: 0.75rem;
 }
 
 @container media-root (width > 48rem) {
-  .media-minimal-skin > * {
+  .media-minimal-skin>* {
     font-size: 0.875rem;
   }
 }
@@ -124,17 +124,17 @@ media-tooltip-group {
   transition-timing-function: ease-out;
 }
 
-.media-minimal-skin .media-error ~ .media-overlay {
+.media-minimal-skin .media-error~.media-overlay {
   transition-duration: var(--media-error-dialog-transition-duration);
   transition-delay: var(--media-error-dialog-transition-delay);
 }
 
-.media-minimal-skin .media-controls[data-visible] ~ .media-overlay,
-.media-minimal-skin .media-error[data-open] ~ .media-overlay {
+.media-minimal-skin .media-controls[data-visible]~.media-overlay,
+.media-minimal-skin .media-error[data-open]~.media-overlay {
   opacity: 1;
 }
 
-.media-minimal-skin .media-error[data-open] ~ .media-overlay {
+.media-minimal-skin .media-error[data-open]~.media-overlay {
   backdrop-filter: blur(16px) saturate(1.2);
 }
 
@@ -171,11 +171,11 @@ media-tooltip-group {
   gap: 0.5rem;
 }
 
-.media-minimal-skin .media-error__actions > * {
+.media-minimal-skin .media-error__actions>* {
   flex: 1;
 }
 
-.media-minimal-skin .media-error[data-open] ~ .media-controls * {
+.media-minimal-skin .media-error[data-open]~.media-controls * {
   visibility: hidden;
 }
 
@@ -367,7 +367,7 @@ media-tooltip-group {
 }
 
 .media-minimal-skin media-poster,
-.media-minimal-skin > img {
+.media-minimal-skin>img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -377,7 +377,7 @@ media-tooltip-group {
 }
 
 .media-minimal-skin media-poster:not([data-visible]),
-.media-minimal-skin > img:not([data-visible]) {
+.media-minimal-skin>img:not([data-visible]) {
   opacity: 0;
 }
 
@@ -392,7 +392,7 @@ media-tooltip-group {
   border-radius: var(--media-video-border-radius);
 }
 
-.media-minimal-skin > img {
+.media-minimal-skin>img {
   object-fit: var(--media-object-fit, contain);
   object-position: var(--media-object-position, center);
   border-radius: inherit;
@@ -400,7 +400,7 @@ media-tooltip-group {
 
 .media-minimal-skin:fullscreen media-poster ::slotted(img),
 .media-minimal-skin:fullscreen media-poster img,
-.media-minimal-skin:fullscreen > img {
+.media-minimal-skin:fullscreen>img {
   object-fit: contain;
 }
 
@@ -726,7 +726,7 @@ media-tooltip-group {
 }
 
 @container media-root (width > 42rem) {
-  .media-minimal-skin:has(.media-controls[data-visible]) > * {
+  .media-minimal-skin:has(.media-controls[data-visible])>* {
     --media-caption-track-y: -3rem;
   }
 }
@@ -807,7 +807,7 @@ media-tooltip-group {
 }
 
 @container media-root (width > 42rem) {
-  .media-minimal-skin--video > * {
+  .media-minimal-skin--video>* {
     --media-popover-side-offset: 0rem;
   }
 }
