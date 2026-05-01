@@ -66,6 +66,10 @@ html::-webkit-scrollbar {
   cursor: grabbing;
 }
 
+body.lightbox-open #custom-scrollbar {
+  display: none !important;
+}
+
 /* Focus effect on scroll drag */
 #hero,
 #masonry,
@@ -379,6 +383,7 @@ body::after {
 
 /* GALLERY */
 #gallery-section {
+  position: relative;
   padding: 3.5rem 1.25rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -485,23 +490,75 @@ body::after {
   margin: -1.5rem -0.8rem;
 }
 
+@media (max-width: 639px) {
+  #gallery-header {
+    padding-top: 1.15rem;
+    padding-bottom: 1.15rem;
+  }
+
+  #gallery-header p {
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    gap: 0.42rem;
+  }
+
+  #gallery-header .nav-divider {
+    font-size: 0.5rem;
+  }
+
+  #gallery-header .active,
+  #gallery-header .inactive {
+    padding: 1.15rem 0.46rem;
+    margin: -1.15rem -0.46rem;
+  }
+}
+
 /* MASONRY */
 #masonry {
   columns: 3;
   column-gap: 0.35rem;
+  will-change: transform;
+  touch-action: pan-y;
 }
 
+.masonry-swipe-stage {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  pointer-events: none;
+  will-change: transform;
+}
 
+.masonry-swipe-pane {
+  flex: 0 0 auto;
+  columns: 3;
+  column-gap: 0.35rem;
+  will-change: opacity;
+}
+
+.masonry-swipe-pane.is-sparse {
+  min-height: 70svh;
+}
+
+@media (max-width: 639px) {
+  #masonry,
+  .masonry-swipe-pane {
+    column-gap: 0.25rem;
+  }
+}
 
 @media (min-width: 500px) {
-  #masonry {
+  #masonry,
+  .masonry-swipe-pane {
     columns: 3;
     column-gap: 0.5rem;
   }
 }
 
 @media (min-width: 1024px) {
-  #masonry {
+  #masonry,
+  .masonry-swipe-pane {
     columns: 4;
     column-gap: 0.75rem;
   }
@@ -523,8 +580,19 @@ body::after {
   opacity: 0.8;
 }
 
-#masonry .date-header:first-child {
+#masonry .date-header:first-child,
+.masonry-swipe-pane .date-header:first-child {
   margin-top: 0rem;
+}
+
+@media (max-width: 639px) {
+  .date-header {
+    font-size: 0.52rem;
+    letter-spacing: 0.18em;
+    margin: 3rem 0 0.9rem;
+    padding-bottom: 0.45rem;
+    width: calc(100% - 0.9rem);
+  }
 }
 
 .photo-card {
@@ -540,6 +608,12 @@ body::after {
 @media (min-width: 1024px) {
   .photo-card {
     margin-bottom: 0.75rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .photo-card {
+    margin-bottom: 0.25rem;
   }
 }
 
@@ -984,6 +1058,7 @@ body::after {
 
 @media (hover: none) and (max-width: 767px) {
   #lightbox-title-row {
+    margin-bottom: 0.62rem;
     padding-right: 5.4rem;
   }
 
@@ -1052,6 +1127,12 @@ body::after {
   flex-direction: column;
   gap: 0.65rem;
   align-items: flex-start;
+}
+
+@media (hover: none) and (max-width: 767px) {
+  #lightbox-meta {
+    gap: 0.54rem;
+  }
 }
 
 .meta-item {
