@@ -2153,7 +2153,7 @@
           if (currentLightboxIsMotion) return;
           if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
           clearTimeout(snapTimer);
-          onSnapSettle();
+          if (!isManuallyNavigating) onSnapSettle();
         });
         imgWrap.addEventListener('scroll', function () {
           if (currentLightboxIsMotion) return;
@@ -2190,7 +2190,7 @@
           }
 
           // preload text underneath if we cross 50% mark — but ONLY if not currently holding
-          if (nearest !== cur && !isUserTouching) {
+          if (nearest !== cur && !isUserTouching && !isManuallyNavigating) {
             onSnapSettle(nearest);
           }
 
@@ -2236,6 +2236,7 @@
           requestAnimationFrame(function () {
             scrollToSlide(cur, false);
             updateLoading();
+            onSnapSettle(cur);
             var p = activePhotos[cur];
             setLightboxContent(p);
             animateInfo(0);
