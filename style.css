@@ -86,7 +86,8 @@ body.is-dragging-scrollbar footer {
 #drag-vignette {
   position: fixed;
   inset: 0;
-  z-index: 9980; /* Above content, below scrollbar/cursor */
+  z-index: 9980;
+  /* Above content, below scrollbar/cursor */
   pointer-events: none;
   background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.45) 150%);
   opacity: 0;
@@ -381,6 +382,7 @@ body::after {
   padding: 3.5rem 1.25rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
+  min-height: 100vh; /* Ensure stickiness even on short categories */
 }
 
 @media (min-width: 640px) {
@@ -393,6 +395,11 @@ body::after {
   #gallery-section {
     padding: 5rem 2rem 8rem;
   }
+}
+
+#gallery-section.motion-active {
+  padding-bottom: 50vh;
+  /* WAY more whitespace as requested */
 }
 
 /* !!! DONT TOUCH !!! - Critical for section transitions */
@@ -732,33 +739,38 @@ body::after {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 58px;
-  height: 58px;
-  background: rgba(17, 16, 16, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(221, 216, 207, 0.15);
+  width: 62px;
+  height: 62px;
+  background: rgba(17, 16, 16, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(221, 216, 207, 0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, border-color 0.2s;
+  transition: background 0.3s ease, border-color 0.3s ease;
   padding: 0;
 }
 
 #motion-player-shell .motion-start-button:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-  background: rgba(17, 16, 16, 0.9);
+  background: rgba(17, 16, 16, 0.88);
   border-color: rgba(221, 216, 207, 0.3);
 }
 
 #motion-player-shell .motion-start-button__icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   color: var(--text);
-  margin-left: 3px;
-  /* visually center play triangle */
+  /* Visually center the play triangle using translate instead of margin for better scaling stability */
+  transform: translateX(1px);
+  transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+#motion-player-shell .motion-start-button:hover .motion-start-button__icon {
+  transform: translateX(1px) scale(1.15);
 }
 
 #motion-player-shell .motion-player-prime:not(.is-started) .media-controls {

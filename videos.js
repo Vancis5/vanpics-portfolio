@@ -8,7 +8,7 @@
 
 var videos = [
   {
-    src: "https://pub-80afe3481b3641e59d4fefe204ace935.r2.dev/after-hours.mp4",
+    src: "https://vanpics-proxy.lorzanofrancisevan.workers.dev/after-hours.mp4",
     thumb: "photos/thumbs/after-hours.webp",
     title: "after hours",
     desc: "filmed with a friend from 3am to 6am. completely impromptu. the entire city was asleep and we had it to ourselves <br> <br> stabilization failed us but i tried to make everything look intentional",
