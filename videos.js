@@ -9,7 +9,7 @@
 var videos = [
   {
     src: "https://pub-80afe3481b3641e59d4fefe204ace935.r2.dev/after-hours.mp4",
-    thumb: "photos/after-hours.webp",
+    thumb: "photos/thumbs/after-hours.webp",
     title: "after hours",
     desc: "stashed some clips from since i bought my first mirrorless cam. its mostly just me strolling around or just testing the dynamic range of the sensor.",
     date: "aug 11, 2025",

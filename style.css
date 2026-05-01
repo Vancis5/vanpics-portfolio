@@ -676,10 +676,10 @@ body::after {
 }
 
 #motion-player-shell .motion-start-button__icon {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   color: var(--text);
-  margin-left: 2px;
+  margin-left: 3px;
   /* visually center play triangle */
 }
 
