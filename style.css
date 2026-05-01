@@ -1152,14 +1152,17 @@ body::after {
     display: none;
   }
 
-  #lightbox-img-wrap {
+  #lightbox:not(.mode-motion) #lightbox-img-wrap {
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    height: 46svh;
+    height: calc(46svh + 13rem);
+    margin-bottom: -13rem;
+    padding-bottom: 13rem;
+    box-sizing: border-box;
     flex-shrink: 0;
-    /* prevent height from collapsing between aspect ratios */
+    /* The transparent bottom area lets native scroll-snap own touches over the info zone. */
     position: relative;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
@@ -1194,12 +1197,25 @@ body::after {
 
   .snap-slide img {
     max-width: 100%;
-    max-height: 100%;
+    max-height: 46svh;
     object-fit: contain;
     border-radius: 3px;
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     /* prevent images from exceeding their slide on notched phones */
     max-width: calc(100% - 0.25rem);
+  }
+
+  #lightbox:not(.mode-motion) #lightbox-info-wrap {
+    position: relative;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  #lightbox:not(.mode-motion) #lightbox-content.desc-open #lightbox-info-wrap,
+  #lightbox:not(.mode-motion) #lightbox-desc-toggle {
+    position: relative;
+    z-index: 4;
+    pointer-events: auto;
   }
 }
 
