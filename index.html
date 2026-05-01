@@ -2510,6 +2510,15 @@
       var currentHeight = m.offsetHeight;
       m.style.minHeight = currentHeight + 'px';
 
+      // 1.5 Anchor View: Ensure we are at the top of the gallery
+      var header = document.getElementById('gallery-header');
+      if (header) {
+        var headerPos = header.getBoundingClientRect().top + window.pageYOffset;
+        if (window.pageYOffset > headerPos) {
+          window.scrollTo({ top: headerPos, behavior: 'auto' });
+        }
+      }
+
       // 2. Fast Swap
       setTimeout(function () {
         var order = ['all', 'portrait', 'motion'];
@@ -2535,16 +2544,17 @@
 
         m.innerHTML = '';
         m.classList.toggle('motion-grid-active', newCategory === 'motion');
+        var gallerySec = document.getElementById('gallery-section');
+        if (gallerySec) gallerySec.classList.toggle('motion-active', newCategory === 'motion');
         m.style.setProperty('--masonry-x', slideX);
         m.classList.remove('switching');
         void m.offsetWidth;
         m.classList.add('switching');
 
         buildMasonry();
-        if (window.updateCustomScrollbar) window.updateCustomScrollbar();
-
         requestAnimationFrame(function () {
           m.style.minHeight = Math.max(currentHeight, m.offsetHeight) + 'px';
+          if (window.updateCustomScrollbar) window.updateCustomScrollbar();
         });
 
         // 3. Update Nav UI
@@ -2557,6 +2567,12 @@
         if (newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
         // 4. Cleanup
+        var updateCount = 0;
+        var updateInterval = setInterval(function () {
+          if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+          if (++updateCount >= 6) clearInterval(updateInterval);
+        }, 100);
+
         setTimeout(function () {
           m.style.minHeight = '';
           if (window.updateCustomScrollbar) window.updateCustomScrollbar();
@@ -3011,6 +3027,12 @@
 
       window.addEventListener('scroll', updateThumb, { passive: true });
       window.addEventListener('resize', updateThumb);
+      window.addEventListener('load', updateThumb);
+
+      if (window.ResizeObserver) {
+        new ResizeObserver(updateThumb).observe(document.body);
+      }
+
       window.updateCustomScrollbar = updateThumb;
       updateThumb();
     })();
