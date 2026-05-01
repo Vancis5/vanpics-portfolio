@@ -200,7 +200,7 @@ const photos = [
   {
     src: "photos/girl-waves-rock.webp",
     title: "rish",
-    desc: "it was our culmination gathering that was held by our class. there was this one girl who really liked me taking pics of her. this was one of the best shots we've taken, and she literally jumped for joy when she saw it",
+    desc: "it was our culmination gathering held by our class. i was asked to take pics of her during the occasion. this was one of the best shots we've taken",
     date: "june 11, 2023",
     location: "punta beach, macrohon, southern leyte",
     aspectRatio: 1.3342,

@@ -2829,15 +2829,33 @@
       var mx = 0, my = 0, rx = 0, ry = 0;
       var cursorVisible = false;
 
+      // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
+      function hideCursor() { 
+        cursor.style.opacity = '0'; ring.style.opacity = '0'; 
+        cursorVisible = false; 
+      }
+      function showCursor() { 
+        if (cursorVisible) return; 
+        cursorVisible = true; 
+        cursor.style.opacity = '1'; ring.style.opacity = '1'; 
+      }
+
+      var cursorTimeout;
+      function resetCursorTimeout() {
+        showCursor();
+        clearTimeout(cursorTimeout);
+        // If mouse is idle for 2s, fade out to prevent "stuck" feeling over overlays
+        cursorTimeout = setTimeout(hideCursor, 2000);
+      }
+
       document.addEventListener('mousemove', function (e) {
         mx = e.clientX; my = e.clientY;
         cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-        if (!cursorVisible) {
-          cursorVisible = true;
-          cursor.style.opacity = '1'; ring.style.opacity = '1';
-        }
+        resetCursorTimeout();
       });
+
       (function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
+      
       // Respond to hold (mousedown)
       window.addEventListener('mousedown', function () {
         cursor.style.transform = 'translate(-50%,-50%) scale(0.65)';
@@ -2847,9 +2865,10 @@
         cursor.style.transform = 'translate(-50%,-50%) scale(1)';
         ring.style.transform = 'translate(-50%,-50%) scale(1)';
       });
-      // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
-      function hideCursor() { cursor.style.opacity = '0'; ring.style.opacity = '0'; cursorVisible = false; }
-      function showCursor() { if (cursorVisible) return; cursorVisible = true; cursor.style.opacity = '1'; ring.style.opacity = '1'; }
+
+      window.addEventListener('blur', hideCursor);
+      window.addEventListener('focus', showCursor);
+
       document.addEventListener('mouseleave', hideCursor);
       document.documentElement.addEventListener('mouseleave', hideCursor);
       document.addEventListener('mouseenter', showCursor);
