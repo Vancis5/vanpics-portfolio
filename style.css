@@ -947,18 +947,24 @@ body::after {
   max-width: 38ch;
 }
 
-/* mobile: desc hidden by default, expands on toggle */
+/* mobile: show a two-line preview by default, then expand on toggle */
 @media (hover: none) and (max-width: 767px) {
   #lightbox-desc {
-    max-height: 0;
+    position: relative;
+    max-height: 3.5em;
     overflow: hidden;
-    margin-bottom: 0;
-    opacity: 0;
-    filter: blur(4px);
+    margin-bottom: 0.75rem;
+    opacity: 1;
+    filter: blur(0);
     transition: max-height 0.6s cubic-bezier(0.33, 1, 0.68, 1),
       opacity 0.45s ease,
       filter 0.45s ease,
       margin-bottom 0.4s ease;
+  }
+
+  #lightbox-desc.desc-overflow:not(.desc-expanded) {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.35em), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.35em), transparent 100%);
   }
 
   #lightbox-content.desc-open #lightbox-desc {
@@ -966,6 +972,8 @@ body::after {
     opacity: 1;
     filter: blur(0px);
     margin-bottom: 1rem;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 

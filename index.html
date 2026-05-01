@@ -1301,6 +1301,8 @@
         btn.classList.toggle('no-desc', !hasDesc);
       }
 
+      updateLightboxDescPreview();
+
       if (content && content.classList.contains('desc-open')) {
         // Mobile: GPU FLIP to gracefully and safely collapse without dropping frames natively
         if (isMobile) {
@@ -1312,6 +1314,7 @@
 
           content.classList.remove('desc-open');
           if (btn) btn.textContent = 'read more';
+          updateLightboxDescPreview();
 
           var endImg = imgWrap.getBoundingClientRect();
           var endInfo = infoWrap.getBoundingClientRect();
@@ -1347,6 +1350,7 @@
 
           content.classList.remove('desc-open');
           if (btn) btn.textContent = 'read more';
+          updateLightboxDescPreview();
 
           var endImg = imgWrap.getBoundingClientRect();
           var endInfo = infoWrap.getBoundingClientRect();
@@ -1374,7 +1378,33 @@
         }
       } else if (btn) {
         btn.textContent = 'read more';
+        updateLightboxDescPreview();
       }
+    }
+
+    function updateLightboxDescPreview() {
+      var desc = document.getElementById('lightbox-desc');
+      var btn = document.getElementById('lightbox-desc-toggle');
+      var content = document.getElementById('lightbox-content');
+      if (!desc || !btn || !content || !isMobile) return;
+
+      var hasDesc = desc.textContent.trim().length > 0;
+      desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
+
+      if (!hasDesc) {
+        desc.classList.remove('desc-overflow');
+        btn.classList.add('no-desc');
+        return;
+      }
+
+      var styles = window.getComputedStyle(desc);
+      var lineHeight = parseFloat(styles.lineHeight);
+      if (!lineHeight) lineHeight = parseFloat(styles.fontSize) * 1.75;
+      var previewHeight = lineHeight * 2;
+      var hasOverflow = desc.scrollHeight > previewHeight + 1;
+
+      desc.classList.toggle('desc-overflow', hasOverflow);
+      btn.classList.toggle('no-desc', !hasOverflow);
     }
 
 
@@ -1741,7 +1771,10 @@
 
       if (!imgWrap || !infoWrap) {
         content.classList.toggle('desc-open', opening);
-        btn.textContent = opening ? 'close text' : 'read more';
+        btn.textContent = opening ? 'read less' : 'read more';
+        updateLightboxDescPreview();
+        if (opening) hideFilmstrip();
+        else showFilmstrip();
         return;
       }
 
@@ -1749,7 +1782,10 @@
       var startInfo = infoWrap.getBoundingClientRect();
 
       content.classList.toggle('desc-open', opening);
-      btn.textContent = opening ? 'close text' : 'read more';
+      btn.textContent = opening ? 'read less' : 'read more';
+      updateLightboxDescPreview();
+      if (opening) hideFilmstrip();
+      else showFilmstrip();
 
       var endImg = imgWrap.getBoundingClientRect();
       var endInfo = infoWrap.getBoundingClientRect();
