@@ -382,7 +382,8 @@ body::after {
   padding: 3.5rem 1.25rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
-  min-height: 100vh; /* Ensure stickiness even on short categories */
+  min-height: 100vh;
+  /* Ensure stickiness even on short categories */
 }
 
 @media (min-width: 640px) {
@@ -665,13 +666,9 @@ body::after {
 }
 
 #lightbox.mode-motion #lightbox-img-wrap {
-  height: auto;
-  min-height: 0;
   display: flex !important;
   justify-content: center;
   align-items: center;
-  flex: 1;
-  /* Critical: prevent collapse on desktop row layout */
 }
 
 #motion-player-shell video-player {
@@ -1055,6 +1052,13 @@ body::after {
     align-items: center;
   }
 
+  /* Ensure video container fills available row space on desktop */
+  #lightbox.mode-motion #lightbox-img-wrap {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+
   #lightbox-img {
     width: auto;
     max-width: 100%;
@@ -1097,6 +1101,10 @@ body::after {
   #lightbox-info {
     max-width: 380px;
     min-width: 220px;
+  }
+
+  #lightbox-info-wrap {
+    margin-top: 0;
   }
 }
 
@@ -1158,13 +1166,12 @@ body::after {
     justify-content: flex-start;
   }
 
-  #lightbox.mode-motion #lightbox-content {
-    justify-content: center;
-    gap: 1rem;
-  }
-
   #lightbox.mode-motion #lightbox-img-wrap {
     overflow: visible;
+  }
+
+  #motion-player-shell {
+    max-height: 44svh; /* Match photo lightbox height */
   }
 
   #lightbox-img-wrap::-webkit-scrollbar {
