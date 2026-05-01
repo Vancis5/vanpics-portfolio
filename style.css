@@ -537,10 +537,6 @@ body::after {
   will-change: opacity;
 }
 
-.masonry-swipe-pane.is-sparse {
-  min-height: 70svh;
-}
-
 @media (max-width: 639px) {
   #masonry,
   .masonry-swipe-pane {
