@@ -1157,9 +1157,9 @@ body::after {
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    height: calc(46svh + 13rem);
-    margin-bottom: -13rem;
-    padding-bottom: 13rem;
+    height: calc(100svh - 3.25rem);
+    margin-bottom: calc(46svh - 100svh + 3.25rem);
+    padding-bottom: calc(54svh - 3.25rem);
     box-sizing: border-box;
     flex-shrink: 0;
     /* The transparent bottom area lets native scroll-snap own touches over the info zone. */
@@ -1216,6 +1216,22 @@ body::after {
     position: relative;
     z-index: 4;
     pointer-events: auto;
+  }
+
+  #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
+    height: 46svh;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    overflow: visible;
+    z-index: 4;
+  }
+
+  #lightbox.zoom-active:not(.mode-motion) #lightbox-info-wrap {
+    z-index: 1;
+  }
+
+  #lightbox.zoom-active #lightbox-zoom-darken {
+    z-index: 3;
   }
 }
 
