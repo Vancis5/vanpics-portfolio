@@ -18,7 +18,7 @@ const photos = [
   {
     src: "photos/fog-motorcycle.webp",
     title: "leaving",
-    desc: "a friend took this, he was driving through the mountains and the fog was so thick that every photo he took was already atmospheric. i picked this one and edited it",
+    desc: "a friend took this, he was driving through the mountains and the fog was so thick that every photo he took was already atmospheric",
     date: "jan 22, 2026",
     location: "cebu",
     aspectRatio: 0.75,
@@ -45,7 +45,7 @@ const photos = [
   {
     src: "photos/moths-light.webp",
     title: "last flight",
-    desc: "it was raining at night when i took this. i went outside and there was literally 200 moths flocking near the light bulb in our shed",
+    desc: "it was raining at night. i went outside and there was literally 200 moths flocking near the light bulb in our shed",
     date: "dec 22, 2025",
     location: "my house",
     aspectRatio: 1,
@@ -63,7 +63,7 @@ const photos = [
   {
     src: "photos/fish-eye-cosmos.webp",
     title: "peer into the void",
-    desc: "this is an eye of a huge fish i found in the wet market. it was fresh and it was still pulsating. i stared at it for 5 seconds and realized i needed to take a pic of it. <br><br> i took the photo 2023 and only edited it recently at 2025",
+    desc: "this is an eye of a huge fish i found in the wet market. it was fresh and it was still pulsating. i stared at it for 5 seconds and realized i needed to take a pic of it. <br><br> i took the photo 2023 and only edited it at 2025",
     date: "oct 19, 2025",
     location: "maasin city public market",
     aspectRatio: 1,
@@ -82,7 +82,7 @@ const photos = [
   {
     src: "photos/broken-house-night.webp",
     title: "inhabited",
-    desc: "i was at a friend's sleepover but we were too alive to fall asleep, so we strolled around the neighborhood at midnight. <br> <br> one particular house felt mysterious, it was this",
+    desc: "i was at a friend's sleepover but we were too alive to fall asleep, so we strolled around the neighborhood at midnight. <br> <br> one particular house felt mysterious",
     date: "aug 10, 2025",
     location: "tagnipa, maasin city",
     aspectRatio: 0.75,
@@ -154,7 +154,7 @@ const photos = [
   {
     src: "photos/door-crack.webp",
     title: "almost",
-    desc: "this was taken inside a utility room next to an office. i just finished cleaning, but when i turned back, the light outside was seeping through the door in a slightly cinematic way. got on the floor to take this",
+    desc: "this was taken inside a utility room next to an office i worked on before. i just finished cleaning, but when i turned back, the light outside was seeping through the door in a slightly cinematic way. got on the floor to take this",
     date: "aug 17, 2024",
     location: "saint joseph college, media office",
     aspectRatio: 1,
@@ -163,7 +163,7 @@ const photos = [
   {
     src: "photos/golden-hour-portrait.webp",
     title: "trash girl",
-    desc: "it was my friend's school project wherein they needed to make a really fashionable outfit made from recycled materials. her dress was basically a trash bag, her headband is made with cellophane. they chose me to do a photoshoot. this one was where she faced sideways",
+    desc: "my friend had a project about making a really fashionable outfit out of recycled materials. her dress is a trash bag, her headband is made with cellophane. they chose me to do a photoshoot. this one was where she faced sideways",
     date: "jun 29, 2024",
     location: "tagnipa, maasin city",
     aspectRatio: 1,
@@ -182,7 +182,7 @@ const photos = [
   {
     src: "photos/crescent-tower-bw.webp",
     title: "",
-    desc: "the color gradient was beautiful but this version has more weight. the grain adds to it. the alignment reads almost sacred now — like a signal going both ways.",
+    desc: "the color gradient was cool but this version has more weight to it. there's also more grain. the alignment reads almost sacred now — like a signal going both ways.",
     date: "2024",
     location: "maasin city, southern leyte",
     aspectRatio: 1,
@@ -191,7 +191,7 @@ const photos = [
   {
     src: "photos/chess-science-room.webp",
     title: "specimen",
-    desc: "everything and everyone is studied. pinned down. observed <br> <br> anyway it's a really tense shot during a chess competition during our school's intramurals. it was held in the high school biology room. <br> <br> i was mostly there to hype up my friend, but i also ended up with shots of the other players too",
+    desc: "everything and everyone is studied. pinned down. observed <br> <br> this is a tense shot during a chess competition during our school's intramurals. it was held in the high school biology room. <br> <br> i was mostly there to hype up my friend, but i also ended up with shots of the other players too",
     date: "oct 25, 2023",
     location: "sjc high school, maasin city",
     aspectRatio: 1.7778,
