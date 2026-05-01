@@ -919,6 +919,11 @@ body::after {
   #lightbox-info-wrap {
     margin-top: 1rem;
     padding: 0 0.5rem;
+    position: relative;
+  }
+
+  #lightbox-info {
+    padding-right: 4.25rem;
   }
 }
 
@@ -969,26 +974,40 @@ body::after {
 
 @media (hover: none) and (max-width: 767px) {
   #lightbox-desc-toggle {
-    display: inline-block;
-    margin-top: 0.6rem;
-    background: none;
-    border: none;
-    border-bottom: 1px solid var(--border);
+    display: inline-flex;
+    position: absolute;
+    top: -0.35rem;
+    right: 0.25rem;
+    z-index: 6;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.75rem;
+    min-height: 2.75rem;
+    background: rgba(13, 12, 12, 0.22);
+    border: 1px solid transparent;
+    border-radius: 3px;
     color: var(--text-faint);
     font-family: 'DM Mono', monospace;
     font-size: 0.52rem;
     letter-spacing: 0.16em;
     text-transform: lowercase;
-    padding: 0.1rem 0;
+    padding: 0 0.65rem;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     outline: none;
-    transition: color 0.2s, border-color 0.2s;
+    touch-action: manipulation;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      background 0.2s ease,
+      opacity 0.2s ease,
+      filter 0.2s ease;
   }
 
   #lightbox-desc-toggle:active {
     color: var(--text-muted);
-    border-color: var(--text-faint);
+    border-color: var(--border);
+    background: rgba(221, 216, 207, 0.06);
   }
 
   /* hide the toggle when there's no description to show */
@@ -1211,9 +1230,7 @@ body::after {
     pointer-events: none;
   }
 
-  #lightbox:not(.mode-motion) #lightbox-content.desc-open #lightbox-info-wrap,
   #lightbox:not(.mode-motion) #lightbox-desc-toggle {
-    position: relative;
     z-index: 4;
     pointer-events: auto;
   }

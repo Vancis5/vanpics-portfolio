@@ -1011,7 +1011,7 @@
         <div id="motion-player-shell"></div>
       </div>
       <div id="lightbox-info-wrap">
-        <div id="lightbox-info" onclick="toggleLightboxDesc()">
+        <div id="lightbox-info">
           <div id="lightbox-title"></div>
           <div id="lightbox-desc"></div>
           <div id="lightbox-meta">
@@ -1045,8 +1045,8 @@
               <span id="meta-date-text"></span>
             </span>
           </div>
-          <button id="lightbox-desc-toggle">read</button>
         </div>
+        <button id="lightbox-desc-toggle" type="button" onclick="toggleLightboxDesc()">read</button>
       </div>
     </div>
 
@@ -1721,8 +1721,46 @@
       var btn = document.getElementById('lightbox-desc-toggle');
       if (!content || !btn || btn.classList.contains('no-desc')) return;
 
-      var open = content.classList.toggle('desc-open');
-      btn.textContent = open ? 'close' : 'read';
+      var imgWrap = document.getElementById('lightbox-img-wrap');
+      var infoWrap = document.getElementById('lightbox-info-wrap');
+      var desc = document.getElementById('lightbox-desc');
+      var opening = !content.classList.contains('desc-open');
+
+      if (!imgWrap || !infoWrap) {
+        content.classList.toggle('desc-open', opening);
+        btn.textContent = opening ? 'close' : 'read';
+        return;
+      }
+
+      var startImg = imgWrap.getBoundingClientRect();
+      var startInfo = infoWrap.getBoundingClientRect();
+
+      content.classList.toggle('desc-open', opening);
+      btn.textContent = opening ? 'close' : 'read';
+
+      var endImg = imgWrap.getBoundingClientRect();
+      var endInfo = infoWrap.getBoundingClientRect();
+      var dImg = startImg.top - endImg.top;
+      var dInfo = startInfo.top - endInfo.top;
+
+      imgWrap.style.transition = 'none';
+      imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+      infoWrap.style.transition = 'none';
+      infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
+      if (desc) void desc.offsetHeight;
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+          imgWrap.style.transform = '';
+          infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+          infoWrap.style.transform = '';
+          setTimeout(function () {
+            imgWrap.style.transition = '';
+            infoWrap.style.transition = '';
+          }, 450);
+        });
+      });
     }
 
     // reset desc expansion on new photo
