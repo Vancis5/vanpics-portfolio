@@ -962,6 +962,9 @@
   </div>
   <div id="cursor"></div>
   <div id="cursor-ring"></div>
+  <div id="custom-scrollbar">
+    <div id="custom-scrollbar-thumb"></div>
+  </div>
   <section id="hero">
     <div id="glow-ball"></div>
     <div class="carousel-row" id="row-0"></div>
@@ -2828,16 +2831,17 @@
       var ring = document.getElementById('cursor-ring');
       var mx = 0, my = 0, rx = 0, ry = 0;
       var cursorVisible = false;
+      var isDraggingScrollbar = false;
 
       // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
-      function hideCursor() { 
-        cursor.style.opacity = '0'; ring.style.opacity = '0'; 
-        cursorVisible = false; 
+      function hideCursor() {
+        cursor.style.opacity = '0'; ring.style.opacity = '0';
+        cursorVisible = false;
       }
-      function showCursor() { 
-        if (cursorVisible) return; 
-        cursorVisible = true; 
-        cursor.style.opacity = '1'; ring.style.opacity = '1'; 
+      function showCursor() {
+        if (cursorVisible) return;
+        cursorVisible = true;
+        cursor.style.opacity = '1'; ring.style.opacity = '1';
       }
 
       var cursorTimeout;
@@ -2851,17 +2855,31 @@
       document.addEventListener('mousemove', function (e) {
         mx = e.clientX; my = e.clientY;
         cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-        resetCursorTimeout();
+        
+        if (isDraggingScrollbar) {
+          hideCursor();
+        } else {
+          resetCursorTimeout();
+        }
       });
 
       (function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
-      
+
       // Respond to hold (mousedown)
-      window.addEventListener('mousedown', function () {
+      window.addEventListener('mousedown', function (e) {
+        // If clicking near the right edge (scrollbar zone), hide the cursor
+        if (e.clientX >= window.innerWidth - 32) {
+          isDraggingScrollbar = true;
+          hideCursor();
+          return;
+        }
+        
         cursor.style.transform = 'translate(-50%,-50%) scale(0.65)';
         ring.style.transform = 'translate(-50%,-50%) scale(0.9)';
       });
       window.addEventListener('mouseup', function () {
+        isDraggingScrollbar = false;
+        showCursor();
         cursor.style.transform = 'translate(-50%,-50%) scale(1)';
         ring.style.transform = 'translate(-50%,-50%) scale(1)';
       });
@@ -2892,6 +2910,98 @@
         ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
       });
     }
+
+    // ADVANCED CUSTOM SCROLLBAR CONTROLLER
+    (function initCustomScrollbar() {
+      var track = document.getElementById('custom-scrollbar');
+      var thumb = document.getElementById('custom-scrollbar-thumb');
+      if (!track || !thumb) return;
+
+      var isDragging = false;
+      var startY, startScroll;
+      var fadeTimer = null;
+
+      function updateThumb() {
+        var winH = window.innerHeight;
+        var docH = document.documentElement.scrollHeight;
+        var scrollT = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (docH <= winH + 5) {
+          track.style.display = 'none';
+          return;
+        } else {
+          track.style.display = 'block';
+        }
+
+        var thumbH = Math.max(30, (winH / docH) * winH);
+        var maxTrack = winH - thumbH;
+        var maxScroll = docH - winH;
+        var thumbY = (scrollT / maxScroll) * maxTrack;
+
+        thumb.style.height = thumbH + 'px';
+        thumb.style.transform = 'translateY(' + thumbY + 'px)';
+
+        if (isMobile) {
+          track.classList.add('moving');
+          clearTimeout(fadeTimer);
+          fadeTimer = setTimeout(function() {
+            if (!isDragging) track.classList.remove('moving');
+          }, 3000);
+        }
+      }
+
+      // Track interaction (click to jump + start dragging)
+      track.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        track.classList.add('dragging');
+        
+        var winH = window.innerHeight;
+        var docH = document.documentElement.scrollHeight;
+        var thumbH = parseFloat(thumb.style.height);
+        var maxTrack = winH - thumbH;
+        var maxScroll = docH - winH;
+
+        // Jump to clicked position immediately
+        var clickY = e.clientY - (thumbH / 2); // Center thumb on click
+        var scrollPos = (clickY / maxTrack) * maxScroll;
+        window.scrollTo(0, scrollPos);
+
+        startY = e.clientY;
+        startScroll = window.pageYOffset || document.documentElement.scrollTop;
+        
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      window.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        var deltaY = e.clientY - startY;
+        var winH = window.innerHeight;
+        var docH = document.documentElement.scrollHeight;
+        var thumbH = parseFloat(thumb.style.height);
+        var maxTrack = winH - thumbH;
+        var maxScroll = docH - winH;
+
+        var scrollDelta = (deltaY / maxTrack) * maxScroll;
+        window.scrollTo(0, startScroll + scrollDelta);
+      });
+
+      window.addEventListener('mouseup', function() {
+        if (isDragging) {
+          isDragging = false;
+          track.classList.remove('dragging');
+          document.body.style.userSelect = '';
+          if (isMobile) {
+            clearTimeout(fadeTimer);
+            fadeTimer = setTimeout(function() { track.classList.remove('moving'); }, 3000);
+          }
+        }
+      });
+
+      window.addEventListener('scroll', updateThumb, { passive: true });
+      window.addEventListener('resize', updateThumb);
+      updateThumb();
+    })();
 
     // FILMSTRIP
     var filmstripWrap = document.getElementById('filmstrip-wrap');

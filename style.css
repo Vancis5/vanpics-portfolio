@@ -18,10 +18,58 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scrollbar-gutter: stable;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom Scrollbar Styles */
+#custom-scrollbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px; /* Large invisible hit zone at the edge */
+  z-index: 10000;
+  pointer-events: all;
+  transition: opacity 0.4s ease;
+}
+
+#custom-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  width: 4px;
+  background: rgba(221, 216, 207, 0.25);
+  border-radius: 10px;
+  cursor: grab;
+  transition: background 0.3s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, background, width;
+}
+
+#custom-scrollbar:hover #custom-scrollbar-thumb {
+  background: rgba(221, 216, 207, 0.5); /* Pulse brighter on hover */
+}
+
+#custom-scrollbar.dragging #custom-scrollbar-thumb {
+  background: rgba(221, 216, 207, 0.85); /* Bright when dragging */
+  width: 8px; /* Thicker when dragging */
+  right: 2px;
+  cursor: grabbing;
+}
+
+/* Mobile: handle the 3s fade */
+@media (hover: none) {
+  #custom-scrollbar {
+    opacity: 0;
+  }
+  #custom-scrollbar.moving {
+    opacity: 1;
+  }
 }
 
 body {
@@ -29,8 +77,6 @@ body {
   color: var(--text);
   font-family: 'Cormorant Garamond', serif;
   overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 /* grain texture overlay */
@@ -45,16 +91,6 @@ body::after {
   background-size: 256px 256px;
 }
 
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}
 
 @media (hover: hover) and (pointer: fine) {
 
@@ -473,6 +509,7 @@ body::after {
 @media (hover: hover) {
   .photo-card:hover img {
     transform: scale(1.03);
+    filter: brightness(1) saturate(1);
   }
 
   .photo-card:hover .photo-card-overlay {
@@ -1231,6 +1268,46 @@ body::after {
 #filmstrip-lift-zone {
   display: none;
   /* hidden by default — JS sets display:block when lightbox opens */
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #filmstrip-lift-zone {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    z-index: 9;
+    /* just below filmstrip-wrap (z-index: 10) */
+    pointer-events: all;
+    cursor: default;
+  }
+}
+
+footer {
+  padding: 2rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+  }
+}
+
+footer p {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  text-transform: lowercase;
 }
 
 @media (hover: hover) and (pointer: fine) {
