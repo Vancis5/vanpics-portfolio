@@ -1081,12 +1081,12 @@
     }
 
     function getMotionPosterMarkup(item) {
-      if (!item.thumbnailUrl) return '';
-      return '<media-poster><img src="' + item.thumbnailUrl + '" alt="' + escapeHtml(item.title) + ' thumbnail"></media-poster>';
+      if (!item.thumb) return '';
+      return '<media-poster><img src="' + item.thumb + '" alt="' + escapeHtml(item.title) + ' thumbnail"></media-poster>';
     }
 
     function getMotionThumbnailMarkup(item) {
-      if (item.thumbnailUrl) return '<img src="' + item.thumbnailUrl + '" alt="' + escapeHtml(item.title) + '" loading="lazy">';
+      if (item.thumb) return '<img src="' + item.thumb + '" alt="' + escapeHtml(item.title) + '" loading="lazy">';
       return '<div class="motion-card-fallback" aria-hidden="true"></div>';
     }
 
@@ -1095,7 +1095,7 @@
         '<div class="motion-player-prime" id="motion-player-instance">',
         '<video-player>',
         '<media-container class="media-minimal-skin media-minimal-skin--video">',
-        '<video src="' + item.videoUrl + '" playsinline controlslist="nodownload"></video>',
+        '<video src="' + item.src + '" playsinline controlslist="nodownload"></video>',
         getMotionPosterMarkup(item),
         '<media-buffering-indicator class="media-buffering-indicator">',
         '<svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" aria-hidden="true" viewBox="0 0 18 18"><rect width="2" height="5" x="8" y=".5" opacity=".5" rx="1"><animate attributeName="opacity" begin="0s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="12.243" y="2.257" opacity=".45" rx="1" transform="rotate(45 13.243 4.757)"><animate attributeName="opacity" begin="0.125s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="12.5" y="8" opacity=".4" rx="1"><animate attributeName="opacity" begin="0.25s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="10.743" y="12.243" opacity=".35" rx="1" transform="rotate(45 13.243 13.243)"><animate attributeName="opacity" begin="0.375s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="8" y="12.5" opacity=".3" rx="1"><animate attributeName="opacity" begin="0.5s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="3.757" y="10.743" opacity=".25" rx="1" transform="rotate(45 4.757 13.243)"><animate attributeName="opacity" begin="0.625s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x=".5" y="8" opacity=".15" rx="1"><animate attributeName="opacity" begin="0.75s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="2.257" y="3.757" opacity=".1" rx="1" transform="rotate(45 4.757 4.757)"><animate attributeName="opacity" begin="0.875s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect></svg>',
@@ -2618,7 +2618,7 @@
 
         // Use p.thumb for motion, p.src for photos
         var basePath = isMotion ? (p.thumb || "") : (p.src || "");
-        var thumbPath = basePath.replace('photos/', 'photos/thumbs/');
+        var thumbPath = basePath.includes('thumbs/') ? basePath : basePath.replace('photos/', 'photos/thumbs/');
 
         imgEl.src = thumbPath;
         imgEl.alt = p.title || "video";
@@ -2912,7 +2912,7 @@
         if (currentLightboxIsMotion) thumb.classList.add('mode-motion');
         thumb.dataset.idx = i;
         var img = document.createElement('img');
-        var thumbPath = currentLightboxIsMotion ? p.thumbnailUrl : p.src.replace('photos/', 'photos/thumbs/');
+        var thumbPath = currentLightboxIsMotion ? p.thumb : p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath;
         img.alt = p.title;
         img.loading = 'lazy';
