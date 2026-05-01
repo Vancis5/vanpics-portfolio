@@ -962,6 +962,7 @@
   </div>
   <div id="cursor"></div>
   <div id="cursor-ring"></div>
+  <div id="drag-vignette"></div>
   <div id="custom-scrollbar">
     <div id="custom-scrollbar-thumb"></div>
   </div>
@@ -2540,6 +2541,7 @@
         m.classList.add('switching');
 
         buildMasonry();
+        if (window.updateCustomScrollbar) window.updateCustomScrollbar();
 
         requestAnimationFrame(function () {
           m.style.minHeight = Math.max(currentHeight, m.offsetHeight) + 'px';
@@ -2557,6 +2559,7 @@
         // 4. Cleanup
         setTimeout(function () {
           m.style.minHeight = '';
+          if (window.updateCustomScrollbar) window.updateCustomScrollbar();
         }, 600);
       }, 0);
     }
@@ -2855,7 +2858,7 @@
       document.addEventListener('mousemove', function (e) {
         mx = e.clientX; my = e.clientY;
         cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-        
+
         if (isDraggingScrollbar) {
           hideCursor();
         } else {
@@ -2873,7 +2876,7 @@
           hideCursor();
           return;
         }
-        
+
         cursor.style.transform = 'translate(-50%,-50%) scale(0.65)';
         ring.style.transform = 'translate(-50%,-50%) scale(0.9)';
       });
@@ -2944,36 +2947,43 @@
         if (isMobile) {
           track.classList.add('moving');
           clearTimeout(fadeTimer);
-          fadeTimer = setTimeout(function() {
+          fadeTimer = setTimeout(function () {
             if (!isDragging) track.classList.remove('moving');
           }, 3000);
         }
       }
 
       // Track interaction (click to jump + start dragging)
-      track.addEventListener('mousedown', function(e) {
+      track.addEventListener('mousedown', function (e) {
         isDragging = true;
         track.classList.add('dragging');
-        
+        document.body.classList.add('is-dragging-scrollbar');
+
         var winH = window.innerHeight;
         var docH = document.documentElement.scrollHeight;
         var thumbH = parseFloat(thumb.style.height);
         var maxTrack = winH - thumbH;
         var maxScroll = docH - winH;
 
-        // Jump to clicked position immediately
-        var clickY = e.clientY - (thumbH / 2); // Center thumb on click
-        var scrollPos = (clickY / maxTrack) * maxScroll;
-        window.scrollTo(0, scrollPos);
+        // Jump to clicked position immediately IF clicking the track, not the thumb
+        // We check vertical bounds so grabbing the 'invisible hit zone' next to the thumb still counts as a grab
+        var thumbRect = thumb.getBoundingClientRect();
+        var isClickingThumb = e.clientY >= thumbRect.top && e.clientY <= thumbRect.bottom;
+
+        if (!isClickingThumb) {
+          var clickY = e.clientY - (thumbH / 2); // Center thumb on click
+          var scrollPos = (clickY / maxTrack) * maxScroll;
+          window.scrollTo(0, scrollPos);
+        }
 
         startY = e.clientY;
         startScroll = window.pageYOffset || document.documentElement.scrollTop;
-        
+
         document.body.style.userSelect = 'none';
         e.preventDefault();
       });
 
-      window.addEventListener('mousemove', function(e) {
+      window.addEventListener('mousemove', function (e) {
         if (!isDragging) return;
         var deltaY = e.clientY - startY;
         var winH = window.innerHeight;
@@ -2986,20 +2996,22 @@
         window.scrollTo(0, startScroll + scrollDelta);
       });
 
-      window.addEventListener('mouseup', function() {
+      window.addEventListener('mouseup', function () {
         if (isDragging) {
           isDragging = false;
           track.classList.remove('dragging');
+          document.body.classList.remove('is-dragging-scrollbar');
           document.body.style.userSelect = '';
           if (isMobile) {
             clearTimeout(fadeTimer);
-            fadeTimer = setTimeout(function() { track.classList.remove('moving'); }, 3000);
+            fadeTimer = setTimeout(function () { track.classList.remove('moving'); }, 3000);
           }
         }
       });
 
       window.addEventListener('scroll', updateThumb, { passive: true });
       window.addEventListener('resize', updateThumb);
+      window.updateCustomScrollbar = updateThumb;
       updateThumb();
     })();
 

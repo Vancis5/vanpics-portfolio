@@ -33,7 +33,8 @@ html::-webkit-scrollbar {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 32px; /* Large invisible hit zone at the edge */
+  width: 32px;
+  /* Large invisible hit zone at the edge */
   z-index: 10000;
   pointer-events: all;
   transition: opacity 0.4s ease;
@@ -43,7 +44,7 @@ html::-webkit-scrollbar {
   position: absolute;
   top: 0;
   right: 4px;
-  width: 4px;
+  width: 3px;
   background: rgba(221, 216, 207, 0.25);
   border-radius: 10px;
   cursor: grab;
@@ -52,14 +53,49 @@ html::-webkit-scrollbar {
 }
 
 #custom-scrollbar:hover #custom-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.5); /* Pulse brighter on hover */
+  background: rgba(221, 216, 207, 0.5);
+  /* Pulse brighter on hover */
 }
 
 #custom-scrollbar.dragging #custom-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.85); /* Bright when dragging */
-  width: 8px; /* Thicker when dragging */
+  background: rgba(221, 216, 207, 0.85);
+  /* Bright when dragging */
+  width: 8px;
+  /* Thicker when dragging */
   right: 2px;
   cursor: grabbing;
+}
+
+/* Focus effect on scroll drag */
+#hero,
+#masonry,
+#gallery-header p,
+#lightbox,
+footer {
+  transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.is-dragging-scrollbar #hero,
+body.is-dragging-scrollbar #masonry,
+body.is-dragging-scrollbar #gallery-header p,
+body.is-dragging-scrollbar #lightbox,
+body.is-dragging-scrollbar footer {
+  filter: saturate(0.8) brightness(0.9);
+}
+
+#drag-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 9980; /* Above content, below scrollbar/cursor */
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.45) 150%);
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+body.is-dragging-scrollbar #drag-vignette {
+  opacity: 1;
 }
 
 /* Mobile: handle the 3s fade */
@@ -67,6 +103,7 @@ html::-webkit-scrollbar {
   #custom-scrollbar {
     opacity: 0;
   }
+
   #custom-scrollbar.moving {
     opacity: 1;
   }
