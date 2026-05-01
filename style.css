@@ -73,8 +73,10 @@ body::after {
     pointer-events: none;
     z-index: 9999;
     transform: translate(-50%, -50%);
-    transition: transform 0.15s ease, opacity 0.3s ease;
+    transition: transform 0.15s ease, opacity 0.2s ease;
     opacity: 0;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   #cursor-ring {
@@ -86,8 +88,10 @@ body::after {
     pointer-events: none;
     z-index: 9998;
     transform: translate(-50%, -50%);
-    transition: width 0.3s, height 0.3s, border-color 0.3s, opacity 0.3s ease;
+    transition: width 0.3s, height 0.3s, border-color 0.3s, opacity 0.2s ease;
     opacity: 0;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   body .zoomable:hover {
