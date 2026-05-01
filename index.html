@@ -2169,7 +2169,7 @@
           }
 
           // smoothly sync filmstrip scrub to native drag
-          if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling) {
+          if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling && !isTouchingFilmstrip) {
             var thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
             if (thumbs.length > 0) {
               var thumbW = thumbs[0].offsetWidth;
@@ -3097,7 +3097,7 @@
     var fsVelocity = 0;
     var fsTarget = 0;
     var isManuallyNavigating = false;
-    var isJSScrollingFilmstrip = false;
+    var isTouchingFilmstrip = false;
     var fsSyncTarget = null;
     var fsSyncRaf = null;
 
@@ -3122,9 +3122,7 @@
         }
         // k=14: reaches 90% in ~165ms, 99% in ~330ms
         var alpha = 1 - Math.exp(-14 * dt / 1000);
-        isJSScrollingFilmstrip = true;
         filmstripEl.scrollLeft = current + diff * alpha;
-        isJSScrollingFilmstrip = false;
         fsSyncRaf = requestAnimationFrame(syncLoop);
       }
       fsSyncRaf = requestAnimationFrame(syncLoop);
@@ -3175,21 +3173,16 @@
               var t = Math.min(1, elapsed / duration);
               // silky ease-out-quart
               var ease = 1 - Math.pow(1 - t, 4);
-              isJSScrollingFilmstrip = true;
               filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
-              isJSScrollingFilmstrip = false;
               fsRaf = requestAnimationFrame(step);
             }
             fsRaf = requestAnimationFrame(step);
           }
         } else {
-          startFsSync(fsTarget);
+          if (!isTouchingFilmstrip) startFsSync(fsTarget);
         }
       }
     }
-    filmstripEl.addEventListener('scroll', function () {
-      if (!isJSScrollingFilmstrip) stopFsSync();
-    }, { passive: true });
 
     var isUserInteracting = false;
     document.getElementById('lightbox').addEventListener('touchstart', function () {
@@ -3198,6 +3191,7 @@
     }, { passive: true });
     window.addEventListener('touchend', function () {
       isUserInteracting = false;
+      isTouchingFilmstrip = false;
       if (filmstripWrap.classList.contains('visible')) {
         clearTimeout(filmstripHideTimer);
         filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
@@ -3210,6 +3204,7 @@
     }, { passive: true });
     window.addEventListener('mouseup', function () {
       isUserInteracting = false;
+      isTouchingFilmstrip = false;
       if (filmstripWrap.classList.contains('visible')) {
         clearTimeout(filmstripHideTimer);
         filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
@@ -3238,9 +3233,14 @@
       // short grace — enough to prevent flicker if mouse clips the edge
       filmstripHideTimer = setTimeout(hideFilmstrip, 200);
     });
-    filmstripWrap.addEventListener('touchstart', function () { clearTimeout(filmstripHideTimer); }, { passive: true });
+    filmstripWrap.addEventListener('touchstart', function () {
+      clearTimeout(filmstripHideTimer);
+      isTouchingFilmstrip = true;
+      stopFsSync();
+    }, { passive: true });
     filmstripWrap.addEventListener('touchend', function () {
       filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
+      isTouchingFilmstrip = false;
     }, { passive: true });
 
     // invisible lift zone — hovering bottom of screen revives hidden filmstrip
@@ -3260,6 +3260,7 @@
     var wheelRafId = null;
     filmstripWrap.addEventListener('wheel', function (e) {
       e.preventDefault();
+      stopFsSync();
       wheelVelocity += (e.deltaY + e.deltaX) * 0.6; // accumulate, scaled down slightly
       clearTimeout(filmstripHideTimer);
       filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
@@ -3283,6 +3284,8 @@
       filmstripEl.addEventListener('mousedown', function (e) {
         isDragging = true;
         dragMoved = false;
+        isTouchingFilmstrip = true;
+        stopFsSync();
         dragStartX = e.clientX;
         scrollStart = filmstripEl.scrollLeft;
         filmstripEl.classList.add('dragging');
