@@ -951,8 +951,8 @@
       will-change: filter, opacity, transform;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-RYmfNSge.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BhwP-WVs.css">
+  <script type="module" crossorigin src="/assets/index-NHYnVcEc.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CBqtFPrN.css">
 </head>
 
 <body>
@@ -1012,7 +1012,10 @@
       </div>
       <div id="lightbox-info-wrap">
         <div id="lightbox-info">
-          <div id="lightbox-title"></div>
+          <div id="lightbox-title-row">
+            <div id="lightbox-title"></div>
+            <button id="lightbox-desc-toggle" type="button" onclick="toggleLightboxDesc()">read more</button>
+          </div>
           <div id="lightbox-desc"></div>
           <div id="lightbox-meta">
             <span class="meta-item" id="meta-location" style="display: none;">
@@ -1046,7 +1049,6 @@
             </span>
           </div>
         </div>
-        <button id="lightbox-desc-toggle" type="button" onclick="toggleLightboxDesc()">read</button>
       </div>
     </div>
 
@@ -1242,9 +1244,24 @@
 
       var safeTitle = p.title || '';
       var safeDesc = p.desc || '';
+      var content = document.getElementById('lightbox-content');
+      var btn = document.getElementById('lightbox-desc-toggle');
+      var descEl = document.getElementById('lightbox-desc');
+      var isCollapsingOpenDesc = content && content.classList.contains('desc-open');
+      var preSwapImgRect = null;
+      var preSwapInfoRect = null;
+
+      if (isCollapsingOpenDesc && isMobile) {
+        var preSwapImgWrap = document.getElementById('lightbox-img-wrap');
+        var preSwapInfoWrap = document.getElementById('lightbox-info-wrap');
+        if (preSwapImgWrap && preSwapInfoWrap) {
+          preSwapImgRect = preSwapImgWrap.getBoundingClientRect();
+          preSwapInfoRect = preSwapInfoWrap.getBoundingClientRect();
+        }
+        if (descEl) descEl.style.transition = 'none';
+      }
 
       document.getElementById('lightbox-title').textContent = safeTitle;
-      var descEl = document.getElementById('lightbox-desc');
       descEl.innerHTML = safeDesc;
       var locItem = document.getElementById('meta-location');
       if (p.location) {
@@ -1278,9 +1295,6 @@
         history.replaceState(null, null, newHash);
       }
 
-      var content = document.getElementById('lightbox-content');
-      var btn = document.getElementById('lightbox-desc-toggle');
-
       // conditionally hide the "read" toggle when photo has no description
       if (btn) {
         var hasDesc = safeDesc.replace(/<[^>]*>/g, '').trim().length > 0;
@@ -1293,12 +1307,11 @@
           var imgWrap = document.getElementById('lightbox-img-wrap');
           var infoWrap = document.getElementById('lightbox-info-wrap');
 
-          var startImg = imgWrap.getBoundingClientRect();
-          var startInfo = infoWrap.getBoundingClientRect();
+          var startImg = preSwapImgRect || imgWrap.getBoundingClientRect();
+          var startInfo = preSwapInfoRect || infoWrap.getBoundingClientRect();
 
-          descEl.style.transition = 'none';
           content.classList.remove('desc-open');
-          if (btn) btn.textContent = 'read';
+          if (btn) btn.textContent = 'read more';
 
           var endImg = imgWrap.getBoundingClientRect();
           var endInfo = infoWrap.getBoundingClientRect();
@@ -1333,7 +1346,7 @@
           var startInfo = infoWrap.getBoundingClientRect();
 
           content.classList.remove('desc-open');
-          if (btn) btn.textContent = 'read';
+          if (btn) btn.textContent = 'read more';
 
           var endImg = imgWrap.getBoundingClientRect();
           var endInfo = infoWrap.getBoundingClientRect();
@@ -1360,7 +1373,7 @@
           });
         }
       } else if (btn) {
-        btn.textContent = 'read';
+        btn.textContent = 'read more';
       }
     }
 
@@ -1728,7 +1741,7 @@
 
       if (!imgWrap || !infoWrap) {
         content.classList.toggle('desc-open', opening);
-        btn.textContent = opening ? 'close' : 'read';
+        btn.textContent = opening ? 'close text' : 'read more';
         return;
       }
 
@@ -1736,7 +1749,7 @@
       var startInfo = infoWrap.getBoundingClientRect();
 
       content.classList.toggle('desc-open', opening);
-      btn.textContent = opening ? 'close' : 'read';
+      btn.textContent = opening ? 'close text' : 'read more';
 
       var endImg = imgWrap.getBoundingClientRect();
       var endInfo = infoWrap.getBoundingClientRect();
@@ -1768,7 +1781,7 @@
       var info = document.getElementById('lightbox-info');
       var btn = document.getElementById('lightbox-desc-toggle');
       if (info) info.classList.remove('desc-open');
-      if (btn) btn.textContent = 'read';
+      if (btn) btn.textContent = 'read more';
     }
 
     function navigateLightbox(d) {
