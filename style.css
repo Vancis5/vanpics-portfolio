@@ -1020,6 +1020,19 @@ body::after {
   max-width: 38ch;
 }
 
+#lightbox-desc a {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--text-faint);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s ease, color 0.2s ease;
+}
+
+#lightbox-desc a:hover {
+  color: #fff;
+  text-decoration-color: var(--text-muted);
+}
+
 /* mobile: show a two-line preview by default, then expand on toggle */
 @media (hover: none) and (max-width: 767px) {
   #lightbox-desc {

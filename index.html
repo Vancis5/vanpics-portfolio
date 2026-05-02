@@ -1004,7 +1004,7 @@
       <p>
         <span class="active photographs-btn">photographs</span>
         <span class="nav-divider">|</span>
-        <span class="inactive portraits-btn">portraits</span>
+        <span class="inactive figures-btn">figures</span>
         <span class="nav-divider">|</span>
         <span class="inactive motion-btn">motion</span>
       </p>
@@ -1098,7 +1098,8 @@
       </section>
 
       <section class="footer-bio" aria-label="bio">
-        <p>for a long time, taking photos was just something i did without thinking about it. i’m drawn to the ordinary, the moody, and the moments you barely notice until they're gone</p>
+        <p>for a long time, taking photos was just something i did without thinking about it. i’m drawn to the ordinary,
+          the moody, and the moments you barely notice until they're gone</p>
         <p>i’m still figuring this out, so you’ll see a little bit of everything here</p>
       </section>
     </div>
@@ -1174,7 +1175,7 @@
     // Initial Route Detection: Determine category before building UI to prevent transition flicker
     if (window.location.hash) {
       var initialHash = window.location.hash.substring(1).split('/')[0];
-      if (initialHash === 'portraits') currentCategory = 'portrait';
+      if (initialHash === 'figures') currentCategory = 'figures';
       if (initialHash === 'motion') currentCategory = 'motion';
     }
 
@@ -1183,12 +1184,12 @@
 
     function getCategorySlug(cat) {
       if (cat === 'all') return 'photographs';
-      if (cat === 'portrait') return 'portraits';
+      if (cat === 'figures') return 'figures';
       return 'motion';
     }
 
     function getInternalCategory(slug) {
-      if (slug === 'portraits') return 'portrait';
+      if (slug === 'figures') return 'figures';
       if (slug === 'motion') return 'motion';
       return 'all';
     }
@@ -1197,8 +1198,8 @@
       if (category === 'motion') return [];
       return photos.filter(function (p) {
         if (!p.title) return false;
-        if (category === 'portrait') return p.category === 'portrait';
-        return p.category !== 'portrait';
+        if (category === 'figures') return p.category === 'figures';
+        return p.category !== 'figures';
       });
     }
 
@@ -2657,7 +2658,7 @@
 
       // 2. Fast Swap
       setTimeout(function () {
-        var order = ['all', 'portrait', 'motion'];
+        var order = ['all', 'figures', 'motion'];
         var oldIdx = order.indexOf(oldCategory);
         var newIdx = order.indexOf(newCategory);
         var direction = newIdx > oldIdx ? 'right' : 'left';
@@ -2708,11 +2709,11 @@
 
         // 3. Update Nav UI
         var photoBtn = document.querySelector('.photographs-btn');
-        var portraitBtn = document.querySelector('.portraits-btn');
+        var figuresBtn = document.querySelector('.figures-btn');
         var motionBtn = document.querySelector('.motion-btn');
-        [photoBtn, portraitBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
+        [photoBtn, figuresBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
         if (newCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
-        if (newCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
+        if (newCategory === 'figures' && figuresBtn) { figuresBtn.classList.remove('inactive'); figuresBtn.classList.add('active'); }
         if (newCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
         // 4. Cleanup
@@ -2731,7 +2732,7 @@
     }
 
     function getAdjacentCategory(direction) {
-      var order = ['all', 'portrait', 'motion'];
+      var order = ['all', 'figures', 'motion'];
       var currentIdx = order.indexOf(currentCategory);
       if (currentIdx < 0) currentIdx = 0;
       var nextIdx = currentIdx + direction;
@@ -3013,13 +3014,13 @@
 
     function initFilters() {
       var photoBtn = document.querySelector('#gallery-header .photographs-btn');
-      var portraitBtn = document.querySelector('#gallery-header .portraits-btn');
+      var figuresBtn = document.querySelector('#gallery-header .figures-btn');
       var motionBtn = document.querySelector('#gallery-header .motion-btn');
 
       // Highlight initial category based on detected route
-      [photoBtn, portraitBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
+      [photoBtn, figuresBtn, motionBtn].forEach(function (b) { if (b) { b.classList.remove('active'); b.classList.add('inactive'); } });
       if (currentCategory === 'all' && photoBtn) { photoBtn.classList.remove('inactive'); photoBtn.classList.add('active'); }
-      if (currentCategory === 'portrait' && portraitBtn) { portraitBtn.classList.remove('inactive'); portraitBtn.classList.add('active'); }
+      if (currentCategory === 'figures' && figuresBtn) { figuresBtn.classList.remove('inactive'); figuresBtn.classList.add('active'); }
       if (currentCategory === 'motion' && motionBtn) { motionBtn.classList.remove('inactive'); motionBtn.classList.add('active'); }
 
       if (photoBtn) {
@@ -3029,10 +3030,10 @@
         });
       }
 
-      if (portraitBtn) {
-        portraitBtn.addEventListener('click', function () {
-          if (currentCategory === 'portrait') return;
-          rebuildGallery('portrait', { animate: true });
+      if (figuresBtn) {
+        figuresBtn.addEventListener('click', function () {
+          if (currentCategory === 'figures') return;
+          rebuildGallery('figures', { animate: true });
         });
       }
 
@@ -3196,7 +3197,7 @@
               img.loading = 'lazy';
             }
             img.addEventListener('click', function () {
-              var targetCat = (p.category === 'portrait') ? 'portrait' : 'all';
+              var targetCat = (p.category === 'figures') ? 'figures' : 'all';
               if (currentCategory === targetCat) {
                 var idx = activePhotos.indexOf(p);
                 if (idx >= 0) openLightbox(idx);
@@ -3315,7 +3316,8 @@
         }
       });
 
-      (function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
+      // the thin ring that follows the dot around
+      (function animateRing() { rx += (mx - rx) * 0.2; ry += (my - ry) * 0.2; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
 
       // Respond to hold (mousedown)
       window.addEventListener('mousedown', function (e) {
@@ -3337,7 +3339,6 @@
       });
 
       window.addEventListener('blur', hideCursor);
-      window.addEventListener('focus', showCursor);
 
       document.addEventListener('mouseleave', hideCursor);
       document.documentElement.addEventListener('mouseleave', hideCursor);
@@ -3843,10 +3844,10 @@
     if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
       document.write('<script src="scripts/firefox.js"><\/script>');
     }
-    
+
     // Footer brightness on mobile scroll
-    var footerObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
+    var footerObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
         if (window.matchMedia('(hover: none)').matches) {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
@@ -3856,7 +3857,7 @@
         }
       });
     }, { threshold: 0.85 });
-    
+
     var siteFooter = document.getElementById('site-footer');
     if (siteFooter) footerObserver.observe(siteFooter);
   </script>
