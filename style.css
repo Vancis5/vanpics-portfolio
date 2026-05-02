@@ -1492,32 +1492,6 @@ body::after {
   }
 }
 
-footer {
-  padding: 2rem 1.5rem;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-@media (min-width: 640px) {
-  footer {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2rem;
-  }
-}
-
-footer p {
-  font-family: 'DM Mono', monospace;
-  font-weight: 400;
-  font-size: 0.55rem;
-  letter-spacing: 0.14em;
-  color: var(--text-faint);
-  text-transform: lowercase;
-}
-
 @media (hover: hover) and (pointer: fine) {
   #filmstrip-lift-zone {
     position: fixed;
@@ -1532,30 +1506,132 @@ footer p {
   }
 }
 
-footer {
-  padding: 2rem 1.5rem;
+#site-footer {
   border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  padding: clamp(1.35rem, 3vw, 2.15rem) 1.5rem;
 }
 
-@media (min-width: 640px) {
-  footer {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2rem;
+.footer-columns {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: 1fr;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.footer-brand h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
+  color: rgba(221, 216, 207, 0.76);
+  transform: translateY(-0.18rem);
+}
+
+.footer-brand p,
+.footer-bio p,
+.footer-copyright {
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+.footer-brand p {
+  max-width: none;
+  margin-top: 0.48rem;
+  font-size: clamp(0.58rem, 1.5vw, 0.65rem);
+  line-height: 1.6;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.footer-instagram {
+  display: inline-flex;
+  width: 1.22rem;
+  height: 1.22rem;
+  margin-top: 0.95rem;
+  align-items: center;
+  justify-content: center;
+  color: rgba(221, 216, 207, 0.46);
+  opacity: 0.78;
+  transition:
+    color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.footer-instagram svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 1.35;
+}
+
+.footer-instagram:hover,
+.footer-instagram:focus-visible {
+  color: rgba(255, 255, 255, 0.96);
+  opacity: 1;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.22));
+}
+
+.footer-bio {
+  align-self: start;
+  display: grid;
+  gap: 0.65rem;
+  max-width: 38rem;
+  justify-self: end;
+  text-align: right;
+}
+
+.footer-bio p {
+  font-size: clamp(0.58rem, 1.5vw, 0.65rem);
+  line-height: 1.65;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.footer-copyright {
+  margin-top: 2.5rem;
+  padding: 0;
+  font-size: clamp(0.58rem, 1.5vw, 0.65rem);
+  line-height: 1.6;
+  letter-spacing: 0.1em;
+  color: rgba(221, 216, 207, 0.19);
+}
+
+@media (min-width: 820px) {
+  #site-footer {
+    padding-inline: 2.25rem;
+  }
+
+  .footer-columns {
+    grid-template-columns: minmax(18rem, 0.75fr) minmax(28rem, 1.25fr);
+    align-items: stretch;
   }
 }
 
-footer p {
-  font-family: 'DM Mono', monospace;
-  font-weight: 400;
-  font-size: 0.55rem;
-  letter-spacing: 0.14em;
-  color: var(--text-faint);
-  text-transform: lowercase;
+@media (max-width: 560px) {
+  #site-footer {
+    padding-block: 1.5rem;
+  }
+
+  .footer-columns {
+    gap: 2rem;
+  }
+
+  .footer-brand p {
+    white-space: normal;
+  }
+
+  .footer-bio p {
+    font-size: 0.58rem;
+  }
 }
 
 /* Selection UI Lock */

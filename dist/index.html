@@ -4,14 +4,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Francis Evan</title>
-  <meta name="description" content="pics by van">
-  <meta property="og:title" content="Francis Evan">
-  <meta property="og:description" content="pics by van">
+  <title>vanpics</title>
+  <meta name="description" content="Photography portfolio by Francis Evan.">
+  <meta name="theme-color" content="#111010">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="/assets/aperture-CZvOGGqN.svg">
+  <link rel="apple-touch-icon" href="/assets/aperture-CZvOGGqN.svg">
+
+  <!-- Link Preview Meta Tags -->
+  <meta property="og:url" content="https://vanpics.pages.dev">
   <meta property="og:type" content="website">
+  <meta property="og:title" content="vanpics">
+  <meta property="og:site_name" content="vanpics">
+  <meta property="og:description" content="pics by van">
+  <meta property="og:image" content="https://vanpics.pages.dev/photos/banner-sunlight.webp">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="800">
+
+  <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Francis Evan">
+  <meta property="twitter:domain" content="vanpics.pages.dev">
+  <meta property="twitter:url" content="https://vanpics.pages.dev">
+  <meta name="twitter:title" content="vanpics">
   <meta name="twitter:description" content="pics by van">
+  <meta name="twitter:image" content="https://vanpics.pages.dev/photos/banner-sunlight.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -951,8 +968,8 @@
       will-change: filter, opacity, transform;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-Duam0ASq.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CM78_T5H.css">
+  <script type="module" crossorigin src="/assets/index-Ch2Niqdg.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-09ZY1a4E.css">
 </head>
 
 <body>
@@ -973,7 +990,7 @@
     <div class="carousel-row" id="row-2"></div>
     <div class="carousel-row" id="row-3" style="display:none"></div>
     <div id="hero-identity">
-      <h1>Francis Evan</h1>
+      <h1>vanpics</h1>
       <p>a collection of things i saw</p>
     </div>
     <div id="scroll-hint" onclick="document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})">
@@ -1063,9 +1080,30 @@
   </div>
 
 
-  <footer>
-    <p>francis evan lorzano &mdash; maasin city, southern leyte</p>
-    <p>all rights reserved</p>
+  <footer id="site-footer">
+    <div class="footer-columns">
+      <section class="footer-brand" aria-labelledby="footer-title">
+        <div>
+          <h2 id="footer-title">vanpics</h2>
+          <p>i take photos and this is my gallery</p>
+          <a class="footer-instagram" href="https://www.instagram.com/vancis5/" target="_blank"
+            rel="noopener noreferrer" aria-label="vanpics on instagram">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+            </svg>
+          </a>
+        </div>
+      </section>
+
+      <section class="footer-bio" aria-label="bio">
+        <p>i've been taking photos before i knew what to call it. always took it on my phone or someone else's. in every
+          moment, there's something happening, and it won't last</p>
+        <p>my photos tend toward the atmospheric, the overlooked, and the ordinary. my work keeps changing, i'm still
+          figuring this out</p>
+      </section>
+    </div>
   </footer>
 
   <script src="photos.js"></script>
@@ -3309,14 +3347,14 @@
       document.documentElement.addEventListener('mouseenter', showCursor);
       document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
       // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
-      var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img';
+      var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img, .footer-instagram';
       document.addEventListener('mouseover', function (e) {
-        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram')) {
           ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';
         }
       });
       document.addEventListener('mouseout', function (e) {
-        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram')) {
           ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
         }
       });
@@ -3751,11 +3789,13 @@
         if (!glowRafId && typeof animateGlow === 'function') glowRafId = requestAnimationFrame(animateGlow);
       }
     }
+
     var heroObs = new IntersectionObserver(function (entries) {
       heroVisible = entries[0].isIntersecting;
       startLoops();
     }, { threshold: 0 });
     heroObs.observe(document.getElementById('hero'));
+
     document.addEventListener('visibilitychange', function () {
       pageVisible = !document.hidden;
       startLoops();

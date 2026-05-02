@@ -1080,9 +1080,30 @@
   </div>
 
 
-  <footer>
-    <p>francis evan lorzano &mdash; maasin city, southern leyte</p>
-    <p>all rights reserved</p>
+  <footer id="site-footer">
+    <div class="footer-columns">
+      <section class="footer-brand" aria-labelledby="footer-title">
+        <div>
+          <h2 id="footer-title">vanpics</h2>
+          <p>i take photos and this is my gallery</p>
+          <a class="footer-instagram" href="https://www.instagram.com/vancis5/" target="_blank"
+            rel="noopener noreferrer" aria-label="vanpics on instagram">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+            </svg>
+          </a>
+        </div>
+      </section>
+
+      <section class="footer-bio" aria-label="bio">
+        <p>i've been taking photos before i knew what to call it. always took it on my phone or someone else's. in every
+          moment, there's something happening, and it won't last</p>
+        <p>my photos tend toward the atmospheric, the overlooked, and the ordinary. my work keeps changing, i'm still
+          figuring this out</p>
+      </section>
+    </div>
   </footer>
 
   <script src="photos.js"></script>
@@ -3326,14 +3347,14 @@
       document.documentElement.addEventListener('mouseenter', showCursor);
       document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
       // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
-      var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img';
+      var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img, .footer-instagram';
       document.addEventListener('mouseover', function (e) {
-        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram')) {
           ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';
         }
       });
       document.addEventListener('mouseout', function (e) {
-        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint')) {
+        if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram')) {
           ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
         }
       });
@@ -3768,11 +3789,13 @@
         if (!glowRafId && typeof animateGlow === 'function') glowRafId = requestAnimationFrame(animateGlow);
       }
     }
+
     var heroObs = new IntersectionObserver(function (entries) {
       heroVisible = entries[0].isIntersecting;
       startLoops();
     }, { threshold: 0 });
     heroObs.observe(document.getElementById('hero'));
+
     document.addEventListener('visibilitychange', function () {
       pageVisible = !document.hidden;
       startLoops();
