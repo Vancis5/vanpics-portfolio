@@ -538,6 +538,7 @@ body::after {
 }
 
 @media (max-width: 639px) {
+
   #masonry,
   .masonry-swipe-pane {
     column-gap: 0.25rem;
@@ -545,6 +546,7 @@ body::after {
 }
 
 @media (min-width: 500px) {
+
   #masonry,
   .masonry-swipe-pane {
     columns: 3;
@@ -553,6 +555,7 @@ body::after {
 }
 
 @media (min-width: 1024px) {
+
   #masonry,
   .masonry-swipe-pane {
     columns: 4;
@@ -1296,7 +1299,8 @@ body::after {
   }
 
   #motion-player-shell {
-    max-height: 44svh; /* Match photo lightbox height */
+    max-height: 44svh;
+    /* Match photo lightbox height */
   }
 
   #lightbox-img-wrap::-webkit-scrollbar {
@@ -1586,7 +1590,7 @@ body::after {
   gap: 0.65rem;
   max-width: 38rem;
   justify-self: end;
-  text-align: right;
+  text-align: left;
 }
 
 .footer-bio p {
