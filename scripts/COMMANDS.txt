@@ -1,5 +1,5 @@
 ─────────────────────────────────────────────────────────────────────────────
-FRANCIS EVAN — PORTFOLIO UTILITY COMMANDS
+VANPICS — PORTFOLIO UTILITY COMMANDS
 ─────────────────────────────────────────────────────────────────────────────
 
 1. LOCAL DEVELOPMENT SERVERS
@@ -17,13 +17,19 @@ FRANCIS EVAN — PORTFOLIO UTILITY COMMANDS
 2. DATA & MAINTENANCE SCRIPTS
    ──────────────────────────
    - npm run sort
-     (Sorts photos.js chronologically from newest to oldest)
+     (Sorts photos.js newest to oldest. Undated photos move to bottom + alphabetical)
+
+   - node scripts/generate-photos.js
+     (Converts big images from /photos-raw to .webp (70% quality) into /photos)
 
    - node scripts/add-ratios.js
      (Scans your photos and adds / updates 'aspectRatio' in photos.js to kill CLS)
 
    - node scripts/generate-thumbs.js
      (Generates thumbnails and blur placeholders for the gallery and lightbox)
+
+   - node scripts/generate-blur.js
+     (Standalone script to regenerate only the blurred background assets)
 
 
 3. BROWSER UTILS

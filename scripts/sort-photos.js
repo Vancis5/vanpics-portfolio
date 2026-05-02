@@ -32,17 +32,7 @@ function getPhotoDate(photo) {
     }
   }
 
-  // Fallback to file system modification time
-  try {
-    const fullPath = path.join(__dirname, '..', photo.src);
-    if (fs.existsSync(fullPath)) {
-      return fs.statSync(fullPath).mtime;
-    }
-  } catch (e) {
-    // Ignore errors
-  }
-
-  return new Date(0); // Oldest fallback
+  return null; // No valid date
 }
 
 function sortPhotos() {
@@ -82,11 +72,22 @@ function sortPhotos() {
 
   console.log(`Analyzing ${photos.length} photos...`);
 
-  // Sort: Newest First
+  // Sort Logic:
+  // 1. Photos with dates come first (sorted newest to oldest)
+  // 2. Photos without dates go to bottom (sorted alphabetically by src)
   photos.sort((a, b) => {
     const dateA = getPhotoDate(a);
     const dateB = getPhotoDate(b);
-    return dateB - dateA;
+
+    if (dateA && dateB) {
+      return dateB - dateA; // Newest first
+    }
+    
+    if (dateA) return -1; // A has date, B doesn't -> A comes first
+    if (dateB) return 1;  // B has date, A doesn't -> B comes first
+
+    // Both have no date -> alphabetical sort by src
+    return a.src.localeCompare(b.src);
   });
 
   // Re-generate the array content with clean formatting
