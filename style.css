@@ -1578,11 +1578,7 @@ body::after {
   stroke-width: 1.35;
 }
 
-.footer-instagram:hover,
-.footer-instagram:focus-visible {
-  color: var(--text);
-  filter: drop-shadow(0 0 18px rgba(221, 216, 207, 0.22));
-}
+
 
 .footer-bio {
   align-self: start;
@@ -1626,6 +1622,12 @@ body::after {
 #site-footer:hover .footer-copyright,
 #site-footer.is-visible .footer-copyright {
   color: rgba(221, 216, 207, 0.35);
+}
+
+#site-footer .footer-instagram:hover,
+#site-footer .footer-instagram:focus-visible {
+  color: rgba(255, 255, 255, 1);
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.25));
 }
 
 @media (min-width: 820px) {
