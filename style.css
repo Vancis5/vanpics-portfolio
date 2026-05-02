@@ -1081,6 +1081,7 @@ body::after {
     -webkit-tap-highlight-color: transparent;
     outline: none;
     touch-action: manipulation;
+    user-select: none;
     opacity: 1;
     filter: blur(0);
     visibility: visible;
@@ -1555,4 +1556,59 @@ footer p {
   letter-spacing: 0.14em;
   color: var(--text-faint);
   text-transform: lowercase;
+}
+
+/* Selection UI Lock */
+#gallery-header,
+#scroll-hint,
+#lightbox-close,
+#lightbox-desc-toggle,
+.motion-start-button,
+.filmstrip-thumb,
+button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Safari / iPhone Immersion Fixes */
+#gallery-header {
+  isolation: isolate;
+}
+
+#gallery-header::before {
+  content: '';
+  position: fixed;
+  top: -180px;
+  left: 0;
+  right: 0;
+  height: calc(180px + env(safe-area-inset-top, 0px) + 1px);
+  background: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+body.gallery-header-stuck #gallery-header::before {
+  opacity: 1;
+}
+
+#lightbox-bg {
+  inset: -220px !important;
+}
+
+.lightbox-bg-blur {
+  inset: -240px !important;
+}
+
+#lightbox::before {
+  content: '';
+  position: fixed;
+  inset: -240px;
+  z-index: -3;
+  background: #0d0c0c;
+  pointer-events: none;
+}
+
+body.lightbox-open {
+  background: #0d0c0c;
 }

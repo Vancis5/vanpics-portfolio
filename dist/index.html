@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Francis Evan</title>
   <meta name="description" content="pics by van">
   <meta property="og:title" content="Francis Evan">
@@ -951,8 +951,8 @@
       will-change: filter, opacity, transform;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BK5rozDP.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-nyKGFU1p.css">
+  <script type="module" crossorigin src="/assets/index-Duam0ASq.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CM78_T5H.css">
 </head>
 
 <body>
@@ -2687,11 +2687,8 @@
         }, 100);
 
         setTimeout(function () {
-          if (options.preserveScroll) {
-            if (window.updateCustomScrollbar) window.updateCustomScrollbar();
-            return;
-          }
           m.style.minHeight = '';
+          if (options.preserveScroll) window.scrollTo(0, lockedScrollY);
           if (window.updateCustomScrollbar) window.updateCustomScrollbar();
         }, 600);
       }, 0);
@@ -3732,6 +3729,20 @@
     buildCarousel();
     buildMasonry();
     initFilters();
+
+    (function initStickyHeaderSurface() {
+      var header = document.getElementById('gallery-header');
+      if (!header) return;
+
+      function updateStickyHeaderSurface() {
+        document.body.classList.toggle('gallery-header-stuck', header.getBoundingClientRect().top <= 0.5);
+      }
+
+      updateStickyHeaderSurface();
+      window.addEventListener('scroll', updateStickyHeaderSurface, { passive: true });
+      window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });
+      window.addEventListener('orientationchange', updateStickyHeaderSurface, { passive: true });
+    })();
 
     // Visibility & Animation Loop Management
     function startLoops() {

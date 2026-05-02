@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Francis Evan</title>
   <meta name="description" content="pics by van">
   <meta property="og:title" content="Francis Evan">
@@ -3729,6 +3729,20 @@
     buildCarousel();
     buildMasonry();
     initFilters();
+
+    (function initStickyHeaderSurface() {
+      var header = document.getElementById('gallery-header');
+      if (!header) return;
+
+      function updateStickyHeaderSurface() {
+        document.body.classList.toggle('gallery-header-stuck', header.getBoundingClientRect().top <= 0.5);
+      }
+
+      updateStickyHeaderSurface();
+      window.addEventListener('scroll', updateStickyHeaderSurface, { passive: true });
+      window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });
+      window.addEventListener('orientationchange', updateStickyHeaderSurface, { passive: true });
+    })();
 
     // Visibility & Animation Loop Management
     function startLoops() {
