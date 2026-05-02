@@ -1535,6 +1535,7 @@ body::after {
   letter-spacing: 0;
   color: rgba(221, 216, 207, 0.76);
   transform: translateY(-0.18rem);
+  transition: color 0.4s ease;
 }
 
 .footer-brand p,
@@ -1543,6 +1544,7 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-weight: 400;
   text-transform: lowercase;
+  transition: color 0.4s ease;
 }
 
 .footer-brand p {
@@ -1562,8 +1564,7 @@ body::after {
   margin-top: 0.95rem;
   align-items: center;
   justify-content: center;
-  color: rgba(221, 216, 207, 0.46);
-  opacity: 0.78;
+  color: var(--text-faint);
   transition:
     color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1579,9 +1580,8 @@ body::after {
 
 .footer-instagram:hover,
 .footer-instagram:focus-visible {
-  color: rgba(255, 255, 255, 0.96);
-  opacity: 1;
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.22));
+  color: var(--text);
+  filter: drop-shadow(0 0 18px rgba(221, 216, 207, 0.22));
 }
 
 .footer-bio {
@@ -1609,6 +1609,25 @@ body::after {
   color: rgba(221, 216, 207, 0.19);
 }
 
+#site-footer:hover .footer-brand h2,
+#site-footer.is-visible .footer-brand h2 {
+  color: rgba(221, 216, 207, 0.95);
+}
+
+#site-footer:hover .footer-brand p,
+#site-footer.is-visible .footer-brand p,
+#site-footer:hover .footer-bio p,
+#site-footer.is-visible .footer-bio p,
+#site-footer:hover .footer-instagram,
+#site-footer.is-visible .footer-instagram {
+  color: var(--text-muted);
+}
+
+#site-footer:hover .footer-copyright,
+#site-footer.is-visible .footer-copyright {
+  color: rgba(221, 216, 207, 0.35);
+}
+
 @media (min-width: 820px) {
   #site-footer {
     padding-inline: 2.25rem;
@@ -1626,11 +1645,40 @@ body::after {
   }
 
   .footer-columns {
-    gap: 2rem;
+    gap: 0;
+  }
+
+  .footer-brand {
+    display: contents;
+  }
+
+  .footer-brand-inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 
+      "title icon"
+      "oneliner oneliner";
+    gap: 0;
+    width: 100%;
+    margin-bottom: 0.65rem;
+  }
+
+  .footer-brand h2 {
+    grid-area: title;
+    align-self: center;
+    transform: none;
+  }
+
+  .footer-instagram {
+    grid-area: icon;
+    align-self: center;
+    margin-top: 0;
   }
 
   .footer-brand p {
+    grid-area: oneliner;
     white-space: normal;
+    margin-top: 1.5rem;
   }
 
   .footer-bio p {
