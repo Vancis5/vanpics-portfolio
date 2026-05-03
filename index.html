@@ -836,38 +836,7 @@
       }
     }
 
-    /* swipe hint for mobile */
-    #swipe-hint {
-      display: none;
-    }
 
-    @media (hover: none) {
-      #swipe-hint {
-        display: flex;
-        position: fixed;
-        bottom: 12vh;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 10;
-        align-items: center;
-        gap: 0.5rem;
-        opacity: 0;
-        transition: opacity 0.4s ease;
-        pointer-events: none;
-      }
-
-      #swipe-hint.visible {
-        opacity: 1;
-      }
-
-      #swipe-hint span {
-        font-family: 'DM Mono', monospace;
-        font-size: 0.55rem;
-        letter-spacing: 0.15em;
-        color: rgba(221, 216, 207, 0.35);
-        text-transform: lowercase;
-      }
-    }
 
 
 
@@ -885,22 +854,7 @@
       transform: translateY(0);
     }
 
-    /* Horizontal slide for subnav category switching */
-    #masonry.switching {
-      animation: masonrySlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
 
-    @keyframes masonrySlide {
-      from {
-        opacity: 0;
-        transform: translateX(var(--masonry-x, 30px));
-      }
-
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
 
     /* lightbox image — transitions handled via inline JS for directional control */
     #lightbox-img {
@@ -1074,9 +1028,7 @@
     </div>
     <!-- invisible hit zone at bottom — always pointer-events active, lifts filmstrip on hover -->
     <div id="filmstrip-lift-zone"></div>
-    <div id="swipe-hint">
-      <span>&larr; swipe &rarr;</span>
-    </div>
+
   </div>
 
 
@@ -2731,286 +2683,7 @@
       }, 0);
     }
 
-    function getAdjacentCategory(direction) {
-      var order = ['all', 'figures', 'motion'];
-      var currentIdx = order.indexOf(currentCategory);
-      if (currentIdx < 0) currentIdx = 0;
-      var nextIdx = currentIdx + direction;
-      if (nextIdx < 0 || nextIdx >= order.length) return currentCategory;
-      return order[nextIdx];
-    }
 
-    function getItemsForCategory(category) {
-      return category === 'motion' ? motionProjects : getPhotoLibrary(category);
-    }
-
-    function createMasonrySwipePane(category) {
-      var pane = document.createElement('div');
-      pane.className = 'masonry-swipe-pane';
-      if (category === 'motion') pane.classList.add('motion-grid-active');
-
-      var lastYear = null;
-      var items = getItemsForCategory(category);
-      var isMotion = category === 'motion';
-
-      items.forEach(function (p) {
-        var currentYear = p.date ? (p.date.match(/\d{4}/) || ["undated"])[0] : "undated";
-
-        if (currentYear !== lastYear) {
-          var header = document.createElement('div');
-          header.className = 'date-header';
-          header.textContent = currentYear;
-          pane.appendChild(header);
-          lastYear = currentYear;
-        }
-
-        var card = document.createElement('div');
-        card.className = isMotion ? 'photo-card motion-card revealed' : 'photo-card revealed';
-        card.style.transition = 'none';
-
-        var imgEl = document.createElement('img');
-        var basePath = isMotion ? (p.thumb || "") : (p.src || "");
-        var thumbPath = basePath.includes('thumbs/') ? basePath : basePath.replace('photos/', 'photos/thumbs/');
-        imgEl.src = thumbPath;
-        imgEl.alt = p.title || "video";
-        imgEl.loading = 'eager';
-
-        if (p.aspectRatio && p.aspectRatio !== 0) {
-          imgEl.style.aspectRatio = p.aspectRatio;
-        } else if (ratioCache[basePath]) {
-          imgEl.style.aspectRatio = ratioCache[basePath];
-        }
-
-        var overlay = document.createElement('div');
-        overlay.className = 'photo-card-overlay';
-        overlay.innerHTML = '<div class="photo-card-title">' + (p.title || "") + '</div><div class="photo-card-date">' + (p.date || "undated") + '</div>';
-        card.appendChild(imgEl);
-        card.appendChild(overlay);
-        pane.appendChild(card);
-      });
-
-      return pane;
-    }
-
-    function initMasonryCategorySwipe() {
-      var gallery = document.getElementById('gallery-section');
-      var masonry = document.getElementById('masonry');
-      if (!gallery || !masonry || !isMobile) return;
-
-      var startX = 0;
-      var startY = 0;
-      var paneWidth = 0;
-      var paneGap = 0;
-      var swipeDirection = 0;
-      var targetCategory = currentCategory;
-      var tracking = false;
-      var horizontalIntent = false;
-      var suppressClick = false;
-      var didDrag = false;
-      var swipeCommitTimer = null;
-      var stage = null;
-      var currentSwipePane = null;
-      var targetSwipePane = null;
-
-      function getDragOffset(dx) {
-        var atFirst = getAdjacentCategory(-1) === currentCategory;
-        var atLast = getAdjacentCategory(1) === currentCategory;
-        if ((dx > 0 && atFirst) || (dx < 0 && atLast)) return dx * 0.26;
-        return dx;
-      }
-
-      function getStageBaseX() {
-        return swipeDirection < 0 ? -getSwipeTravel() : 0;
-      }
-
-      function getSwipeTravel() {
-        return paneWidth + paneGap;
-      }
-
-      function clampSwipeProgress(value) {
-        return Math.max(0, Math.min(1, value));
-      }
-
-      function updatePaneOpacity(progress) {
-        if (!currentSwipePane || !targetSwipePane) return;
-        var easedProgress = 1 - Math.pow(1 - clampSwipeProgress(progress), 1.7);
-        currentSwipePane.style.opacity = (1 - easedProgress * 0.72).toFixed(3);
-        targetSwipePane.style.opacity = (0.16 + easedProgress * 0.84).toFixed(3);
-      }
-
-      function setStageX(offset, withTransition, duration) {
-        if (!stage) return;
-        stage.style.transition = withTransition ? 'transform ' + duration + 'ms cubic-bezier(0.22,1,0.36,1)' : '';
-        stage.style.transform = 'translate3d(' + offset + 'px,0,0)';
-        var moved = Math.abs(offset - getStageBaseX());
-        updatePaneOpacity(moved / Math.min(paneWidth * 0.72, 280));
-      }
-
-      function removeSwipeStage() {
-        if (stage && stage.parentNode) stage.parentNode.removeChild(stage);
-        stage = null;
-        currentSwipePane = null;
-        targetSwipePane = null;
-        masonry.style.visibility = '';
-        masonry.style.transition = '';
-        masonry.style.transform = '';
-        masonry.style.minHeight = '';
-      }
-
-      function clearMasonryMotion(delay) {
-        clearTimeout(swipeCommitTimer);
-        swipeCommitTimer = setTimeout(function () {
-          removeSwipeStage();
-        }, delay);
-      }
-
-      function beginSwipeStage(direction) {
-        swipeDirection = direction;
-        targetCategory = getAdjacentCategory(direction);
-        if (targetCategory === currentCategory || stage) return;
-
-        paneWidth = masonry.offsetWidth;
-        paneGap = Math.round(Math.min(44, Math.max(24, window.innerWidth * 0.08)));
-        var currentHeight = masonry.offsetHeight;
-        var top = masonry.offsetTop;
-        var left = masonry.offsetLeft;
-
-        stage = document.createElement('div');
-        stage.className = 'masonry-swipe-stage';
-        stage.style.top = top + 'px';
-        stage.style.left = left + 'px';
-        stage.style.width = (paneWidth * 2 + paneGap) + 'px';
-        stage.style.gap = paneGap + 'px';
-
-        var currentPane = masonry.cloneNode(true);
-        currentPane.removeAttribute('id');
-        currentPane.classList.add('masonry-swipe-pane');
-        currentPane.classList.remove('switching');
-        currentPane.style.width = paneWidth + 'px';
-        currentPane.style.minHeight = currentHeight + 'px';
-        currentPane.style.transform = '';
-        currentPane.style.transition = '';
-
-        var targetPane = createMasonrySwipePane(targetCategory);
-        targetPane.style.width = paneWidth + 'px';
-        targetPane.style.minHeight = currentHeight + 'px';
-        currentSwipePane = currentPane;
-        targetSwipePane = targetPane;
-        updatePaneOpacity(0);
-
-        if (direction > 0) {
-          stage.appendChild(currentPane);
-          stage.appendChild(targetPane);
-        } else {
-          stage.appendChild(targetPane);
-          stage.appendChild(currentPane);
-        }
-
-        gallery.appendChild(stage);
-        masonry.style.minHeight = currentHeight + 'px';
-        masonry.style.visibility = 'hidden';
-        setStageX(getStageBaseX(), false, 0);
-      }
-
-      masonry.addEventListener('touchstart', function (e) {
-        if (document.getElementById('lightbox').classList.contains('open')) return;
-        if (!e.touches || e.touches.length !== 1) return;
-        if (!e.target.closest('#masonry')) return;
-        clearTimeout(swipeCommitTimer);
-        removeSwipeStage();
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        paneWidth = masonry.offsetWidth;
-        paneGap = Math.round(Math.min(44, Math.max(24, window.innerWidth * 0.08)));
-        swipeDirection = 0;
-        targetCategory = currentCategory;
-        tracking = true;
-        horizontalIntent = false;
-        didDrag = false;
-        masonry.style.transition = '';
-      }, { passive: true });
-
-      window.addEventListener('touchmove', function (e) {
-        if (!tracking || !e.touches || e.touches.length !== 1) return;
-        var dx = e.touches[0].clientX - startX;
-        var dy = e.touches[0].clientY - startY;
-        if (!horizontalIntent && Math.abs(dx) > 18 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-          horizontalIntent = true;
-        }
-        if (horizontalIntent) {
-          didDrag = true;
-          var direction = dx < 0 ? 1 : -1;
-          if (!stage) {
-            removeSwipeStage();
-            beginSwipeStage(direction);
-          }
-          var offsetDx = direction === swipeDirection ? getDragOffset(dx) : dx * 0.26;
-          if (stage) {
-            setStageX(getStageBaseX() + offsetDx, false, 0);
-          } else {
-            masonry.style.transform = 'translate3d(' + offsetDx + 'px,0,0)';
-          }
-          e.preventDefault();
-        }
-      }, { passive: false });
-
-      window.addEventListener('touchend', function (e) {
-        if (!tracking) return;
-        tracking = false;
-        if (document.getElementById('lightbox').classList.contains('open')) return;
-        var touch = e.changedTouches && e.changedTouches[0];
-        if (!touch) return;
-
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if (!didDrag || Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy) * 1.25) {
-          if (stage) setStageX(getStageBaseX(), true, 360);
-          else {
-            masonry.style.transition = 'transform 360ms cubic-bezier(0.22,1,0.36,1)';
-            masonry.style.transform = '';
-          }
-          clearMasonryMotion(380);
-          return;
-        }
-
-        var releaseDirection = dx < 0 ? 1 : -1;
-        if (!stage || targetCategory === currentCategory || releaseDirection !== swipeDirection) {
-          if (stage) setStageX(getStageBaseX(), true, 420);
-          else {
-            masonry.style.transition = 'transform 420ms cubic-bezier(0.22,1,0.36,1)';
-            masonry.style.transform = '';
-          }
-          clearMasonryMotion(440);
-          return;
-        }
-
-        suppressClick = true;
-        var commitX = swipeDirection > 0 ? -getSwipeTravel() : 0;
-        setStageX(commitX, true, 220);
-        setTimeout(function () {
-          rebuildGallery(targetCategory, { animate: false });
-          setTimeout(removeSwipeStage, 40);
-        }, 210);
-        setTimeout(function () { suppressClick = false; }, 480);
-      }, { passive: true });
-
-      window.addEventListener('touchcancel', function () {
-        if (!tracking) return;
-        tracking = false;
-        if (stage) setStageX(getStageBaseX(), true, 320);
-        else {
-          masonry.style.transition = 'transform 320ms cubic-bezier(0.22,1,0.36,1)';
-          masonry.style.transform = '';
-        }
-        clearMasonryMotion(340);
-      }, { passive: true });
-
-      gallery.addEventListener('click', function (e) {
-        if (!suppressClick) return;
-        e.preventDefault();
-        e.stopPropagation();
-      }, true);
-    }
 
     function initFilters() {
       var photoBtn = document.querySelector('#gallery-header .photographs-btn');
@@ -3044,7 +2717,7 @@
         });
       }
 
-      initMasonryCategorySwipe();
+
     }
 
     function buildMasonry() {
