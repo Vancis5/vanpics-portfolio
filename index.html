@@ -2646,26 +2646,31 @@
       })();
     }
 
-    function revealCards() {
-      var cards = document.querySelectorAll('.photo-card:not(.revealed)');
-      cards.forEach(function (card) {
-        var rect = card.getBoundingClientRect();
-        if (rect.top < window.innerHeight - 60) {
+    var cardObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var card = entry.target;
           var img = card.querySelector('img');
-          if (img && img.complete && img.naturalHeight !== 0) {
+
+          var reveal = function () {
             card.classList.add('revealed');
-          } else if (img && !img.dataset.loadListenerAttached) {
-            img.dataset.loadListenerAttached = "true";
-            img.addEventListener('load', function () {
-              var r = card.getBoundingClientRect();
-              if (r.top < window.innerHeight - 30) card.classList.add('revealed');
-            });
+            cardObserver.unobserve(card);
+          };
+
+          if (img && img.complete && img.naturalHeight !== 0) {
+            reveal();
+          } else if (img) {
+            img.addEventListener('load', reveal, { once: true });
           }
         }
       });
-    }
+    }, { rootMargin: '0px 0px -60px 0px' });
 
-    window.addEventListener('scroll', revealCards, { passive: true });
+    function revealCards() {
+      document.querySelectorAll('.photo-card:not(.revealed)').forEach(function (card) {
+        cardObserver.observe(card);
+      });
+    }
 
     // MASONRY — scroll reveal handles fade-in
     // aspect ratios cached in localStorage to prevent CLS on repeat visits
@@ -3585,9 +3590,13 @@
       window.addEventListener('orientationchange', updateStickyHeaderSurface, { passive: true });
     })();
 
-    // Rebuild masonry on resize to handle column count changes
+    // Rebuild masonry on resize to handle column count changes (width-only check to avoid mobile address bar flicker)
     var _masonryResizeTimer;
+    var _lastMasonryWidth = window.innerWidth;
     window.addEventListener('resize', function () {
+      if (window.innerWidth === _lastMasonryWidth) return;
+      _lastMasonryWidth = window.innerWidth;
+
       clearTimeout(_masonryResizeTimer);
       _masonryResizeTimer = setTimeout(function () {
         buildMasonry();
