@@ -319,7 +319,7 @@ const photos = [
   {
     src: "photos/mama-cat-kittens.webp",
     title: "they didn't make it",
-    desc: "all the kittens died because she wasnt able to feed them. they died one by one in my friend's daycare. the mama cat then fleed and never came back",
+    desc: "all the kittens died because she wasn't able to feed them. they died one by one in my friend's house. the mama cat then fled and never came back",
     date: "aug 24, 2022",
     location: "tagnipa",
     aspectRatio: 1.3369,

@@ -961,7 +961,7 @@
     <div class="carousel-row" id="row-3" style="display:none"></div>
     <div id="hero-identity">
       <h1>vanpics</h1>
-      <p>a collection of things i saw</p>
+      <p>collection of all the pics i've ever taken <br> more soon!</p>
     </div>
     <div id="scroll-hint"
       onclick="if(window.lenis){window.lenis.scrollTo('#gallery-section')}else{document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})}">
@@ -1077,6 +1077,9 @@
   <script src="photos.js"></script>
   <script src="videos.js"></script>
   <script>
+    var pushNextState = false;
+    var isPopState = false;
+
     // ── MOTION: swap this to change which video plays ──
     var motionProjects = (typeof videos !== 'undefined' && Array.isArray(videos)) ? videos.filter(function (v) {
       return !!v.thumb || !!v.src;
@@ -1140,6 +1143,36 @@
         .replace(/[^\w-]+/g, '')  // Remove all non-word chars
         .replace(/--+/g, '-');    // Replace multiple - with single -
     }
+    (function initHeroTagline() {
+      var taglines = [
+        "collection of all the pics i've ever taken <br> more soon!",
+        "still adding stuff. check back sometime",
+        "i keep the ones nobody else would keep",
+        "some of these i really wanna remember",
+        "taken between doing other things",
+        "photos i like!",
+        "things i saw while looking for something else",
+        "light, shadow, and a bit of luck",
+        "a little bit of everything",
+        "more coming soon, probably",
+        "started as a habit",
+        "taken when something was worth keeping"
+      ];
+      var el = document.querySelector('#hero-identity p');
+
+      if (el) {
+        var visited = localStorage.getItem('van_v3_visited');
+        var selected;
+        if (!visited) {
+          selected = taglines[0];
+          localStorage.setItem('van_v3_visited', 'true');
+        } else {
+          selected = taglines[Math.floor(Math.random() * taglines.length)];
+        }
+        el.innerHTML = selected;
+      }
+    })();
+
     var currentCategory = 'all';
     // Initial Route Detection: Determine category before building UI to prevent transition flicker
     if (window.location.hash) {
@@ -1314,7 +1347,14 @@
       var slug = slugify(safeTitle);
       var newHash = '#' + catSlug + '/' + slug;
       if (slug && window.location.hash !== newHash) {
-        history.replaceState(null, null, newHash);
+        if (isPopState) {
+          history.replaceState(null, null, newHash);
+        } else if (pushNextState) {
+          history.pushState(null, null, newHash);
+          pushNextState = false;
+        } else {
+          history.replaceState(null, null, newHash);
+        }
       }
 
       // conditionally hide the "read" toggle when photo has no description
@@ -1474,6 +1514,11 @@
     }
 
     function openLightbox(i, direction, isMotion) {
+      var lb = document.getElementById('lightbox');
+      if (lb && !lb.classList.contains('open') && !isPopState) {
+        pushNextState = true;
+      }
+      
       cur = i;
       isManuallyNavigating = true;
       currentLightboxIsMotion = !!isMotion;
@@ -1713,9 +1758,9 @@
       document.getElementById('blur-layer-a').classList.remove('active');
       document.getElementById('blur-layer-b').classList.remove('active');
       // Reset hash to category on close
-      if (window.location.hash) {
+      if (window.location.hash && !isPopState) {
         var catSlug = getCategorySlug(currentCategory);
-        history.replaceState(null, null, '#' + catSlug);
+        history.pushState(null, null, '#' + catSlug);
       }
 
       // Delay DOM teardown until the opacity fade finishes
@@ -1849,8 +1894,8 @@
       var currentSet = getCurrentLightboxItems();
       var prev = (cur - 1 + currentSet.length) % currentSet.length;
       var next = (cur + 1) % currentSet.length;
-      var p1 = new Image(); p1.src = currentSet[prev].src; if (p1.decode) p1.decode().catch(function(){});
-      var p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function(){});
+      var p1 = new Image(); p1.src = currentSet[prev].src; if (p1.decode) p1.decode().catch(function () { });
+      var p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function () { });
     }
 
     function navigateLightbox(d) {
@@ -2230,8 +2275,8 @@
             var shouldEager = (Math.abs(i - cur) <= 2);
             imgs[i].loading = shouldEager ? 'eager' : 'lazy';
             if (shouldEager && imgs[i].decode && !imgs[i].dataset.decoded) {
-              (function(img) {
-                img.decode().then(function() { img.dataset.decoded = "true"; }).catch(function(){});
+              (function (img) {
+                img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
               })(imgs[i]);
             }
           }
@@ -2669,12 +2714,12 @@
         updateActivePhotos();
 
         // Update URL hash for category if lightbox not open
-        if (!document.getElementById('lightbox').classList.contains('open')) {
+        if (!document.getElementById('lightbox').classList.contains('open') && !isPopState) {
           var catSlug = getCategorySlug(newCategory);
           var curHash = window.location.hash.substring(1);
           // Only update if the hash doesn't already start with this category slug (prevents wiping item slugs)
           if (!curHash.startsWith(catSlug)) {
-            history.replaceState(null, null, '#' + catSlug);
+            history.pushState(null, null, '#' + catSlug);
           }
         }
 
@@ -3571,6 +3616,16 @@
     // Deep Link Initial Load
     function checkHash() {
       var fullHash = window.location.hash.substring(1);
+      
+      var lb = document.getElementById('lightbox');
+      var isLbOpen = lb && lb.classList.contains('open');
+
+      // If no item slug and lightbox is open, close it (User clicked back from item to category)
+      if (fullHash.split('/').length < 2 && isLbOpen) {
+        closeLightbox();
+        return;
+      }
+
       if (!fullHash) return;
 
       var parts = fullHash.split('/');
@@ -3583,7 +3638,6 @@
       if (currentCategory !== targetCat) {
         rebuildGallery(targetCat);
         // Wait for rebuild, then re-check for the item
-        // We use a longer timeout and check for the presence of items
         setTimeout(checkHash, 300);
         return;
       }
@@ -3591,7 +3645,6 @@
       // 2. If we are in the right category, check for the specific item
       if (itemSlug) {
         var items = currentCategory === 'motion' ? motionProjects : activePhotos;
-        // Safety check: if items haven't populated yet, wait a bit longer
         if (items.length === 0 && currentCategory !== 'motion') {
           setTimeout(checkHash, 100);
           return;
@@ -3599,12 +3652,24 @@
 
         for (var i = 0; i < items.length; i++) {
           if (slugify(items[i].title) === itemSlug) {
+            // If already open to this item, do nothing
+            if (isLbOpen && cur === i) return;
+            
+            isPopState = true;
             openLightbox(i, 0, currentCategory === 'motion');
+            setTimeout(function() { isPopState = false; }, 100);
             return;
           }
         }
       }
     }
+
+    window.addEventListener('popstate', function() {
+      isPopState = true;
+      checkHash();
+      setTimeout(function() { isPopState = false; }, 500);
+    });
+
     // Defer slightly to ensure layout is ready
     setTimeout(checkHash, 300);
   </script>
