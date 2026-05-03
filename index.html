@@ -1188,6 +1188,22 @@
     var heroVisible = true, pageVisible = true;
     var heroRafId = null, glowRafId = null;
 
+    function syncVisualViewportVars() {
+      var vv = window.visualViewport;
+      var height = vv ? vv.height : window.innerHeight;
+      var bottomInset = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+      if (height) document.documentElement.style.setProperty('--app-height', height + 'px');
+      document.documentElement.style.setProperty('--browser-bottom', bottomInset + 'px');
+    }
+
+    syncVisualViewportVars();
+    window.addEventListener('resize', syncVisualViewportVars, { passive: true });
+    window.addEventListener('orientationchange', syncVisualViewportVars, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncVisualViewportVars, { passive: true });
+      window.visualViewport.addEventListener('scroll', syncVisualViewportVars, { passive: true });
+    }
+
     // GLOW BALL
     var glowBall = document.getElementById('glow-ball');
     var glowX = window.innerWidth / 2, glowY = window.innerHeight / 2;

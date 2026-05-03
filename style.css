@@ -15,6 +15,19 @@
   --text-muted: rgba(221, 216, 207, 0.48);
   --text-faint: rgba(221, 216, 207, 0.22);
   --border: rgba(221, 216, 207, 0.09);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --browser-bottom: 0px;
+  --app-height: 100svh;
+  --liquid-edge-bleed: 240px;
+  --filmstrip-bottom-pad: calc(1.5rem + var(--safe-bottom));
+  --filmstrip-clearance: calc(5.5rem + var(--safe-bottom) + var(--browser-bottom));
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
 }
 
 html {
@@ -493,7 +506,7 @@ body::after {
 
 @media (max-width: 639px) {
   #gallery-header {
-    padding-top: 1.15rem;
+    padding-top: calc(1.15rem + var(--safe-top));
     padding-bottom: 1.15rem;
   }
 
@@ -509,8 +522,8 @@ body::after {
 
   #gallery-header .active,
   #gallery-header .inactive {
-    padding: 1.15rem 0.46rem;
-    margin: -1.15rem -0.46rem;
+    padding: calc(1.15rem + var(--safe-top)) 0.46rem 1.15rem;
+    margin: calc(-1.15rem - var(--safe-top)) -0.46rem -1.15rem;
   }
 }
 
@@ -876,6 +889,8 @@ body::after {
 #lightbox {
   position: fixed;
   inset: 0;
+  height: var(--app-height);
+  min-height: var(--app-height);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -898,14 +913,14 @@ body::after {
 
 #lightbox-bg {
   position: fixed;
-  inset: 0;
+  inset: calc(-1 * var(--liquid-edge-bleed));
   z-index: -2;
   background: #0d0c0c;
 }
 
 .lightbox-bg-blur {
   position: fixed;
-  inset: -50px;
+  inset: calc(-1 * var(--liquid-edge-bleed));
   z-index: -1;
   transform: scale(1.12);
   opacity: 0;
@@ -931,11 +946,11 @@ body::after {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  height: 100svh;
+  height: var(--app-height);
   /* fixed height so justify-content:center is reliable */
   width: 100%;
   /* symmetric-ish padding: top clears close button, bottom clears filmstrip */
-  padding: 4.5rem 1.5rem 5rem;
+  padding: calc(4.5rem + var(--safe-top)) 1.5rem var(--filmstrip-clearance);
   gap: 0;
   justify-content: center;
   box-sizing: border-box;
@@ -944,8 +959,7 @@ body::after {
 /* Mobile: tighter top padding so image gets full breathing room */
 @media (hover: none) and (max-width: 767px) {
   #lightbox-content {
-    padding: 3.25rem 0.75rem 3.5rem;
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    padding: calc(3.25rem + var(--safe-top)) 0.75rem var(--filmstrip-clearance);
   }
 }
 
@@ -1191,15 +1205,15 @@ body::after {
     align-items: center;
     /* vertically center both columns */
     justify-content: center;
-    padding: 4.5rem 2.5rem 4.5rem;
+    padding: calc(4.5rem + var(--safe-top)) 2.5rem calc(4.5rem + var(--safe-bottom));
     transition: padding-bottom 0.3s ease;
     gap: 3rem;
-    height: 100svh;
+    height: var(--app-height);
   }
 
   /* filmstrip visible — shift center up to account for filmstrip height */
   #lightbox.filmstrip-visible #lightbox-content {
-    padding-bottom: 8rem;
+    padding-bottom: calc(8rem + var(--safe-bottom));
   }
 
   #lightbox-img-wrap {
@@ -1238,13 +1252,13 @@ body::after {
   #lightbox-content {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 4.5rem 3rem 4.5rem;
+    padding: calc(4.5rem + var(--safe-top)) 3rem calc(4.5rem + var(--safe-bottom));
     gap: 4rem;
     transition: padding-bottom 0.3s ease;
   }
 
   #lightbox.filmstrip-visible #lightbox-content {
-    padding-bottom: 8rem;
+    padding-bottom: calc(8rem + var(--safe-bottom));
   }
 
   #lightbox-img-wrap {
@@ -1268,8 +1282,8 @@ body::after {
 
 #lightbox-close {
   position: fixed;
-  top: 1.25rem;
-  right: 1.25rem;
+  top: calc(1.25rem + var(--safe-top));
+  right: calc(1.25rem + env(safe-area-inset-right, 0px));
   z-index: 10;
   background: rgba(17, 16, 16, 0.6);
   border: 1px solid var(--border);
@@ -1315,9 +1329,9 @@ body::after {
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    height: calc(100svh - 3.25rem);
-    margin-bottom: calc(46svh - 100svh + 3.25rem);
-    padding-bottom: calc(54svh - 3.25rem);
+    height: calc(var(--app-height) - 3.25rem - var(--safe-top));
+    margin-bottom: calc(46svh - var(--app-height) + 3.25rem + var(--safe-top));
+    padding-bottom: calc(54svh - 3.25rem - var(--safe-top));
     box-sizing: border-box;
     flex-shrink: 0;
     /* The transparent bottom area lets native scroll-snap own touches over the info zone. */
@@ -1395,15 +1409,26 @@ body::after {
 /* FILMSTRIP */
 #filmstrip-wrap {
   position: fixed;
-  bottom: 0;
+  bottom: var(--browser-bottom);
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 1.25rem 0 1.5rem;
+  padding: 1.25rem 0 var(--filmstrip-bottom-pad);
   background: linear-gradient(to top, rgba(13, 12, 12, 0.92) 0%, transparent 100%);
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+#filmstrip-wrap::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--liquid-edge-bleed));
+  height: calc(var(--liquid-edge-bleed) + var(--browser-bottom));
+  background: rgba(13, 12, 12, 0.92);
   pointer-events: none;
 }
 
@@ -1421,6 +1446,8 @@ body::after {
 }
 
 #filmstrip {
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: 5px;
   overflow-x: auto;
@@ -1504,7 +1531,7 @@ body::after {
   }
 
   #filmstrip-wrap {
-    padding: 1.5rem 0 1.75rem;
+    padding: 1.5rem 0 calc(1.75rem + var(--safe-bottom));
   }
 }
 
@@ -1747,7 +1774,7 @@ button {
   top: -180px;
   left: 0;
   right: 0;
-  height: calc(180px + env(safe-area-inset-top, 0px) + 1px);
+  height: calc(180px + var(--safe-top) + 1px);
   background: var(--bg);
   opacity: 0;
   pointer-events: none;
@@ -1759,17 +1786,17 @@ body.gallery-header-stuck #gallery-header::before {
 }
 
 #lightbox-bg {
-  inset: -220px !important;
+  inset: calc(-1 * var(--liquid-edge-bleed)) !important;
 }
 
 .lightbox-bg-blur {
-  inset: -240px !important;
+  inset: calc(-1 * var(--liquid-edge-bleed)) !important;
 }
 
 #lightbox::before {
   content: '';
   position: fixed;
-  inset: -240px;
+  inset: calc(-1 * var(--liquid-edge-bleed));
   z-index: -3;
   background: #0d0c0c;
   pointer-events: none;
@@ -1777,4 +1804,6 @@ body.gallery-header-stuck #gallery-header::before {
 
 body.lightbox-open {
   background: #0d0c0c;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
