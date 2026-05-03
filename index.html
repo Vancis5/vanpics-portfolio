@@ -962,7 +962,7 @@
       <h1>vanpics</h1>
       <p>a collection of things i saw</p>
     </div>
-    <div id="scroll-hint" onclick="document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})">
+    <div id="scroll-hint" onclick="if(window.lenis){window.lenis.scrollTo('#gallery-section')}else{document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})}">
       <span>scroll</span>
       <div class="scroll-line"></div>
     </div>
@@ -990,7 +990,7 @@
       <div class="lightbox-bg-blur-inner"></div>
     </div>
     <button id="lightbox-close" onclick="closeLightbox()">close</button>
-    <div id="lightbox-content">
+    <div id="lightbox-content" data-lenis-prevent>
       <div id="lightbox-zoom-darken"></div>
       <div id="lightbox-img-wrap">
         <img id="lightbox-img" class="zoomable" src="" alt="">
@@ -1038,7 +1038,7 @@
       </div>
     </div>
 
-    <div id="filmstrip-wrap">
+    <div id="filmstrip-wrap" data-lenis-prevent>
       <div id="filmstrip"></div>
     </div>
     <!-- invisible hit zone at bottom — always pointer-events active, lifts filmstrip on hover -->
@@ -2635,7 +2635,8 @@
       if (!options.preserveScroll && header) {
         var headerPos = header.getBoundingClientRect().top + window.pageYOffset;
         if (lockedScrollY > headerPos) {
-          window.scrollTo({ top: headerPos, behavior: 'auto' });
+          if (window.lenis) window.lenis.scrollTo(headerPos, { immediate: true });
+          else window.scrollTo({ top: headerPos, behavior: 'auto' });
         }
       }
 
@@ -2686,7 +2687,7 @@
         }
         requestAnimationFrame(function () {
           m.style.minHeight = Math.max(currentHeight, m.offsetHeight) + 'px';
-          if (options.preserveScroll) window.scrollTo(0, lockedScrollY);
+          if (options.preserveScroll) { if (window.lenis) window.lenis.scrollTo(lockedScrollY, { immediate: true }); else window.scrollTo(0, lockedScrollY); }
           if (window.updateCustomScrollbar) window.updateCustomScrollbar();
         });
 
@@ -2708,7 +2709,7 @@
 
         setTimeout(function () {
           m.style.minHeight = '';
-          if (options.preserveScroll) window.scrollTo(0, lockedScrollY);
+          if (options.preserveScroll) { if (window.lenis) window.lenis.scrollTo(lockedScrollY, { immediate: true }); else window.scrollTo(0, lockedScrollY); }
           if (window.updateCustomScrollbar) window.updateCustomScrollbar();
         }, 600);
       }, 0);
@@ -3139,7 +3140,7 @@
         if (!isClickingThumb) {
           var clickY = e.clientY - (thumbH / 2); // Center thumb on click
           var scrollPos = (clickY / maxTrack) * maxScroll;
-          window.scrollTo(0, scrollPos);
+          if (window.lenis) window.lenis.scrollTo(scrollPos, { immediate: true }); else window.scrollTo(0, scrollPos);
         }
 
         startY = e.clientY;
@@ -3159,7 +3160,7 @@
         var maxScroll = docH - winH;
 
         var scrollDelta = (deltaY / maxTrack) * maxScroll;
-        window.scrollTo(0, startScroll + scrollDelta);
+        if (window.lenis) window.lenis.scrollTo(startScroll + scrollDelta, { immediate: true }); else window.scrollTo(0, startScroll + scrollDelta);
       });
 
       window.addEventListener('mouseup', function () {
@@ -3576,6 +3577,61 @@
 
     var siteFooter = document.getElementById('site-footer');
     if (siteFooter) footerObserver.observe(siteFooter);
+  </script>
+
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+  <script>
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+
+      var lenis = new Lenis({
+        lerp: 0.09,
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        infinite: false,
+        autoResize: false, // Prevent Lenis from reading transient 0 values during reflows
+      });
+
+      window.lenis = lenis;
+
+      // ── Anti-Desync Guard ──
+      // If Lenis's internal state ever silently detaches from the real window scroll
+      // (a known edge case with Chrome scroll anchoring during lazy loading),
+      // force it back into sync when idle. This completely prevents the "stuck/teleport" bug.
+      setInterval(function () {
+        if (lenis && lenis.isScrolling === false && !lenis.isStopped && !lenis.isLocked) {
+          var realY = window.scrollY || window.pageYOffset || 0;
+          if (Math.abs(lenis.targetScroll - realY) > 5) {
+            lenis.targetScroll = lenis.animatedScroll = realY;
+            lenis.emit(); // ensure internal state propagates
+          }
+        }
+      }, 150);
+
+      // Manual RAF
+      function lenisRaf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(lenisRaf);
+      }
+      requestAnimationFrame(lenisRaf);
+
+      // Lightbox sync
+      window.addEventListener('lightbox-open', function () { lenis.stop(); });
+
+      var _origCloseLightbox = closeLightbox;
+      closeLightbox = function () {
+        _origCloseLightbox();
+        setTimeout(function () {
+          lenis.start();
+          lenis.animatedScroll = lenis.targetScroll = window.scrollY;
+        }, 450);
+      };
+
+      // Override Lenis CSS classes that conflict with site overflow rules
+      var ls = document.createElement('style');
+      ls.textContent = 'html.lenis,html.lenis body{height:auto}html.lenis,html.lenis-scrolling{overflow-x:clip!important;overflow-y:auto!important}html.lenis-stopped{overflow:hidden}';
+      document.head.appendChild(ls);
+    }
   </script>
 </body>
 

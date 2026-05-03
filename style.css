@@ -35,6 +35,7 @@ html {
   scrollbar-width: none;
   -ms-overflow-style: none;
   overflow-x: clip;
+  background: var(--bg);
 }
 
 html::-webkit-scrollbar {
@@ -437,7 +438,7 @@ body::after {
   background: rgba(17, 16, 16, 0.82);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding-top: 1.5rem;
+  padding-top: calc(1.5rem + var(--safe-top, 0px));
   padding-bottom: 1.5rem;
   margin-bottom: 0rem;
 
@@ -451,15 +452,15 @@ body::after {
 
 @media (min-width: 640px) {
   #gallery-header {
-    padding-top: 1.75rem;
+    padding-top: calc(1.75rem + var(--safe-top, 0px));
     padding-bottom: 1.75rem;
   }
 
   #gallery-header .active,
   #gallery-header .inactive {
-    padding-top: 1.75rem;
+    padding-top: calc(1.75rem + var(--safe-top, 0px));
     padding-bottom: 1.75rem;
-    margin-top: -1.75rem;
+    margin-top: calc(-1.75rem - var(--safe-top, 0px));
     margin-bottom: -1.75rem;
   }
 }
@@ -889,8 +890,8 @@ body::after {
 #lightbox {
   position: fixed;
   inset: 0;
-  height: var(--app-height);
-  min-height: var(--app-height);
+  height: 100vh;
+  min-height: 100vh;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -1409,12 +1410,12 @@ body::after {
 /* FILMSTRIP */
 #filmstrip-wrap {
   position: fixed;
-  bottom: var(--browser-bottom);
+  bottom: 0;
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 1.25rem 0 var(--filmstrip-bottom-pad);
-  background: linear-gradient(to top, rgba(13, 12, 12, 0.92) 0%, transparent 100%);
+  padding: 1.25rem 0 calc(var(--filmstrip-bottom-pad) + var(--browser-bottom));
+  background: linear-gradient(to top, rgba(13, 12, 12, 0.92) calc(var(--filmstrip-bottom-pad) + var(--browser-bottom)), transparent 100%);
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -1427,7 +1428,7 @@ body::after {
   left: 0;
   right: 0;
   bottom: calc(-1 * var(--liquid-edge-bleed));
-  height: calc(var(--liquid-edge-bleed) + var(--browser-bottom));
+  height: var(--liquid-edge-bleed);
   background: rgba(13, 12, 12, 0.92);
   pointer-events: none;
 }
@@ -1766,23 +1767,6 @@ button {
 /* Safari / iPhone Immersion Fixes */
 #gallery-header {
   isolation: isolate;
-}
-
-#gallery-header::before {
-  content: '';
-  position: fixed;
-  top: -180px;
-  left: 0;
-  right: 0;
-  height: calc(180px + var(--safe-top) + 1px);
-  background: var(--bg);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease;
-}
-
-body.gallery-header-stuck #gallery-header::before {
-  opacity: 1;
 }
 
 #lightbox-bg {
