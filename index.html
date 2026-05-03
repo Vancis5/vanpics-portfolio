@@ -3374,6 +3374,11 @@
     }
 
     function hideFilmstrip() {
+      // Don't hide if the cursor is still in the wrap or the lift zone
+      if (filmstripWrap.matches(':hover') || (liftZone && liftZone.matches(':hover'))) {
+        filmstripHideTimer = setTimeout(hideFilmstrip, 1000);
+        return;
+      }
       filmstripWrap.classList.remove('visible');
       document.getElementById('lightbox').classList.remove('filmstrip-visible');
     }
@@ -3381,8 +3386,8 @@
     // keep filmstrip visible while hovering it
     filmstripWrap.addEventListener('mouseenter', function () { clearTimeout(filmstripHideTimer); });
     filmstripWrap.addEventListener('mouseleave', function () {
-      // short grace — enough to prevent flicker if mouse clips the edge
-      filmstripHideTimer = setTimeout(hideFilmstrip, 200);
+      // grace period — prevents flicker and allows cursor to move back in
+      filmstripHideTimer = setTimeout(hideFilmstrip, 600);
     });
     filmstripWrap.addEventListener('touchstart', function () {
       clearTimeout(filmstripHideTimer);
@@ -3401,8 +3406,8 @@
         showFilmstrip();
       });
       liftZone.addEventListener('mouseleave', function () {
-        // if mouse left lift zone without entering filmstrip, hide immediately
-        filmstripHideTimer = setTimeout(hideFilmstrip, 0);
+        // if mouse left lift zone without entering filmstrip, wait a bit
+        filmstripHideTimer = setTimeout(hideFilmstrip, 600);
       });
     }
 
