@@ -21,6 +21,7 @@ html {
   scrollbar-gutter: stable;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overflow-x: clip;
 }
 
 html::-webkit-scrollbar {
@@ -118,7 +119,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Cormorant Garamond', serif;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* grain texture overlay */
