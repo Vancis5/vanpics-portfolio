@@ -2743,21 +2743,33 @@
 
       var isMotion = (currentCategory === 'motion');
       var items = isMotion ? motionProjects : activePhotos;
+      var isSwitching = m.classList.contains('switching');
+      var yearGrid = null;
 
       items.forEach(function (p, i) {
         // Extract year (e.g., "2026" from "jan 9, 2026")
         var currentYear = p.date ? (p.date.match(/\d{4}/) || ["undated"])[0] : "undated";
 
         if (currentYear !== lastYear) {
+          var yearSection = document.createElement('section');
+          yearSection.className = 'masonry-year';
+
           var header = document.createElement('div');
           header.className = 'date-header';
           header.textContent = currentYear;
-          m.appendChild(header);
+          yearSection.appendChild(header);
+
+          yearGrid = document.createElement('div');
+          yearGrid.className = 'masonry-year-grid';
+          yearSection.appendChild(yearGrid);
+
+          m.appendChild(yearSection);
           lastYear = currentYear;
         }
 
         var card = document.createElement('div');
         card.className = isMotion ? 'photo-card motion-card' : 'photo-card';
+        if (isSwitching) card.classList.add('revealed');
         var imgEl = document.createElement('img');
 
         // Use p.thumb for motion, p.src for photos
@@ -2795,7 +2807,7 @@
         card.addEventListener('click', (function (idx) {
           return function () { openLightbox(idx, 0, isMotion); };
         })(i));
-        m.appendChild(card);
+        if (yearGrid) yearGrid.appendChild(card);
       });
 
       // Special handling for the switch reveal

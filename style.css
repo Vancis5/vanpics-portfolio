@@ -516,10 +516,13 @@ body::after {
 
 /* MASONRY */
 #masonry {
-  columns: 3;
-  column-gap: 0.35rem;
   will-change: transform;
   touch-action: pan-y;
+}
+
+.masonry-year-grid {
+  columns: 3;
+  column-gap: 0.35rem;
 }
 
 .masonry-swipe-stage {
@@ -540,7 +543,7 @@ body::after {
 
 @media (max-width: 639px) {
 
-  #masonry,
+  .masonry-year-grid,
   .masonry-swipe-pane {
     column-gap: 0.25rem;
   }
@@ -548,7 +551,7 @@ body::after {
 
 @media (min-width: 500px) {
 
-  #masonry,
+  .masonry-year-grid,
   .masonry-swipe-pane {
     columns: 3;
     column-gap: 0.5rem;
@@ -557,7 +560,7 @@ body::after {
 
 @media (min-width: 1024px) {
 
-  #masonry,
+  .masonry-year-grid,
   .masonry-swipe-pane {
     columns: 4;
     column-gap: 0.75rem;
@@ -567,20 +570,29 @@ body::after {
 }
 
 .date-header {
-  column-span: all;
   font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.25em;
   color: var(--text-faint);
   text-transform: uppercase;
-  margin: 4.5rem 0 1.5rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--border);
+  margin: 4.5rem 0 0;
+  padding-bottom: 2.1rem;
+  position: relative;
   width: 100%;
   opacity: 0.8;
 }
 
-#masonry .date-header:first-child,
+.date-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1.5rem;
+  height: 1px;
+  background: var(--border);
+}
+
+.masonry-year:first-child .date-header,
 .masonry-swipe-pane .date-header:first-child {
   margin-top: 0rem;
 }
@@ -589,9 +601,13 @@ body::after {
   .date-header {
     font-size: 0.52rem;
     letter-spacing: 0.18em;
-    margin: 3rem 0 0.9rem;
-    padding-bottom: 0.45rem;
+    margin: 3rem 0 0;
+    padding-bottom: 1.35rem;
     width: calc(100% - 0.9rem);
+  }
+  
+  .date-header::after {
+    bottom: 0.9rem;
   }
 }
 
@@ -603,6 +619,9 @@ body::after {
   border-radius: 3px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  display: inline-block;
+  width: 100%;
+  vertical-align: top;
 }
 
 @media (min-width: 1024px) {
