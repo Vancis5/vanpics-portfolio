@@ -3258,22 +3258,27 @@
     // Uses frame-rate-independent exponential decay so the filmstrip
     // chases the target position without jitter or abrupt transitions.
     function startFsSync(target) {
+      if (window.fsLenis) window.fsLenis.stop();
       fsSyncTarget = target;
-      if (fsSyncRaf) return; // loop already running — just updated target
+      if (fsSyncRaf) return;
       var prevTime = 0;
       function syncLoop(time) {
-        if (fsSyncTarget === null) { fsSyncRaf = null; return; }
+        if (fsSyncTarget === null) {
+          if (window.fsLenis) window.fsLenis.start();
+          fsSyncRaf = null;
+          return;
+        }
         var dt = prevTime ? Math.min(time - prevTime, 33) : 16;
         prevTime = time;
         var current = filmstripEl.scrollLeft;
         var diff = fsSyncTarget - current;
         if (Math.abs(diff) < 0.5) {
           filmstripEl.scrollLeft = fsSyncTarget;
+          if (window.fsLenis) window.fsLenis.start();
           fsSyncRaf = null;
           fsSyncTarget = null;
           return;
         }
-        // k=14: reaches 90% in ~165ms, 99% in ~330ms
         var alpha = 1 - Math.exp(-14 * dt / 1000);
         filmstripEl.scrollLeft = current + diff * alpha;
         fsSyncRaf = requestAnimationFrame(syncLoop);
@@ -3286,6 +3291,7 @@
       if (fsSyncRaf) { cancelAnimationFrame(fsSyncRaf); fsSyncRaf = null; }
       fsSyncTarget = null;
       isManuallyNavigating = false;
+      if (window.fsLenis) window.fsLenis.start();
     }
 
     function updateFilmstrip() {
@@ -3315,16 +3321,19 @@
             var duration = 400; // graceful duration
 
             function step(time) {
-              if (!startTime) startTime = time;
+              if (!startTime) {
+                startTime = time;
+                if (window.fsLenis) window.fsLenis.stop();
+              }
               var elapsed = time - startTime;
               if (elapsed >= duration) {
                 filmstripEl.scrollLeft = fsTarget;
+                if (window.fsLenis) window.fsLenis.start();
                 fsRaf = null;
                 isManuallyNavigating = false;
                 return;
               }
               var t = Math.min(1, elapsed / duration);
-              // silky ease-out-quart
               var ease = 1 - Math.pow(1 - t, 4);
               filmstripEl.scrollLeft = startPos + (fsTarget - startPos) * ease;
               fsRaf = requestAnimationFrame(step);
@@ -3432,6 +3441,7 @@
         dragMoved = false;
         isTouchingFilmstrip = true;
         stopFsSync();
+        if (window.fsLenis) window.fsLenis.stop();
         dragStartX = e.clientX;
         scrollStart = filmstripEl.scrollLeft;
         filmstripEl.classList.add('dragging');
@@ -3449,6 +3459,7 @@
         if (!isDragging) return;
         isDragging = false;
         filmstripEl.classList.remove('dragging');
+        if (window.fsLenis) window.fsLenis.start();
         filmstripHideTimer = setTimeout(hideFilmstrip, 1500);
       });
 
@@ -3603,9 +3614,9 @@
         });
 
         var _fsResizeTimer;
-        new ResizeObserver(function() {
+        new ResizeObserver(function () {
           clearTimeout(_fsResizeTimer);
-          _fsResizeTimer = setTimeout(function() {
+          _fsResizeTimer = setTimeout(function () {
             if (window.fsLenis) window.fsLenis.resize();
           }, 150);
         }).observe(filmstripEl);
@@ -3623,7 +3634,7 @@
             lenis.emit(); // ensure internal state propagates
           }
         }
-      }, 150);
+      }, 50);
 
       // Manual RAF
       function lenisRaf(time) {
