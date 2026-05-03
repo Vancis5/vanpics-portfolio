@@ -1299,10 +1299,12 @@ body::after {
   position: fixed;
   top: calc(1.25rem + var(--safe-top));
   right: calc(1.25rem + env(safe-area-inset-right, 0px));
-  z-index: 10;
-  background: rgba(17, 16, 16, 0.6);
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  z-index: 1000;
+  background: rgba(17, 16, 16, 0.76);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(221, 216, 207, 0.12);
+  border-radius: 4px;
   color: var(--text-muted);
   font-family: 'DM Mono', monospace;
   font-weight: 400;
@@ -1310,7 +1312,7 @@ body::after {
   letter-spacing: 0.14em;
   cursor: pointer;
   padding: 0.5rem 0.85rem;
-  transition: color 0.2s, border-color 0.2s;
+  transition: all 0.3s ease;
   text-transform: lowercase;
   -webkit-tap-highlight-color: transparent;
   min-height: 40px;
@@ -1398,6 +1400,11 @@ body::after {
     position: relative;
     z-index: 3;
     pointer-events: none;
+  }
+
+  #lightbox-info a,
+  #lightbox-desc a {
+    pointer-events: auto;
   }
 
   #lightbox:not(.mode-motion) #lightbox-desc-toggle {
