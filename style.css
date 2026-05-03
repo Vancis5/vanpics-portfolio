@@ -535,8 +535,17 @@ body::after {
 }
 
 .masonry-year-grid {
-  columns: 3;
-  column-gap: 0.35rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.masonry-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0; /* Prevents overflow in flex children */
 }
 
 .masonry-swipe-stage {
@@ -557,27 +566,31 @@ body::after {
 
 @media (max-width: 639px) {
 
-  .masonry-year-grid,
-  .masonry-swipe-pane {
-    column-gap: 0.25rem;
+  .masonry-year-grid {
+    gap: 0.25rem;
+  }
+  .masonry-column {
+    gap: 0.25rem;
   }
 }
 
 @media (min-width: 500px) {
 
-  .masonry-year-grid,
-  .masonry-swipe-pane {
-    columns: 3;
-    column-gap: 0.5rem;
+  .masonry-year-grid {
+    gap: 0.5rem;
+  }
+  .masonry-column {
+    gap: 0.5rem;
   }
 }
 
 @media (min-width: 1024px) {
 
-  .masonry-year-grid,
-  .masonry-swipe-pane {
-    columns: 4;
-    column-gap: 0.75rem;
+  .masonry-year-grid {
+    gap: 0.75rem;
+  }
+  .masonry-column {
+    gap: 0.75rem;
   }
 
 
@@ -994,6 +1007,7 @@ body::after {
   object-fit: contain;
   border-radius: 3px;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .zoomed {
@@ -1375,6 +1389,7 @@ body::after {
     object-fit: contain;
     border-radius: 3px;
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
     /* prevent images from exceeding their slide on notched phones */
     max-width: calc(100% - 0.25rem);
   }
@@ -1458,6 +1473,7 @@ body::after {
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-x;
+  will-change: transform, scroll-position;
   /* native horizontal scroll on mobile, doesn't interfere with swipe */
   -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
   mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
