@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>vanpics</title>
   <meta name="description" content="Photography portfolio by Francis Evan.">
   <meta name="theme-color" content="#111010">
@@ -962,7 +963,8 @@
       <h1>vanpics</h1>
       <p>a collection of things i saw</p>
     </div>
-    <div id="scroll-hint" onclick="if(window.lenis){window.lenis.scrollTo('#gallery-section')}else{document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})}">
+    <div id="scroll-hint"
+      onclick="if(window.lenis){window.lenis.scrollTo('#gallery-section')}else{document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})}">
       <span>scroll</span>
       <div class="scroll-line"></div>
     </div>
@@ -3387,7 +3389,7 @@
     filmstripWrap.addEventListener('mouseenter', function () { clearTimeout(filmstripHideTimer); });
     filmstripWrap.addEventListener('mouseleave', function () {
       // grace period — prevents flicker and allows cursor to move back in
-      filmstripHideTimer = setTimeout(hideFilmstrip, 600);
+      filmstripHideTimer = setTimeout(hideFilmstrip, 300);
     });
     filmstripWrap.addEventListener('touchstart', function () {
       clearTimeout(filmstripHideTimer);
@@ -3411,24 +3413,12 @@
       });
     }
 
-    // mouse wheel scroll — momentum accumulator for smooth visual feel
-    var wheelVelocity = 0;
-    var wheelRafId = null;
+    // Capture wheel events early to trigger UI logic (scroll handled by fsLenis)
     filmstripWrap.addEventListener('wheel', function (e) {
-      e.preventDefault();
       stopFsSync();
-      wheelVelocity += (e.deltaY + e.deltaX) * 0.6; // accumulate, scaled down slightly
       clearTimeout(filmstripHideTimer);
       filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
-      if (!wheelRafId) {
-        (function wheelLoop() {
-          if (Math.abs(wheelVelocity) < 0.5) { wheelVelocity = 0; wheelRafId = null; return; }
-          filmstripEl.scrollLeft += wheelVelocity;
-          wheelVelocity *= 0.82; // friction — decay per frame
-          wheelRafId = requestAnimationFrame(wheelLoop);
-        })();
-      }
-    }, { passive: false });
+    }, { passive: true, capture: true });
 
     // click-drag scroll
     function initFilmstripDrag() {
@@ -3599,6 +3589,28 @@
 
       window.lenis = lenis;
 
+      // ── Filmstrip Lenis ──
+      var filmstripEl = document.getElementById('filmstrip');
+      if (filmstripEl) {
+        window.fsLenis = new Lenis({
+          wrapper: filmstripEl,
+          content: filmstripEl,
+          orientation: 'horizontal',
+          gestureOrientation: 'both',
+          smoothWheel: true,
+          lerp: 0.09,
+          autoResize: false
+        });
+
+        var _fsResizeTimer;
+        new ResizeObserver(function() {
+          clearTimeout(_fsResizeTimer);
+          _fsResizeTimer = setTimeout(function() {
+            if (window.fsLenis) window.fsLenis.resize();
+          }, 150);
+        }).observe(filmstripEl);
+      }
+
       // ── Anti-Desync Guard ──
       // If Lenis's internal state ever silently detaches from the real window scroll
       // (a known edge case with Chrome scroll anchoring during lazy loading),
@@ -3616,6 +3628,7 @@
       // Manual RAF
       function lenisRaf(time) {
         lenis.raf(time);
+        if (window.fsLenis) window.fsLenis.raf(time);
         requestAnimationFrame(lenisRaf);
       }
       requestAnimationFrame(lenisRaf);
