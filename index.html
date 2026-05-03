@@ -19,7 +19,7 @@
   <meta property="og:title" content="vanpics">
   <meta property="og:site_name" content="vanpics">
   <meta property="og:description" content="pics by van">
-  <meta property="og:image" content="https://vanpics.pages.dev/photos/banner-sunlight.webp">
+  <meta property="og:image" content="https://vanpics.pages.dev/preview.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="800">
 
@@ -29,7 +29,7 @@
   <meta property="twitter:url" content="https://vanpics.pages.dev">
   <meta name="twitter:title" content="vanpics">
   <meta name="twitter:description" content="pics by van">
-  <meta name="twitter:image" content="https://vanpics.pages.dev/photos/banner-sunlight.webp">
+  <meta name="twitter:image" content="https://vanpics.pages.dev/preview.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -961,7 +961,7 @@
     <div class="carousel-row" id="row-3" style="display:none"></div>
     <div id="hero-identity">
       <h1>vanpics</h1>
-      <p>collection of all the pics i've ever taken <br> more soon!</p>
+      <p>collection of all the pics i've ever taken <br> more soon</p>
     </div>
     <div id="scroll-hint"
       onclick="if(window.lenis){window.lenis.scrollTo('#gallery-section')}else{document.getElementById('gallery-section').scrollIntoView({behavior:'smooth'})}">
@@ -1145,16 +1145,14 @@
     }
     (function initHeroTagline() {
       var taglines = [
-        "collection of all the pics i've ever taken <br> more soon!",
+        "collection of all the pics i've ever taken <br> more soon",
         "still adding stuff. check back sometime",
         "i keep the ones nobody else would keep",
         "some of these i really wanna remember",
         "taken between doing other things",
-        "photos i like!",
         "things i saw while looking for something else",
         "light, shadow, and a bit of luck",
         "a little bit of everything",
-        "more coming soon, probably",
         "started as a habit",
         "taken when something was worth keeping"
       ];
@@ -1518,7 +1516,7 @@
       if (lb && !lb.classList.contains('open') && !isPopState) {
         pushNextState = true;
       }
-      
+
       cur = i;
       isManuallyNavigating = true;
       currentLightboxIsMotion = !!isMotion;
@@ -3625,7 +3623,7 @@
     // Deep Link Initial Load
     function checkHash() {
       var fullHash = window.location.hash.substring(1);
-      
+
       var lb = document.getElementById('lightbox');
       var isLbOpen = lb && lb.classList.contains('open');
 
@@ -3663,20 +3661,20 @@
           if (slugify(items[i].title) === itemSlug) {
             // If already open to this item, do nothing
             if (isLbOpen && cur === i) return;
-            
+
             isPopState = true;
             openLightbox(i, 0, currentCategory === 'motion');
-            setTimeout(function() { isPopState = false; }, 100);
+            setTimeout(function () { isPopState = false; }, 100);
             return;
           }
         }
       }
     }
 
-    window.addEventListener('popstate', function() {
+    window.addEventListener('popstate', function () {
       isPopState = true;
       checkHash();
-      setTimeout(function() { isPopState = false; }, 500);
+      setTimeout(function () { isPopState = false; }, 500);
     });
 
     // Defer slightly to ensure layout is ready
