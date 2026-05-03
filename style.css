@@ -1708,6 +1708,9 @@ body::after {
 #lightbox-desc-toggle,
 .motion-start-button,
 .filmstrip-thumb,
+#filmstrip,
+.photo-card,
+.date-header,
 button {
   user-select: none;
   -webkit-user-select: none;
