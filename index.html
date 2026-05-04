@@ -3740,38 +3740,19 @@
         }).observe(filmstripEl);
       }
 
-      // ── Anti-Desync Guard ──
-      // If Lenis's internal state ever silently detaches from the real window scroll
-      // (a known edge case with Chrome scroll anchoring during lazy loading),
-      // force it back into sync when idle. Only runs after scroll activity, then stops.
-      var _desyncTimer = null;
-      var _desyncRaf = null;
-      function runDesyncCheck() {
-        if (_desyncRaf) return; // already running
-        var checks = 0;
-        function tick() {
-          if (lenis && lenis.isScrolling === false && !lenis.isStopped && !lenis.isLocked) {
-            var realY = window.scrollY || window.pageYOffset || 0;
-            if (Math.abs(lenis.targetScroll - realY) > 5) {
-              lenis.targetScroll = lenis.animatedScroll = realY;
-              lenis.emit(); // ensure internal state propagates
-            }
-          }
-          if (++checks < 8) { // check a few frames after scroll settles, then stop
-            _desyncRaf = requestAnimationFrame(tick);
-          } else {
-            _desyncRaf = null;
+      // LET LENIS KNOW EVERY SINGLE FRAME EVERY TIME RAHHH
+      // Manual RAF + Anti-Desync Guard
+      // The desync check lives here instead of a separate setInterval — same frame-rate
+      // coverage, zero extra timers, and auto-pauses when the tab is backgrounded.
+      // Catches Chrome scroll-anchoring silently shifting the page during lazy image loads.
+      function lenisRaf(time) {
+        if (lenis.isScrolling === false && !lenis.isStopped && !lenis.isLocked) {
+          var realY = window.scrollY || window.pageYOffset || 0;
+          if (Math.abs(lenis.targetScroll - realY) > 5) {
+            lenis.targetScroll = lenis.animatedScroll = realY;
+            lenis.emit();
           }
         }
-        _desyncRaf = requestAnimationFrame(tick);
-      }
-      window.addEventListener('scroll', function () {
-        clearTimeout(_desyncTimer);
-        _desyncTimer = setTimeout(runDesyncCheck, 150); // run after scroll settles
-      }, { passive: true });
-
-      // Manual RAF
-      function lenisRaf(time) {
         lenis.raf(time);
         if (window.fsLenis) window.fsLenis.raf(time);
         requestAnimationFrame(lenisRaf);
