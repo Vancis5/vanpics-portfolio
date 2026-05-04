@@ -3743,16 +3743,32 @@
       // ── Anti-Desync Guard ──
       // If Lenis's internal state ever silently detaches from the real window scroll
       // (a known edge case with Chrome scroll anchoring during lazy loading),
-      // force it back into sync when idle. This completely prevents the "stuck/teleport" bug.
-      setInterval(function () {
-        if (lenis && lenis.isScrolling === false && !lenis.isStopped && !lenis.isLocked) {
-          var realY = window.scrollY || window.pageYOffset || 0;
-          if (Math.abs(lenis.targetScroll - realY) > 5) {
-            lenis.targetScroll = lenis.animatedScroll = realY;
-            lenis.emit(); // ensure internal state propagates
+      // force it back into sync when idle. Only runs after scroll activity, then stops.
+      var _desyncTimer = null;
+      var _desyncRaf = null;
+      function runDesyncCheck() {
+        if (_desyncRaf) return; // already running
+        var checks = 0;
+        function tick() {
+          if (lenis && lenis.isScrolling === false && !lenis.isStopped && !lenis.isLocked) {
+            var realY = window.scrollY || window.pageYOffset || 0;
+            if (Math.abs(lenis.targetScroll - realY) > 5) {
+              lenis.targetScroll = lenis.animatedScroll = realY;
+              lenis.emit(); // ensure internal state propagates
+            }
+          }
+          if (++checks < 8) { // check a few frames after scroll settles, then stop
+            _desyncRaf = requestAnimationFrame(tick);
+          } else {
+            _desyncRaf = null;
           }
         }
-      }, 25); // lenis masonry guard time
+        _desyncRaf = requestAnimationFrame(tick);
+      }
+      window.addEventListener('scroll', function () {
+        clearTimeout(_desyncTimer);
+        _desyncTimer = setTimeout(runDesyncCheck, 150); // run after scroll settles
+      }, { passive: true });
 
       // Manual RAF
       function lenisRaf(time) {
