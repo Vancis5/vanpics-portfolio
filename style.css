@@ -1816,13 +1816,10 @@ button {
 
 body.lightbox-open {
   background: #0d0c0c;
-  overflow: hidden;
   overscroll-behavior: none;
 }
 
-/* Hide subnav instantly when lightbox opens — prevents visible sticky-position
-   jump caused by overflow:hidden breaking position:sticky */
-body.lightbox-open #gallery-header {
-  opacity: 0;
-  transition: none;
+/* Ensure layout stays centered even if scrollbar logic shifts */
+html {
+  scrollbar-gutter: stable;
 }

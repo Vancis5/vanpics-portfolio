@@ -1663,7 +1663,6 @@
         lb.classList.add('open');
         document.body.classList.add('lightbox-open');
         lb.scrollTop = 0;
-        document.body.style.overflow = 'hidden';
         if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'block';
         // allow other UI (cursor ring) to reset on lightbox open
         window.dispatchEvent(new Event('lightbox-open'));
