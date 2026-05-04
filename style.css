@@ -648,6 +648,7 @@ body::after {
   position: relative;
   overflow: hidden;
   border-radius: 3px;
+  background: #1a1919;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   display: inline-block;

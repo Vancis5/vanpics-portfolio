@@ -9,7 +9,7 @@ const photos = [
   {
     src: "photos/tch-crash.webp",
     title: "collateral",
-    desc: "someone crashed their truck onto a wall. lots of people die and crash in this road daily, which is ironic because the highway itself is beautiful <br> <br>  taken by JohnB: <br> <a href='https://www.facebook.com/share/p/1aePoJX4dk/' target='_blank'>fb.com/share/p/1aePoJX4dk/</a>",
+    desc: "someone crashed their truck onto a wall. lots of people die and crash in this road daily, which is ironic because the highway itself is beautiful <br> <br> taken by <a href='https://www.facebook.com/share/p/1aePoJX4dk/' target='_blank'>JohnB</a>",
     date: "apr 11, 2026",
     location: "balamban, cebu",
     aspectRatio: 1.3345,
