@@ -953,6 +953,12 @@
   <div id="custom-scrollbar">
     <div id="custom-scrollbar-thumb"></div>
   </div>
+  <style>
+    /* Hide scrollbar during loader curtain */
+    #loader:not([style*="display: none"]) ~ #custom-scrollbar {
+      display: none !important;
+    }
+  </style>
   <section id="hero">
     <div id="glow-ball"></div>
     <div class="carousel-row" id="row-0"></div>
@@ -3289,6 +3295,7 @@
         isDragging = true;
         track.classList.add('dragging');
         document.body.classList.add('is-dragging-scrollbar');
+        if (window.lenis) window.lenis.stop();
 
         var winH = window.innerHeight;
         var docH = document.documentElement.scrollHeight;
@@ -3296,15 +3303,13 @@
         var maxTrack = winH - thumbH;
         var maxScroll = docH - winH;
 
-        // Jump to clicked position immediately IF clicking the track, not the thumb
-        // We check vertical bounds so grabbing the 'invisible hit zone' next to the thumb still counts as a grab
         var thumbRect = thumb.getBoundingClientRect();
         var isClickingThumb = e.clientY >= thumbRect.top && e.clientY <= thumbRect.bottom;
 
         if (!isClickingThumb) {
-          var clickY = e.clientY - (thumbH / 2); // Center thumb on click
+          var clickY = e.clientY - (thumbH / 2);
           var scrollPos = (clickY / maxTrack) * maxScroll;
-          if (window.lenis) window.lenis.scrollTo(scrollPos, { immediate: true }); else window.scrollTo(0, scrollPos);
+          window.scrollTo(0, scrollPos);
         }
 
         startY = e.clientY;
@@ -3324,7 +3329,7 @@
         var maxScroll = docH - winH;
 
         var scrollDelta = (deltaY / maxTrack) * maxScroll;
-        if (window.lenis) window.lenis.scrollTo(startScroll + scrollDelta, { immediate: true }); else window.scrollTo(0, startScroll + scrollDelta);
+        window.scrollTo(0, startScroll + scrollDelta);
       });
 
       window.addEventListener('mouseup', function () {
@@ -3333,6 +3338,11 @@
           track.classList.remove('dragging');
           document.body.classList.remove('is-dragging-scrollbar');
           document.body.style.userSelect = '';
+
+          if (window.lenis) {
+            window.lenis.start();
+          }
+
           if (isMobile) {
             clearTimeout(fadeTimer);
             fadeTimer = setTimeout(function () { track.classList.remove('moving'); }, 3000);
@@ -3790,12 +3800,8 @@
         smoothWheel: true,
         wheelMultiplier: 1,
         infinite: false,
-        autoResize: false, // Prevent Lenis from reading transient 0 values during reflows
+        autoResize: false
       });
-
-      // Sync Lenis to current scroll position immediately to prevent refresh-teleport bug
-      lenis.scrollTo(window.scrollY, { immediate: true });
-
       window.lenis = lenis;
 
       // ── Filmstrip Lenis ──
@@ -3820,40 +3826,27 @@
         }).observe(filmstripEl);
       }
 
-      // ── Anti-Desync Guard ──
-      // If Lenis's internal state ever silently detaches from the real window scroll
-      // (a known edge case with Chrome scroll anchoring during lazy loading),
-      // force it back into sync when idle. This completely prevents the "stuck/teleport" bug.
-      setInterval(function () {
-        if (lenis && lenis.isScrolling === false && !lenis.isStopped && !lenis.isLocked) {
-          var realY = window.scrollY || window.pageYOffset || 0;
-          if (Math.abs(lenis.targetScroll - realY) > 5) {
-            lenis.targetScroll = lenis.animatedScroll = realY;
-            lenis.emit(); // ensure internal state propagates
-          }
-        }
-      }, 25); // lenis masonry guard time
+      // ── THE GLOBAL SCROLL HUB ──
+      window.globalScrollHub = function(s) {
+        var scrollPos = (typeof s === 'number') ? s : (window.scrollY || 0);
+        scrollY = scrollPos;
+        if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface(scrollPos);
+        if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+      };
 
-      // Manual RAF
+      window.addEventListener('scroll', function() {
+        window.globalScrollHub();
+      }, { passive: true });
+
       function lenisRaf(time) {
-        lenis.raf(time);
+        if (window.lenis) window.lenis.raf(time);
         if (window.fsLenis) window.fsLenis.raf(time);
         requestAnimationFrame(lenisRaf);
       }
       requestAnimationFrame(lenisRaf);
 
-      // ── SINGLE SOURCE OF TRUTH: SCROLL HUB ──
       lenis.on('scroll', function (e) {
-        var s = e.scroll;
-
-        // 1. Sync parallax global
-        scrollY = s;
-
-        // 2. Update subnav sticky state
-        if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface(s);
-
-        // 3. Update custom scrollbar
-        if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+        window.globalScrollHub(e.scroll);
       });
 
       // Lightbox sync
@@ -3861,7 +3854,7 @@
 
       // Override Lenis CSS classes that conflict with site overflow rules
       var ls = document.createElement('style');
-      ls.textContent = 'html.lenis,html.lenis body{height:auto}html.lenis,html.lenis-scrolling{overflow-x:clip!important;overflow-y:auto!important}html.lenis-stopped{overflow:hidden}';
+      ls.textContent = 'html.lenis,html.lenis body{height:auto}html.lenis,html.lenis-scrolling{overflow-x:clip!important;overflow-y:auto!important}html.lenis-stopped{overflow:auto!important}';
       document.head.appendChild(ls);
     }
   </script>
