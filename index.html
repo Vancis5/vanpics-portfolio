@@ -1660,12 +1660,45 @@
           infoEl2.style.opacity = '0';
         }
 
+        var header = document.getElementById('gallery-header');
+        var masonry = document.getElementById('masonry');
+        var headerRect = header ? header.getBoundingClientRect() : null;
+        var masonryRect = masonry ? masonry.getBoundingClientRect() : null;
+
         lb.classList.add('open');
         document.body.classList.add('lightbox-open');
         lb.scrollTop = 0;
         document.body.style.overflow = 'hidden';
+
+        // ── FLIP: Invert ──
+        if (header && headerRect) {
+          var last = header.getBoundingClientRect();
+          var dX = headerRect.left - last.left;
+          var dY = headerRect.top - last.top;
+          header.style.transition = 'none';
+          header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
+        }
+        if (masonry && masonryRect) {
+          var lastM = masonry.getBoundingClientRect();
+          var dXm = masonryRect.left - lastM.left;
+          var dYm = masonryRect.top - lastM.top;
+          masonry.style.transition = 'none';
+          masonry.style.transform = 'translate(' + dXm + 'px, ' + dYm + 'px)';
+        }
+
+        requestAnimationFrame(function () {
+          var ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+          if (header) {
+            header.style.transition = ease;
+            header.style.transform = '';
+          }
+          if (masonry) {
+            masonry.style.transition = ease;
+            masonry.style.transform = '';
+          }
+        });
+
         if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'block';
-        // allow other UI (cursor ring) to reset on lightbox open
         window.dispatchEvent(new Event('lightbox-open'));
         setTimeout(showFilmstrip, 300);
 
@@ -1741,6 +1774,12 @@
     function closeLightbox() {
       var lb = document.getElementById('lightbox');
       if (!lb.classList.contains('open')) return;
+
+      var header = document.getElementById('gallery-header');
+      var masonry = document.getElementById('masonry');
+      var headerRect = header ? header.getBoundingClientRect() : null;
+      var masonryRect = masonry ? masonry.getBoundingClientRect() : null;
+
       var img = document.getElementById('lightbox-img');
       var activeGen = ++navGen; // invalidates all pending callbacks
       lb.classList.remove('open');
@@ -1749,6 +1788,43 @@
       clearTimeout(filmstripHideTimer);
       hideFilmstrip();
       if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'none';
+
+      // ── FLIP: Invert ──
+      if (header && headerRect) {
+        var last = header.getBoundingClientRect();
+        var dX = headerRect.left - last.left;
+        var dY = headerRect.top - last.top;
+        header.style.transition = 'none';
+        header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
+      }
+      if (masonry && masonryRect) {
+        var lastM = masonry.getBoundingClientRect();
+        var dXm = masonryRect.left - lastM.left;
+        var dYm = masonryRect.top - lastM.top;
+        masonry.style.transition = 'none';
+        masonry.style.transform = 'translate(' + dXm + 'px, ' + dYm + 'px)';
+      }
+
+      requestAnimationFrame(function () {
+        var ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+        if (header) {
+          header.style.transition = ease;
+          header.style.transform = '';
+        }
+        if (masonry) {
+          masonry.style.transition = ease;
+          masonry.style.transform = '';
+        }
+
+        // Restart Lenis and sync state once transition has a head start
+        setTimeout(function () {
+          if (window.lenis) {
+            window.lenis.start();
+            window.lenis.animatedScroll = window.lenis.targetScroll = window.scrollY;
+            window.lenis.emit(); // Force sync of all UI driven by scroll hub
+          }
+        }, 400);
+      });
 
       var playerShell = document.getElementById('motion-player-shell');
       if (playerShell) playerShell.innerHTML = '';
@@ -2939,7 +3015,6 @@
 
     // PARALLAX
     var scrollY = 0;
-    window.addEventListener('scroll', function () { scrollY = window.scrollY; }, { passive: true });
 
     // CAROUSEL
     var ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
@@ -3265,7 +3340,6 @@
         }
       });
 
-      window.addEventListener('scroll', updateThumb, { passive: true });
       window.addEventListener('resize', updateThumb);
       window.addEventListener('load', updateThumb);
 
@@ -3581,14 +3655,15 @@
       var header = document.getElementById('gallery-header');
       if (!header) return;
 
-      function updateStickyHeaderSurface() {
+      window.updateStickyHeaderSurface = function (scroll) {
+        // Use provided scroll or fallback to current position
+        var s = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
         document.body.classList.toggle('gallery-header-stuck', header.getBoundingClientRect().top <= 0.5);
-      }
+      };
 
-      updateStickyHeaderSurface();
-      window.addEventListener('scroll', updateStickyHeaderSurface, { passive: true });
-      window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });
-      window.addEventListener('orientationchange', updateStickyHeaderSurface, { passive: true });
+      window.updateStickyHeaderSurface();
+      window.addEventListener('resize', window.updateStickyHeaderSurface, { passive: true });
+      window.addEventListener('orientationchange', window.updateStickyHeaderSurface, { passive: true });
     })();
 
     // Rebuild masonry on resize to handle column count changes (width-only check to avoid mobile address bar flicker)
@@ -3718,6 +3793,9 @@
         autoResize: false, // Prevent Lenis from reading transient 0 values during reflows
       });
 
+      // Sync Lenis to current scroll position immediately to prevent refresh-teleport bug
+      lenis.scrollTo(window.scrollY, { immediate: true });
+
       window.lenis = lenis;
 
       // ── Filmstrip Lenis ──
@@ -3764,17 +3842,22 @@
       }
       requestAnimationFrame(lenisRaf);
 
-      // Lightbox sync
-      window.addEventListener('lightbox-open', function () { lenis.stop(); });
+      // ── SINGLE SOURCE OF TRUTH: SCROLL HUB ──
+      lenis.on('scroll', function (e) {
+        var s = e.scroll;
 
-      var _origCloseLightbox = closeLightbox;
-      closeLightbox = function () {
-        _origCloseLightbox();
-        setTimeout(function () {
-          lenis.start();
-          lenis.animatedScroll = lenis.targetScroll = window.scrollY;
-        }, 450);
-      };
+        // 1. Sync parallax global
+        scrollY = s;
+
+        // 2. Update subnav sticky state
+        if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface(s);
+
+        // 3. Update custom scrollbar
+        if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+      });
+
+      // Lightbox sync
+      window.addEventListener('lightbox-open', function () { if (window.lenis) window.lenis.stop(); });
 
       // Override Lenis CSS classes that conflict with site overflow rules
       var ls = document.createElement('style');

@@ -448,6 +448,7 @@ body::after {
 
   opacity: 0;
   animation: fadeup 0.8s ease 0.2s forwards;
+  will-change: transform;
 }
 
 @media (min-width: 640px) {
@@ -1818,4 +1819,63 @@ body.lightbox-open {
   background: #0d0c0c;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+/* -- STABILIZE SUBNAV ON LIGHTBOX OPEN -- */
+/* Pin the subnav at the top when lightbox opens (kills position:sticky) */
+body.lightbox-open.gallery-header-stuck #gallery-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  margin-left: 0 !important;
+  z-index: 100 !important;
+  /* Stays BELOW lightbox (1000) */
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  body.lightbox-open.gallery-header-stuck #gallery-header {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  body.lightbox-open.gallery-header-stuck #gallery-header {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  body.lightbox-open.gallery-header-stuck #gallery-header {
+    padding-left: calc((100vw - 1400px) / 2 + 2rem);
+    padding-right: calc((100vw - 1400px) / 2 + 2rem);
+  }
+}
+
+/* Maintain the vertical gap to prevent page jump underneath */
+body.lightbox-open.gallery-header-stuck #gallery-section {
+  padding-top: calc(3.5rem + 3.1rem + var(--safe-top, 0px)) !important;
+}
+
+@media (min-width: 640px) {
+  body.lightbox-open.gallery-header-stuck #gallery-section {
+    padding-top: calc(4.5rem + 4.05rem + var(--safe-top, 0px)) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  body.lightbox-open.gallery-header-stuck #gallery-section {
+    padding-top: calc(5rem + 4.05rem + var(--safe-top, 0px)) !important;
+  }
+}
+
+/* Prevent horizontal shift by locking the scrollbar gutter */
+html {
+  scrollbar-gutter: stable !important;
+  overflow-y: scroll !important;
 }
