@@ -3295,7 +3295,9 @@
         isDragging = true;
         track.classList.add('dragging');
         document.body.classList.add('is-dragging-scrollbar');
-        if (window.lenis) window.lenis.stop();
+        // Kill any ongoing smooth animation
+        if (window.lenis) window.lenis.scrollTo(window.scrollY, { immediate: true });
+        window._scrollbarDragging = true;
 
         var winH = window.innerHeight;
         var docH = document.documentElement.scrollHeight;
@@ -3329,7 +3331,8 @@
         var maxScroll = docH - winH;
 
         var scrollDelta = (deltaY / maxTrack) * maxScroll;
-        window.scrollTo(0, startScroll + scrollDelta);
+        var targetPos = Math.max(0, Math.min(startScroll + scrollDelta, maxScroll));
+        document.documentElement.scrollTop = targetPos;
       });
 
       window.addEventListener('mouseup', function () {
@@ -3339,9 +3342,21 @@
           document.body.classList.remove('is-dragging-scrollbar');
           document.body.style.userSelect = '';
 
+          // Hand off to lenis by directly setting its brain.
+          // We CANNOT use scrollTo() because it calls setScroll() internally
+          // which uses window.scrollTo() — and the browser blocks that API
+          // while lenis CSS is active.
           if (window.lenis) {
-            window.lenis.start();
+            var pos = document.documentElement.scrollTop;
+            window.lenis.animatedScroll = pos;
+            window.lenis.targetScroll = pos;
+            window.lenis.velocity = 0;
+            window.lenis.isScrolling = false;
+            if (window.lenis.animate) window.lenis.animate.stop();
           }
+
+          // Unblock lenis AFTER state is set
+          window._scrollbarDragging = false;
 
           if (isMobile) {
             clearTimeout(fadeTimer);
@@ -3838,8 +3853,16 @@
         window.globalScrollHub();
       }, { passive: true });
 
+
       function lenisRaf(time) {
-        if (window.lenis) window.lenis.raf(time);
+        if (window.lenis) {
+          if (window._scrollbarDragging) {
+            // Don't let lenis touch the scroll during manual drag
+            window.lenis.time = time;
+          } else {
+            window.lenis.raf(time);
+          }
+        }
         if (window.fsLenis) window.fsLenis.raf(time);
         requestAnimationFrame(lenisRaf);
       }
