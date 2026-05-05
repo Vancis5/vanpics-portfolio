@@ -3819,6 +3819,30 @@
       });
       window.lenis = lenis;
 
+      // ── DESYNC WATCHER ──
+      // Catches browser scroll restoration after refresh, back/forward nav,
+      // or any other situation where the real scroll position drifts from
+      // what lenis thinks. Runs on every native scroll event.
+      function syncLenisToReality() {
+        if (!window.lenis || window._scrollbarDragging) return;
+        var pos = document.documentElement.scrollTop || 0;
+        var delta = Math.abs(window.lenis.animatedScroll - pos);
+        if (delta > 5) {
+          window.lenis.animatedScroll = pos;
+          window.lenis.targetScroll = pos;
+          window.lenis.velocity = 0;
+          window.lenis.isScrolling = false;
+          if (window.lenis.animate) window.lenis.animate.stop();
+        }
+      }
+      window.addEventListener('scroll', syncLenisToReality, { passive: true });
+      // Also catch the first wheel event (user might scroll before restoration fires)
+      window.addEventListener('wheel', syncLenisToReality, { capture: true, passive: true });
+      // And catch late browser restoration
+      window.addEventListener('pageshow', function () {
+        requestAnimationFrame(syncLenisToReality);
+      });
+
       // ── Filmstrip Lenis ──
       var filmstripEl = document.getElementById('filmstrip');
       if (filmstripEl) {
