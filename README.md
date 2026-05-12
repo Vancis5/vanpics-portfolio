@@ -1,62 +1,50 @@
-# Francis Evan — Portfolio
+# vanpics-portfolio
 
-A high-performance, aesthetically driven photography and motion portfolio. Built with a focus on minimalism, typography, and buttery-smooth interactions.
+my photography & motion portfolio. minimal, typographic, smooth.
 
-> "pics by van"
+> pics by van
 
-## Features
+## what it does
 
-- **Performance First**: Zero Layout Shift (CLS) via pre-calculated aspect ratios.
-- **Hybrid Lightbox**: Custom-built lightbox with thumbnail hand-off and hardware-accelerated animations.
-- **Optimization Engine**: Pre-generated Gaussian blur backgrounds to ensure high frame rates on Firefox and mobile devices.
-- **Refined UX**: Smooth modal transitions, mobile swipe gestures, and a specialized "Filmstrip" navigation.
+- masonry grid gallery w/ category filtering
+- custom lightbox w/ thumbnail hand-off and filmstrip nav
+- pre-calculated aspect ratios so nothing jumps around on load
+- swipe gestures on mobile
+- pre-generated blur backgrounds for the lightbox
 
-## Tech Stack
+## stack
 
-- **Core**: Semantic HTML5, Vanilla JavaScript (ES6+), Modern CSS.
-- **Bundler**: [Vite](https://vitejs.dev/)
-- **Processing**: Node.js & Sharp for image automation.
-- **Typography**: Cormorant Garamond & DM Mono.
+- html / css / vanilla js
+- [vite](https://vitejs.dev/) for bundling
+- node + [sharp](https://sharp.pixelplumbing.com/) for image processing
+- fonts: cormorant garamond & dm mono
 
-## Getting Started
+## setup
 
-### Prerequisites
-
-- Node.js (Latest LTS recommended)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Vancis5/vanpics-portfolio.git
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-### Development
-
-Start the Vite dev server:
 ```bash
+git clone https://github.com/Vancis5/vanpics-portfolio.git
+cd vanpics-portfolio
+npm install
 npm run dev
 ```
 
-For mobile testing on your local network:
+if you wanna test on your phone over local network:
+
 ```bash
 npm run dev -- --host
 ```
 
-## Workflow & Image Processing
+## image scripts
 
-The project includes a suite of Node.js utilities to maintain performance:
+a few node utilities to keep things fast:
 
-- **Sort**: `npm run sort` — Sorts the gallery chronologically.
-- **Metadata**: `node scripts/add-ratios.js` — Scans photos and updates aspect ratios in the data file.
-- **Thumbnails**: `node scripts/generate-thumbs.js` — Generates gallery thumbnails.
-- **Optimization**: `node scripts/generate-blur.js` — Generates ultra-fast blurred background assets.
+| command | what it does |
+|---|---|
+| `npm run sort` | sorts gallery chronologically |
+| `node scripts/add-ratios.js` | scans photos, writes aspect ratios to data file |
+| `node scripts/generate-thumbs.js` | generates gallery thumbnails |
+| `node scripts/generate-blur.js` | generates blurred background assets for lightbox |
 
-## License
+## license
 
-© Francis Evan. All rights reserved. Images and content are the property of the author and may not be used without permission.
+© francis evan. all rights reserved — don't use my photos without asking.
