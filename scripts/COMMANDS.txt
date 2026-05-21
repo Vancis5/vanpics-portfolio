@@ -17,13 +17,13 @@ VANPICS — PORTFOLIO UTILITY COMMANDS
 2. DATA & MAINTENANCE SCRIPTS
    ──────────────────────────
    - npm run sort
-     (Sorts photos.js newest to oldest. Undated photos move to bottom + alphabetical)
+     (Sorts public/data/photos.js newest to oldest. Undated photos move to bottom + alphabetical)
 
    - node scripts/generate-photos.js
      (Converts big images from /photos-raw to .webp (70% quality) into /photos)
 
    - node scripts/add-ratios.js
-     (Scans your photos and adds / updates 'aspectRatio' in photos.js to kill CLS)
+     (Scans your photos and adds / updates 'aspectRatio' in public/data/photos.js to kill CLS)
 
    - node scripts/generate-thumbs.js
      (Generates thumbnails and blur placeholders for the gallery and lightbox)

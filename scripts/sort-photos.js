@@ -2,7 +2,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * PHOTO SORTER UTILITY
  * ─────────────────────────────────────────────────────────────────────────────
- * This script automatically sorts photos.js by date (newest first).
+ * This script automatically sorts public/data/photos.js by date (newest first).
  * 
  * Logic:
  * 1. Checks 'date' field (e.g., "Oct 19, 2025" or "2023").
@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PHOTOS_FILE = path.join(__dirname, '..', 'photos.js');
+const PHOTOS_FILE = path.join(__dirname, '..', 'public', 'data', 'photos.js');
 
 function getPhotoDate(photo) {
   const dateStr = photo.date ? photo.date.trim().toLowerCase() : '';
@@ -37,11 +37,11 @@ function getPhotoDate(photo) {
 
 function sortPhotos() {
   if (!fs.existsSync(PHOTOS_FILE)) {
-    console.error('Error: photos.js not found!');
+    console.error('Error: public/data/photos.js not found!');
     return;
   }
 
-  console.log('Reading photos.js...');
+  console.log('Reading public/data/photos.js...');
   const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
 
   // Extract array using markers
@@ -107,7 +107,7 @@ function sortPhotos() {
   const finalOutput = `${header}\n${serializedPhotos}\n${footer}`;
 
   fs.writeFileSync(PHOTOS_FILE, finalOutput, 'utf8');
-  console.log('Done! photos.js has been sorted by date.');
+  console.log('Done! public/data/photos.js has been sorted by date.');
 }
 
 sortPhotos();

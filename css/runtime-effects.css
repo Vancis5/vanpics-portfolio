@@ -1,0 +1,190 @@
+/* LOADER */
+#loader {
+  position: fixed;
+  inset: 0;
+  background: #111010;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.7s ease;
+}
+
+#loader.lifting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#gallery-header .active {
+  color: var(--text);
+  cursor: default;
+}
+
+.empty-state {
+  column-span: all;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20vh 0;
+  min-height: 100vh;
+  /* Prevents height snapping from bottom of long lists */
+  opacity: 0;
+  animation: fadeup 0.8s ease 0.3s forwards;
+}
+
+.empty-state p {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--text-faint);
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+#loader-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(221, 216, 207, 0.35);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.4);
+  }
+}
+
+/* glow ball - desktop only */
+@media (hover: hover) and (pointer: fine) {
+  #glow-ball {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(210, 140, 40, 0.18) 0%, rgba(180, 100, 20, 0.08) 40%, transparent 70%);
+    transition: opacity 0.4s ease;
+    will-change: left, top;
+  }
+}
+
+
+
+
+
+/* scroll reveal for gallery cards */
+/* !!! DONT TOUCH !!! - Handles the complex X/Y reveal logic */
+/* Vertical lift for standard scrolling */
+.photo-card {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.photo-card.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Horizontal slide for subnav category switching */
+#masonry.switching {
+  animation: masonrySlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes masonrySlide {
+  from {
+    opacity: 0;
+    transform: translateX(var(--masonry-x, 30px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* lightbox image — transitions handled via inline JS for directional control */
+#lightbox-img {
+  transition: opacity 0.28s ease, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 160px;
+  background: rgba(221, 216, 207, 0.04);
+  border-radius: 3px;
+  will-change: opacity, transform;
+}
+
+/* skeleton pulse while image is loading (opacity 0 = still loading) */
+#lightbox-img[src=""] {
+  animation: imgSkeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes imgSkeleton {
+
+  0%,
+  100% {
+    background: rgba(221, 216, 207, 0.03);
+  }
+
+  50% {
+    background: rgba(221, 216, 207, 0.07);
+  }
+}
+
+/* lightbox info — keyframe only, no CSS transition to avoid double-fire */
+#lightbox-info {
+  opacity: 0;
+  --lb-from-x: 0px;
+  --lb-from-y: 12px;
+}
+
+#lightbox-info.sliding {
+  opacity: 0;
+}
+
+@keyframes lbInfoIn {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateX(var(--lb-from-x)) translateY(var(--lb-from-y));
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes lbInfoOut {
+  from {
+    opacity: 1;
+    filter: blur(0px);
+  }
+
+  to {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+#lightbox-info.animating {
+  animation: lbInfoIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: filter, opacity, transform;
+}
+
+/* Hide scrollbar during loader curtain */
+#loader:not([style*="display: none"]) ~ #custom-scrollbar {
+  display: none !important;
+}

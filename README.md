@@ -40,8 +40,8 @@ a few node utilities to keep things fast:
 
 | command | what it does |
 |---|---|
-| `npm run sort` | sorts gallery chronologically |
-| `node scripts/add-ratios.js` | scans photos, writes aspect ratios to data file |
+| `npm run sort` | sorts `public/data/photos.js` chronologically |
+| `node scripts/add-ratios.js` | scans photos, writes aspect ratios to `public/data/photos.js` |
 | `node scripts/generate-thumbs.js` | generates gallery thumbnails |
 | `node scripts/generate-blur.js` | generates blurred background assets for lightbox |
 
