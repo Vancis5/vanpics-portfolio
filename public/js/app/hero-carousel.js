@@ -31,7 +31,7 @@ function buildCarousel() {
   var activeRows = isMobile ? rows : rows.slice(0, 3);
   var activeRowCount = activeRows.length;
 
-  if (carouselPhotos.length === 0) { startLoops(); return; }
+  if (carouselPhotos.length === 0) { startLoopsIfReady(); return; }
 
   // rows stay visible; eager images handle their own fade-in
   activeRows.forEach(function (r) { r.style.opacity = '1'; });
@@ -98,11 +98,11 @@ function buildCarousel() {
       });
       activeRows.forEach(function (r) { r.style.opacity = '1'; }); // already visible, belt-and-suspenders
       if (window.__onCarouselReady) window.__onCarouselReady();
-      startLoops();
+      startLoopsIfReady();
     });
   }
 
-  if (total === 0) { activeRows.forEach(function (r) { r.style.opacity = '1'; }); startLoops(); return; }
+  if (total === 0) { activeRows.forEach(function (r) { r.style.opacity = '1'; }); startLoopsIfReady(); return; }
   eagerImgs.forEach(function (img) {
     var counted = false;
     function countOnce() { if (!counted) { counted = true; onImageReady(); } }

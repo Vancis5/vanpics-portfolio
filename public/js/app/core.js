@@ -108,6 +108,27 @@ var domRefs = {
   siteFooter: document.getElementById('site-footer')
 };
 
+function showFilmstripIfReady() {
+  if (typeof window.showFilmstrip === 'function') window.showFilmstrip();
+}
+
+function hideFilmstripIfReady() {
+  if (typeof window.hideFilmstrip === 'function') window.hideFilmstrip();
+}
+
+function clearFilmstripHideTimerIfReady() {
+  if (window.filmstripHideTimer) window.clearTimeout(window.filmstripHideTimer);
+}
+
+function setFilmstripLiftZoneDisplay(display) {
+  var liftZone = domRefs.filmstripLiftZone;
+  if (liftZone) liftZone.style.display = display;
+}
+
+function startLoopsIfReady() {
+  if (typeof window.startLoops === 'function') window.startLoops();
+}
+
 (function initHeroTagline() {
   var taglines = [
     "collection of all the pics i've ever taken <br> more soon",
@@ -210,7 +231,7 @@ var glowTargetX = glowX, glowTargetY = glowY;
 if (glowBall && domRefs.hero) {
   var hero = domRefs.hero;
   var mouseInHero = false;
-  hero.addEventListener('mouseenter', function () { mouseInHero = true; startLoops(); });
+  hero.addEventListener('mouseenter', function () { mouseInHero = true; startLoopsIfReady(); });
   hero.addEventListener('mouseleave', function () { mouseInHero = false; });
   hero.addEventListener('mousemove', function (e) {
     var rect = hero.getBoundingClientRect();

@@ -34,10 +34,10 @@ lbEl.addEventListener('click', function (e) {
     lastTapT = 0;
   } else {
     lastTapT = now;
-    if (filmstripWrap.classList.contains('visible')) {
-      hideFilmstrip();
+    if (domRefs.filmstripWrap.classList.contains('visible')) {
+      hideFilmstripIfReady();
     } else {
-      showFilmstrip();
+      showFilmstripIfReady();
     }
   }
 });
@@ -115,7 +115,7 @@ if (isMobile) {
             setTimeout(function () { window.isAutoRapidScrolling = false; }, 50);
 
             setLightboxContent(finalP);
-            showFilmstrip();
+            showFilmstripIfReady();
             if (typeof updateLoading === 'function') updateLoading();
 
             var info = domRefs.lightboxInfo;
@@ -212,7 +212,7 @@ if (isMobile) {
         setLightboxBlur(p.src);
 
         setLightboxContent(p);
-        showFilmstrip();
+        showFilmstripIfReady();
         updateLoading();
       }
 

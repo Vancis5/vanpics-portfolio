@@ -23,7 +23,7 @@ function updateZoomTransform(img) {
     img.classList.remove('zoomed');
     var dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
-    showFilmstrip();
+    showFilmstripIfReady();
     if (isMobile) {
       mWrap.style.transform = ''; // revert translation
       mWrap.style.overflowX = 'auto'; // restore gallery swipe
@@ -73,7 +73,7 @@ function updateZoomTransform(img) {
     var dark = domRefs.lightboxZoomDarken;
     // base darkness leaps to 30%, climbing dynamically to 90%
     if (dark) dark.style.opacity = Math.min(0.95, 0.3 + (lbZoomLevel - 1) * 0.5);
-    hideFilmstrip();
+    hideFilmstripIfReady();
 
     if (isMobile && mWrap.style.overflowX !== 'visible') {
       // Prevent browser from zero-ing out scroll when we swap to visible overflow
@@ -142,7 +142,6 @@ window.addEventListener('mouseup', function () {
 // Desktop: Mouse wheel / Touchpad pinch -> Zoom
 domRefs.lightboxImgWrap.addEventListener('wheel', function (e) {
   var lb = domRefs.lightbox;
-  var mWrap = domRefs.lightboxImgWrap;
   if (!lb.classList.contains('open') || isMobile) return;
 
   var img = isMobile ? mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img') : domRefs.lightboxImg;

@@ -273,7 +273,6 @@ function openLightbox(i, direction, isMotion) {
   var p = getCurrentLightboxItems()[i];
 
   if (!p) return;
-  var lb = domRefs.lightbox;
   var img = domRefs.lightboxImg;
   var playerShell = domRefs.motionPlayerShell;
 
@@ -312,7 +311,7 @@ function openLightbox(i, direction, isMotion) {
 
     // update blur bg immediately (visual polish) — text stays hidden until image ready
     // MOVED to afterLoad() to prevent network progressive rendering from lagging JS animations
-    showFilmstrip();
+    showFilmstripIfReady();
 
     var entered = false;
 
@@ -448,9 +447,9 @@ function openLightbox(i, direction, isMotion) {
       }
     });
 
-    if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'block';
+    setFilmstripLiftZoneDisplay('block');
     window.dispatchEvent(new Event('lightbox-open'));
-    setTimeout(showFilmstrip, 300);
+    setTimeout(showFilmstripIfReady, 300);
 
     var hint = document.getElementById('swipe-hint');
     if (hint) {
@@ -535,9 +534,9 @@ function closeLightbox() {
   lb.classList.remove('open');
   document.body.classList.remove('lightbox-open');
   document.body.style.overflow = '';
-  clearTimeout(filmstripHideTimer);
-  hideFilmstrip();
-  if (typeof liftZone !== 'undefined' && liftZone) liftZone.style.display = 'none';
+  clearFilmstripHideTimerIfReady();
+  hideFilmstripIfReady();
+  setFilmstripLiftZoneDisplay('none');
 
   // ── FLIP: Invert ──
   if (header && headerRect) {
@@ -666,8 +665,8 @@ function toggleLightboxDesc() {
     content.classList.toggle('desc-open', opening);
     btn.textContent = opening ? 'read less' : 'read more';
     updateLightboxDescPreview();
-    if (opening) hideFilmstrip();
-    else showFilmstrip();
+    if (opening) hideFilmstripIfReady();
+    else showFilmstripIfReady();
     return;
   }
 
@@ -677,8 +676,8 @@ function toggleLightboxDesc() {
   content.classList.toggle('desc-open', opening);
   btn.textContent = opening ? 'read less' : 'read more';
   updateLightboxDescPreview();
-  if (opening) hideFilmstrip();
-  else showFilmstrip();
+  if (opening) hideFilmstripIfReady();
+  else showFilmstripIfReady();
 
   var endImg = imgWrap.getBoundingClientRect();
   var endInfo = infoWrap.getBoundingClientRect();
