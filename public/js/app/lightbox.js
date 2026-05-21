@@ -1,8 +1,26 @@
 var blurFlip = false;
+
+function refreshLightboxInfoRefs() {
+  var info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
+  if (!info) return null;
+
+  domRefs.lightboxInfo = info;
+  domRefs.lightboxTitle = info.querySelector('#lightbox-title');
+  domRefs.lightboxDescToggle = info.querySelector('#lightbox-desc-toggle');
+  domRefs.lightboxDesc = info.querySelector('#lightbox-desc');
+  domRefs.metaLocation = info.querySelector('#meta-location');
+  domRefs.metaLocationText = info.querySelector('#meta-location-text');
+  domRefs.metaDate = info.querySelector('#meta-date');
+  domRefs.metaDateText = info.querySelector('#meta-date-text');
+  domRefs.metaMusic = info.querySelector('#meta-music');
+  domRefs.metaMusicText = info.querySelector('#meta-music-text');
+  return info;
+}
+
 function setLightboxBlur(src) {
   if (!src) return;
-  var active = document.getElementById('blur-layer-a').classList.contains('active') ? document.getElementById('blur-layer-b') : document.getElementById('blur-layer-a');
-  var inactive = active.id === 'blur-layer-a' ? document.getElementById('blur-layer-b') : document.getElementById('blur-layer-a');
+  var active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
+  var inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
 
   // Resolve blur path: strip 'thumbs/' if present so it points to the correct blur asset
   var blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
@@ -18,19 +36,20 @@ function setLightboxBlur(src) {
 // updates text + blur bg only — image src is set separately to avoid double-load
 function setLightboxContent(p) {
   if (!p) return;
+  refreshLightboxInfoRefs();
 
   var safeTitle = p.title || '';
   var safeDesc = p.desc || '';
-  var content = document.getElementById('lightbox-content');
-  var btn = document.getElementById('lightbox-desc-toggle');
-  var descEl = document.getElementById('lightbox-desc');
+  var content = domRefs.lightboxContent;
+  var btn = domRefs.lightboxDescToggle;
+  var descEl = domRefs.lightboxDesc;
   var isCollapsingOpenDesc = content && content.classList.contains('desc-open');
   var preSwapImgRect = null;
   var preSwapInfoRect = null;
 
   if (isCollapsingOpenDesc && isMobile) {
-    var preSwapImgWrap = document.getElementById('lightbox-img-wrap');
-    var preSwapInfoWrap = document.getElementById('lightbox-info-wrap');
+    var preSwapImgWrap = domRefs.lightboxImgWrap;
+    var preSwapInfoWrap = domRefs.lightboxInfoWrap;
     if (preSwapImgWrap && preSwapInfoWrap) {
       preSwapImgRect = preSwapImgWrap.getBoundingClientRect();
       preSwapInfoRect = preSwapInfoWrap.getBoundingClientRect();
@@ -38,29 +57,29 @@ function setLightboxContent(p) {
     if (descEl) descEl.style.transition = 'none';
   }
 
-  document.getElementById('lightbox-title').textContent = safeTitle;
-  descEl.innerHTML = safeDesc;
-  var locItem = document.getElementById('meta-location');
+  if (domRefs.lightboxTitle) domRefs.lightboxTitle.textContent = safeTitle;
+  if (descEl) descEl.innerHTML = safeDesc;
+  var locItem = domRefs.metaLocation;
   if (p.location) {
-    document.getElementById('meta-location-text').textContent = p.location;
-    locItem.style.display = 'inline-flex';
-  } else {
+    if (domRefs.metaLocationText) domRefs.metaLocationText.textContent = p.location;
+    if (locItem) locItem.style.display = 'inline-flex';
+  } else if (locItem) {
     locItem.style.display = 'none';
   }
 
-  var dateItem = document.getElementById('meta-date');
+  var dateItem = domRefs.metaDate;
   if (p.date) {
-    document.getElementById('meta-date-text').textContent = p.date;
-    dateItem.style.display = 'inline-flex';
-  } else {
+    if (domRefs.metaDateText) domRefs.metaDateText.textContent = p.date;
+    if (dateItem) dateItem.style.display = 'inline-flex';
+  } else if (dateItem) {
     dateItem.style.display = 'none';
   }
 
-  var musicItem = document.getElementById('meta-music');
+  var musicItem = domRefs.metaMusic;
   if (p.music) {
-    document.getElementById('meta-music-text').textContent = p.music;
-    musicItem.style.display = 'inline-flex';
-  } else {
+    if (domRefs.metaMusicText) domRefs.metaMusicText.textContent = p.music;
+    if (musicItem) musicItem.style.display = 'inline-flex';
+  } else if (musicItem) {
     musicItem.style.display = 'none';
   }
 
@@ -90,8 +109,8 @@ function setLightboxContent(p) {
   if (content && content.classList.contains('desc-open')) {
     // Mobile: GPU FLIP to gracefully and safely collapse without dropping frames natively
     if (isMobile) {
-      var imgWrap = document.getElementById('lightbox-img-wrap');
-      var infoWrap = document.getElementById('lightbox-info-wrap');
+      var imgWrap = domRefs.lightboxImgWrap;
+      var infoWrap = domRefs.lightboxInfoWrap;
 
       var startImg = preSwapImgRect || imgWrap.getBoundingClientRect();
       var startInfo = preSwapInfoRect || infoWrap.getBoundingClientRect();
@@ -126,8 +145,8 @@ function setLightboxContent(p) {
       });
     } else {
       // Desktop: Hardware accelerated glide down — FLIP animation
-      var imgWrap = document.getElementById('lightbox-img-wrap');
-      var infoWrap = document.getElementById('lightbox-info-wrap');
+      var imgWrap = domRefs.lightboxImgWrap;
+      var infoWrap = domRefs.lightboxInfoWrap;
 
       var startImg = imgWrap.getBoundingClientRect();
       var startInfo = infoWrap.getBoundingClientRect();
@@ -167,9 +186,9 @@ function setLightboxContent(p) {
 }
 
 function updateLightboxDescPreview() {
-  var desc = document.getElementById('lightbox-desc');
-  var btn = document.getElementById('lightbox-desc-toggle');
-  var content = document.getElementById('lightbox-content');
+  var desc = domRefs.lightboxDesc;
+  var btn = domRefs.lightboxDescToggle;
+  var content = domRefs.lightboxContent;
   if (!desc || !btn || !content || !isMobile) return;
 
   var hasDesc = desc.textContent.trim().length > 0;
@@ -193,7 +212,12 @@ function updateLightboxDescPreview() {
 
 
 function animateInfo(dir) {
-  var info = document.getElementById('lightbox-info');
+  var info = domRefs.lightboxInfo;
+  if (!info || !info.parentNode) {
+    domRefs.lightboxInfo = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
+    info = domRefs.lightboxInfo;
+    if (!info || !info.parentNode) return;
+  }
 
   // only animate exit if there's visible content (opacity > 0 means it's shown)
   var hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
@@ -225,6 +249,8 @@ function animateInfo(dir) {
   clone.style.transition = '';
   clone.style.filter = '';
   info.parentNode.replaceChild(clone, info);
+  domRefs.lightboxInfo = clone;
+  refreshLightboxInfoRefs();
 }
 
 // increments each navigation so stale callbacks from aborted navigations are ignored
@@ -236,7 +262,7 @@ function getCurrentLightboxItems() {
 }
 
 function openLightbox(i, direction, isMotion) {
-  var lb = document.getElementById('lightbox');
+  var lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !isPopState) {
     pushNextState = true;
   }
@@ -247,9 +273,9 @@ function openLightbox(i, direction, isMotion) {
   var p = getCurrentLightboxItems()[i];
 
   if (!p) return;
-  var lb = document.getElementById('lightbox');
-  var img = document.getElementById('lightbox-img');
-  var playerShell = document.getElementById('motion-player-shell');
+  var lb = domRefs.lightbox;
+  var img = domRefs.lightboxImg;
+  var playerShell = domRefs.motionPlayerShell;
 
   if (isMotion) lb.classList.add('mode-motion');
   else lb.classList.remove('mode-motion');
@@ -278,7 +304,7 @@ function openLightbox(i, direction, isMotion) {
     playerShell.style.opacity = '0';
 
     // hide info panel immediately so old text isn't visible
-    var infoEl = document.getElementById('lightbox-info');
+    var infoEl = domRefs.lightboxInfo;
     if (infoEl) {
       infoEl.style.animation = 'none';
       infoEl.style.opacity = '0';
@@ -378,14 +404,14 @@ function openLightbox(i, direction, isMotion) {
     playerShell.style.opacity = '0';
 
     // info panel fully hidden — no stale text visible
-    var infoEl2 = document.getElementById('lightbox-info');
+    var infoEl2 = domRefs.lightboxInfo;
     if (infoEl2) {
       infoEl2.style.animation = 'none';
       infoEl2.style.opacity = '0';
     }
 
-    var header = document.getElementById('gallery-header');
-    var masonry = document.getElementById('masonry');
+    var header = domRefs.galleryHeader;
+    var masonry = domRefs.masonry;
     var headerRect = header ? header.getBoundingClientRect() : null;
     var masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
@@ -477,7 +503,7 @@ function openLightbox(i, direction, isMotion) {
 }
 
 function renderVideoInLightbox(p) {
-  var shell = document.getElementById('motion-player-shell');
+  var shell = domRefs.motionPlayerShell;
   if (!shell) return;
   var ratio = p.aspectRatio || (16 / 9);
   shell.style.aspectRatio = ratio;
@@ -496,15 +522,15 @@ function startUnifiedMotionPlayer(id) {
 }
 
 function closeLightbox() {
-  var lb = document.getElementById('lightbox');
+  var lb = domRefs.lightbox;
   if (!lb.classList.contains('open')) return;
 
-  var header = document.getElementById('gallery-header');
-  var masonry = document.getElementById('masonry');
+  var header = domRefs.galleryHeader;
+  var masonry = domRefs.masonry;
   var headerRect = header ? header.getBoundingClientRect() : null;
   var masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
-  var img = document.getElementById('lightbox-img');
+  var img = domRefs.lightboxImg;
   var activeGen = ++navGen; // invalidates all pending callbacks
   lb.classList.remove('open');
   document.body.classList.remove('lightbox-open');
@@ -550,11 +576,11 @@ function closeLightbox() {
     }, 400);
   });
 
-  var playerShell = document.getElementById('motion-player-shell');
+  var playerShell = domRefs.motionPlayerShell;
   if (playerShell) playerShell.innerHTML = '';
 
-  document.getElementById('blur-layer-a').classList.remove('active');
-  document.getElementById('blur-layer-b').classList.remove('active');
+  domRefs.blurLayerA.classList.remove('active');
+  domRefs.blurLayerB.classList.remove('active');
   // Reset hash to category on close
   if (window.location.hash && !isPopState) {
     var catSlug = getCategorySlug(currentCategory);
@@ -575,7 +601,7 @@ function closeLightbox() {
       img.style.opacity = '';
     }
 
-    var info = document.getElementById('lightbox-info');
+    var info = domRefs.lightboxInfo;
     if (info) {
       info.style.animation = 'none';
       info.style.opacity = '0';
@@ -584,7 +610,7 @@ function closeLightbox() {
       info.style.transform = '';
     }
 
-    var content = document.getElementById('lightbox-content');
+    var content = domRefs.lightboxContent;
     if (content) {
       content.classList.remove('desc-open');
       content.style.transition = '';
@@ -592,11 +618,11 @@ function closeLightbox() {
       content.style.transformOrigin = '';
       content.style.opacity = '';
     }
-    var lb = document.getElementById('lightbox');
+    var lb = domRefs.lightbox;
     if (lb) lb.classList.remove('zoom-active');
 
     if (isMobile) {
-      var mWrap = document.getElementById('lightbox-img-wrap');
+      var mWrap = domRefs.lightboxImgWrap;
       if (mWrap) {
         mWrap.style.transform = '';
         mWrap.style.overflowX = '';
@@ -621,19 +647,19 @@ function closeLightbox() {
       }
     }
 
-    var dark = document.getElementById('lightbox-zoom-darken');
+    var dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
   }, 400);
 }
 
 function toggleLightboxDesc() {
-  var content = document.getElementById('lightbox-content');
-  var btn = document.getElementById('lightbox-desc-toggle');
+  var content = domRefs.lightboxContent;
+  var btn = domRefs.lightboxDescToggle;
   if (!content || !btn || btn.classList.contains('no-desc')) return;
 
-  var imgWrap = document.getElementById('lightbox-img-wrap');
-  var infoWrap = document.getElementById('lightbox-info-wrap');
-  var desc = document.getElementById('lightbox-desc');
+  var imgWrap = domRefs.lightboxImgWrap;
+  var infoWrap = domRefs.lightboxInfoWrap;
+  var desc = domRefs.lightboxDesc;
   var opening = !content.classList.contains('desc-open');
 
   if (!imgWrap || !infoWrap) {
@@ -681,8 +707,8 @@ function toggleLightboxDesc() {
 
 // reset desc expansion on new photo
 function resetDescToggle() {
-  var info = document.getElementById('lightbox-info');
-  var btn = document.getElementById('lightbox-desc-toggle');
+  var info = domRefs.lightboxInfo;
+  var btn = domRefs.lightboxDescToggle;
   if (info) info.classList.remove('desc-open');
   if (btn) btn.textContent = 'read more';
 }
@@ -712,4 +738,4 @@ document.addEventListener('keydown', function (e) {
 });
 
 // desktop: click bg to close
-if (!isMobile) document.getElementById('lightbox-bg').addEventListener('click', closeLightbox);
+if (!isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);

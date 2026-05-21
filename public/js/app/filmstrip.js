@@ -1,6 +1,6 @@
 // FILMSTRIP
-var filmstripWrap = document.getElementById('filmstrip-wrap');
-var filmstripEl = document.getElementById('filmstrip');
+var filmstripWrap = domRefs.filmstripWrap;
+var filmstripEl = domRefs.filmstrip;
 var filmstripHideTimer = null;
 var filmstripBuilt = false;
 window.addEventListener('category-change', function () {
@@ -9,13 +9,13 @@ window.addEventListener('category-change', function () {
     filmstripEl.innerHTML = '';
   }
   // Also reset mobile slides if they exist
-  var imgWrap = document.getElementById('lightbox-img-wrap');
+  var imgWrap = domRefs.lightboxImgWrap;
   if (imgWrap) {
     var slides = imgWrap.querySelectorAll('.snap-slide');
     for (var i = 0; i < slides.length; i++) slides[i].remove();
   }
 });
-var liftZone = document.getElementById('filmstrip-lift-zone');
+var liftZone = domRefs.filmstripLiftZone;
 
 function buildFilmstrip() {
   if (filmstripBuilt) return;
@@ -155,7 +155,7 @@ function updateFilmstrip() {
 }
 
 var isUserInteracting = false;
-document.getElementById('lightbox').addEventListener('touchstart', function () {
+domRefs.lightbox.addEventListener('touchstart', function () {
   isUserInteracting = true;
   clearTimeout(filmstripHideTimer);
 }, { passive: true });
@@ -168,7 +168,7 @@ window.addEventListener('touchend', function () {
   }
 }, { passive: true });
 
-document.getElementById('lightbox').addEventListener('mousedown', function () {
+domRefs.lightbox.addEventListener('mousedown', function () {
   isUserInteracting = true;
   clearTimeout(filmstripHideTimer);
 }, { passive: true });
@@ -185,7 +185,7 @@ function showFilmstrip() {
   buildFilmstrip();
   updateFilmstrip();
   filmstripWrap.classList.add('visible');
-  document.getElementById('lightbox').classList.add('filmstrip-visible');
+  domRefs.lightbox.classList.add('filmstrip-visible');
   clearTimeout(filmstripHideTimer);
   if (!isUserInteracting) {
     filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
@@ -199,7 +199,7 @@ function hideFilmstrip() {
     return;
   }
   filmstripWrap.classList.remove('visible');
-  document.getElementById('lightbox').classList.remove('filmstrip-visible');
+  domRefs.lightbox.classList.remove('filmstrip-visible');
 }
 
 // keep filmstrip visible while hovering it

@@ -1,7 +1,7 @@
 // buildCarousel internally waits for images, then calls onReady
 // we hook into that by wrapping the final reveal
 function liftLoader() {
-  var loader = document.getElementById('loader');
+  var loader = domRefs.loader;
   loader.classList.add('lifting');
   setTimeout(function () { loader.style.display = 'none'; }, 750);
 }
@@ -19,7 +19,7 @@ buildMasonry();
 initFilters();
 
 (function initStickyHeaderSurface() {
-  var header = document.getElementById('gallery-header');
+  var header = domRefs.galleryHeader;
   if (!header) return;
 
   window.updateStickyHeaderSurface = function (scroll) {
@@ -58,7 +58,7 @@ var heroObs = new IntersectionObserver(function (entries) {
   heroVisible = entries[0].isIntersecting;
   startLoops();
 }, { threshold: 0 });
-heroObs.observe(document.getElementById('hero'));
+heroObs.observe(domRefs.hero);
 
 document.addEventListener('visibilitychange', function () {
   pageVisible = !document.hidden;
@@ -69,7 +69,7 @@ document.addEventListener('visibilitychange', function () {
 function checkHash() {
   var fullHash = window.location.hash.substring(1);
 
-  var lb = document.getElementById('lightbox');
+  var lb = domRefs.lightbox;
   var isLbOpen = lb && lb.classList.contains('open');
 
   // If no item slug and lightbox is open, close it (User clicked back from item to category)

@@ -19,8 +19,7 @@ var rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, set
 var easeFrame = 0;
 
 function buildCarousel() {
-  var rowIds = ['row-0', 'row-1', 'row-2', 'row-3'];
-  var rows = rowIds.map(function (id) { return document.getElementById(id); });
+  var rows = domRefs.heroRows;
 
   // show/hide row-3 based on device
   if (isMobile) {
@@ -123,8 +122,7 @@ function buildCarousel() {
 
 function tick() {
   if (!heroVisible || !pageVisible) { heroRafId = null; return; }
-  var rowIds = isMobile ? ['row-0', 'row-1', 'row-2', 'row-3'] : ['row-0', 'row-1', 'row-2'];
-  var rows = rowIds.map(function (id) { return document.getElementById(id); });
+  var rows = isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
   var speed = getCurrentSpeed(easeFrame);
   if (easeFrame < EASE_FRAMES + 10) easeFrame++;
 

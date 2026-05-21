@@ -1,8 +1,8 @@
 // CURSOR - mouse only
 var isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 if (isMouseDevice) {
-  var cursor = document.getElementById('cursor');
-  var ring = document.getElementById('cursor-ring');
+  var cursor = domRefs.cursor;
+  var ring = domRefs.cursorRing;
   var mx = 0, my = 0, rx = 0, ry = 0;
   var cursorVisible = false;
   var isDraggingScrollbar = false;

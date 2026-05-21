@@ -64,6 +64,50 @@ function slugify(text) {
     .replace(/[^\w-]+/g, '')  // Remove all non-word chars
     .replace(/--+/g, '-');    // Replace multiple - with single -
 }
+
+var domRefs = {
+  loader: document.getElementById('loader'),
+  cursor: document.getElementById('cursor'),
+  cursorRing: document.getElementById('cursor-ring'),
+  customScrollbar: document.getElementById('custom-scrollbar'),
+  customScrollbarThumb: document.getElementById('custom-scrollbar-thumb'),
+  hero: document.getElementById('hero'),
+  glowBall: document.getElementById('glow-ball'),
+  heroRows: [
+    document.getElementById('row-0'),
+    document.getElementById('row-1'),
+    document.getElementById('row-2'),
+    document.getElementById('row-3')
+  ],
+  gallerySection: document.getElementById('gallery-section'),
+  galleryHeader: document.getElementById('gallery-header'),
+  masonry: document.getElementById('masonry'),
+  lightbox: document.getElementById('lightbox'),
+  lightboxBg: document.getElementById('lightbox-bg'),
+  blurLayerA: document.getElementById('blur-layer-a'),
+  blurLayerB: document.getElementById('blur-layer-b'),
+  lightboxContent: document.getElementById('lightbox-content'),
+  lightboxZoomDarken: document.getElementById('lightbox-zoom-darken'),
+  lightboxImgWrap: document.getElementById('lightbox-img-wrap'),
+  lightboxImg: document.getElementById('lightbox-img'),
+  motionPlayerShell: document.getElementById('motion-player-shell'),
+  lightboxInfoWrap: document.getElementById('lightbox-info-wrap'),
+  lightboxInfo: document.getElementById('lightbox-info'),
+  lightboxTitle: document.getElementById('lightbox-title'),
+  lightboxDescToggle: document.getElementById('lightbox-desc-toggle'),
+  lightboxDesc: document.getElementById('lightbox-desc'),
+  metaLocation: document.getElementById('meta-location'),
+  metaLocationText: document.getElementById('meta-location-text'),
+  metaDate: document.getElementById('meta-date'),
+  metaDateText: document.getElementById('meta-date-text'),
+  metaMusic: document.getElementById('meta-music'),
+  metaMusicText: document.getElementById('meta-music-text'),
+  filmstripWrap: document.getElementById('filmstrip-wrap'),
+  filmstrip: document.getElementById('filmstrip'),
+  filmstripLiftZone: document.getElementById('filmstrip-lift-zone'),
+  siteFooter: document.getElementById('site-footer')
+};
+
 (function initHeroTagline() {
   var taglines = [
     "collection of all the pics i've ever taken <br> more soon",
@@ -159,12 +203,12 @@ if (window.visualViewport) {
 }
 
 // GLOW BALL
-var glowBall = document.getElementById('glow-ball');
+var glowBall = domRefs.glowBall;
 var glowX = window.innerWidth / 2, glowY = window.innerHeight / 2;
 var glowTargetX = glowX, glowTargetY = glowY;
 
-if (glowBall) {
-  var hero = document.getElementById('hero');
+if (glowBall && domRefs.hero) {
+  var hero = domRefs.hero;
   var mouseInHero = false;
   hero.addEventListener('mouseenter', function () { mouseInHero = true; startLoops(); });
   hero.addEventListener('mouseleave', function () { mouseInHero = false; });

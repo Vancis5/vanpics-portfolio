@@ -1,7 +1,7 @@
 // ADVANCED CUSTOM SCROLLBAR CONTROLLER
 (function initCustomScrollbar() {
-  var track = document.getElementById('custom-scrollbar');
-  var thumb = document.getElementById('custom-scrollbar-thumb');
+  var track = domRefs.customScrollbar;
+  var thumb = domRefs.customScrollbarThumb;
   if (!track || !thumb) return;
 
   var isDragging = false;

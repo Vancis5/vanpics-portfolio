@@ -39,7 +39,7 @@ function saveRatioCache() {
 
 function rebuildGallery(newCategory, options) {
   options = options || {};
-  var m = document.getElementById('masonry');
+  var m = domRefs.masonry;
   if (!m) return;
   var oldCategory = currentCategory;
 
@@ -49,7 +49,7 @@ function rebuildGallery(newCategory, options) {
 
   // 1.5 Anchor View: Ensure tap switches begin from the gallery header.
   // Swipe commits preserve the user's exact scroll position so sticky state doesn't jump.
-  var header = document.getElementById('gallery-header');
+  var header = domRefs.galleryHeader;
   var lockedScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
   if (!options.preserveScroll && header) {
     var headerPos = header.getBoundingClientRect().top + window.pageYOffset;
@@ -71,7 +71,7 @@ function rebuildGallery(newCategory, options) {
     updateActivePhotos();
 
     // Update URL hash for category if lightbox not open
-    if (!document.getElementById('lightbox').classList.contains('open') && !isPopState) {
+    if (!domRefs.lightbox.classList.contains('open') && !isPopState) {
       var catSlug = getCategorySlug(newCategory);
       var curHash = window.location.hash.substring(1);
       // Only update if the hash doesn't already start with this category slug (prevents wiping item slugs)
@@ -84,7 +84,7 @@ function rebuildGallery(newCategory, options) {
 
     m.innerHTML = '';
     m.classList.toggle('motion-grid-active', newCategory === 'motion');
-    var gallerySec = document.getElementById('gallery-section');
+    var gallerySec = domRefs.gallerySection;
     if (gallerySec) gallerySec.classList.toggle('motion-active', newCategory === 'motion');
     m.classList.remove('switching');
     m.style.transition = '';
@@ -174,7 +174,7 @@ function initFilters() {
 }
 
 function buildMasonry() {
-  var m = document.getElementById('masonry');
+  var m = domRefs.masonry;
   if (!m) return;
   m.innerHTML = '';
   var lastYear = null;
