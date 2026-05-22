@@ -1,7 +1,7 @@
-var blurFlip = false;
+let blurFlip = false;
 
 function refreshLightboxInfoRefs() {
-  var info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
+  let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
   if (!info) return null;
 
   domRefs.lightboxInfo = info;
@@ -19,12 +19,12 @@ function refreshLightboxInfoRefs() {
 
 function setLightboxBlur(src) {
   if (!src) return;
-  var active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
-  var inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
+  let active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
+  let inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
 
   // Resolve blur path: strip 'thumbs/' if present so it points to the correct blur asset
-  var blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
-  var inner = active.querySelector('.lightbox-bg-blur-inner');
+  let blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+  let inner = active.querySelector('.lightbox-bg-blur-inner');
   if (inner) inner.style.backgroundImage = 'url(' + blurPath + ')';
 
   active.classList.add('active');
@@ -33,23 +33,66 @@ function setLightboxBlur(src) {
   blurFlip = !blurFlip;
 }
 
+function runDescFlipTransition(options) {
+  let imgWrap = domRefs.lightboxImgWrap;
+  let infoWrap = domRefs.lightboxInfoWrap;
+  let applyLayoutChange = options.applyLayoutChange;
+  let cleanup = options.cleanup;
+
+  if (!imgWrap || !infoWrap) {
+    applyLayoutChange();
+    if (cleanup) cleanup();
+    return;
+  }
+
+  let startImg = options.startImgRect || imgWrap.getBoundingClientRect();
+  let startInfo = options.startInfoRect || infoWrap.getBoundingClientRect();
+
+  applyLayoutChange();
+
+  let endImg = imgWrap.getBoundingClientRect();
+  let endInfo = infoWrap.getBoundingClientRect();
+  let dImg = startImg.top - endImg.top;
+  let dInfo = startInfo.top - endInfo.top;
+
+  imgWrap.style.transition = 'none';
+  imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+  infoWrap.style.transition = 'none';
+  infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
+  if (options.afterInvert) options.afterInvert();
+
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+      imgWrap.style.transform = '';
+      infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+      infoWrap.style.transform = '';
+      setTimeout(function () {
+        imgWrap.style.transition = '';
+        infoWrap.style.transition = '';
+        if (cleanup) cleanup();
+      }, 450);
+    });
+  });
+}
+
 // updates text + blur bg only — image src is set separately to avoid double-load
 function setLightboxContent(p) {
   if (!p) return;
   refreshLightboxInfoRefs();
 
-  var safeTitle = p.title || '';
-  var safeDesc = p.desc || '';
-  var content = domRefs.lightboxContent;
-  var btn = domRefs.lightboxDescToggle;
-  var descEl = domRefs.lightboxDesc;
-  var isCollapsingOpenDesc = content && content.classList.contains('desc-open');
-  var preSwapImgRect = null;
-  var preSwapInfoRect = null;
+  let safeTitle = p.title || '';
+  let safeDesc = p.desc || '';
+  let content = domRefs.lightboxContent;
+  let btn = domRefs.lightboxDescToggle;
+  let descEl = domRefs.lightboxDesc;
+  let isCollapsingOpenDesc = content && content.classList.contains('desc-open');
+  let preSwapImgRect = null;
+  let preSwapInfoRect = null;
 
   if (isCollapsingOpenDesc && isMobile) {
-    var preSwapImgWrap = domRefs.lightboxImgWrap;
-    var preSwapInfoWrap = domRefs.lightboxInfoWrap;
+    let preSwapImgWrap = domRefs.lightboxImgWrap;
+    let preSwapInfoWrap = domRefs.lightboxInfoWrap;
     if (preSwapImgWrap && preSwapInfoWrap) {
       preSwapImgRect = preSwapImgWrap.getBoundingClientRect();
       preSwapInfoRect = preSwapInfoWrap.getBoundingClientRect();
@@ -59,7 +102,7 @@ function setLightboxContent(p) {
 
   if (domRefs.lightboxTitle) domRefs.lightboxTitle.textContent = safeTitle;
   if (descEl) descEl.innerHTML = safeDesc;
-  var locItem = domRefs.metaLocation;
+  let locItem = domRefs.metaLocation;
   if (p.location) {
     if (domRefs.metaLocationText) domRefs.metaLocationText.textContent = p.location;
     if (locItem) locItem.style.display = 'inline-flex';
@@ -67,7 +110,7 @@ function setLightboxContent(p) {
     locItem.style.display = 'none';
   }
 
-  var dateItem = domRefs.metaDate;
+  let dateItem = domRefs.metaDate;
   if (p.date) {
     if (domRefs.metaDateText) domRefs.metaDateText.textContent = p.date;
     if (dateItem) dateItem.style.display = 'inline-flex';
@@ -75,7 +118,7 @@ function setLightboxContent(p) {
     dateItem.style.display = 'none';
   }
 
-  var musicItem = domRefs.metaMusic;
+  let musicItem = domRefs.metaMusic;
   if (p.music) {
     if (domRefs.metaMusicText) domRefs.metaMusicText.textContent = p.music;
     if (musicItem) musicItem.style.display = 'inline-flex';
@@ -84,9 +127,9 @@ function setLightboxContent(p) {
   }
 
   // Deep Link: Automatically update the URL hash dynamically for routing tracking
-  var catSlug = getCategorySlug(currentCategory);
-  var slug = slugify(safeTitle);
-  var newHash = '#' + catSlug + '/' + slug;
+  let catSlug = getCategorySlug(currentCategory);
+  let slug = slugify(safeTitle);
+  let newHash = '#' + catSlug + '/' + slug;
   if (slug && window.location.hash !== newHash) {
     if (isPopState) {
       history.replaceState(null, null, newHash);
@@ -100,85 +143,23 @@ function setLightboxContent(p) {
 
   // conditionally hide the "read" toggle when photo has no description
   if (btn) {
-    var hasDesc = safeDesc.replace(/<[^>]*>/g, '').trim().length > 0;
+    let hasDesc = safeDesc.replace(/<[^>]*>/g, '').trim().length > 0;
     btn.classList.toggle('no-desc', !hasDesc);
   }
 
   updateLightboxDescPreview();
 
   if (content && content.classList.contains('desc-open')) {
-    // Mobile: GPU FLIP to gracefully and safely collapse without dropping frames natively
-    if (isMobile) {
-      var imgWrap = domRefs.lightboxImgWrap;
-      var infoWrap = domRefs.lightboxInfoWrap;
-
-      var startImg = preSwapImgRect || imgWrap.getBoundingClientRect();
-      var startInfo = preSwapInfoRect || infoWrap.getBoundingClientRect();
-
-      content.classList.remove('desc-open');
-      if (btn) btn.textContent = 'read more';
-      updateLightboxDescPreview();
-
-      var endImg = imgWrap.getBoundingClientRect();
-      var endInfo = infoWrap.getBoundingClientRect();
-
-      var dImg = startImg.top - endImg.top;
-      var dInfo = startInfo.top - endInfo.top;
-
-      imgWrap.style.transition = 'none';
-      imgWrap.style.transform = 'translateY(' + dImg + 'px)';
-      infoWrap.style.transition = 'none';
-      infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
-
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-          imgWrap.style.transform = '';
-          infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-          infoWrap.style.transform = '';
-          setTimeout(function () {
-            descEl.style.transition = '';
-            imgWrap.style.transition = '';
-            infoWrap.style.transition = '';
-          }, 450);
-        });
-      });
-    } else {
-      // Desktop: Hardware accelerated glide down — FLIP animation
-      var imgWrap = domRefs.lightboxImgWrap;
-      var infoWrap = domRefs.lightboxInfoWrap;
-
-      var startImg = imgWrap.getBoundingClientRect();
-      var startInfo = infoWrap.getBoundingClientRect();
-
-      content.classList.remove('desc-open');
-      if (btn) btn.textContent = 'read more';
-      updateLightboxDescPreview();
-
-      var endImg = imgWrap.getBoundingClientRect();
-      var endInfo = infoWrap.getBoundingClientRect();
-
-      var dImg = startImg.top - endImg.top;
-      var dInfo = startInfo.top - endInfo.top;
-
-      imgWrap.style.transition = 'none';
-      imgWrap.style.transform = 'translateY(' + dImg + 'px)';
-      infoWrap.style.transition = 'none';
-      infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
-
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-          imgWrap.style.transform = '';
-          infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-          infoWrap.style.transform = '';
-          setTimeout(function () {
-            imgWrap.style.transition = '';
-            infoWrap.style.transition = '';
-          }, 450);
-        });
-      });
-    }
+    runDescFlipTransition({
+      startImgRect: isMobile ? preSwapImgRect : null,
+      startInfoRect: isMobile ? preSwapInfoRect : null,
+      applyLayoutChange: function () {
+        content.classList.remove('desc-open');
+        if (btn) btn.textContent = 'read more';
+        updateLightboxDescPreview();
+      },
+      cleanup: isMobile && descEl ? function () { descEl.style.transition = ''; } : null
+    });
   } else if (btn) {
     btn.textContent = 'read more';
     updateLightboxDescPreview();
@@ -186,12 +167,12 @@ function setLightboxContent(p) {
 }
 
 function updateLightboxDescPreview() {
-  var desc = domRefs.lightboxDesc;
-  var btn = domRefs.lightboxDescToggle;
-  var content = domRefs.lightboxContent;
+  let desc = domRefs.lightboxDesc;
+  let btn = domRefs.lightboxDescToggle;
+  let content = domRefs.lightboxContent;
   if (!desc || !btn || !content || !isMobile) return;
 
-  var hasDesc = desc.textContent.trim().length > 0;
+  let hasDesc = desc.textContent.trim().length > 0;
   desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
 
   if (!hasDesc) {
@@ -200,11 +181,11 @@ function updateLightboxDescPreview() {
     return;
   }
 
-  var styles = window.getComputedStyle(desc);
-  var lineHeight = parseFloat(styles.lineHeight);
+  let styles = window.getComputedStyle(desc);
+  let lineHeight = parseFloat(styles.lineHeight);
   if (!lineHeight) lineHeight = parseFloat(styles.fontSize) * 1.75;
-  var previewHeight = lineHeight * 2;
-  var hasOverflow = desc.scrollHeight > previewHeight + 1;
+  let previewHeight = lineHeight * 2;
+  let hasOverflow = desc.scrollHeight > previewHeight + 1;
 
   desc.classList.toggle('desc-overflow', hasOverflow);
   btn.classList.toggle('no-desc', !hasOverflow);
@@ -212,7 +193,7 @@ function updateLightboxDescPreview() {
 
 
 function animateInfo(dir) {
-  var info = domRefs.lightboxInfo;
+  let info = domRefs.lightboxInfo;
   if (!info || !info.parentNode) {
     domRefs.lightboxInfo = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
     info = domRefs.lightboxInfo;
@@ -220,10 +201,10 @@ function animateInfo(dir) {
   }
 
   // only animate exit if there's visible content (opacity > 0 means it's shown)
-  var hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
+  let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
   if (hasContent) {
     // create exit ghost — absolutely positioned so it doesn't shift layout
-    var ghost = info.cloneNode(true);
+    let ghost = info.cloneNode(true);
     ghost.style.position = 'absolute';
     ghost.style.top = info.offsetTop + 'px';
     ghost.style.left = info.offsetLeft + 'px';
@@ -238,9 +219,9 @@ function animateInfo(dir) {
   }
 
   // clone-replace for enter — clean slate, no animation-cancel issues
-  var fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
-  var fromY = dir === 0 ? 16 : 0;
-  var clone = info.cloneNode(true);
+  let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
+  let fromY = dir === 0 ? 16 : 0;
+  let clone = info.cloneNode(true);
   clone.style.setProperty('--lb-from-x', fromX + 'px');
   clone.style.setProperty('--lb-from-y', fromY + 'px');
   clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
@@ -254,15 +235,15 @@ function animateInfo(dir) {
 }
 
 // increments each navigation so stale callbacks from aborted navigations are ignored
-var navGen = 0;
+let navGen = 0;
 
-var currentLightboxIsMotion = false;
+let currentLightboxIsMotion = false;
 function getCurrentLightboxItems() {
   return currentLightboxIsMotion ? motionProjects : activePhotos;
 }
 
 function openLightbox(i, direction, isMotion) {
-  var lb = domRefs.lightbox;
+  let lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !isPopState) {
     pushNextState = true;
   }
@@ -270,11 +251,11 @@ function openLightbox(i, direction, isMotion) {
   cur = i;
   isManuallyNavigating = true;
   currentLightboxIsMotion = !!isMotion;
-  var p = getCurrentLightboxItems()[i];
+  let p = getCurrentLightboxItems()[i];
 
   if (!p) return;
-  var img = domRefs.lightboxImg;
-  var playerShell = domRefs.motionPlayerShell;
+  let img = domRefs.lightboxImg;
+  let playerShell = domRefs.motionPlayerShell;
 
   if (isMotion) lb.classList.add('mode-motion');
   else lb.classList.remove('mode-motion');
@@ -282,7 +263,7 @@ function openLightbox(i, direction, isMotion) {
   // Mobile: already open — natively smooth scroll
   if (lb.classList.contains('open') && isMobile && mobileScrollToSlide && !isMotion) {
     // Fallback to 1 if direction evaluates to 0 or is mathematically missing
-    var dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
+    let dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
     mobileScrollToSlide(i, true, dir);
 
     cur = i;
@@ -291,10 +272,10 @@ function openLightbox(i, direction, isMotion) {
   }
 
   if (lb.classList.contains('open')) {
-    var dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
-    var exitX = dir > 0 ? '-6%' : '6%';
-    var enterX = dir > 0 ? '6%' : '-6%';
-    var gen = ++navGen;
+    let dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
+    let exitX = dir > 0 ? '-6%' : '6%';
+    let enterX = dir > 0 ? '6%' : '-6%';
+    let gen = ++navGen;
 
     // exit current media immediately — snappy
     img.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
@@ -303,7 +284,7 @@ function openLightbox(i, direction, isMotion) {
     playerShell.style.opacity = '0';
 
     // hide info panel immediately so old text isn't visible
-    var infoEl = domRefs.lightboxInfo;
+    let infoEl = domRefs.lightboxInfo;
     if (infoEl) {
       infoEl.style.animation = 'none';
       infoEl.style.opacity = '0';
@@ -313,7 +294,7 @@ function openLightbox(i, direction, isMotion) {
     // MOVED to afterLoad() to prevent network progressive rendering from lagging JS animations
     showFilmstripIfReady();
 
-    var entered = false;
+    let entered = false;
 
     function doEnter() {
       if (entered || gen !== navGen) return;
@@ -329,13 +310,13 @@ function openLightbox(i, direction, isMotion) {
       playerShell.style.opacity = '0';
 
       // assign handlers BEFORE setting src — Firefox fires load before handler if src set first
-      var loadFired = false;
+      let loadFired = false;
       function afterLoad() {
         if (loadFired || gen !== navGen) return;
         loadFired = true;
         img.onload = null; img.onerror = null;
 
-        var bSrc = isMotion ? p.thumb : p.src;
+        let bSrc = isMotion ? p.thumb : p.src;
         setLightboxBlur(bSrc);
         setLightboxContent(p);
 
@@ -366,7 +347,7 @@ function openLightbox(i, direction, isMotion) {
           img.onload = function () { clearTimeout(loadFallback); afterLoad(); };
           img.onerror = function () { clearTimeout(loadFallback); afterLoad(); };
           img.src = p.src;
-          var loadFallback = setTimeout(afterLoad, 700);
+          let loadFallback = setTimeout(afterLoad, 700);
           // decode() waits for full pixel decode — reliable in Firefox unlike img.complete
           if (img.decode) img.decode().then(function () { clearTimeout(loadFallback); afterLoad(); }).catch(function () { });
         }
@@ -377,9 +358,9 @@ function openLightbox(i, direction, isMotion) {
       doEnter();
     } else {
       // probe starts the network request — doEnter fires after min 150ms exit time
-      var probe = new Image();
-      var probeReady = false;
-      var minWaitDone = false;
+      let probe = new Image();
+      let probeReady = false;
+      let minWaitDone = false;
       function maybeEnter() { if (probeReady && minWaitDone) doEnter(); }
       probe.onload = probe.onerror = function () { probeReady = true; maybeEnter(); };
       probe.src = p.src;
@@ -391,7 +372,7 @@ function openLightbox(i, direction, isMotion) {
 
   } else {
     // INITIAL OPEN
-    var openGen = ++navGen;
+    let openGen = ++navGen;
 
     // media starts invisible — no content yet
     img.onload = null; img.onerror = null;
@@ -403,16 +384,16 @@ function openLightbox(i, direction, isMotion) {
     playerShell.style.opacity = '0';
 
     // info panel fully hidden — no stale text visible
-    var infoEl2 = domRefs.lightboxInfo;
+    let infoEl2 = domRefs.lightboxInfo;
     if (infoEl2) {
       infoEl2.style.animation = 'none';
       infoEl2.style.opacity = '0';
     }
 
-    var header = domRefs.galleryHeader;
-    var masonry = domRefs.masonry;
-    var headerRect = header ? header.getBoundingClientRect() : null;
-    var masonryRect = masonry ? masonry.getBoundingClientRect() : null;
+    let header = domRefs.galleryHeader;
+    let masonry = domRefs.masonry;
+    let headerRect = header ? header.getBoundingClientRect() : null;
+    let masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
     lb.classList.add('open');
     document.body.classList.add('lightbox-open');
@@ -421,22 +402,22 @@ function openLightbox(i, direction, isMotion) {
 
     // ── FLIP: Invert ──
     if (header && headerRect) {
-      var last = header.getBoundingClientRect();
-      var dX = headerRect.left - last.left;
-      var dY = headerRect.top - last.top;
+      let last = header.getBoundingClientRect();
+      let dX = headerRect.left - last.left;
+      let dY = headerRect.top - last.top;
       header.style.transition = 'none';
       header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
     }
     if (masonry && masonryRect) {
-      var lastM = masonry.getBoundingClientRect();
-      var dXm = masonryRect.left - lastM.left;
-      var dYm = masonryRect.top - lastM.top;
+      let lastM = masonry.getBoundingClientRect();
+      let dXm = masonryRect.left - lastM.left;
+      let dYm = masonryRect.top - lastM.top;
       masonry.style.transition = 'none';
       masonry.style.transform = 'translate(' + dXm + 'px, ' + dYm + 'px)';
     }
 
     requestAnimationFrame(function () {
-      var ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+      let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
       if (header) {
         header.style.transition = ease;
         header.style.transform = '';
@@ -451,19 +432,19 @@ function openLightbox(i, direction, isMotion) {
     window.dispatchEvent(new Event('lightbox-open'));
     setTimeout(showFilmstripIfReady, 300);
 
-    var hint = document.getElementById('swipe-hint');
+    let hint = document.getElementById('swipe-hint');
     if (hint) {
       hint.classList.add('visible');
       setTimeout(function () { hint.classList.remove('visible'); }, 2500);
     }
 
-    var openLoadFired = false;
+    let openLoadFired = false;
     function afterOpenLoad() {
       if (openLoadFired || openGen !== navGen) return;
       openLoadFired = true;
       img.onload = null; img.onerror = null;
 
-      var bSrc = isMotion ? p.thumb : p.src;
+      let bSrc = isMotion ? p.thumb : p.src;
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) loadSwipeNeighbors();
@@ -485,7 +466,7 @@ function openLightbox(i, direction, isMotion) {
     }
 
     // handlers BEFORE src — Firefox-safe
-    var openFallback;
+    let openFallback;
     requestAnimationFrame(function () {
       if (isMotion) {
         afterOpenLoad();
@@ -502,9 +483,9 @@ function openLightbox(i, direction, isMotion) {
 }
 
 function renderVideoInLightbox(p) {
-  var shell = domRefs.motionPlayerShell;
+  let shell = domRefs.motionPlayerShell;
   if (!shell) return;
-  var ratio = p.aspectRatio || (16 / 9);
+  let ratio = p.aspectRatio || (16 / 9);
   shell.style.aspectRatio = ratio;
   shell.style.width = 'min(100%, calc((100svh - 15rem) * ' + ratio + '))';
   shell.innerHTML = getVideoPlayerMarkup(p);
@@ -513,24 +494,24 @@ function renderVideoInLightbox(p) {
 }
 
 function startUnifiedMotionPlayer(id) {
-  var prime = document.getElementById(id);
+  let prime = document.getElementById(id);
   if (!prime) return;
-  var video = prime.querySelector('video');
+  let video = prime.querySelector('video');
   prime.classList.add('is-started');
   if (video) video.play().catch(function () { });
 }
 
 function closeLightbox() {
-  var lb = domRefs.lightbox;
+  let lb = domRefs.lightbox;
   if (!lb.classList.contains('open')) return;
 
-  var header = domRefs.galleryHeader;
-  var masonry = domRefs.masonry;
-  var headerRect = header ? header.getBoundingClientRect() : null;
-  var masonryRect = masonry ? masonry.getBoundingClientRect() : null;
+  let header = domRefs.galleryHeader;
+  let masonry = domRefs.masonry;
+  let headerRect = header ? header.getBoundingClientRect() : null;
+  let masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
-  var img = domRefs.lightboxImg;
-  var activeGen = ++navGen; // invalidates all pending callbacks
+  let img = domRefs.lightboxImg;
+  let activeGen = ++navGen; // invalidates all pending callbacks
   lb.classList.remove('open');
   document.body.classList.remove('lightbox-open');
   document.body.style.overflow = '';
@@ -540,22 +521,22 @@ function closeLightbox() {
 
   // ── FLIP: Invert ──
   if (header && headerRect) {
-    var last = header.getBoundingClientRect();
-    var dX = headerRect.left - last.left;
-    var dY = headerRect.top - last.top;
+    let last = header.getBoundingClientRect();
+    let dX = headerRect.left - last.left;
+    let dY = headerRect.top - last.top;
     header.style.transition = 'none';
     header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
   }
   if (masonry && masonryRect) {
-    var lastM = masonry.getBoundingClientRect();
-    var dXm = masonryRect.left - lastM.left;
-    var dYm = masonryRect.top - lastM.top;
+    let lastM = masonry.getBoundingClientRect();
+    let dXm = masonryRect.left - lastM.left;
+    let dYm = masonryRect.top - lastM.top;
     masonry.style.transition = 'none';
     masonry.style.transform = 'translate(' + dXm + 'px, ' + dYm + 'px)';
   }
 
   requestAnimationFrame(function () {
-    var ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+    let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
     if (header) {
       header.style.transition = ease;
       header.style.transform = '';
@@ -575,14 +556,14 @@ function closeLightbox() {
     }, 400);
   });
 
-  var playerShell = domRefs.motionPlayerShell;
+  let playerShell = domRefs.motionPlayerShell;
   if (playerShell) playerShell.innerHTML = '';
 
   domRefs.blurLayerA.classList.remove('active');
   domRefs.blurLayerB.classList.remove('active');
   // Reset hash to category on close
   if (window.location.hash && !isPopState) {
-    var catSlug = getCategorySlug(currentCategory);
+    let catSlug = getCategorySlug(currentCategory);
     history.pushState(null, null, '#' + catSlug);
   }
 
@@ -600,7 +581,7 @@ function closeLightbox() {
       img.style.opacity = '';
     }
 
-    var info = domRefs.lightboxInfo;
+    let info = domRefs.lightboxInfo;
     if (info) {
       info.style.animation = 'none';
       info.style.opacity = '0';
@@ -609,7 +590,7 @@ function closeLightbox() {
       info.style.transform = '';
     }
 
-    var content = domRefs.lightboxContent;
+    let content = domRefs.lightboxContent;
     if (content) {
       content.classList.remove('desc-open');
       content.style.transition = '';
@@ -617,11 +598,11 @@ function closeLightbox() {
       content.style.transformOrigin = '';
       content.style.opacity = '';
     }
-    var lb = domRefs.lightbox;
+    let lb = domRefs.lightbox;
     if (lb) lb.classList.remove('zoom-active');
 
     if (isMobile) {
-      var mWrap = domRefs.lightboxImgWrap;
+      let mWrap = domRefs.lightboxImgWrap;
       if (mWrap) {
         mWrap.style.transform = '';
         mWrap.style.overflowX = '';
@@ -630,11 +611,11 @@ function closeLightbox() {
       lbZoomLevel = 1;
       lbZoomPanX = 0;
       lbZoomPanY = 0;
-      var slides = mWrap ? mWrap.querySelectorAll('.snap-slide') : [];
-      for (var si = 0; si < slides.length; si++) {
+      let slides = mWrap ? mWrap.querySelectorAll('.snap-slide') : [];
+      for (let si = 0; si < slides.length; si++) {
         slides[si].style.opacity = '';
         slides[si].style.transition = '';
-        var slideImg = slides[si].querySelector('img');
+        let slideImg = slides[si].querySelector('img');
         if (slideImg) {
           slideImg.classList.remove('zoomed');
           slideImg.style.transform = '';
@@ -646,84 +627,53 @@ function closeLightbox() {
       }
     }
 
-    var dark = domRefs.lightboxZoomDarken;
+    let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
   }, 400);
 }
 
 function toggleLightboxDesc() {
-  var content = domRefs.lightboxContent;
-  var btn = domRefs.lightboxDescToggle;
+  let content = domRefs.lightboxContent;
+  let btn = domRefs.lightboxDescToggle;
   if (!content || !btn || btn.classList.contains('no-desc')) return;
 
-  var imgWrap = domRefs.lightboxImgWrap;
-  var infoWrap = domRefs.lightboxInfoWrap;
-  var desc = domRefs.lightboxDesc;
-  var opening = !content.classList.contains('desc-open');
+  let desc = domRefs.lightboxDesc;
+  let opening = !content.classList.contains('desc-open');
 
-  if (!imgWrap || !infoWrap) {
-    content.classList.toggle('desc-open', opening);
-    btn.textContent = opening ? 'read less' : 'read more';
-    updateLightboxDescPreview();
-    if (opening) hideFilmstripIfReady();
-    else showFilmstripIfReady();
-    return;
-  }
-
-  var startImg = imgWrap.getBoundingClientRect();
-  var startInfo = infoWrap.getBoundingClientRect();
-
-  content.classList.toggle('desc-open', opening);
-  btn.textContent = opening ? 'read less' : 'read more';
-  updateLightboxDescPreview();
-  if (opening) hideFilmstripIfReady();
-  else showFilmstripIfReady();
-
-  var endImg = imgWrap.getBoundingClientRect();
-  var endInfo = infoWrap.getBoundingClientRect();
-  var dImg = startImg.top - endImg.top;
-  var dInfo = startInfo.top - endInfo.top;
-
-  imgWrap.style.transition = 'none';
-  imgWrap.style.transform = 'translateY(' + dImg + 'px)';
-  infoWrap.style.transition = 'none';
-  infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
-  if (desc) void desc.offsetHeight;
-
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () {
-      imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      imgWrap.style.transform = '';
-      infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      infoWrap.style.transform = '';
-      setTimeout(function () {
-        imgWrap.style.transition = '';
-        infoWrap.style.transition = '';
-      }, 450);
-    });
+  runDescFlipTransition({
+    applyLayoutChange: function () {
+      content.classList.toggle('desc-open', opening);
+      btn.textContent = opening ? 'read less' : 'read more';
+      updateLightboxDescPreview();
+      if (opening) hideFilmstripIfReady();
+      else showFilmstripIfReady();
+    },
+    afterInvert: function () {
+      if (desc) void desc.offsetHeight;
+    }
   });
 }
 
 // reset desc expansion on new photo
 function resetDescToggle() {
-  var info = domRefs.lightboxInfo;
-  var btn = domRefs.lightboxDescToggle;
+  let info = domRefs.lightboxInfo;
+  let btn = domRefs.lightboxDescToggle;
   if (info) info.classList.remove('desc-open');
   if (btn) btn.textContent = 'read more';
 }
 
 function loadSwipeNeighbors() {
   if (currentLightboxIsMotion) return;
-  var currentSet = getCurrentLightboxItems();
-  var prev = (cur - 1 + currentSet.length) % currentSet.length;
-  var next = (cur + 1) % currentSet.length;
-  var p1 = new Image(); p1.src = currentSet[prev].src; if (p1.decode) p1.decode().catch(function () { });
-  var p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function () { });
+  let currentSet = getCurrentLightboxItems();
+  let prev = (cur - 1 + currentSet.length) % currentSet.length;
+  let next = (cur + 1) % currentSet.length;
+  let p1 = new Image(); p1.src = currentSet[prev].src; if (p1.decode) p1.decode().catch(function () { });
+  let p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function () { });
 }
 
 function navigateLightbox(d) {
   if (typeof lbZoomLevel !== 'undefined' && lbZoomLevel > 1) resetZoom();
-  var currentSet = getCurrentLightboxItems();
+  let currentSet = getCurrentLightboxItems();
   cur = (cur + d + currentSet.length) % currentSet.length;
   openLightbox(cur, d, currentLightboxIsMotion);
 }

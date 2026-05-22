@@ -1,6 +1,6 @@
 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 
-  var lenis = new Lenis({
+  let lenis = new Lenis({
     lerp: 0.09,
     smoothWheel: true,
     wheelMultiplier: 1,
@@ -15,8 +15,8 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   // what lenis thinks. Runs on every native scroll event.
   function syncLenisToReality() {
     if (!window.lenis || window._scrollbarDragging) return;
-    var pos = document.documentElement.scrollTop || 0;
-    var delta = Math.abs(window.lenis.animatedScroll - pos);
+    let pos = document.documentElement.scrollTop || 0;
+    let delta = Math.abs(window.lenis.animatedScroll - pos);
     if (delta > 5) {
       window.lenis.animatedScroll = pos;
       window.lenis.targetScroll = pos;
@@ -34,7 +34,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   });
 
   // ── Filmstrip Lenis ──
-  var filmstripEl = document.getElementById('filmstrip');
+  let filmstripEl = document.getElementById('filmstrip');
   if (filmstripEl) {
     window.fsLenis = new Lenis({
       wrapper: filmstripEl,
@@ -46,7 +46,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       autoResize: false
     });
 
-    var _fsResizeTimer;
+    let _fsResizeTimer;
     new ResizeObserver(function () {
       clearTimeout(_fsResizeTimer);
       _fsResizeTimer = setTimeout(function () {
@@ -57,7 +57,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 
   // ── THE GLOBAL SCROLL HUB ──
   window.globalScrollHub = function(s) {
-    var scrollPos = (typeof s === 'number') ? s : (window.scrollY || 0);
+    let scrollPos = (typeof s === 'number') ? s : (window.scrollY || 0);
     scrollY = scrollPos;
     if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface(scrollPos);
     if (window.updateCustomScrollbar) window.updateCustomScrollbar();
@@ -90,7 +90,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   window.addEventListener('lightbox-open', function () { if (window.lenis) window.lenis.stop(); });
 
   // Override Lenis CSS classes that conflict with site overflow rules
-  var ls = document.createElement('style');
+  let ls = document.createElement('style');
   ls.textContent = 'html.lenis,html.lenis body{height:auto}html.lenis,html.lenis-scrolling{overflow-x:clip!important;overflow-y:auto!important}html.lenis-stopped{overflow:auto!important}';
   document.head.appendChild(ls);
 }

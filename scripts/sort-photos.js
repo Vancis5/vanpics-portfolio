@@ -45,14 +45,14 @@ function sortPhotos() {
   const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
 
   // Extract array using markers
-  const startMarker = 'const photos = [';
+  const startMarker = 'var photos = [';
   const endMarker = '];';
   
   const startIndex = content.indexOf(startMarker);
   const endIndex = content.lastIndexOf(endMarker);
 
   if (startIndex === -1 || endIndex === -1) {
-    console.error('Error: Could not locate "const photos = [" or "];" markers.');
+    console.error('Error: Could not locate "var photos = [" or "];" markers.');
     return;
   }
 

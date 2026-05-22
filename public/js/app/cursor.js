@@ -1,11 +1,11 @@
 // CURSOR - mouse only
-var isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+let isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 if (isMouseDevice) {
-  var cursor = domRefs.cursor;
-  var ring = domRefs.cursorRing;
-  var mx = 0, my = 0, rx = 0, ry = 0;
-  var cursorVisible = false;
-  var isDraggingScrollbar = false;
+  let cursor = domRefs.cursor;
+  let ring = domRefs.cursorRing;
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  let cursorVisible = false;
+  let isDraggingScrollbar = false;
 
   // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
   function hideCursor() {
@@ -18,7 +18,7 @@ if (isMouseDevice) {
     cursor.style.opacity = '1'; ring.style.opacity = '1';
   }
 
-  var cursorTimeout;
+  let cursorTimeout;
   function resetCursorTimeout() {
     showCursor();
     clearTimeout(cursorTimeout);
@@ -67,7 +67,7 @@ if (isMouseDevice) {
   document.documentElement.addEventListener('mouseenter', showCursor);
   document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
   // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
-  var interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img, .footer-instagram';
+  let interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img, .footer-instagram';
   document.addEventListener('mouseover', function (e) {
     if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram')) {
       ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';

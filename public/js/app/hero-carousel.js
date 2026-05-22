@@ -1,25 +1,25 @@
 // PARALLAX
-var scrollY = 0;
+let scrollY = 0;
 
 // CAROUSEL
-var ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
+let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
 // cruise speed scaled by device — mobile narrower so same px/frame looks faster
-var CRUISE_SPEED = isMobile ? 0.28 : (window.innerWidth < 1024 ? 0.36 : 0.45);
-var EASE_FRAMES = 120;
-var START_SPEED_MULT = 8.0;
+let CRUISE_SPEED = isMobile ? 0.28 : (window.innerWidth < 1024 ? 0.36 : 0.45);
+let EASE_FRAMES = 120;
+let START_SPEED_MULT = 8.0;
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 function getCurrentSpeed(frame) {
   if (frame >= EASE_FRAMES) return CRUISE_SPEED;
-  var t = frame / EASE_FRAMES;
+  let t = frame / EASE_FRAMES;
   return CRUISE_SPEED * START_SPEED_MULT + (CRUISE_SPEED - CRUISE_SPEED * START_SPEED_MULT) * easeOutCubic(t);
 }
 
-var rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
-var easeFrame = 0;
+let rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
+let easeFrame = 0;
 
 function buildCarousel() {
-  var rows = domRefs.heroRows;
+  let rows = domRefs.heroRows;
 
   // show/hide row-3 based on device
   if (isMobile) {
@@ -28,28 +28,28 @@ function buildCarousel() {
     rows[3].style.display = 'none';
   }
 
-  var activeRows = isMobile ? rows : rows.slice(0, 3);
-  var activeRowCount = activeRows.length;
+  let activeRows = isMobile ? rows : rows.slice(0, 3);
+  let activeRowCount = activeRows.length;
 
   if (carouselPhotos.length === 0) { startLoopsIfReady(); return; }
 
   // rows stay visible; eager images handle their own fade-in
   activeRows.forEach(function (r) { r.style.opacity = '1'; });
 
-  var groups = [];
-  for (var g = 0; g < activeRowCount; g++) groups.push([]);
+  let groups = [];
+  for (let g = 0; g < activeRowCount; g++) groups.push([]);
   carouselPhotos.forEach(function (p, i) { groups[i % activeRowCount].push(p); });
 
-  var eagerImgs = [];
+  let eagerImgs = [];
 
   activeRows.forEach(function (row, ri) {
-    var group = groups[ri].length > 0 ? groups[ri] : carouselPhotos;
-    var copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
+    let group = groups[ri].length > 0 ? groups[ri] : carouselPhotos;
+    let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
 
-    for (var c = 0; c < copies * 2; c++) {
+    for (let c = 0; c < copies * 2; c++) {
       group.forEach(function (p) {
-        var img = document.createElement('img');
-        var thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+        let img = document.createElement('img');
+        let thumbPath = p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
         if (c === 0) {
           img.loading = 'eager';
@@ -62,14 +62,14 @@ function buildCarousel() {
           img.loading = 'lazy';
         }
         img.addEventListener('click', function () {
-          var targetCat = (p.category === 'figures') ? 'figures' : 'all';
+          let targetCat = (p.category === 'figures') ? 'figures' : 'all';
           if (currentCategory === targetCat) {
-            var idx = activePhotos.indexOf(p);
+            let idx = activePhotos.indexOf(p);
             if (idx >= 0) openLightbox(idx);
           } else {
             rebuildGallery(targetCat, {
               onReady: function () {
-                var idx = activePhotos.indexOf(p);
+                let idx = activePhotos.indexOf(p);
                 if (idx >= 0) openLightbox(idx);
               }
             });
@@ -80,19 +80,19 @@ function buildCarousel() {
     }
   });
 
-  var loaded = 0;
-  var total = eagerImgs.length;
+  let loaded = 0;
+  let total = eagerImgs.length;
 
   function onImageReady() {
     if (++loaded < total) return;
     // defer to next paint — Firefox offsetWidth is 0 if read before layout pass
     requestAnimationFrame(function () {
       activeRows.forEach(function (row, ri) {
-        var group = groups[ri].length > 0 ? groups[ri] : carouselPhotos;
-        var copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
-        var imgs = Array.from(row.querySelectorAll('img'));
-        var w = 0;
-        for (var i = 0; i < group.length * copies && i < imgs.length; i++) w += (imgs[i].offsetWidth || 220) + 10;
+        let group = groups[ri].length > 0 ? groups[ri] : carouselPhotos;
+        let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
+        let imgs = Array.from(row.querySelectorAll('img'));
+        let w = 0;
+        for (let i = 0; i < group.length * copies && i < imgs.length; i++) w += (imgs[i].offsetWidth || 220) + 10;
         rowState[ri].setWidth = w > 0 ? w : group.length * copies * 230;
         if (ROW_CONFIG[ri].dir === 1) rowState[ri].offset = -rowState[ri].setWidth;
       });
@@ -104,7 +104,7 @@ function buildCarousel() {
 
   if (total === 0) { activeRows.forEach(function (r) { r.style.opacity = '1'; }); startLoopsIfReady(); return; }
   eagerImgs.forEach(function (img) {
-    var counted = false;
+    let counted = false;
     function countOnce() { if (!counted) { counted = true; onImageReady(); } }
     img.addEventListener('load', countOnce);
     img.addEventListener('error', countOnce);
@@ -114,7 +114,7 @@ function buildCarousel() {
         img.decode().then(countOnce).catch(countOnce);
       } else {
         // no decode() — nudge src to retrigger load event (cached, no network hit)
-        var s = img.src; img.src = ''; img.src = s;
+        let s = img.src; img.src = ''; img.src = s;
       }
     }
   });
@@ -122,11 +122,11 @@ function buildCarousel() {
 
 function tick() {
   if (!heroVisible || !pageVisible) { heroRafId = null; return; }
-  var rows = isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
-  var speed = getCurrentSpeed(easeFrame);
+  let rows = isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
+  let speed = getCurrentSpeed(easeFrame);
   if (easeFrame < EASE_FRAMES + 10) easeFrame++;
 
-  var px = [scrollY * 0.18, -scrollY * 0.12, scrollY * 0.22, -scrollY * 0.15];
+  let px = [scrollY * 0.18, -scrollY * 0.12, scrollY * 0.22, -scrollY * 0.15];
 
   rowState.forEach(function (state, ri) {
     if (ri >= rows.length) return;

@@ -1,17 +1,17 @@
 // ADVANCED CUSTOM SCROLLBAR CONTROLLER
 (function initCustomScrollbar() {
-  var track = domRefs.customScrollbar;
-  var thumb = domRefs.customScrollbarThumb;
+  let track = domRefs.customScrollbar;
+  let thumb = domRefs.customScrollbarThumb;
   if (!track || !thumb) return;
 
-  var isDragging = false;
-  var startY, startScroll;
-  var fadeTimer = null;
+  let isDragging = false;
+  let startY, startScroll;
+  let fadeTimer = null;
 
   function updateThumb() {
-    var winH = window.innerHeight;
-    var docH = document.documentElement.scrollHeight;
-    var scrollT = window.pageYOffset || document.documentElement.scrollTop;
+    let winH = window.innerHeight;
+    let docH = document.documentElement.scrollHeight;
+    let scrollT = window.pageYOffset || document.documentElement.scrollTop;
 
     if (docH <= winH + 5) {
       track.style.display = 'none';
@@ -20,10 +20,10 @@
       track.style.display = 'block';
     }
 
-    var thumbH = Math.max(30, (winH / docH) * winH);
-    var maxTrack = winH - thumbH;
-    var maxScroll = docH - winH;
-    var thumbY = (scrollT / maxScroll) * maxTrack;
+    let thumbH = Math.max(30, (winH / docH) * winH);
+    let maxTrack = winH - thumbH;
+    let maxScroll = docH - winH;
+    let thumbY = (scrollT / maxScroll) * maxTrack;
 
     thumb.style.height = thumbH + 'px';
     thumb.style.transform = 'translateY(' + thumbY + 'px)';
@@ -46,18 +46,18 @@
     if (window.lenis) window.lenis.scrollTo(window.scrollY, { immediate: true });
     window._scrollbarDragging = true;
 
-    var winH = window.innerHeight;
-    var docH = document.documentElement.scrollHeight;
-    var thumbH = parseFloat(thumb.style.height);
-    var maxTrack = winH - thumbH;
-    var maxScroll = docH - winH;
+    let winH = window.innerHeight;
+    let docH = document.documentElement.scrollHeight;
+    let thumbH = parseFloat(thumb.style.height);
+    let maxTrack = winH - thumbH;
+    let maxScroll = docH - winH;
 
-    var thumbRect = thumb.getBoundingClientRect();
-    var isClickingThumb = e.clientY >= thumbRect.top && e.clientY <= thumbRect.bottom;
+    let thumbRect = thumb.getBoundingClientRect();
+    let isClickingThumb = e.clientY >= thumbRect.top && e.clientY <= thumbRect.bottom;
 
     if (!isClickingThumb) {
-      var clickY = e.clientY - (thumbH / 2);
-      var scrollPos = (clickY / maxTrack) * maxScroll;
+      let clickY = e.clientY - (thumbH / 2);
+      let scrollPos = (clickY / maxTrack) * maxScroll;
       window.scrollTo(0, scrollPos);
     }
 
@@ -70,15 +70,15 @@
 
   window.addEventListener('mousemove', function (e) {
     if (!isDragging) return;
-    var deltaY = e.clientY - startY;
-    var winH = window.innerHeight;
-    var docH = document.documentElement.scrollHeight;
-    var thumbH = parseFloat(thumb.style.height);
-    var maxTrack = winH - thumbH;
-    var maxScroll = docH - winH;
+    let deltaY = e.clientY - startY;
+    let winH = window.innerHeight;
+    let docH = document.documentElement.scrollHeight;
+    let thumbH = parseFloat(thumb.style.height);
+    let maxTrack = winH - thumbH;
+    let maxScroll = docH - winH;
 
-    var scrollDelta = (deltaY / maxTrack) * maxScroll;
-    var targetPos = Math.max(0, Math.min(startScroll + scrollDelta, maxScroll));
+    let scrollDelta = (deltaY / maxTrack) * maxScroll;
+    let targetPos = Math.max(0, Math.min(startScroll + scrollDelta, maxScroll));
     document.documentElement.scrollTop = targetPos;
   });
 
@@ -94,7 +94,7 @@
       // which uses window.scrollTo() — and the browser blocks that API
       // while lenis CSS is active.
       if (window.lenis) {
-        var pos = document.documentElement.scrollTop;
+        let pos = document.documentElement.scrollTop;
         window.lenis.animatedScroll = pos;
         window.lenis.targetScroll = pos;
         window.lenis.velocity = 0;

@@ -3,7 +3,7 @@ if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
 }
 
 // Footer brightness on mobile scroll
-var footerObserver = new IntersectionObserver(function (entries) {
+let footerObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {
     if (window.matchMedia('(hover: none)').matches) {
       if (entry.isIntersecting) {
@@ -15,5 +15,5 @@ var footerObserver = new IntersectionObserver(function (entries) {
   });
 }, { threshold: 0.85 });
 
-var siteFooter = document.getElementById('site-footer');
+let siteFooter = document.getElementById('site-footer');
 if (siteFooter) footerObserver.observe(siteFooter);

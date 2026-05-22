@@ -67,10 +67,10 @@
 
   // 5. JS: Override animateInfo to delay the 'Ghost Removal' jank
   window.animateInfo = (dir) => {
-    var info = document.getElementById('lightbox-info');
-    var hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
+    let info = document.getElementById('lightbox-info');
+    let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
     if (hasContent) {
-      var ghost = info.cloneNode(true);
+      let ghost = info.cloneNode(true);
       ghost.style.position = 'absolute';
       ghost.style.top = info.offsetTop + 'px';
       ghost.style.left = info.offsetLeft + 'px';
@@ -81,9 +81,9 @@
       info.parentNode.appendChild(ghost);
       setTimeout(() => { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 1500);
     }
-    var fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
-    var fromY = dir === 0 ? 16 : 0;
-    var clone = info.cloneNode(true);
+    let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
+    let fromY = dir === 0 ? 16 : 0;
+    let clone = info.cloneNode(true);
     clone.style.setProperty('--lb-from-x', fromX + 'px');
     clone.style.setProperty('--lb-from-y', fromY + 'px');
     clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';

@@ -5,7 +5,7 @@
 //  heroSlide -> true: will show in carousel in the beginning
 // ─────────────────────────────────────────────
 
-const photos = [
+var photos = [
   {
     src: "photos/tch-crash.webp",
     title: "collateral",
