@@ -32,12 +32,22 @@
   <meta name="twitter:image" content="https://vanpics.pages.dev/preview.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="style.css" as="style">
+  <link rel="preload" href="player.css" as="style">
+  <link rel="preload" href="photos/thumbs/depths-remake.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="preload" href="photos/thumbs/red-moon.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="preload" href="photos/thumbs/fog-motorcycle.webp" as="image" type="image/webp" fetchpriority="high">
+  <link rel="preload" href="photos/thumbs/lone-house-hill.webp" as="image" type="image/webp">
+  <link rel="preload" href="photos/thumbs/ray-of-light-bw.webp" as="image" type="image/webp">
+  <link rel="preload" href="photos/thumbs/moths-light.webp" as="image" type="image/webp">
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="player.css">
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js"
+    integrity="sha384-KX08lNsWYubfaqhixUNDRCPT1gKYzflmBWz1vyfYku2IKsL1Tx9njUH6FcIEtWzk" crossorigin="anonymous"
+    onerror="import('/vendor/video-minimal-ui.js')"></script>
   <link rel="stylesheet" href="css/motion-section.css">
   <!-- Video.js minimal skin CSS -->
   <link rel="stylesheet" href="css/media-minimal-skin.css">
@@ -207,6 +217,7 @@
 
   <script src="/data/photos.js"></script>
   <script src="/data/videos.js"></script>
+  <script src="/js/app/config.js"></script>
   <script src="/js/app/core.js"></script>
   <script src="/js/app/lightbox.js"></script>
   <script src="/js/app/lightbox-zoom.js"></script>
@@ -220,7 +231,12 @@
   <script src="/js/browser-fixes.js"></script>
 
   <!-- Lenis Smooth Scroll -->
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"
+    integrity="sha384-eD5ubmuCcvTdCADWuSchJYE7wcj2nzNr0itbrh6w/KJyBiltSZ8w3VFRBSWu5YQ8"
+    crossorigin="anonymous"></script>
+  <script>
+    if (!window.Lenis) document.write('<script src="/vendor/lenis.min.js"><\/script>');
+  </script>
   <script src="/js/smooth-scroll.js"></script>
 </body>
 

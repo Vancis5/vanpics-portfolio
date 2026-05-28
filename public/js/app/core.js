@@ -1,6 +1,8 @@
 let pushNextState = false;
 let isPopState = false;
 
+const photoLibrary = (typeof photos !== 'undefined' && Array.isArray(photos)) ? photos : [];
+
 // ── MOTION: swap this to change which video plays ──
 const motionProjects = (typeof videos !== 'undefined' && Array.isArray(videos)) ? videos.filter(function (v) {
   return !!v.thumb || !!v.src;
@@ -186,7 +188,7 @@ function getInternalCategory(slug) {
 
 function getPhotoLibrary(category) {
   if (category === 'motion') return [];
-  return photos.filter(function (p) {
+  return photoLibrary.filter(function (p) {
     if (!p.title) return false;
     if (category === 'figures') return p.category === 'figures';
     return p.category !== 'figures';
@@ -198,8 +200,8 @@ function updateActivePhotos() {
 }
 
 updateActivePhotos();
-carouselPhotos = photos.filter(function (p) { return p.heroSlide === true && p.title !== ''; });
-if (carouselPhotos.length === 0) carouselPhotos = photos.filter(function (p) { return p.title !== ''; });
+carouselPhotos = photoLibrary.filter(function (p) { return p.heroSlide === true && p.title !== ''; });
+if (carouselPhotos.length === 0) carouselPhotos = photoLibrary.filter(function (p) { return p.title !== ''; });
 
 // Pre-cache first 6 carousel images to warm up the browser cache without triggering "unused preload" warnings
 carouselPhotos.slice(0, 6).forEach(function (p) {

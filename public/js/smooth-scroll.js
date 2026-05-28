@@ -1,9 +1,10 @@
 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  let SMOOTH_SCROLL_CONFIG = window.APP_CONFIG.smoothScroll;
 
   let lenis = new Lenis({
-    lerp: 0.09,
+    lerp: SMOOTH_SCROLL_CONFIG.lerp,
     smoothWheel: true,
-    wheelMultiplier: 1,
+    wheelMultiplier: SMOOTH_SCROLL_CONFIG.wheelMultiplier,
     infinite: false,
     autoResize: false
   });
@@ -17,7 +18,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     if (!window.lenis || window._scrollbarDragging) return;
     let pos = document.documentElement.scrollTop || 0;
     let delta = Math.abs(window.lenis.animatedScroll - pos);
-    if (delta > 5) {
+    if (delta > SMOOTH_SCROLL_CONFIG.desyncThreshold) {
       window.lenis.animatedScroll = pos;
       window.lenis.targetScroll = pos;
       window.lenis.velocity = 0;
@@ -42,7 +43,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       orientation: 'horizontal',
       gestureOrientation: 'both',
       smoothWheel: true,
-      lerp: 0.09,
+      lerp: SMOOTH_SCROLL_CONFIG.lerp,
       autoResize: false
     });
 
@@ -51,7 +52,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       clearTimeout(_fsResizeTimer);
       _fsResizeTimer = setTimeout(function () {
         if (window.fsLenis) window.fsLenis.resize();
-      }, 150);
+      }, SMOOTH_SCROLL_CONFIG.resizeDebounce);
     }).observe(filmstripEl);
   }
 

@@ -1,4 +1,9 @@
 {
+  "name": "vanpics-portfolio",
+  "version": "1.0.0",
+  "description": "Photography and motion portfolio for vanpics.",
+  "private": true,
+  "license": "UNLICENSED",
   "devDependencies": {
     "vite": "^8.0.8"
   },
@@ -6,6 +11,10 @@
     "dev": "vite",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "vite build",
-    "sort": "node scripts/sort-photos.js"
+    "sort": "node scripts/sort-photos.js",
+    "add-ratios": "node scripts/add-ratios.js",
+    "generate-photos": "node scripts/generate-photos.js",
+    "generate-thumbs": "node scripts/generate-thumbs.js",
+    "generate-blur": "node scripts/generate-blur.js"
   }
 }

@@ -3,10 +3,15 @@ let scrollY = 0;
 
 // CAROUSEL
 let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
+let CAROUSEL_CONFIG = window.APP_CONFIG.carousel;
 // cruise speed scaled by device — mobile narrower so same px/frame looks faster
-let CRUISE_SPEED = isMobile ? 0.28 : (window.innerWidth < 1024 ? 0.36 : 0.45);
-let EASE_FRAMES = 120;
-let START_SPEED_MULT = 8.0;
+let CRUISE_SPEED = isMobile
+  ? CAROUSEL_CONFIG.cruiseSpeed.mobile
+  : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
+    ? CAROUSEL_CONFIG.cruiseSpeed.tablet
+    : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+let EASE_FRAMES = CAROUSEL_CONFIG.easeFrames;
+let START_SPEED_MULT = CAROUSEL_CONFIG.startSpeedMultiplier;
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 function getCurrentSpeed(frame) {

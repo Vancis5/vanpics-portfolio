@@ -1,7 +1,6 @@
 // SWIPE for lightbox
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
-let loadSwipeNeighbors = function () { };
 let mobileScrollToSlide = null;
 let swipeHappened = false;
 

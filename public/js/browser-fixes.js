@@ -1,7 +1,3 @@
-if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
-  document.write('<script src="scripts/firefox.js"><\/script>');
-}
-
 // Footer brightness on mobile scroll
 let footerObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {

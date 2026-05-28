@@ -1,18 +1,22 @@
 // buildCarousel internally waits for images, then calls onReady
 // we hook into that by wrapping the final reveal
+const LOADER_CONFIG = window.APP_CONFIG.loader;
+const ROUTING_CONFIG = window.APP_CONFIG.routing;
+const MASONRY_CONFIG = window.APP_CONFIG.masonry;
+
 function liftLoader() {
   const loader = domRefs.loader;
   loader.classList.add('lifting');
-  setTimeout(function () { loader.style.display = 'none'; }, 750);
+  setTimeout(function () { loader.style.display = 'none'; }, LOADER_CONFIG.liftDuration);
 }
 
 // Lift loader via direct callback — no MutationObserver (flaky in Firefox)
 let _loaderLifted = false;
 function safeLift() { if (!_loaderLifted) { _loaderLifted = true; liftLoader(); } }
 // Hard fallback: lift after 4s no matter what
-setTimeout(safeLift, 4000);
+setTimeout(safeLift, LOADER_CONFIG.hardFallbackDelay);
 // Expose for buildCarousel to call after rows are visible
-window.__onCarouselReady = function () { setTimeout(safeLift, 120); };
+window.__onCarouselReady = function () { setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay); };
 
 function scrollToGallery() {
   if (window.lenis) {
@@ -69,7 +73,7 @@ window.addEventListener('resize', function () {
   clearTimeout(_masonryResizeTimer);
   _masonryResizeTimer = setTimeout(function () {
     buildMasonry();
-  }, 200);
+  }, MASONRY_CONFIG.resizeDebounce);
 });
 
 // Visibility & Animation Loop Management
@@ -116,7 +120,7 @@ function checkHash() {
   if (currentCategory !== targetCat) {
     rebuildGallery(targetCat);
     // Wait for rebuild, then re-check for the item
-    setTimeout(checkHash, 300);
+    setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
     return;
   }
 
@@ -124,7 +128,7 @@ function checkHash() {
   if (itemSlug) {
     const items = currentCategory === 'motion' ? motionProjects : activePhotos;
     if (items.length === 0 && currentCategory !== 'motion') {
-      setTimeout(checkHash, 100);
+      setTimeout(checkHash, ROUTING_CONFIG.itemRecheckDelay);
       return;
     }
 
@@ -135,7 +139,7 @@ function checkHash() {
 
         isPopState = true;
         openLightbox(i, 0, currentCategory === 'motion');
-        setTimeout(function () { isPopState = false; }, 100);
+        setTimeout(function () { isPopState = false; }, ROUTING_CONFIG.itemRecheckDelay);
         return;
       }
     }
@@ -145,8 +149,8 @@ function checkHash() {
 window.addEventListener('popstate', function () {
   isPopState = true;
   checkHash();
-  setTimeout(function () { isPopState = false; }, 500);
+  setTimeout(function () { isPopState = false; }, ROUTING_CONFIG.popstateResetDelay);
 });
 
 // Defer slightly to ensure layout is ready
-setTimeout(checkHash, 300);
+setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);

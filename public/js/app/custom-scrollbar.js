@@ -7,6 +7,7 @@
   let isDragging = false;
   let startY, startScroll;
   let fadeTimer = null;
+  let SCROLLBAR_CONFIG = window.APP_CONFIG.scrollbar;
 
   function updateThumb() {
     let winH = window.innerHeight;
@@ -33,7 +34,7 @@
       clearTimeout(fadeTimer);
       fadeTimer = setTimeout(function () {
         if (!isDragging) track.classList.remove('moving');
-      }, 3000);
+      }, SCROLLBAR_CONFIG.mobileFadeDelay);
     }
   }
 
@@ -107,7 +108,7 @@
 
       if (isMobile) {
         clearTimeout(fadeTimer);
-        fadeTimer = setTimeout(function () { track.classList.remove('moving'); }, 3000);
+        fadeTimer = setTimeout(function () { track.classList.remove('moving'); }, SCROLLBAR_CONFIG.mobileFadeDelay);
       }
     }
   });

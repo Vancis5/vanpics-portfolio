@@ -1586,20 +1586,6 @@ body::after {
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  #filmstrip-lift-zone {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 80px;
-    z-index: 9;
-    /* just below filmstrip-wrap (z-index: 10) */
-    pointer-events: all;
-    cursor: default;
-  }
-}
-
 #site-footer {
   border-top: 1px solid var(--border);
   padding: clamp(1.35rem, 3vw, 2.15rem) 1.5rem;

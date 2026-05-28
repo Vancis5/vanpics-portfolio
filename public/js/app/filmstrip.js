@@ -3,6 +3,7 @@ let filmstripWrap = domRefs.filmstripWrap;
 let filmstripEl = domRefs.filmstrip;
 let filmstripHideTimer = null;
 let filmstripBuilt = false;
+let FILMSTRIP_CONFIG = window.APP_CONFIG.filmstrip;
 window.addEventListener('category-change', function () {
   filmstripBuilt = false;
   if (typeof filmstripEl !== 'undefined' && filmstripEl) {
@@ -76,7 +77,7 @@ function startFsSync(target) {
       fsSyncRaf = null;
       return;
     }
-    let dt = prevTime ? Math.min(time - prevTime, 33) : 16;
+    let dt = prevTime ? Math.min(time - prevTime, FILMSTRIP_CONFIG.syncMaxDeltaMs) : FILMSTRIP_CONFIG.syncDefaultDeltaMs;
     prevTime = time;
     let current = filmstripEl.scrollLeft;
     let diff = fsSyncTarget - current;
@@ -87,7 +88,7 @@ function startFsSync(target) {
       fsSyncTarget = null;
       return;
     }
-    let alpha = 1 - Math.exp(-14 * dt / 1000);
+    let alpha = 1 - Math.exp(-FILMSTRIP_CONFIG.syncSpring * dt / 1000);
     filmstripEl.scrollLeft = current + diff * alpha;
     fsSyncRaf = requestAnimationFrame(syncLoop);
   }
@@ -126,7 +127,7 @@ function updateFilmstrip() {
         stopFsSync();
         let startPos = filmstripEl.scrollLeft;
         let startTime = null;
-        let duration = 400; // graceful duration
+        let duration = FILMSTRIP_CONFIG.scrollDuration;
 
         function step(time) {
           if (!startTime) {
@@ -164,7 +165,7 @@ window.addEventListener('touchend', function () {
   isTouchingFilmstrip = false;
   if (filmstripWrap.classList.contains('visible')) {
     clearTimeout(filmstripHideTimer);
-    filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+    filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.activeHideDelay);
   }
 }, { passive: true });
 
@@ -177,7 +178,7 @@ window.addEventListener('mouseup', function () {
   isTouchingFilmstrip = false;
   if (filmstripWrap.classList.contains('visible')) {
     clearTimeout(filmstripHideTimer);
-    filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+    filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.activeHideDelay);
   }
 }, { passive: true });
 
@@ -188,14 +189,14 @@ function showFilmstrip() {
   domRefs.lightbox.classList.add('filmstrip-visible');
   clearTimeout(filmstripHideTimer);
   if (!isUserInteracting) {
-    filmstripHideTimer = setTimeout(hideFilmstrip, 2800);
+    filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.activeHideDelay);
   }
 }
 
 function hideFilmstrip() {
   // Don't hide if the cursor is still in the wrap or the lift zone
   if (filmstripWrap.matches(':hover') || (liftZone && liftZone.matches(':hover'))) {
-    filmstripHideTimer = setTimeout(hideFilmstrip, 1000);
+    filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.hoverRetryDelay);
     return;
   }
   filmstripWrap.classList.remove('visible');
@@ -206,7 +207,7 @@ function hideFilmstrip() {
 filmstripWrap.addEventListener('mouseenter', function () { clearTimeout(filmstripHideTimer); });
 filmstripWrap.addEventListener('mouseleave', function () {
   // grace period — prevents flicker and allows cursor to move back in
-  filmstripHideTimer = setTimeout(hideFilmstrip, 300);
+  filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.mouseLeaveDelay);
 });
 filmstripWrap.addEventListener('touchstart', function () {
   clearTimeout(filmstripHideTimer);
@@ -214,7 +215,7 @@ filmstripWrap.addEventListener('touchstart', function () {
   stopFsSync();
 }, { passive: true });
 filmstripWrap.addEventListener('touchend', function () {
-  filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
+  filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.touchHideDelay);
   isTouchingFilmstrip = false;
 }, { passive: true });
 
@@ -226,7 +227,7 @@ if (liftZone) {
   });
   liftZone.addEventListener('mouseleave', function () {
     // if mouse left lift zone without entering filmstrip, wait a bit
-    filmstripHideTimer = setTimeout(hideFilmstrip, 600);
+    filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.liftZoneLeaveDelay);
   });
 }
 
@@ -234,7 +235,7 @@ if (liftZone) {
 filmstripWrap.addEventListener('wheel', function (e) {
   stopFsSync();
   clearTimeout(filmstripHideTimer);
-  filmstripHideTimer = setTimeout(hideFilmstrip, 2000);
+  filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.touchHideDelay);
 }, { passive: true, capture: true });
 
 // click-drag scroll
@@ -268,7 +269,7 @@ function initFilmstripDrag() {
     isDragging = false;
     filmstripEl.classList.remove('dragging');
     if (window.fsLenis) window.fsLenis.start();
-    filmstripHideTimer = setTimeout(hideFilmstrip, 1500);
+    filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.dragHideDelay);
   });
 
   // suppress click on thumbs if we just dragged
