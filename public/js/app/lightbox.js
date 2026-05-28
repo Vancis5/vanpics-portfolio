@@ -290,8 +290,7 @@ function openLightbox(i, direction, isMotion) {
       infoEl.style.opacity = '0';
     }
 
-    // update blur bg immediately (visual polish) — text stays hidden until image ready
-    // MOVED to afterLoad() to prevent network progressive rendering from lagging JS animations
+    // update blur bg immediately (visual polish)
     showFilmstripIfReady();
 
     let entered = false;
@@ -309,47 +308,28 @@ function openLightbox(i, direction, isMotion) {
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
 
-      // assign handlers BEFORE setting src — Firefox fires load before handler if src set first
-      let loadFired = false;
-      function afterLoad() {
-        if (loadFired || gen !== navGen) return;
-        loadFired = true;
-        img.onload = null; img.onerror = null;
-
-        let bSrc = isMotion ? p.thumb : p.src;
-        setLightboxBlur(bSrc);
-        setLightboxContent(p);
-
-        if (!isMotion) loadSwipeNeighbors();
-
-        requestAnimationFrame(function () {
-          if (gen !== navGen) return;
-          animateInfo(dir);
-          void img.offsetWidth; // force reflow
-
-          if (isMotion) {
-            renderVideoInLightbox(p);
-            playerShell.style.transition = 'opacity 0.35s ease';
-            playerShell.style.opacity = '1';
-          } else {
-            img.style.transition = 'opacity 0.32s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)';
-            img.style.opacity = '1';
-            img.style.transform = 'translateX(0) scale(1)';
-          }
-        });
+      // Start the new media immediately instead of waiting for decode.
+      let bSrc = isMotion ? p.thumb : p.src;
+      setLightboxBlur(bSrc);
+      setLightboxContent(p);
+      if (!isMotion) {
+        img.src = p.src;
+        loadSwipeNeighbors();
       }
 
       requestAnimationFrame(function () {
         if (gen !== navGen) return;
+        animateInfo(dir);
+        void img.offsetWidth; // force reflow
+
         if (isMotion) {
-          afterLoad();
+          renderVideoInLightbox(p);
+          playerShell.style.transition = 'opacity 0.35s ease';
+          playerShell.style.opacity = '1';
         } else {
-          img.onload = function () { clearTimeout(loadFallback); afterLoad(); };
-          img.onerror = function () { clearTimeout(loadFallback); afterLoad(); };
-          img.src = p.src;
-          let loadFallback = setTimeout(afterLoad, 700);
-          // decode() waits for full pixel decode — reliable in Firefox unlike img.complete
-          if (img.decode) img.decode().then(function () { clearTimeout(loadFallback); afterLoad(); }).catch(function () { });
+          img.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1)';
+          img.style.opacity = '1';
+          img.style.transform = 'translateX(0) scale(1)';
         }
       });
     }
@@ -357,17 +337,7 @@ function openLightbox(i, direction, isMotion) {
     if (isMotion) {
       doEnter();
     } else {
-      // probe starts the network request — doEnter fires after min 150ms exit time
-      let probe = new Image();
-      let probeReady = false;
-      let minWaitDone = false;
-      function maybeEnter() { if (probeReady && minWaitDone) doEnter(); }
-      probe.onload = probe.onerror = function () { probeReady = true; maybeEnter(); };
-      probe.src = p.src;
-      // decode() fires after pixel decode — reliable Firefox alternative to img.complete
-      if (probe.decode) probe.decode().then(function () { probeReady = true; maybeEnter(); }).catch(function () { });
-      setTimeout(function () { minWaitDone = true; maybeEnter(); }, 150);
-      setTimeout(doEnter, 600); // hard fallback
+      setTimeout(doEnter, 70);
     }
 
   } else {
@@ -465,18 +435,13 @@ function openLightbox(i, direction, isMotion) {
       });
     }
 
-    // handlers BEFORE src — Firefox-safe
-    let openFallback;
+    // Start the image immediately; the browser paints it as soon as pixels arrive.
     requestAnimationFrame(function () {
       if (isMotion) {
         afterOpenLoad();
       } else {
-        img.onload = function () { clearTimeout(openFallback); afterOpenLoad(); };
-        img.onerror = function () { clearTimeout(openFallback); afterOpenLoad(); };
         img.src = p.src;
-        openFallback = setTimeout(afterOpenLoad, 700);
-        // decode() waits for pixel decode — reliable in Firefox unlike img.complete
-        if (img.decode) img.decode().then(function () { clearTimeout(openFallback); afterOpenLoad(); }).catch(function () { });
+        afterOpenLoad();
       }
     });
   }
