@@ -1,4 +1,6 @@
 let blurFlip = false;
+let photoPlaceholderTimer = null;
+let photoPlaceholderToken = 0;
 
 function refreshLightboxInfoRefs() {
   let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
@@ -33,10 +35,18 @@ function setLightboxBlur(src) {
   blurFlip = !blurFlip;
 }
 
-function clearLightboxPhotoPlaceholder() {
+function clearLightboxPhotoPlaceholder(expectedToken) {
+  if (expectedToken && expectedToken !== photoPlaceholderToken) return;
+  if (!expectedToken) photoPlaceholderToken++;
   let wrap = domRefs.lightboxImgWrap;
+  let img = domRefs.lightboxImg;
   if (!wrap) return;
-  wrap.classList.remove('photo-loading');
+  wrap.classList.add('photo-loaded');
+  if (img) img.removeAttribute('data-loading-photo');
+  clearTimeout(photoPlaceholderTimer);
+  photoPlaceholderTimer = setTimeout(function () {
+    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded');
+  }, 260);
 }
 
 function prepareLightboxPhoto(p) {
@@ -45,22 +55,31 @@ function prepareLightboxPhoto(p) {
   if (!img || !wrap || !p) return;
 
   let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+  let token = ++photoPlaceholderToken;
+  clearTimeout(photoPlaceholderTimer);
   wrap.style.setProperty('--lightbox-photo-ratio', ratio);
+  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded');
   wrap.classList.add('photo-loading');
+  img.dataset.loadingPhoto = 'true';
+  requestAnimationFrame(function () {
+    wrap.classList.add('photo-placeholder-visible');
+  });
 
   img.onload = function () {
+    if (token !== photoPlaceholderToken) return;
     img.onload = null;
     img.onerror = null;
-    clearLightboxPhotoPlaceholder();
+    clearLightboxPhotoPlaceholder(token);
   };
   img.onerror = function () {
+    if (token !== photoPlaceholderToken) return;
     img.onload = null;
     img.onerror = null;
   };
   img.src = p.src;
 
   if (img.complete && img.naturalWidth > 0) {
-    requestAnimationFrame(clearLightboxPhotoPlaceholder);
+    requestAnimationFrame(function () { clearLightboxPhotoPlaceholder(token); });
   }
 }
 
@@ -286,6 +305,7 @@ function openLightbox(i, direction, isMotion) {
 
   if (!p) return;
   let img = domRefs.lightboxImg;
+  let imgWrap = domRefs.lightboxImgWrap;
   let playerShell = domRefs.motionPlayerShell;
 
   if (isMotion) lb.classList.add('mode-motion');
@@ -335,8 +355,11 @@ function openLightbox(i, direction, isMotion) {
       img.onload = null; img.onerror = null;
       img.src = '';
       img.style.transition = 'none';
-      img.style.transform = 'translateX(' + enterX + ') scale(0.98)';
+      img.style.transform = '';
       img.style.opacity = '0';
+      imgWrap.style.transition = 'none';
+      imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.98)';
+      imgWrap.style.opacity = '0';
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
 
@@ -359,9 +382,11 @@ function openLightbox(i, direction, isMotion) {
           playerShell.style.transition = 'opacity 0.35s ease';
           playerShell.style.opacity = '1';
         } else {
-          img.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1)';
+          imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1)';
+          imgWrap.style.opacity = '1';
+          imgWrap.style.transform = 'translateX(0) scale(1)';
+          img.style.transition = 'opacity 0.24s ease';
           img.style.opacity = '1';
-          img.style.transform = 'translateX(0) scale(1)';
         }
       });
     }
@@ -382,6 +407,9 @@ function openLightbox(i, direction, isMotion) {
     img.style.transition = 'none';
     img.style.opacity = '0';
     img.style.transform = '';
+    imgWrap.style.transition = '';
+    imgWrap.style.opacity = '';
+    imgWrap.style.transform = '';
     playerShell.innerHTML = '';
     playerShell.style.opacity = '0';
 
@@ -444,7 +472,10 @@ function openLightbox(i, direction, isMotion) {
     function afterOpenLoad() {
       if (openLoadFired || openGen !== navGen) return;
       openLoadFired = true;
-      img.onload = null; img.onerror = null;
+      if (isMotion) {
+        img.onload = null;
+        img.onerror = null;
+      }
 
       let bSrc = isMotion ? p.thumb : p.src;
       setLightboxBlur(bSrc);
@@ -571,12 +602,18 @@ function closeLightbox() {
       img.onload = null;
       img.onerror = null;
       img.src = '';
+      img.removeAttribute('data-loading-photo');
       clearLightboxPhotoPlaceholder();
       img.classList.remove('zoomed');
       img.style.transition = '';
       img.style.transform = '';
       img.style.transformOrigin = '';
       img.style.opacity = '';
+    }
+    if (domRefs.lightboxImgWrap) {
+      domRefs.lightboxImgWrap.style.transition = '';
+      domRefs.lightboxImgWrap.style.transform = '';
+      domRefs.lightboxImgWrap.style.opacity = '';
     }
 
     let info = domRefs.lightboxInfo;
