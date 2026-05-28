@@ -5,7 +5,8 @@
   "private": true,
   "license": "UNLICENSED",
   "devDependencies": {
-    "vite": "^8.0.8"
+    "vite": "^8.0.8",
+    "wrangler": "^4.95.0"
   },
   "scripts": {
     "dev": "vite",
