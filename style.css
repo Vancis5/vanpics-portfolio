@@ -436,8 +436,8 @@ body::after {
   padding-right: calc(50vw - 50%);
 
   background: rgba(17, 16, 16, 0.82);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   padding-top: calc(1.5rem + var(--safe-top, 0px));
   padding-bottom: 1.5rem;
   margin-bottom: 0rem;
@@ -865,8 +865,8 @@ body::after {
   width: 62px;
   height: 62px;
   background: rgba(17, 16, 16, 0.72);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1.5px solid rgba(221, 216, 207, 0.12);
   border-radius: 50%;
   display: flex;
@@ -1363,8 +1363,8 @@ body::after {
   right: calc(1.25rem + env(safe-area-inset-right, 0px));
   z-index: 1000;
   background: rgba(17, 16, 16, 0.76);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(221, 216, 207, 0.12);
   border-radius: 4px;
   color: var(--text-muted);
