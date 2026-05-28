@@ -995,6 +995,7 @@ body::after {
 }
 
 #lightbox-img-wrap {
+  --lightbox-photo-ratio: 1;
   width: 100%;
   flex-shrink: 0;
   display: flex;
@@ -1002,6 +1003,27 @@ body::after {
   position: relative;
   z-index: 2;
   /* Sits above darken layer */
+}
+
+#lightbox-img-wrap.photo-loading {
+  width: min(100%, calc(44svh * var(--lightbox-photo-ratio)));
+  max-width: 100%;
+  aspect-ratio: var(--lightbox-photo-ratio);
+  align-self: center;
+  border-radius: 3px;
+}
+
+#lightbox-img-wrap.photo-loading::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
+    rgba(242, 238, 231, 0.035);
+  border: 1px solid rgba(242, 238, 231, 0.08);
+  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
+  pointer-events: none;
 }
 
 #lightbox-img {
@@ -1245,6 +1267,11 @@ body::after {
     align-items: center;
   }
 
+  #lightbox-img-wrap.photo-loading {
+    width: min(50vw, calc(72svh * var(--lightbox-photo-ratio)));
+    max-width: 50vw;
+  }
+
   /* Ensure video container fills available row space on desktop */
   #lightbox.mode-motion #lightbox-img-wrap {
     flex: 1;
@@ -1283,6 +1310,11 @@ body::after {
   }
 
   #lightbox-img-wrap {
+    max-width: min(56vw, 640px);
+  }
+
+  #lightbox-img-wrap.photo-loading {
+    width: min(56vw, 640px, calc(72svh * var(--lightbox-photo-ratio)));
     max-width: min(56vw, 640px);
   }
 
@@ -1343,6 +1375,16 @@ body::after {
 
 /* MOBILE SCROLL-SNAP GALLERY */
 @media (hover: none) {
+  #lightbox-img-wrap.photo-loading {
+    width: 100%;
+    max-width: none;
+    aspect-ratio: auto;
+  }
+
+  #lightbox-img-wrap.photo-loading::before {
+    display: none;
+  }
+
   #lightbox-img {
     display: none;
   }

@@ -33,6 +33,37 @@ function setLightboxBlur(src) {
   blurFlip = !blurFlip;
 }
 
+function clearLightboxPhotoPlaceholder() {
+  let wrap = domRefs.lightboxImgWrap;
+  if (!wrap) return;
+  wrap.classList.remove('photo-loading');
+}
+
+function prepareLightboxPhoto(p) {
+  let img = domRefs.lightboxImg;
+  let wrap = domRefs.lightboxImgWrap;
+  if (!img || !wrap || !p) return;
+
+  let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+  wrap.style.setProperty('--lightbox-photo-ratio', ratio);
+  wrap.classList.add('photo-loading');
+
+  img.onload = function () {
+    img.onload = null;
+    img.onerror = null;
+    clearLightboxPhotoPlaceholder();
+  };
+  img.onerror = function () {
+    img.onload = null;
+    img.onerror = null;
+  };
+  img.src = p.src;
+
+  if (img.complete && img.naturalWidth > 0) {
+    requestAnimationFrame(clearLightboxPhotoPlaceholder);
+  }
+}
+
 function runDescFlipTransition(options) {
   let imgWrap = domRefs.lightboxImgWrap;
   let infoWrap = domRefs.lightboxInfoWrap;
@@ -259,6 +290,7 @@ function openLightbox(i, direction, isMotion) {
 
   if (isMotion) lb.classList.add('mode-motion');
   else lb.classList.remove('mode-motion');
+  if (isMotion) clearLightboxPhotoPlaceholder();
 
   // Mobile: already open — natively smooth scroll
   if (lb.classList.contains('open') && isMobile && mobileScrollToSlide && !isMotion) {
@@ -313,7 +345,7 @@ function openLightbox(i, direction, isMotion) {
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) {
-        img.src = p.src;
+        prepareLightboxPhoto(p);
         loadSwipeNeighbors();
       }
 
@@ -440,7 +472,7 @@ function openLightbox(i, direction, isMotion) {
       if (isMotion) {
         afterOpenLoad();
       } else {
-        img.src = p.src;
+        prepareLightboxPhoto(p);
         afterOpenLoad();
       }
     });
@@ -539,6 +571,7 @@ function closeLightbox() {
       img.onload = null;
       img.onerror = null;
       img.src = '';
+      clearLightboxPhotoPlaceholder();
       img.classList.remove('zoomed');
       img.style.transition = '';
       img.style.transform = '';
