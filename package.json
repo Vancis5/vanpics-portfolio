@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vite",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-assets.js",
     "sort": "node scripts/sort-photos.js",
     "add-ratios": "node scripts/add-ratios.js",
     "generate-photos": "node scripts/generate-photos.js",
