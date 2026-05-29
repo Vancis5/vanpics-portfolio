@@ -1,6 +1,12 @@
 import '../../data/photos.js';
 import '../../data/videos.js';
 import './config.js';
+import './utils.js';
+import './dom.js';
+import './media-data.js';
+import './motion-markup.js';
+import './hero-tagline.js';
+import './viewport.js';
 
 function loadScript(src, options = {}) {
   return new Promise(function (resolve, reject) {
