@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vanpics — admin cms</title>
+  
+  <!-- Cormorant Garamond & DM Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #111010;
+      --text: #ddd8cf;
+      --text-muted: rgba(221, 216, 207, 0.48);
+      --text-faint: rgba(221, 216, 207, 0.22);
+      --border: rgba(221, 216, 207, 0.09);
+      --surface: #1a1919;
+      --radius: 3px;
+      --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      --danger: rgba(221, 216, 207, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* grain texture overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: -150px;
+      z-index: 9990;
+      pointer-events: none;
+      opacity: 0.045;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+    }
+
+    /* Header styling */
+    header {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-area h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 400;
+      font-size: 1.6rem;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+
+    .logo-area p {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: lowercase;
+      letter-spacing: 0.15em;
+      margin-top: 0.3rem;
+    }
+
+    .auth-input-wrapper {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input, textarea, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 0.65rem 0.85rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--text-muted);
+    }
+
+    .secret-input {
+      width: 220px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+    }
+
+    /* Main layout grid */
+    main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 3rem;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    /* Monochrome Panel styling */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+    }
+
+    .panel-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 400;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text);
+    }
+
+    .panel-title svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-muted);
+    }
+
+    /* File Drop Zone */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 3.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: rgba(17, 16, 16, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--text-muted);
+      background: rgba(221, 216, 207, 0.02);
+    }
+
+    .drop-zone svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--text-faint);
+      transition: var(--transition);
+    }
+
+    .drop-zone:hover svg {
+      stroke: var(--text-muted);
+    }
+
+    .drop-zone p {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+    }
+
+    .drop-zone span {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--text-faint);
+      text-transform: lowercase;
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    /* Preview area */
+    .preview-container {
+      display: none;
+      width: 100%;
+      margin-top: 1rem;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .preview-image {
+      width: 100%;
+      max-height: 350px;
+      object-fit: contain;
+      background: var(--bg);
+      display: block;
+    }
+
+    .remove-file {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(17, 16, 16, 0.85);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .remove-file:hover {
+      background: var(--danger);
+      color: var(--bg);
+      border-color: transparent;
+    }
+
+    /* Form Fields grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .field-group.full-width {
+      grid-column: span 2;
+    }
+
+    label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: lowercase;
+      letter-spacing: 0.12em;
+    }
+
+    /* Monospaced fields */
+    #date, #location, .secret-input, select {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    /* Elegant toggle switch */
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: rgba(17, 16, 16, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .toggle-wrapper span {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      text-transform: lowercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(221, 216, 207, 0.1);
+      transition: .4s;
+      border-radius: var(--radius);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: rgba(221, 216, 207, 0.3);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+      background-color: var(--text);
+    }
+
+    /* Monochrome minimalist button */
+    .btn {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--text-faint);
+      border-radius: var(--radius);
+      padding: 0.85rem 2rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 400;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      width: 100%;
+    }
+
+    .btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn:hover {
+      border-color: var(--text-muted);
+      background: rgba(221, 216, 207, 0.03);
+    }
+
+    .btn:active {
+      background: rgba(221, 216, 207, 0.06);
+    }
+
+    .btn:disabled {
+      border-color: var(--border);
+      color: var(--text-faint);
+      cursor: not-allowed;
+      background: transparent;
+    }
+
+    /* Processing visualizer */
+    .pipeline-status {
+      display: none;
+      margin-top: 2rem;
+      background: rgba(17, 16, 16, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      margin-bottom: 0.65rem;
+      color: var(--text-muted);
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pipeline-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .pipeline-step.success {
+      color: var(--text);
+    }
+
+    .pipeline-step.success::before {
+      content: '✓';
+      margin-right: 0.25rem;
+      color: rgba(221, 216, 207, 0.6);
+    }
+
+    .pipeline-step.active {
+      color: var(--text);
+    }
+
+    .pipeline-step.active::after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
+    /* Sidebar listings */
+    .list-panel {
+      display: flex;
+      flex-direction: column;
+      max-height: 800px;
+    }
+
+    .items-container {
+      overflow-y: auto;
+      flex-grow: 1;
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding-right: 0.5rem;
+    }
+
+    .items-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .archive-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(17, 16, 16, 0.4);
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      transition: var(--transition);
+    }
+
+    .archive-item:hover {
+      border-color: var(--text-faint);
+      background: rgba(17, 16, 16, 0.7);
+    }
+
+    .archive-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius);
+      object-fit: cover;
+      background: #000;
+      filter: brightness(0.8);
+      transition: var(--transition);
+    }
+
+    .archive-item:hover .archive-thumb {
+      filter: brightness(1);
+    }
+
+    .archive-info {
+      flex-grow: 1;
+      min-width: 0;
+    }
+
+    .archive-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .archive-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      text-transform: lowercase;
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: var(--radius);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-delete svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-delete:hover {
+      color: var(--text);
+      background: rgba(221, 216, 207, 0.05);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.25rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success { border-left: 2px solid rgba(221, 216, 207, 0.5); }
+    .toast-error { border-left: 2px solid var(--danger); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-area">
+      <h1>vanpics</h1>
+      <p>media archives cms</p>
+    </div>
+    
+    <div class="auth-input-wrapper">
+      <input type="password" id="secret-token" class="secret-input" placeholder="secret token">
+    </div>
+  </header>
+
+  <main>
+    <!-- Left panel: Upload Form & Browser Pipeline -->
+    <div class="panel">
+      <h2 class="panel-title">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+        catalog new media
+      </h2>
+      
+      <!-- Drag/Drop Container -->
+      <div class="drop-zone" id="drop-zone">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+        </svg>
+        <p>drag raw photo here or click to browse</p>
+        <span>supports jpeg, png, webp</span>
+        <input type="file" id="file-input" accept="image/*">
+        
+        <div class="preview-container" id="preview-container">
+          <img id="image-preview" class="preview-image" src="" alt="preview">
+          <button class="remove-file" id="remove-btn" type="button">&times;</button>
+        </div>
+      </div>
+
+      <form id="cms-form">
+        <div class="form-grid">
+          <div class="field-group">
+            <label for="title">photo title</label>
+            <input type="text" id="title" placeholder="e.g. harbinger" required>
+          </div>
+          
+          <div class="field-group">
+            <label for="date">capture date</label>
+            <input type="text" id="date" placeholder="e.g. mar 22, 2026">
+          </div>
+          
+          <div class="field-group">
+            <label for="location">location</label>
+            <input type="text" id="location" placeholder="e.g. macrohon, southern leyte">
+          </div>
+
+          <div class="field-group">
+            <label for="category">category segment</label>
+            <select id="category">
+              <option value="">photographs (default)</option>
+              <option value="figures">figures</option>
+            </select>
+          </div>
+
+          <div class="field-group full-width">
+            <label for="desc">narrative</label>
+            <textarea id="desc" rows="3" placeholder="describe the context or story..."></textarea>
+          </div>
+
+          <div class="field-group full-width">
+            <div class="toggle-wrapper">
+              <span>feature in hero carousel</span>
+              <label class="switch">
+                <input type="checkbox" id="hero-slide">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" id="submit-btn" disabled>
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          catalog and upload
+        </button>
+      </form>
+
+      <!-- Client Side pipeline status -->
+      <div class="pipeline-status" id="pipeline-status">
+        <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
+        <div class="pipeline-step" id="step-compress">compressing raw photo (2500px, webp)...</div>
+        <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail...</div>
+        <div class="pipeline-step" id="step-blur">rendering 40px pre-blurred background...</div>
+      </div>
+    </div>
+
+    <!-- Right panel: Active database items -->
+    <div class="panel list-panel">
+      <h2 class="panel-title">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        current archives
+      </h2>
+      <p style="font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--text-muted); text-transform: lowercase; margin-top: -1rem; margin-bottom: 1.5rem; letter-spacing: 0.05em;">deleting here removes the item from both r2 and d1 archives.</p>
+      
+      <div class="items-container" id="items-container">
+        <p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.65rem; text-transform: lowercase;">loading active archives...</p>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Client-side image processor using HTML5 Canvas -->
+  <script>
+    const API_BASE_URL = window.location.origin.includes('localhost') 
+      ? 'http://localhost:8787' 
+      : ''; 
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const previewContainer = document.getElementById('preview-container');
+    const imgPreview = document.getElementById('image-preview');
+    const removeBtn = document.getElementById('remove-btn');
+    const form = document.getElementById('cms-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const pipelineStatus = document.getElementById('pipeline-status');
+    const itemsContainer = document.getElementById('items-container');
+    const toast = document.getElementById('toast');
+
+    let selectedFile = null;
+    let computedAspectRatio = 1.0;
+    
+    let processedPhotoBlob = null;
+    let processedThumbBlob = null;
+    let processedBlurBlob = null;
+
+    function showToast(text, type = 'success') {
+      toast.innerText = text;
+      toast.className = `toast show toast-${type}`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetFileSelection();
+    });
+
+    function resetFileSelection() {
+      selectedFile = null;
+      processedPhotoBlob = null;
+      processedThumbBlob = null;
+      processedBlurBlob = null;
+      imgPreview.src = '';
+      previewContainer.style.display = 'none';
+      submitBtn.disabled = true;
+      pipelineStatus.style.display = 'none';
+      fileInput.value = '';
+    }
+
+    function handleFileSelect(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('file is not an image', 'error');
+        return;
+      }
+      
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imgPreview.src = e.target.result;
+        previewContainer.style.display = 'block';
+        submitBtn.disabled = false;
+        
+        processImagePipeline(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function processImagePipeline(imgSrc) {
+      pipelineStatus.style.display = 'block';
+      resetStepsStatus();
+      
+      const img = new Image();
+      img.src = imgSrc;
+      
+      await new Promise(resolve => img.onload = resolve);
+      
+      setStepState('dimensions', 'active');
+      computedAspectRatio = parseFloat((img.width / img.height).toFixed(4));
+      document.getElementById('step-dimensions').innerText = `aspect ratio: ${computedAspectRatio} (${img.width}x${img.height})`;
+      setStepState('dimensions', 'success');
+
+      setStepState('compress', 'active');
+      processedPhotoBlob = await resizeImage(img, 2500, 0.75);
+      setStepState('compress', 'success');
+
+      setStepState('thumbnail', 'active');
+      processedThumbBlob = await resizeImage(img, 600, 0.75);
+      setStepState('thumbnail', 'success');
+
+      setStepState('blur', 'active');
+      processedBlurBlob = await resizeImage(img, 40, 0.4, true);
+      setStepState('blur', 'success');
+      
+      showToast('photo processed successfully', 'success');
+    }
+
+    function resetStepsStatus() {
+      ['dimensions', 'compress', 'thumbnail', 'blur'].forEach(step => {
+        const el = document.getElementById(`step-${step}`);
+        el.className = 'pipeline-step';
+      });
+    }
+
+    function setStepState(step, state) {
+      const el = document.getElementById(`step-${step}`);
+      el.className = `pipeline-step ${state}`;
+    }
+
+    function resizeImage(img, maxDimension, quality, applyBlur = false) {
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        if (applyBlur) {
+          ctx.filter = 'blur(10px)';
+          ctx.drawImage(img, -10, -10, width + 20, height + 20);
+        } else {
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+        
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/webp', quality);
+      });
+    }
+
+    async function loadArchives() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/photos?limit=50`);
+        if (!res.ok) throw new Error('API server down');
+        const data = await res.json();
+        const photos = Array.isArray(data) ? data : data.items || [];
+        
+        if (photos.length === 0) {
+          itemsContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.6rem; text-transform: lowercase;">no archives found.</p>';
+          return;
+        }
+        
+        itemsContainer.innerHTML = photos.map(p => `
+          <div class="archive-item">
+            <img class="archive-thumb" src="${p.thumb || p.src}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.src='https://placehold.co/100x100?text=mock'">
+            <div class="archive-info">
+              <div class="archive-title">${escapeHtml(p.title || 'untitled')}</div>
+              <div class="archive-meta">${escapeHtml(p.location || 'unknown location')} • ${escapeHtml(p.date || 'undated')}</div>
+            </div>
+            <button class="btn-delete" onclick="deletePhoto(${p.id}, decodeURIComponent('${encodeURIComponent(p.title || 'untitled')}'))">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        itemsContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.6rem; text-transform: lowercase;">failed to connect to local database.</p>';
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function deletePhoto(id, title) {
+      if (!confirm(`are you sure you want to delete "${title}"?`)) {
+        return;
+      }
+      
+      const token = document.getElementById('secret-token').value;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/photo/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'X-Admin-Token': token
+          }
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          showToast('photo deleted', 'success');
+          loadArchives();
+        } else {
+          showToast(data.error || 'delete failed', 'error');
+        }
+      } catch (err) {
+        showToast('database connection failed', 'error');
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!processedPhotoBlob || !processedThumbBlob || !processedBlurBlob) {
+        showToast('processing file...', 'error');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'cataloging...';
+      
+      const token = document.getElementById('secret-token').value;
+      const formData = new FormData();
+      
+      formData.append('photo', processedPhotoBlob);
+      formData.append('thumb', processedThumbBlob);
+      formData.append('blur', processedBlurBlob);
+      
+      formData.append('title', document.getElementById('title').value);
+      formData.append('date', document.getElementById('date').value);
+      formData.append('location', document.getElementById('location').value);
+      formData.append('category', document.getElementById('category').value);
+      formData.append('desc', document.getElementById('desc').value);
+      formData.append('aspectRatio', computedAspectRatio);
+      formData.append('heroSlide', document.getElementById('hero-slide').checked);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/upload-photo`, {
+          method: 'POST',
+          headers: {
+            'X-Admin-Token': token
+          },
+          body: formData
+        });
+        
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('archived successfully', 'success');
+          form.reset();
+          resetFileSelection();
+          loadArchives();
+        } else {
+          showToast(data.error || 'upload failed', 'error');
+        }
+      } catch (err) {
+        showToast('server connection failed', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          catalog and upload
+        `;
+      }
+    });
+
+    loadArchives();
+  </script>
+</body>
+</html>

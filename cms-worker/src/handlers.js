@@ -1,0 +1,260 @@
+import { corsHeaders, errorResponse, jsonResponse } from './http.js';
+import {
+  extensionForContentType,
+  inferContentType,
+  makeMediaKey,
+  mediaKey,
+  publicPhoto,
+  publicVideo,
+} from './media.js';
+import {
+  isFileLike,
+  parsePagination,
+  validatePhotoFields,
+  validateVideoFields,
+} from './validation.js';
+
+export async function serveMedia(request, env, params) {
+  const fileKey = decodeURIComponent(params.key);
+  const object = await env.MEDIA_BUCKET.get(fileKey);
+
+  if (!object) {
+    return new Response('Media asset not found', {
+      status: 404,
+      headers: corsHeaders(request, env),
+    });
+  }
+
+  const headers = new Headers(corsHeaders(request, env));
+  object.writeHttpMetadata(headers);
+  headers.set('etag', object.httpEtag);
+  headers.set('Cache-Control', 'public, max-age=31536000');
+
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', inferContentType(fileKey));
+  }
+
+  return new Response(object.body, { headers });
+}
+
+export async function listPhotos(request, env) {
+  const url = new URL(request.url);
+  const { limit, offset } = parsePagination(url.searchParams);
+  const { results } = await env.DB.prepare(
+    `SELECT id, title, src, thumb, blur, aspect_ratio, category, location, date, desc, hero_slide, created_at
+     FROM photos
+     ORDER BY created_at DESC, id DESC
+     LIMIT ? OFFSET ?`
+  ).bind(limit, offset).all();
+  const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM photos').first();
+  const items = results.map((row) => publicPhoto(request, row));
+
+  return jsonResponse(request, env, {
+    items,
+    pagination: {
+      limit,
+      offset,
+      total: totalRow?.total || 0,
+      nextOffset: items.length === limit ? offset + limit : null,
+    },
+  });
+}
+
+export async function listVideos(request, env) {
+  const url = new URL(request.url);
+  const { limit, offset } = parsePagination(url.searchParams);
+  const { results } = await env.DB.prepare(
+    `SELECT id, title, src, poster, aspect_ratio, location, date, desc, music, created_at
+     FROM videos
+     ORDER BY created_at DESC, id DESC
+     LIMIT ? OFFSET ?`
+  ).bind(limit, offset).all();
+  const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM videos').first();
+  const items = results.map((row) => publicVideo(request, row));
+
+  return jsonResponse(request, env, {
+    items,
+    pagination: {
+      limit,
+      offset,
+      total: totalRow?.total || 0,
+      nextOffset: items.length === limit ? offset + limit : null,
+    },
+  });
+}
+
+export async function deletePhoto(request, env, params) {
+  const photoId = Number.parseInt(params.id, 10);
+  if (!Number.isInteger(photoId) || photoId < 1) {
+    return errorResponse(request, env, 'invalid photo id', 400);
+  }
+
+  const photo = await env.DB.prepare('SELECT src, thumb, blur FROM photos WHERE id = ?')
+    .bind(photoId)
+    .first();
+
+  if (!photo) {
+    return errorResponse(request, env, 'photo not found', 404);
+  }
+
+  const keysToDelete = [mediaKey(photo.src), mediaKey(photo.thumb), mediaKey(photo.blur)].filter(Boolean);
+  if (keysToDelete.length > 0) {
+    await env.MEDIA_BUCKET.delete(keysToDelete);
+  }
+
+  await env.DB.prepare('DELETE FROM photos WHERE id = ?').bind(photoId).run();
+  return jsonResponse(request, env, { success: true });
+}
+
+export async function deleteVideo(request, env, params) {
+  const videoId = Number.parseInt(params.id, 10);
+  if (!Number.isInteger(videoId) || videoId < 1) {
+    return errorResponse(request, env, 'invalid video id', 400);
+  }
+
+  const video = await env.DB.prepare('SELECT src, poster FROM videos WHERE id = ?')
+    .bind(videoId)
+    .first();
+
+  if (!video) {
+    return errorResponse(request, env, 'video not found', 404);
+  }
+
+  const keysToDelete = [mediaKey(video.src), mediaKey(video.poster)].filter(Boolean);
+  if (keysToDelete.length > 0) {
+    await env.MEDIA_BUCKET.delete(keysToDelete);
+  }
+
+  await env.DB.prepare('DELETE FROM videos WHERE id = ?').bind(videoId).run();
+  return jsonResponse(request, env, { success: true });
+}
+
+export async function uploadPhoto(request, env) {
+  const formData = await request.formData();
+  const photoFile = formData.get('photo');
+  const thumbFile = formData.get('thumb');
+  const blurFile = formData.get('blur');
+  const { data, errors } = validatePhotoFields(formData);
+
+  if (!isFileLike(photoFile, 'image/') || !isFileLike(thumbFile, 'image/') || !isFileLike(blurFile, 'image/')) {
+    errors.push('missing processed image assets');
+  }
+
+  if (errors.length > 0) {
+    return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
+  }
+
+  const photoKey = makeMediaKey('photos', 'webp');
+  const thumbKey = makeMediaKey('thumbs', 'webp');
+  const blurKey = makeMediaKey('blur', 'webp');
+
+  await Promise.all([
+    env.MEDIA_BUCKET.put(photoKey, await photoFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp' },
+    }),
+    env.MEDIA_BUCKET.put(thumbKey, await thumbFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp' },
+    }),
+    env.MEDIA_BUCKET.put(blurKey, await blurFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp' },
+    }),
+  ]);
+
+  const result = await env.DB.prepare(
+    `INSERT INTO photos (title, src, thumb, blur, aspect_ratio, category, location, date, desc, hero_slide)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      data.title,
+      photoKey,
+      thumbKey,
+      blurKey,
+      data.aspectRatio,
+      data.category,
+      data.location,
+      data.date,
+      data.desc,
+      data.heroSlide
+    )
+    .run();
+
+  return jsonResponse(request, env, {
+    success: true,
+    photo: publicPhoto(request, {
+      id: result.meta.last_row_id,
+      title: data.title,
+      src: photoKey,
+      thumb: thumbKey,
+      blur: blurKey,
+      aspect_ratio: data.aspectRatio,
+      category: data.category,
+      location: data.location,
+      date: data.date,
+      desc: data.desc,
+      hero_slide: data.heroSlide,
+    }),
+  });
+}
+
+export async function uploadVideo(request, env) {
+  const formData = await request.formData();
+  const videoFile = formData.get('video');
+  const posterFile = formData.get('poster');
+  const { data, errors } = validateVideoFields(formData);
+
+  if (!isFileLike(videoFile, 'video/')) {
+    errors.push('missing video asset');
+  }
+
+  if (!isFileLike(posterFile, 'image/')) {
+    errors.push('missing poster image asset');
+  }
+
+  if (errors.length > 0) {
+    return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
+  }
+
+  const videoExt = extensionForContentType(videoFile.type, 'mp4');
+  const videoKey = makeMediaKey('videos', videoExt);
+  const posterKey = makeMediaKey('posters', 'webp');
+
+  await Promise.all([
+    env.MEDIA_BUCKET.put(videoKey, await videoFile.arrayBuffer(), {
+      httpMetadata: { contentType: videoFile.type || 'video/mp4' },
+    }),
+    env.MEDIA_BUCKET.put(posterKey, await posterFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp' },
+    }),
+  ]);
+
+  const result = await env.DB.prepare(
+    `INSERT INTO videos (title, src, poster, aspect_ratio, location, date, desc, music)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      data.title,
+      videoKey,
+      posterKey,
+      data.aspectRatio,
+      data.location,
+      data.date,
+      data.desc,
+      data.music
+    )
+    .run();
+
+  return jsonResponse(request, env, {
+    success: true,
+    video: publicVideo(request, {
+      id: result.meta.last_row_id,
+      title: data.title,
+      src: videoKey,
+      poster: posterKey,
+      aspect_ratio: data.aspectRatio,
+      location: data.location,
+      date: data.date,
+      desc: data.desc,
+      music: data.music,
+    }),
+  });
+}

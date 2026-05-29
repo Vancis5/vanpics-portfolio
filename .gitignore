@@ -4,6 +4,7 @@ node_modules/
 # Vite / build output
 dist/
 .vite/
+.wrangler/
 
 # Local environment
 .env

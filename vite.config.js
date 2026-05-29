@@ -7,7 +7,13 @@ export default {
     outDir: 'dist',
     emptyOutDir: true,
     copyPublicDir: true,
-    target: ['chrome100', 'safari15', 'firefox100', 'edge100']
+    target: ['chrome100', 'safari15', 'firefox100', 'edge100'],
+    rollupOptions: {
+      input: {
+        main: path.resolve('index.html'),
+        admin: path.resolve('admin.html')
+      }
+    }
   },
   plugins: [
     {
