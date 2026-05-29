@@ -29,3 +29,10 @@ photos-raw/
 # Local one-off tools
 Antigravity_Conversation_Fix.exe
 firefox.js
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
