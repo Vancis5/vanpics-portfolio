@@ -214,6 +214,7 @@ if (isMobile) {
         showFilmstripIfReady();
         updateLoading();
       }
+      if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync();
 
       // enforce visible opacity if this was called by snap-settle completion (no arg)
       if (typeof targetIdx !== 'number') {
@@ -257,15 +258,7 @@ if (isMobile) {
 
       // smoothly sync filmstrip scrub to native drag
       if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling && !isTouchingFilmstrip) {
-        let thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
-        if (thumbs.length > 0) {
-          let thumbW = thumbs[0].offsetWidth;
-          let gap = 5;
-          let track = typeof getFilmstripTrack === 'function' ? getFilmstripTrack() : filmstripEl;
-          let paddingLeft = parseFloat(track.style.paddingLeft) || 0;
-          let targetCenter = paddingLeft + f * (thumbW + gap) + thumbW / 2;
-          startFsSync(targetCenter - filmstripEl.offsetWidth / 2);
-        }
+        if (typeof syncFilmstripToPhotoProgress === 'function') syncFilmstripToPhotoProgress(f);
       }
 
       let nearest = Math.round(f);

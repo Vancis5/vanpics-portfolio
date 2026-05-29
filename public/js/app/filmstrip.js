@@ -111,6 +111,36 @@ function getFilmstripScroll() {
   return fsTransformActive ? fsVisualScroll : filmstripEl.scrollLeft;
 }
 
+function getFilmstripTargetForPhotoProgress(progress) {
+  let thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
+  if (thumbs.length < 1) return null;
+
+  let track = getFilmstripTrack();
+  let thumbW = thumbs[0].offsetWidth;
+  let gap = parseFloat(window.getComputedStyle(track).gap) || 5;
+  let paddingLeft = parseFloat(track.style.paddingLeft) || 0;
+  let targetCenter = paddingLeft + progress * (thumbW + gap) + thumbW / 2;
+  return targetCenter - filmstripEl.offsetWidth / 2;
+}
+
+function syncFilmstripToPhotoProgress(progress) {
+  if (isTouchingFilmstrip) return;
+  if (fsSyncRaf) {
+    cancelAnimationFrame(fsSyncRaf);
+    fsSyncRaf = null;
+  }
+  fsSyncTarget = null;
+  if (window.fsLenis) window.fsLenis.stop();
+
+  let target = getFilmstripTargetForPhotoProgress(progress);
+  if (target !== null) setFilmstripScroll(target);
+}
+
+function finishFilmstripPhotoSync() {
+  if (window.fsLenis) window.fsLenis.start();
+  scheduleFilmstripNativeCommit(180);
+}
+
 function commitFilmstripTransformScroll() {
   if (!fsTransformActive) return;
   clearScheduledFilmstripCommit();
