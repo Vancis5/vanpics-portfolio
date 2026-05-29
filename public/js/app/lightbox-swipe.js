@@ -214,7 +214,7 @@ if (isMobile) {
         showFilmstripIfReady();
         updateLoading();
       }
-      if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync();
+      if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
 
       // enforce visible opacity if this was called by snap-settle completion (no arg)
       if (typeof targetIdx !== 'number') {
@@ -250,19 +250,22 @@ if (isMobile) {
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;
+      let nearest = Math.round(f);
+      nearest = Math.max(0, Math.min(nearest, activePhotos.length - 1));
 
       let hint = document.getElementById('swipe-hint');
       if (hint && Math.abs(imgWrap.scrollLeft - cur * w) > 10) {
         hint.classList.remove('visible');
       }
 
-      // smoothly sync filmstrip scrub to native drag
+      // Use exact sync while the finger is down, then a separate rAF settle after release.
       if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling && !isTouchingFilmstrip) {
-        if (typeof syncFilmstripToPhotoProgress === 'function') syncFilmstripToPhotoProgress(f);
+        if (isUserTouching && typeof syncFilmstripToPhotoProgress === 'function') {
+          syncFilmstripToPhotoProgress(f);
+        } else if (!isUserTouching && typeof settleFilmstripToPhotoProgress === 'function') {
+          settleFilmstripToPhotoProgress(nearest);
+        }
       }
-
-      let nearest = Math.round(f);
-      nearest = Math.max(0, Math.min(nearest, activePhotos.length - 1));
 
       // rapid scroll mode suspends normal text updates to keep transition fluid
       if (window.isAutoRapidScrolling) {

@@ -69,6 +69,10 @@ let fsSyncRaf = null;
 let fsVisualScroll = 0;
 let fsTransformActive = false;
 let fsCommitTimer = null;
+let fsDirectSyncTime = 0;
+let fsDirectSyncValue = 0;
+let fsDirectVelocity = 0;
+let fsSettleTarget = null;
 
 function getFilmstripTrack() {
   if (filmstripTrack && filmstripTrack.parentNode === filmstripEl) return filmstripTrack;
@@ -111,6 +115,19 @@ function getFilmstripScroll() {
   return fsTransformActive ? fsVisualScroll : filmstripEl.scrollLeft;
 }
 
+function rememberFilmstripDirectVelocity(value) {
+  let now = performance.now();
+  if (fsDirectSyncTime) {
+    let dt = now - fsDirectSyncTime;
+    if (dt > 0 && dt < 80) {
+      let velocity = (value - fsDirectSyncValue) / dt;
+      fsDirectVelocity = fsDirectVelocity * 0.45 + velocity * 0.55;
+    }
+  }
+  fsDirectSyncTime = now;
+  fsDirectSyncValue = value;
+}
+
 function getFilmstripTargetForPhotoProgress(progress) {
   let thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb');
   if (thumbs.length < 1) return null;
@@ -130,15 +147,30 @@ function syncFilmstripToPhotoProgress(progress) {
     fsSyncRaf = null;
   }
   fsSyncTarget = null;
+  fsSettleTarget = null;
   if (window.fsLenis) window.fsLenis.stop();
 
   let target = getFilmstripTargetForPhotoProgress(progress);
-  if (target !== null) setFilmstripScroll(target);
+  if (target !== null) {
+    target = clampFilmstripScroll(target);
+    rememberFilmstripDirectVelocity(target);
+    setFilmstripScroll(target);
+  }
 }
 
-function finishFilmstripPhotoSync() {
-  if (window.fsLenis) window.fsLenis.start();
-  scheduleFilmstripNativeCommit(180);
+function settleFilmstripToPhotoProgress(progress) {
+  if (isTouchingFilmstrip) return;
+  let target = getFilmstripTargetForPhotoProgress(progress);
+  if (target !== null) startFilmstripSettle(target);
+}
+
+function finishFilmstripPhotoSync(progress) {
+  if (typeof progress === 'number') {
+    settleFilmstripToPhotoProgress(progress);
+  } else {
+    if (window.fsLenis) window.fsLenis.start();
+    scheduleFilmstripNativeCommit(180);
+  }
 }
 
 function commitFilmstripTransformScroll() {
@@ -176,8 +208,69 @@ function resetFilmstripTransformScroll() {
   clearScheduledFilmstripCommit();
   fsVisualScroll = 0;
   fsTransformActive = false;
+  fsDirectSyncTime = 0;
+  fsDirectSyncValue = 0;
+  fsDirectVelocity = 0;
+  fsSettleTarget = null;
   filmstripEl.scrollLeft = 0;
   getFilmstripTrack().style.transform = '';
+}
+
+function startFilmstripSettle(target) {
+  target = clampFilmstripScroll(target);
+  let start = getFilmstripScroll();
+  let distance = target - start;
+  if (Math.abs(distance) < 0.5) {
+    setFilmstripScroll(target);
+    scheduleFilmstripNativeCommit(180);
+    if (window.fsLenis) window.fsLenis.start();
+    fsSettleTarget = null;
+    return;
+  }
+
+  if (fsSyncRaf && fsSettleTarget !== null && Math.abs(fsSettleTarget - target) < 0.5) return;
+  if (fsSyncRaf) {
+    cancelAnimationFrame(fsSyncRaf);
+    fsSyncRaf = null;
+  }
+  if (window.fsLenis) window.fsLenis.stop();
+
+  fsSettleTarget = target;
+  let startTime = 0;
+  let duration = Math.max(220, Math.min(420, 190 + Math.abs(distance) * 3.2));
+  let initialVelocity = fsDirectVelocity;
+  if (Math.sign(initialVelocity) !== Math.sign(distance)) initialVelocity = 0;
+  let maxVelocity = Math.max(0.08, Math.abs(distance) / duration * 3.5);
+  initialVelocity = Math.max(-maxVelocity, Math.min(maxVelocity, initialVelocity));
+
+  function settleStep(time) {
+    if (!startTime) startTime = time;
+    let t = Math.min(1, (time - startTime) / duration);
+    let t2 = t * t;
+    let t3 = t2 * t;
+    let h00 = 2 * t3 - 3 * t2 + 1;
+    let h10 = t3 - 2 * t2 + t;
+    let h01 = -2 * t3 + 3 * t2;
+    let next = h00 * start + h10 * initialVelocity * duration + h01 * target;
+
+    if (distance > 0) next = Math.min(target, Math.max(start, next));
+    else next = Math.max(target, Math.min(start, next));
+
+    setFilmstripScroll(next);
+    if (t < 1) {
+      fsSyncRaf = requestAnimationFrame(settleStep);
+      return;
+    }
+
+    setFilmstripScroll(target);
+    scheduleFilmstripNativeCommit(180);
+    if (window.fsLenis) window.fsLenis.start();
+    fsSyncRaf = null;
+    fsSettleTarget = null;
+    fsDirectVelocity = 0;
+  }
+
+  fsSyncRaf = requestAnimationFrame(settleStep);
 }
 
 // Smooth lerp loop for mobile filmstrip tracking during swipe.
@@ -185,6 +278,7 @@ function resetFilmstripTransformScroll() {
 // chases the target position without jitter or abrupt transitions.
 function startFsSync(target) {
   if (window.fsLenis) window.fsLenis.stop();
+  fsSettleTarget = null;
   fsSyncTarget = target;
   if (fsSyncRaf) return;
   let prevTime = 0;
@@ -217,6 +311,7 @@ function stopFsSync(options) {
   if (fsRaf) { cancelAnimationFrame(fsRaf); fsRaf = null; }
   if (fsSyncRaf) { cancelAnimationFrame(fsSyncRaf); fsSyncRaf = null; }
   fsSyncTarget = null;
+  fsSettleTarget = null;
   if (!options || options.commit !== false) commitFilmstripTransformScroll();
   isManuallyNavigating = false;
   if (window.fsLenis) window.fsLenis.start();
