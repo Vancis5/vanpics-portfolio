@@ -238,6 +238,12 @@ function getActiveGalleryPanel() {
   return getGalleryPanel(currentCategory);
 }
 
+function getMasonryColumnCount() {
+  if (window.innerWidth >= 1024) return 4;
+  if (window.innerWidth >= 640) return 3;
+  return 2;
+}
+
 function updateGalleryNav(category) {
   let photoBtn = document.querySelector('#gallery-header .photographs-btn');
   let figuresBtn = document.querySelector('#gallery-header .figures-btn');
@@ -416,7 +422,7 @@ function buildMasonry(category) {
   let yearGrid = null;
   let columns = [];
   let colHeights = [];
-  let numCols = (window.innerWidth >= 1024) ? 4 : 3;
+  let numCols = getMasonryColumnCount();
 
   items.forEach(function (p, i) {
     let currentYear = p.date ? (p.date.match(/\d{4}/) || ["undated"])[0] : "undated";

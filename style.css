@@ -111,7 +111,6 @@ body.is-dragging-scrollbar footer {
   background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.45) 150%);
   opacity: 0;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity;
 }
 
 body.is-dragging-scrollbar #drag-vignette {
@@ -448,7 +447,6 @@ body::after {
 
   opacity: 0;
   animation: fadeup 0.8s ease 0.2s forwards;
-  will-change: transform;
 }
 
 @media (min-width: 640px) {
@@ -532,7 +530,6 @@ body::after {
 /* MASONRY */
 #masonry {
   position: relative;
-  will-change: transform;
   touch-action: pan-y;
 }
 
@@ -572,7 +569,6 @@ body::after {
   flex: 0 0 auto;
   columns: 3;
   column-gap: 0.35rem;
-  will-change: opacity;
 }
 
 @media (max-width: 639px) {
@@ -682,7 +678,6 @@ body::after {
   width: 100%;
   display: block;
   transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1), filter 1.4s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: filter, transform;
   filter: brightness(0.82) saturate(0.88);
 }
 
@@ -713,7 +708,6 @@ body::after {
   background: linear-gradient(to top, rgba(17, 16, 16, 0.9) 0%, transparent 52%);
   opacity: 0.25;
   transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -1053,6 +1047,28 @@ body::after {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+
+#lightbox-photo-error {
+  position: absolute;
+  inset: auto 1rem 1rem;
+  z-index: 3;
+  display: none;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(221, 216, 207, 0.18);
+  border-radius: 3px;
+  background: rgba(17, 16, 16, 0.78);
+  color: rgba(221, 216, 207, 0.82);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+#lightbox-img-wrap.photo-error #lightbox-photo-error {
+  display: block;
 }
 
 #lightbox-img[data-loading-photo="true"] {
@@ -1561,7 +1577,7 @@ body::after {
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-x;
-  will-change: transform, scroll-position;
+  will-change: transform;
   /* native horizontal scroll on mobile, doesn't interfere with swipe */
   -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
   mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);

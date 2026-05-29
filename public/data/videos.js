@@ -6,7 +6,7 @@
 //  src -> the actual video link
 // -------------------------------------------------------------
 
-var videos = [
+const videos = [
   {
     src: "https://vanpics-proxy.lorzanofrancisevan.workers.dev/after-hours.mp4",
     thumb: "photos/thumbs/after-hours.webp",

@@ -94,6 +94,7 @@ const domRefs = {
   lightboxZoomDarken: document.getElementById('lightbox-zoom-darken'),
   lightboxImgWrap: document.getElementById('lightbox-img-wrap'),
   lightboxImg: document.getElementById('lightbox-img'),
+  lightboxPhotoError: document.getElementById('lightbox-photo-error'),
   motionPlayerShell: document.getElementById('motion-player-shell'),
   lightboxInfoWrap: document.getElementById('lightbox-info-wrap'),
   lightboxInfo: document.getElementById('lightbox-info'),

@@ -41,12 +41,25 @@ function clearLightboxPhotoPlaceholder(expectedToken) {
   let wrap = domRefs.lightboxImgWrap;
   let img = domRefs.lightboxImg;
   if (!wrap) return;
+  wrap.classList.remove('photo-error');
   wrap.classList.add('photo-loaded');
   if (img) img.removeAttribute('data-loading-photo');
+  if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
   clearTimeout(photoPlaceholderTimer);
   photoPlaceholderTimer = setTimeout(function () {
     wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded');
   }, 260);
+}
+
+function showLightboxPhotoError(expectedToken) {
+  if (expectedToken !== photoPlaceholderToken) return;
+  let wrap = domRefs.lightboxImgWrap;
+  let img = domRefs.lightboxImg;
+  if (!wrap) return;
+  wrap.classList.remove('photo-loaded');
+  wrap.classList.add('photo-loading', 'photo-placeholder-visible', 'photo-error');
+  if (img) img.removeAttribute('data-loading-photo');
+  if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = 'image failed to load';
 }
 
 function prepareLightboxPhoto(p) {
@@ -58,9 +71,10 @@ function prepareLightboxPhoto(p) {
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
   wrap.style.setProperty('--lightbox-photo-ratio', ratio);
-  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded');
+  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
   wrap.classList.add('photo-loading');
   img.dataset.loadingPhoto = 'true';
+  if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
   requestAnimationFrame(function () {
     wrap.classList.add('photo-placeholder-visible');
   });
@@ -75,6 +89,7 @@ function prepareLightboxPhoto(p) {
     if (token !== photoPlaceholderToken) return;
     img.onload = null;
     img.onerror = null;
+    showLightboxPhotoError(token);
   };
   img.src = p.src;
 
@@ -714,6 +729,11 @@ function navigateLightbox(d) {
 }
 
 document.addEventListener('keydown', function (e) {
+  let target = e.target;
+  let isTyping = target && (
+    target.matches && target.matches('input, textarea, select, [contenteditable="true"]')
+  );
+  if (isTyping || !domRefs.lightbox.classList.contains('open')) return;
   if (e.key === 'Escape') {
     closeLightbox();
   }

@@ -59,7 +59,7 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   // ── THE GLOBAL SCROLL HUB ──
   window.globalScrollHub = function(s) {
     let scrollPos = (typeof s === 'number') ? s : (window.scrollY || 0);
-    scrollY = scrollPos;
+    heroScrollY = scrollPos;
     if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface(scrollPos);
     if (window.updateCustomScrollbar) window.updateCustomScrollbar();
   };

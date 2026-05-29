@@ -107,6 +107,7 @@
       <div id="lightbox-zoom-darken"></div>
       <div id="lightbox-img-wrap">
         <img id="lightbox-img" class="zoomable" src="" alt="">
+        <div id="lightbox-photo-error" role="status" aria-live="polite">image failed to load</div>
         <div id="motion-player-shell"></div>
       </div>
       <div id="lightbox-info-wrap">
@@ -255,10 +256,7 @@
                       class="media-slider__fill"></media-slider-fill><media-slider-buffer
                       class="media-slider__buffer"></media-slider-buffer></media-slider-track><media-slider-thumb
                     class="media-slider__thumb"></media-slider-thumb></media-time-slider></div>
-              <div class="media-button-group"><media-playback-rate-button commandfor="motion-rate-tooltip"
-                  class="media-button media-button--subtle media-button--icon media-button--playback-rate"></media-playback-rate-button><media-tooltip
-                  id="motion-rate-tooltip" side="top" class="media-tooltip">Toggle playback
-                  rate</media-tooltip><media-mute-button commandfor="motion-volume-popover"
+              <div class="media-button-group"><media-mute-button commandfor="motion-volume-popover"
                   class="media-button media-button--subtle media-button--icon media-button--mute"><svg
                     class="media-icon media-icon--volume-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                     fill="none" aria-hidden="true" viewBox="0 0 18 18">

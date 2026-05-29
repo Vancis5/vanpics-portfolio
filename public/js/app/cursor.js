@@ -6,16 +6,35 @@ if (isMouseDevice) {
   let mx = 0, my = 0, rx = 0, ry = 0;
   let cursorVisible = false;
   let isDraggingScrollbar = false;
+  let ringRafId = null;
 
   // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
   function hideCursor() {
     cursor.style.opacity = '0'; ring.style.opacity = '0';
     cursorVisible = false;
+    stopRingAnimation();
   }
   function showCursor() {
     if (cursorVisible) return;
     cursorVisible = true;
     cursor.style.opacity = '1'; ring.style.opacity = '1';
+    startRingAnimation();
+  }
+  function animateRing() {
+    rx += (mx - rx) * 0.2;
+    ry += (my - ry) * 0.2;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    ringRafId = requestAnimationFrame(animateRing);
+  }
+  function startRingAnimation() {
+    if (ringRafId || document.hidden) return;
+    ringRafId = requestAnimationFrame(animateRing);
+  }
+  function stopRingAnimation() {
+    if (!ringRafId) return;
+    cancelAnimationFrame(ringRafId);
+    ringRafId = null;
   }
 
   let cursorTimeout;
@@ -37,9 +56,6 @@ if (isMouseDevice) {
     }
   });
 
-  // the thin ring that follows the dot around
-  (function animateRing() { rx += (mx - rx) * 0.2; ry += (my - ry) * 0.2; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); })();
-
   // Respond to hold (mousedown)
   window.addEventListener('mousedown', function (e) {
     // If clicking near the right edge (scrollbar zone), hide the cursor
@@ -60,6 +76,13 @@ if (isMouseDevice) {
   });
 
   window.addEventListener('blur', hideCursor);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      stopRingAnimation();
+    } else if (cursorVisible) {
+      startRingAnimation();
+    }
+  });
 
   document.addEventListener('mouseleave', hideCursor);
   document.documentElement.addEventListener('mouseleave', hideCursor);

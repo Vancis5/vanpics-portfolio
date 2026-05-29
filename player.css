@@ -241,7 +241,6 @@ media-tooltip-group {
   outline: 2px solid transparent;
   outline-offset: -2px;
   transition-property: background-color, outline-offset, scale;
-  will-change: scale;
   transition-duration: 150ms;
   transition-timing-function: ease-out;
   cursor: pointer;
@@ -322,16 +321,6 @@ media-tooltip-group {
 .media-minimal-skin .media-button--seek:has(.media-icon--flipped) .media-icon__label {
   right: unset;
   left: -1px;
-}
-
-.media-minimal-skin .media-button--playback-rate {
-  padding: 0;
-}
-
-.media-minimal-skin .media-button--playback-rate::after {
-  content: attr(data-rate) "\00D7";
-  width: 4ch;
-  font-variant-numeric: tabular-nums;
 }
 
 .media-minimal-skin .media-button-group {
@@ -858,14 +847,12 @@ media-tooltip-group {
 
 @media (pointer: fine) {
   .media-minimal-skin--video .media-controls {
-    will-change: translate, filter, opacity;
     transition-property: translate, filter, opacity;
   }
 }
 
 @media (pointer: coarse) {
   .media-minimal-skin--video .media-controls {
-    will-change: translate, opacity;
     transition-property: translate, opacity;
   }
 }

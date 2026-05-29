@@ -1,5 +1,5 @@
 // PARALLAX
-let scrollY = 0;
+let heroScrollY = 0;
 
 // CAROUSEL
 let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
@@ -131,7 +131,7 @@ function tick() {
   let speed = getCurrentSpeed(easeFrame);
   if (easeFrame < EASE_FRAMES + 10) easeFrame++;
 
-  let px = [scrollY * 0.18, -scrollY * 0.12, scrollY * 0.22, -scrollY * 0.15];
+  let px = [heroScrollY * 0.18, -heroScrollY * 0.12, heroScrollY * 0.22, -heroScrollY * 0.15];
 
   rowState.forEach(function (state, ri) {
     if (ri >= rows.length) return;
