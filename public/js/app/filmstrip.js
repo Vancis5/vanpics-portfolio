@@ -68,6 +68,7 @@ let fsSyncTarget = null;
 let fsSyncRaf = null;
 let fsVisualScroll = 0;
 let fsTransformActive = false;
+let fsCommitTimer = null;
 
 function getFilmstripTrack() {
   if (filmstripTrack && filmstripTrack.parentNode === filmstripEl) return filmstripTrack;
@@ -97,6 +98,7 @@ function beginFilmstripTransformScroll() {
 function setFilmstripScroll(value) {
   value = clampFilmstripScroll(value);
   if (isMobile) {
+    clearScheduledFilmstripCommit();
     beginFilmstripTransformScroll();
     fsVisualScroll = value;
     getFilmstripTrack().style.transform = 'translate3d(' + (-value) + 'px, 0, 0)';
@@ -111,6 +113,7 @@ function getFilmstripScroll() {
 
 function commitFilmstripTransformScroll() {
   if (!fsTransformActive) return;
+  clearScheduledFilmstripCommit();
   let value = clampFilmstripScroll(fsVisualScroll);
   filmstripEl.scrollLeft = value;
   getFilmstripTrack().style.transform = '';
@@ -118,8 +121,29 @@ function commitFilmstripTransformScroll() {
   fsVisualScroll = value;
 }
 
+function clearScheduledFilmstripCommit() {
+  if (!fsCommitTimer) return;
+  clearTimeout(fsCommitTimer);
+  fsCommitTimer = null;
+}
+
+function scheduleFilmstripNativeCommit(delay) {
+  if (!isMobile || !fsTransformActive) {
+    commitFilmstripTransformScroll();
+    return;
+  }
+  clearScheduledFilmstripCommit();
+  fsCommitTimer = setTimeout(function () {
+    fsCommitTimer = null;
+    requestAnimationFrame(function () {
+      if (!fsRaf && !fsSyncRaf) commitFilmstripTransformScroll();
+    });
+  }, delay);
+}
+
 function resetFilmstripTransformScroll() {
   if (!filmstripEl) return;
+  clearScheduledFilmstripCommit();
   fsVisualScroll = 0;
   fsTransformActive = false;
   filmstripEl.scrollLeft = 0;
@@ -146,6 +170,7 @@ function startFsSync(target) {
     let diff = fsSyncTarget - current;
     if (Math.abs(diff) < 0.5) {
       setFilmstripScroll(fsSyncTarget);
+      scheduleFilmstripNativeCommit(180);
       if (window.fsLenis) window.fsLenis.start();
       fsSyncRaf = null;
       fsSyncTarget = null;
@@ -201,6 +226,7 @@ function updateFilmstrip() {
           let elapsed = time - startTime;
           if (elapsed >= duration) {
             setFilmstripScroll(fsTarget);
+            scheduleFilmstripNativeCommit(180);
             if (window.fsLenis) window.fsLenis.start();
             fsRaf = null;
             isManuallyNavigating = false;
