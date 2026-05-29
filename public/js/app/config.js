@@ -1,4 +1,4 @@
-window.APP_CONFIG = {
+export const APP_CONFIG = {
   carousel: {
     cruiseSpeed: {
       mobile: 0.28,
@@ -44,3 +44,7 @@ window.APP_CONFIG = {
     desyncThreshold: 5
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.APP_CONFIG = APP_CONFIG;
+}

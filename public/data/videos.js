@@ -6,7 +6,7 @@
 //  src -> the actual video link
 // -------------------------------------------------------------
 
-const videos = [
+export const videos = [
   {
     src: "https://vanpics-proxy.lorzanofrancisevan.workers.dev/after-hours.mp4",
     thumb: "photos/thumbs/after-hours.webp",
@@ -18,3 +18,7 @@ const videos = [
     aspectRatio: 1.777,
   },
 ];
+
+if (typeof window !== 'undefined') {
+  window.videos = videos;
+}

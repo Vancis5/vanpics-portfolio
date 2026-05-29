@@ -5,7 +5,7 @@
 //  heroSlide -> true: will show in carousel in the beginning
 // ─────────────────────────────────────────────
 
-const photos = [
+export const photos = [
   {
     src: "photos/tch-crash.webp",
     title: "collateral",
@@ -437,3 +437,7 @@ const photos = [
     heroSlide: false,
   },
 ];
+
+if (typeof window !== 'undefined') {
+  window.photos = photos;
+}
