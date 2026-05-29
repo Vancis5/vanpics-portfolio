@@ -2,28 +2,68 @@ let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTo
 let galleryScrollDirection = 'down';
 let galleryScrollRevealRaf = null;
 let gallerySuppressScrollRevealUntil = 0;
+let galleryRevealRepairTimer = null;
+const GALLERY_REVEAL_CLEANUP_MS = 850;
+const GALLERY_REVEAL_IMAGE_WAIT_MS = 1400;
 
-function showCardWithoutScrollReveal(card) {
+function clearCardRevealTimers(card) {
+  if (card.dataset.revealCleanupTimer) {
+    window.clearTimeout(Number(card.dataset.revealCleanupTimer));
+  }
+  if (card.dataset.revealFallbackTimer) {
+    window.clearTimeout(Number(card.dataset.revealFallbackTimer));
+  }
+}
+
+function cleanupCardScrollReveal(card) {
+  clearCardRevealTimers(card);
   card.classList.remove('pending-reveal');
   card.classList.remove('revealed');
+  delete card.dataset.revealPending;
+  delete card.dataset.revealCleanupTimer;
+  delete card.dataset.revealFallbackTimer;
+}
+
+function showCardWithoutScrollReveal(card) {
+  cleanupCardScrollReveal(card);
+}
+
+function finishCardScrollReveal(card) {
+  if (!card.classList.contains('pending-reveal')) {
+    cleanupCardScrollReveal(card);
+    return;
+  }
+
+  card.classList.add('revealed');
+
+  if (card.dataset.revealCleanupTimer) return;
+  let cleanupTimer = window.setTimeout(function () {
+    cleanupCardScrollReveal(card);
+  }, GALLERY_REVEAL_CLEANUP_MS);
+  card.dataset.revealCleanupTimer = String(cleanupTimer);
 }
 
 function playCardScrollReveal(card) {
   if (!card.classList.contains('pending-reveal')) return;
+  if (card.dataset.revealPending === 'true') return;
+  card.dataset.revealPending = 'true';
 
   let img = card.querySelector('img');
   let reveal = function () {
-    card.classList.add('revealed');
-    setTimeout(function () {
-      card.classList.remove('pending-reveal');
-      card.classList.remove('revealed');
-    }, 850);
+    if (card.dataset.revealFallbackTimer) {
+      window.clearTimeout(Number(card.dataset.revealFallbackTimer));
+      delete card.dataset.revealFallbackTimer;
+    }
+    finishCardScrollReveal(card);
   };
 
   if (img && img.complete && img.naturalHeight !== 0) {
     reveal();
   } else if (img) {
     img.addEventListener('load', reveal, { once: true });
+    img.addEventListener('error', reveal, { once: true });
+    let fallbackTimer = window.setTimeout(reveal, GALLERY_REVEAL_IMAGE_WAIT_MS);
+    card.dataset.revealFallbackTimer = String(fallbackTimer);
   } else {
     reveal();
   }
@@ -36,10 +76,41 @@ function armCardsBelowViewport(scope) {
   root.querySelectorAll('.photo-card').forEach(function (card) {
     let rect = card.getBoundingClientRect();
     if (rect.top > viewportBottom + 24) {
+      clearCardRevealTimers(card);
+      delete card.dataset.revealPending;
+      delete card.dataset.revealCleanupTimer;
+      delete card.dataset.revealFallbackTimer;
       card.classList.add('pending-reveal');
       card.classList.remove('revealed');
     }
   });
+}
+
+function repairVisiblePendingCards(scope) {
+  let root = scope || getActiveGalleryPanel() || document;
+  let viewportTop = 0;
+  let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
+
+  root.querySelectorAll('.photo-card.pending-reveal').forEach(function (card) {
+    let rect = card.getBoundingClientRect();
+    let isVisible = rect.bottom > viewportTop && rect.top < viewportBottom;
+    if (!isVisible) return;
+
+    if (galleryScrollDirection === 'down') {
+      playCardScrollReveal(card);
+    } else {
+      showCardWithoutScrollReveal(card);
+    }
+  });
+}
+
+function scheduleGalleryRevealRepair(scope, delay) {
+  if (galleryRevealRepairTimer) window.clearTimeout(galleryRevealRepairTimer);
+
+  galleryRevealRepairTimer = window.setTimeout(function () {
+    galleryRevealRepairTimer = null;
+    repairVisiblePendingCards(scope);
+  }, delay || 0);
 }
 
 let cardObserver = new IntersectionObserver(function (entries) {
@@ -56,6 +127,8 @@ let cardObserver = new IntersectionObserver(function (entries) {
       card.classList.remove('revealed');
     }
   });
+
+  scheduleGalleryRevealRepair(getActiveGalleryPanel(), 60);
 }, { rootMargin: '0px 0px -60px 0px' });
 
 function revealCards(scope, options) {
@@ -132,6 +205,7 @@ function queueGalleryScrollReveal() {
   galleryScrollRevealRaf = requestAnimationFrame(function () {
     galleryScrollRevealRaf = null;
     armCardsBelowViewport(getActiveGalleryPanel());
+    repairVisiblePendingCards(getActiveGalleryPanel());
   });
 }
 
