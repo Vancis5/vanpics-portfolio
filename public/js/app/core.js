@@ -233,10 +233,14 @@ if (window.visualViewport) {
 const glowBall = domRefs.glowBall;
 let glowX = window.innerWidth / 2, glowY = window.innerHeight / 2;
 let glowTargetX = glowX, glowTargetY = glowY;
+let mouseInHero = false;
+
+// Declared at outer scope so bootstrap.js can always find it via typeof check,
+// even under strict mode or future ES module migration.
+var animateGlow = null;
 
 if (glowBall && domRefs.hero) {
   const hero = domRefs.hero;
-  let mouseInHero = false;
   hero.addEventListener('mouseenter', function () { mouseInHero = true; startLoopsIfReady(); });
   hero.addEventListener('mouseleave', function () { mouseInHero = false; });
   hero.addEventListener('mousemove', function (e) {
@@ -244,7 +248,7 @@ if (glowBall && domRefs.hero) {
     glowTargetX = e.clientX - rect.left;
     glowTargetY = e.clientY - rect.top;
   });
-  function animateGlow() {
+  animateGlow = function () {
     const scrollFade = Math.max(0, 1 - (window.scrollY / 350));
     const targetOp = (mouseInHero && heroVisible && pageVisible) ? scrollFade : 0;
 
@@ -263,5 +267,5 @@ if (glowBall && domRefs.hero) {
     glowBall.style.left = glowX + 'px';
     glowBall.style.top = glowY + 'px';
     glowRafId = requestAnimationFrame(animateGlow);
-  }
+  };
 }

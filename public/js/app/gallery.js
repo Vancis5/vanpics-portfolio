@@ -246,7 +246,7 @@ function buildMasonry() {
 
     let overlay = document.createElement('div');
     overlay.className = 'photo-card-overlay';
-    overlay.innerHTML = '<div class="photo-card-title">' + (p.title || "") + '</div><div class="photo-card-date">' + (p.date || "undated") + '</div>';
+    overlay.innerHTML = '<div class="photo-card-title">' + escapeHtml(p.title || "") + '</div><div class="photo-card-date">' + escapeHtml(p.date || "undated") + '</div>';
     card.appendChild(imgEl);
     card.appendChild(overlay);
 
