@@ -1,28 +1,72 @@
+let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+let galleryScrollDirection = 'down';
+let galleryScrollRevealRaf = null;
+let gallerySuppressScrollRevealUntil = 0;
+
+function showCardWithoutScrollReveal(card) {
+  card.classList.remove('pending-reveal');
+  card.classList.remove('revealed');
+}
+
+function playCardScrollReveal(card) {
+  if (!card.classList.contains('pending-reveal')) return;
+
+  let img = card.querySelector('img');
+  let reveal = function () {
+    card.classList.add('revealed');
+    setTimeout(function () {
+      card.classList.remove('pending-reveal');
+      card.classList.remove('revealed');
+    }, 850);
+  };
+
+  if (img && img.complete && img.naturalHeight !== 0) {
+    reveal();
+  } else if (img) {
+    img.addEventListener('load', reveal, { once: true });
+  } else {
+    reveal();
+  }
+}
+
+function armCardsBelowViewport(scope) {
+  let root = scope || getActiveGalleryPanel() || document;
+  let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
+
+  root.querySelectorAll('.photo-card').forEach(function (card) {
+    let rect = card.getBoundingClientRect();
+    if (rect.top > viewportBottom + 24) {
+      card.classList.add('pending-reveal');
+      card.classList.remove('revealed');
+    }
+  });
+}
+
 let cardObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {
-    if (entry.isIntersecting) {
-      let card = entry.target;
-      let img = card.querySelector('img');
+    let card = entry.target;
+    let suppressReveal = performance.now() < gallerySuppressScrollRevealUntil;
 
-      let reveal = function () {
-        card.classList.add('revealed');
-        cardObserver.unobserve(card);
-      };
-
-      if (img && img.complete && img.naturalHeight !== 0) {
-        reveal();
-      } else if (img) {
-        img.addEventListener('load', reveal, { once: true });
-      }
+    if (entry.isIntersecting && galleryScrollDirection === 'down' && !suppressReveal) {
+      playCardScrollReveal(card);
+    } else if (entry.isIntersecting && galleryScrollDirection === 'up') {
+      showCardWithoutScrollReveal(card);
+    } else if (!entry.isIntersecting && galleryScrollDirection === 'up' && entry.boundingClientRect.top > window.innerHeight) {
+      card.classList.add('pending-reveal');
+      card.classList.remove('revealed');
     }
   });
 }, { rootMargin: '0px 0px -60px 0px' });
 
-function revealCards(scope) {
+function revealCards(scope, options) {
+  options = options || {};
   let root = scope || getActiveGalleryPanel() || document;
-  root.querySelectorAll('.photo-card:not(.revealed)').forEach(function (card) {
+  root.querySelectorAll('.photo-card').forEach(function (card) {
+    if (options.immediate) showCardWithoutScrollReveal(card);
     cardObserver.observe(card);
   });
+
+  if (!options.immediate) armCardsBelowViewport(root);
 }
 
 // Masonry: scroll reveal handles fade-in.
@@ -65,6 +109,32 @@ function rememberGalleryScroll(category) {
   try { sessionStorage.setItem(GALLERY_SCROLL_MEMORY_KEY, JSON.stringify(galleryScrollPositions)); } catch (e) { }
 }
 
+function resetGalleryScrollMemory() {
+  GALLERY_CATEGORIES.forEach(function (cat) {
+    galleryScrollPositions[cat] = null;
+  });
+  try { sessionStorage.setItem(GALLERY_SCROLL_MEMORY_KEY, JSON.stringify(galleryScrollPositions)); } catch (e) { }
+}
+
+function updateGalleryScrollDirection() {
+  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  if (Math.abs(scrollY - galleryLastScrollY) > 1) {
+    galleryScrollDirection = scrollY > galleryLastScrollY ? 'down' : 'up';
+    galleryLastScrollY = scrollY;
+  }
+}
+
+function queueGalleryScrollReveal() {
+  if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) return;
+  if (performance.now() < gallerySuppressScrollRevealUntil) return;
+  if (galleryScrollRevealRaf) return;
+
+  galleryScrollRevealRaf = requestAnimationFrame(function () {
+    galleryScrollRevealRaf = null;
+    armCardsBelowViewport(getActiveGalleryPanel());
+  });
+}
+
 function queueGalleryScrollMemory() {
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) return;
   if (galleryScrollSaveRaf) return;
@@ -75,7 +145,13 @@ function queueGalleryScrollMemory() {
   });
 }
 
-window.addEventListener('scroll', queueGalleryScrollMemory, { passive: true });
+function handleGalleryScroll() {
+  updateGalleryScrollDirection();
+  queueGalleryScrollMemory();
+  queueGalleryScrollReveal();
+}
+
+window.addEventListener('scroll', handleGalleryScroll, { passive: true });
 
 function getGalleryAnchorScrollY() {
   let section = domRefs.gallerySection;
@@ -136,6 +212,10 @@ function refreshGalleryScrollMetrics() {
 function getCategoryItems(category) {
   if (category === 'motion') return motionProjects;
   return getPhotoLibrary(category);
+}
+
+function getCategoryIndex(category) {
+  return GALLERY_CATEGORIES.indexOf(normalizeGalleryCategory(category));
 }
 
 function getGalleryPanel(category) {
@@ -209,16 +289,19 @@ function setActiveGalleryPanel(category, options) {
   updateGalleryNav(category);
 
   if (activePanel && options.animate) {
+    activePanel.style.setProperty('--masonry-x', (options.direction || 1) > 0 ? '-36px' : '36px');
     activePanel.classList.remove('is-entering');
     void activePanel.offsetWidth;
     activePanel.classList.add('is-entering');
     setTimeout(function () {
       activePanel.classList.remove('is-entering');
-    }, 500);
+      activePanel.style.removeProperty('--masonry-x');
+    }, 820);
   }
 
   requestAnimationFrame(function () {
-    revealCards(activePanel);
+    revealCards(activePanel, { immediate: true });
+    armCardsBelowViewport(activePanel);
     refreshGalleryScrollMetrics();
   });
 
@@ -232,11 +315,20 @@ function rebuildGallery(newCategory, options) {
   if (!galleryPanelsBuilt) buildMasonry();
 
   let previousCategory = normalizeGalleryCategory(currentCategory);
+  let tabDirection = getCategoryIndex(newCategory) > getCategoryIndex(previousCategory) ? -1 : 1;
   let currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let lockToStickyStart = !options.preserveScroll && isGalleryHeaderStuck();
-  let targetScrollY = options.preserveScroll ? currentScrollY : getGalleryTargetScroll(newCategory, {
-    lockToStickyStart: lockToStickyStart
-  });
+  let headerWasStuck = isGalleryHeaderStuck();
+  let targetScrollY = currentScrollY;
+
+  if (!options.preserveScroll) {
+    if (headerWasStuck) {
+      targetScrollY = getGalleryTargetScroll(newCategory, {
+        lockToStickyStart: true
+      });
+    } else {
+      resetGalleryScrollMemory();
+    }
+  }
 
   if (previousCategory !== newCategory && !Number.isFinite(galleryScrollPositions[previousCategory])) {
     rememberGalleryScroll(previousCategory);
@@ -254,10 +346,12 @@ function rebuildGallery(newCategory, options) {
   }
 
   window.dispatchEvent(new Event('category-change'));
-  setActiveGalleryPanel(newCategory, { animate: options.animate });
+  gallerySuppressScrollRevealUntil = performance.now() + 900;
+  setActiveGalleryPanel(newCategory, { animate: options.animate, direction: tabDirection });
 
   requestAnimationFrame(function () {
     restoreWindowScroll(targetScrollY);
+    galleryLastScrollY = targetScrollY;
     refreshGalleryScrollMetrics();
     setTimeout(refreshGalleryScrollMetrics, 120);
     if (typeof options.onReady === 'function') options.onReady();

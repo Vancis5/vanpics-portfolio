@@ -89,12 +89,17 @@
 /* !!! DONT TOUCH !!! - Handles the complex X/Y reveal logic */
 /* Vertical lift for standard scrolling */
 .photo-card {
-  opacity: 0;
-  transform: translateY(30px);
+  opacity: 1;
+  transform: translateY(0);
   transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.photo-card.revealed {
+.photo-card.pending-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.photo-card.pending-reveal.revealed {
   opacity: 1;
   transform: translateY(0);
 }
@@ -105,7 +110,7 @@
 }
 
 .masonry-panel.is-entering {
-  animation: masonrySlide 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: masonrySlide 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes masonrySlide {
