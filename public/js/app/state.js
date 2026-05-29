@@ -50,37 +50,3 @@ state.carouselPhotos.slice(0, 6).forEach(function (photo) {
   const img = new Image();
   img.src = photo.src;
 });
-
-if (typeof window !== 'undefined') {
-  window.appState = state;
-  window.updateActivePhotos = updateActivePhotos;
-
-  [
-    'pushNextState',
-    'isPopState',
-    'currentCategory',
-    'activePhotos',
-    'carouselPhotos',
-    'cur',
-    'isMobile',
-    'heroVisible',
-    'pageVisible',
-    'heroRafId',
-    'glowRafId',
-    'heroScrollY',
-    'currentLightboxIsMotion',
-    'isManuallyNavigating',
-    'isTouchingFilmstrip',
-    'fsRaf',
-    'filmstripHideTimer',
-    'lbZoomLevel',
-    'lbZoomPanX',
-    'lbZoomPanY'
-  ].forEach(function (key) {
-    Object.defineProperty(window, key, {
-      get: function () { return state[key]; },
-      set: function (value) { state[key] = value; },
-      configurable: true
-    });
-  });
-}

@@ -1,3 +1,11 @@
+import { domRefs } from './dom.js';
+import { state, updateActivePhotos } from './state.js';
+import { getCategorySlug, getPhotoLibrary, motionProjects } from './media-data.js';
+import { getMotionThumbnailMarkup } from './motion-markup.js';
+import { openLightbox } from './lightbox.js';
+import { updateCustomScrollbar } from './custom-scrollbar.js';
+import { updateStickyHeaderSurface } from './sticky-header.js';
+
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 let galleryScrollDirection = 'down';
 let galleryScrollRevealRaf = null;
@@ -248,7 +256,7 @@ function queueGalleryScrollMemory() {
 
   galleryScrollSaveRaf = requestAnimationFrame(function () {
     galleryScrollSaveRaf = null;
-    rememberGalleryScroll(currentCategory);
+    rememberGalleryScroll(state.currentCategory);
   });
 }
 
@@ -312,8 +320,8 @@ function getGalleryTargetScroll(category, options) {
 
 function refreshGalleryScrollMetrics() {
   if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
-  if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface();
-  if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+  updateStickyHeaderSurface();
+  updateCustomScrollbar();
 }
 
 function getCategoryItems(category) {
@@ -342,7 +350,7 @@ function getGalleryPanel(category) {
 }
 
 function getActiveGalleryPanel() {
-  return getGalleryPanel(currentCategory);
+  return getGalleryPanel(state.currentCategory);
 }
 
 function getMasonryColumnCount() {
@@ -426,7 +434,7 @@ export function rebuildGallery(newCategory, options) {
 
   if (!galleryPanelsBuilt) buildMasonry();
 
-  let previousCategory = normalizeGalleryCategory(currentCategory);
+  let previousCategory = normalizeGalleryCategory(state.currentCategory);
   let tabDirection = getCategoryIndex(newCategory) > getCategoryIndex(previousCategory) ? -1 : 1;
   let currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
   let headerWasStuck = isGalleryHeaderStuck();
@@ -446,10 +454,10 @@ export function rebuildGallery(newCategory, options) {
     rememberGalleryScroll(previousCategory);
   }
 
-  currentCategory = newCategory;
+  state.currentCategory = newCategory;
   updateActivePhotos();
 
-  if (!domRefs.lightbox.classList.contains('open') && !isPopState) {
+  if (!domRefs.lightbox.classList.contains('open') && !state.isPopState) {
     let catSlug = getCategorySlug(newCategory);
     let curHash = window.location.hash.substring(1);
     if (!curHash.startsWith(catSlug)) {
@@ -476,7 +484,7 @@ export function initFilters() {
   let figuresBtn = document.querySelector('#gallery-header .figures-btn');
   let motionBtn = document.querySelector('#gallery-header .motion-btn');
 
-  updateGalleryNav(currentCategory);
+  updateGalleryNav(state.currentCategory);
 
   [
     { button: photoBtn, category: 'all' },
@@ -486,7 +494,7 @@ export function initFilters() {
     if (!item.button) return;
 
     item.button.addEventListener('click', function () {
-      if (currentCategory === item.category) return;
+      if (state.currentCategory === item.category) return;
       rebuildGallery(item.category, { animate: true });
     });
   });
@@ -498,18 +506,18 @@ export function buildMasonry(category) {
 
   if (!category) {
     let shouldRestoreScroll = galleryPanelsBuilt;
-    if (shouldRestoreScroll) rememberGalleryScroll(currentCategory);
+    if (shouldRestoreScroll) rememberGalleryScroll(state.currentCategory);
 
     GALLERY_CATEGORIES.forEach(function (cat) {
       buildMasonry(cat);
     });
 
     galleryPanelsBuilt = true;
-    setActiveGalleryPanel(currentCategory);
+    setActiveGalleryPanel(state.currentCategory);
 
     if (shouldRestoreScroll) {
       requestAnimationFrame(function () {
-        restoreWindowScroll(getGalleryTargetScroll(currentCategory, {
+        restoreWindowScroll(getGalleryTargetScroll(state.currentCategory, {
           lockToStickyStart: isGalleryHeaderStuck()
         }));
         refreshGalleryScrollMetrics();
@@ -602,8 +610,8 @@ export function buildMasonry(category) {
 
     card.addEventListener('click', (function (idx, cardCategory) {
       return function () {
-        if (currentCategory !== cardCategory) {
-          currentCategory = cardCategory;
+        if (state.currentCategory !== cardCategory) {
+          state.currentCategory = cardCategory;
           updateActivePhotos();
         }
         openLightbox(idx, 0, cardCategory === 'motion');
@@ -625,10 +633,5 @@ export function buildMasonry(category) {
     }
   });
 
-  if (category === currentCategory) setTimeout(function () { revealCards(panel); }, 150);
+  if (category === state.currentCategory) setTimeout(function () { revealCards(panel); }, 150);
 }
-
-window.revealCards = revealCards;
-window.rebuildGallery = rebuildGallery;
-window.initFilters = initFilters;
-window.buildMasonry = buildMasonry;

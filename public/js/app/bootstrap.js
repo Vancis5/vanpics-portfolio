@@ -1,8 +1,19 @@
+import { APP_CONFIG } from './config.js';
+import { domRefs } from './dom.js';
+import { state } from './state.js';
+import { getInternalCategory, motionProjects } from './media-data.js';
+import { slugify } from './utils.js';
+import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
+import { buildMasonry, initFilters, rebuildGallery } from './gallery.js';
+import { buildCarousel, setCarouselReadyCallback, tick } from './hero-carousel.js';
+import { animateGlow, setStartLoopsCallback } from './core.js';
+import { updateStickyHeaderSurface } from './sticky-header.js';
+
 // buildCarousel internally waits for images, then calls onReady
 // we hook into that by wrapping the final reveal
-const LOADER_CONFIG = window.APP_CONFIG.loader;
-const ROUTING_CONFIG = window.APP_CONFIG.routing;
-const MASONRY_CONFIG = window.APP_CONFIG.masonry;
+const LOADER_CONFIG = APP_CONFIG.loader;
+const ROUTING_CONFIG = APP_CONFIG.routing;
+const MASONRY_CONFIG = APP_CONFIG.masonry;
 
 function liftLoader() {
   const loader = domRefs.loader;
@@ -15,8 +26,7 @@ let _loaderLifted = false;
 function safeLift() { if (!_loaderLifted) { _loaderLifted = true; liftLoader(); } }
 // Hard fallback: lift after 4s no matter what
 setTimeout(safeLift, LOADER_CONFIG.hardFallbackDelay);
-// Expose for buildCarousel to call after rows are visible
-window.__onCarouselReady = function () { setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay); };
+setCarouselReadyCallback(function () { setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay); });
 
 function scrollToGallery() {
   if (window.lenis) {
@@ -48,20 +58,9 @@ buildCarousel();
 buildMasonry();
 initFilters();
 
-(function initStickyHeaderSurface() {
-  const header = domRefs.galleryHeader;
-  if (!header) return;
-
-  window.updateStickyHeaderSurface = function (scroll) {
-    // Use provided scroll or fallback to current position
-    const s = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
-    document.body.classList.toggle('gallery-header-stuck', header.getBoundingClientRect().top <= 0.5);
-  };
-
-  window.updateStickyHeaderSurface();
-  window.addEventListener('resize', window.updateStickyHeaderSurface, { passive: true });
-  window.addEventListener('orientationchange', window.updateStickyHeaderSurface, { passive: true });
-})();
+updateStickyHeaderSurface();
+window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });
+window.addEventListener('orientationchange', updateStickyHeaderSurface, { passive: true });
 
 // Rebuild masonry on resize to handle column count changes (width-only check to avoid mobile address bar flicker)
 let _masonryResizeTimer;
@@ -78,22 +77,22 @@ window.addEventListener('resize', function () {
 
 // Visibility & Animation Loop Management
 export function startLoops() {
-  if (heroVisible && pageVisible) {
-    if (!heroRafId) heroRafId = requestAnimationFrame(tick);
-    if (!glowRafId && typeof animateGlow === 'function') glowRafId = requestAnimationFrame(animateGlow);
+  if (state.heroVisible && state.pageVisible) {
+    if (!state.heroRafId) state.heroRafId = requestAnimationFrame(tick);
+    if (!state.glowRafId && typeof animateGlow === 'function') state.glowRafId = requestAnimationFrame(animateGlow);
   }
 }
 
-window.startLoops = startLoops;
+setStartLoopsCallback(startLoops);
 
 const heroObs = new IntersectionObserver(function (entries) {
-  heroVisible = entries[0].isIntersecting;
+  state.heroVisible = entries[0].isIntersecting;
   startLoops();
 }, { threshold: 0 });
 heroObs.observe(domRefs.hero);
 
 document.addEventListener('visibilitychange', function () {
-  pageVisible = !document.hidden;
+  state.pageVisible = !document.hidden;
   startLoops();
 });
 
@@ -119,7 +118,7 @@ function checkHash() {
   const targetCat = getInternalCategory(catSlug);
 
   // 1. If we're not in the right category, switch it first
-  if (currentCategory !== targetCat) {
+  if (state.currentCategory !== targetCat) {
     rebuildGallery(targetCat);
     // Wait for rebuild, then re-check for the item
     setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
@@ -128,8 +127,8 @@ function checkHash() {
 
   // 2. If we are in the right category, check for the specific item
   if (itemSlug) {
-    const items = currentCategory === 'motion' ? motionProjects : activePhotos;
-    if (items.length === 0 && currentCategory !== 'motion') {
+    const items = state.currentCategory === 'motion' ? motionProjects : state.activePhotos;
+    if (items.length === 0 && state.currentCategory !== 'motion') {
       setTimeout(checkHash, ROUTING_CONFIG.itemRecheckDelay);
       return;
     }
@@ -137,11 +136,11 @@ function checkHash() {
     for (let i = 0; i < items.length; i++) {
       if (slugify(items[i].title) === itemSlug) {
         // If already open to this item, do nothing
-        if (isLbOpen && cur === i) return;
+        if (isLbOpen && state.cur === i) return;
 
-        isPopState = true;
-        openLightbox(i, 0, currentCategory === 'motion');
-        setTimeout(function () { isPopState = false; }, ROUTING_CONFIG.itemRecheckDelay);
+        state.isPopState = true;
+        openLightbox(i, 0, state.currentCategory === 'motion');
+        setTimeout(function () { state.isPopState = false; }, ROUTING_CONFIG.itemRecheckDelay);
         return;
       }
     }
@@ -149,9 +148,9 @@ function checkHash() {
 }
 
 window.addEventListener('popstate', function () {
-  isPopState = true;
+  state.isPopState = true;
   checkHash();
-  setTimeout(function () { isPopState = false; }, ROUTING_CONFIG.popstateResetDelay);
+  setTimeout(function () { state.isPopState = false; }, ROUTING_CONFIG.popstateResetDelay);
 });
 
 // Defer slightly to ensure layout is ready

@@ -437,7 +437,3 @@ export const photos = [
     heroSlide: false,
   },
 ];
-
-if (typeof window !== 'undefined') {
-  window.photos = photos;
-}

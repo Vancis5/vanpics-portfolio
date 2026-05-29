@@ -44,7 +44,3 @@ export const APP_CONFIG = {
     desyncThreshold: 5
   }
 };
-
-if (typeof window !== 'undefined') {
-  window.APP_CONFIG = APP_CONFIG;
-}

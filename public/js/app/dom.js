@@ -43,7 +43,3 @@ export const domRefs = {
   filmstripLiftZone: document.getElementById('filmstrip-lift-zone'),
   siteFooter: document.getElementById('site-footer')
 };
-
-if (typeof window !== 'undefined') {
-  window.domRefs = domRefs;
-}

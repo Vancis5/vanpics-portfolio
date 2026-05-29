@@ -18,7 +18,3 @@ export const videos = [
     aspectRatio: 1.777,
   },
 ];
-
-if (typeof window !== 'undefined') {
-  window.videos = videos;
-}

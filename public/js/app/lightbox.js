@@ -1,3 +1,11 @@
+import { domRefs } from './dom.js';
+import { state } from './state.js';
+import { getCategorySlug, motionProjects } from './media-data.js';
+import { getVideoPlayerMarkup } from './motion-markup.js';
+import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfReady, setFilmstripLiftZoneDisplay } from './core.js';
+import { resetZoom } from './lightbox-zoom.js';
+import { updateFilmstrip } from './filmstrip.js';
+
 let blurFlip = false;
 let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
@@ -155,7 +163,7 @@ export function setLightboxContent(p) {
   let preSwapImgRect = null;
   let preSwapInfoRect = null;
 
-  if (isCollapsingOpenDesc && isMobile) {
+  if (isCollapsingOpenDesc && state.isMobile) {
     let preSwapImgWrap = domRefs.lightboxImgWrap;
     let preSwapInfoWrap = domRefs.lightboxInfoWrap;
     if (preSwapImgWrap && preSwapInfoWrap) {
@@ -192,15 +200,15 @@ export function setLightboxContent(p) {
   }
 
   // Deep Link: Automatically update the URL hash dynamically for routing tracking
-  let catSlug = getCategorySlug(currentCategory);
+  let catSlug = getCategorySlug(state.currentCategory);
   let slug = slugify(safeTitle);
   let newHash = '#' + catSlug + '/' + slug;
   if (slug && window.location.hash !== newHash) {
-    if (isPopState) {
+    if (state.isPopState) {
       history.replaceState(null, null, newHash);
-    } else if (pushNextState) {
+    } else if (state.pushNextState) {
       history.pushState(null, null, newHash);
-      pushNextState = false;
+      state.pushNextState = false;
     } else {
       history.replaceState(null, null, newHash);
     }
@@ -216,14 +224,14 @@ export function setLightboxContent(p) {
 
   if (content && content.classList.contains('desc-open')) {
     runDescFlipTransition({
-      startImgRect: isMobile ? preSwapImgRect : null,
-      startInfoRect: isMobile ? preSwapInfoRect : null,
+      startImgRect: state.isMobile ? preSwapImgRect : null,
+      startInfoRect: state.isMobile ? preSwapInfoRect : null,
       applyLayoutChange: function () {
         content.classList.remove('desc-open');
         if (btn) btn.textContent = 'read more';
         updateLightboxDescPreview();
       },
-      cleanup: isMobile && descEl ? function () { descEl.style.transition = ''; } : null
+      cleanup: state.isMobile && descEl ? function () { descEl.style.transition = ''; } : null
     });
   } else if (btn) {
     btn.textContent = 'read more';
@@ -235,7 +243,7 @@ function updateLightboxDescPreview() {
   let desc = domRefs.lightboxDesc;
   let btn = domRefs.lightboxDescToggle;
   let content = domRefs.lightboxContent;
-  if (!desc || !btn || !content || !isMobile) return;
+  if (!desc || !btn || !content || !state.isMobile) return;
 
   let hasDesc = desc.textContent.trim().length > 0;
   desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
@@ -303,18 +311,18 @@ function animateInfo(dir) {
 let navGen = 0;
 
 function getCurrentLightboxItems() {
-  return currentLightboxIsMotion ? motionProjects : activePhotos;
+  return state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 }
 
 export function openLightbox(i, direction, isMotion) {
   let lb = domRefs.lightbox;
-  if (lb && !lb.classList.contains('open') && !isPopState) {
-    pushNextState = true;
+  if (lb && !lb.classList.contains('open') && !state.isPopState) {
+    state.pushNextState = true;
   }
 
-  cur = i;
-  isManuallyNavigating = true;
-  currentLightboxIsMotion = !!isMotion;
+  state.cur = i;
+  state.isManuallyNavigating = true;
+  state.currentLightboxIsMotion = !!isMotion;
   let p = getCurrentLightboxItems()[i];
 
   if (!p) return;
@@ -327,12 +335,12 @@ export function openLightbox(i, direction, isMotion) {
   if (isMotion) clearLightboxPhotoPlaceholder();
 
   // Mobile: already open — natively smooth scroll
-  if (lb.classList.contains('open') && isMobile && mobileScrollToSlide && !isMotion) {
+  if (lb.classList.contains('open') && state.isMobile && mobileScrollToSlide && !isMotion) {
     // Fallback to 1 if direction evaluates to 0 or is mathematically missing
     let dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
     mobileScrollToSlide(i, true, dir);
 
-    cur = i;
+    state.cur = i;
     updateFilmstrip();
     return;
   }
@@ -383,7 +391,7 @@ export function openLightbox(i, direction, isMotion) {
       setLightboxContent(p);
       if (!isMotion) {
         prepareLightboxPhoto(p);
-        window.loadSwipeNeighbors();
+        loadSwipeNeighbors();
       }
 
       requestAnimationFrame(function () {
@@ -494,7 +502,7 @@ export function openLightbox(i, direction, isMotion) {
       let bSrc = isMotion ? p.thumb : p.src;
       setLightboxBlur(bSrc);
       setLightboxContent(p);
-      if (!isMotion) window.loadSwipeNeighbors();
+      if (!isMotion) loadSwipeNeighbors();
 
       requestAnimationFrame(function () {
         if (openGen !== navGen) return;
@@ -604,8 +612,8 @@ export function closeLightbox() {
   domRefs.blurLayerA.classList.remove('active');
   domRefs.blurLayerB.classList.remove('active');
   // Reset hash to category on close
-  if (window.location.hash && !isPopState) {
-    let catSlug = getCategorySlug(currentCategory);
+  if (window.location.hash && !state.isPopState) {
+    let catSlug = getCategorySlug(state.currentCategory);
     history.pushState(null, null, '#' + catSlug);
   }
 
@@ -650,16 +658,16 @@ export function closeLightbox() {
     let lb = domRefs.lightbox;
     if (lb) lb.classList.remove('zoom-active');
 
-    if (isMobile) {
+    if (state.isMobile) {
       let mWrap = domRefs.lightboxImgWrap;
       if (mWrap) {
         mWrap.style.transform = '';
         mWrap.style.overflowX = '';
         mWrap.style.overflowY = '';
       }
-      lbZoomLevel = 1;
-      lbZoomPanX = 0;
-      lbZoomPanY = 0;
+      state.lbZoomLevel = 1;
+      state.lbZoomPanX = 0;
+      state.lbZoomPanY = 0;
       let slides = mWrap ? mWrap.querySelectorAll('.snap-slide') : [];
       for (let si = 0; si < slides.length; si++) {
         slides[si].style.opacity = '';
@@ -711,20 +719,24 @@ export function resetDescToggle() {
   if (btn) btn.textContent = 'read more';
 }
 
-export function loadSwipeNeighbors() {
-  if (currentLightboxIsMotion) return;
+export let loadSwipeNeighbors = function () {
+  if (state.currentLightboxIsMotion) return;
   let currentSet = getCurrentLightboxItems();
-  let prev = (cur - 1 + currentSet.length) % currentSet.length;
-  let next = (cur + 1) % currentSet.length;
+  let prev = (state.cur - 1 + currentSet.length) % currentSet.length;
+  let next = (state.cur + 1) % currentSet.length;
   let p1 = new Image(); p1.src = currentSet[prev].src; if (p1.decode) p1.decode().catch(function () { });
   let p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function () { });
+};
+
+export function setLoadSwipeNeighbors(fn) {
+  loadSwipeNeighbors = fn;
 }
 
 export function navigateLightbox(d) {
-  if (typeof lbZoomLevel !== 'undefined' && lbZoomLevel > 1) resetZoom();
+  if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) resetZoom();
   let currentSet = getCurrentLightboxItems();
-  cur = (cur + d + currentSet.length) % currentSet.length;
-  openLightbox(cur, d, currentLightboxIsMotion);
+  state.cur = (state.cur + d + currentSet.length) % currentSet.length;
+  openLightbox(state.cur, d, state.currentLightboxIsMotion);
 }
 
 document.addEventListener('keydown', function (e) {
@@ -741,15 +753,4 @@ document.addEventListener('keydown', function (e) {
 });
 
 // desktop: click bg to close
-if (!isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);
-
-window.prepareLightboxPhoto = prepareLightboxPhoto;
-window.setLightboxContent = setLightboxContent;
-window.openLightbox = openLightbox;
-window.renderVideoInLightbox = renderVideoInLightbox;
-window.startUnifiedMotionPlayer = startUnifiedMotionPlayer;
-window.closeLightbox = closeLightbox;
-window.toggleLightboxDesc = toggleLightboxDesc;
-window.resetDescToggle = resetDescToggle;
-window.loadSwipeNeighbors = loadSwipeNeighbors;
-window.navigateLightbox = navigateLightbox;
+if (!state.isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);

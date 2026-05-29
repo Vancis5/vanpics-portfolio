@@ -27,11 +27,3 @@ export function getPhotoLibrary(category) {
     return photo.category !== 'figures';
   });
 }
-
-if (typeof window !== 'undefined') {
-  window.photoLibrary = photoLibrary;
-  window.motionProjects = motionProjects;
-  window.getCategorySlug = getCategorySlug;
-  window.getInternalCategory = getInternalCategory;
-  window.getPhotoLibrary = getPhotoLibrary;
-}

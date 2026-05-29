@@ -1,3 +1,9 @@
+import { APP_CONFIG } from './config.js';
+import { domRefs } from './dom.js';
+import { state } from './state.js';
+
+export let updateCustomScrollbar = function () {};
+
 // ADVANCED CUSTOM SCROLLBAR CONTROLLER
 (function initCustomScrollbar() {
   let track = domRefs.customScrollbar;
@@ -7,7 +13,7 @@
   let isDragging = false;
   let startY, startScroll;
   let fadeTimer = null;
-  let SCROLLBAR_CONFIG = window.APP_CONFIG.scrollbar;
+  let SCROLLBAR_CONFIG = APP_CONFIG.scrollbar;
 
   function updateThumb() {
     let winH = window.innerHeight;
@@ -29,7 +35,7 @@
     thumb.style.height = thumbH + 'px';
     thumb.style.transform = 'translateY(' + thumbY + 'px)';
 
-    if (isMobile) {
+    if (state.isMobile) {
       track.classList.add('moving');
       clearTimeout(fadeTimer);
       fadeTimer = setTimeout(function () {
@@ -106,7 +112,7 @@
       // Unblock lenis AFTER state is set
       window._scrollbarDragging = false;
 
-      if (isMobile) {
+      if (state.isMobile) {
         clearTimeout(fadeTimer);
         fadeTimer = setTimeout(function () { track.classList.remove('moving'); }, SCROLLBAR_CONFIG.mobileFadeDelay);
       }
@@ -120,6 +126,6 @@
     new ResizeObserver(updateThumb).observe(document.body);
   }
 
-  window.updateCustomScrollbar = updateThumb;
+  updateCustomScrollbar = updateThumb;
   updateThumb();
 })();

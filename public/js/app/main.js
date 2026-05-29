@@ -15,8 +15,9 @@ import './lightbox-swipe.js';
 import './gallery.js';
 import './hero-carousel.js';
 import './cursor.js';
-import './custom-scrollbar.js';
 import './filmstrip.js';
+import { updateStickyHeaderSurface } from './sticky-header.js';
+import { updateCustomScrollbar } from './custom-scrollbar.js';
 import './bootstrap.js';
 import '../browser-fixes.js';
 
@@ -50,7 +51,8 @@ async function loadLenis() {
 
 async function bootstrapApp() {
   await loadLenis();
-  await import('../smooth-scroll.js');
+  const { initSmoothScroll } = await import('../smooth-scroll.js');
+  initSmoothScroll({ updateStickyHeaderSurface, updateCustomScrollbar });
 }
 
 bootstrapApp().catch(function (error) {

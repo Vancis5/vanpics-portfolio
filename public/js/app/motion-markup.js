@@ -41,8 +41,3 @@ export function getVideoPlayerMarkup(item) {
   wrap.appendChild(fragment);
   return wrap.innerHTML;
 }
-
-if (typeof window !== 'undefined') {
-  window.getMotionThumbnailMarkup = getMotionThumbnailMarkup;
-  window.getVideoPlayerMarkup = getVideoPlayerMarkup;
-}

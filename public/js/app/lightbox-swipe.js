@@ -1,4 +1,12 @@
 // SWIPE for lightbox
+import { domRefs } from './dom.js';
+import { state } from './state.js';
+import { motionProjects } from './media-data.js';
+import { closeLightbox, openLightbox, navigateLightbox, setLightboxContent, setLoadSwipeNeighbors } from './lightbox.js';
+import { resetZoom, toggleImageZoom, updateZoomTransform } from './lightbox-zoom.js';
+import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
+import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
+
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
 let mobileScrollToSlide = null;
@@ -8,21 +16,21 @@ let lastTapT = 0;
 
 // mobile: tap content area (not interactive elements) to toggle filmstrip
 lbEl.addEventListener('click', function (e) {
-  if (!isMobile) return;
+  if (!state.isMobile) return;
   if (swipeHappened) { swipeHappened = false; return; }
   if (e.target.closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info')) return;
 
   let now = Date.now();
   if (e.target.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
     // Double tap zoom
-    if (lbZoomLevel > 1) {
+    if (state.lbZoomLevel > 1) {
       resetZoom();
     } else {
-      lbZoomLevel = 2.5;
+      state.lbZoomLevel = 2.5;
       let img = e.target;
       let rect = img.getBoundingClientRect();
-      lbZoomPanX = -(e.clientX - (rect.left + rect.width / 2)) * (lbZoomLevel - 1);
-      lbZoomPanY = -(e.clientY - (rect.top + rect.height / 2)) * (lbZoomLevel - 1);
+      state.lbZoomPanX = -(e.clientX - (rect.left + rect.width / 2)) * (state.lbZoomLevel - 1);
+      state.lbZoomPanY = -(e.clientY - (rect.top + rect.height / 2)) * (state.lbZoomLevel - 1);
       img.dataset.zoomAnimated = "true";
       updateZoomTransform(img);
       setTimeout(function () {
@@ -43,7 +51,7 @@ lbEl.addEventListener('click', function (e) {
 
 // ─── MOBILE SCROLL-SNAP GALLERY ───
 // Native scroll container with snap points — browser handles touch physics
-if (isMobile) {
+if (state.isMobile) {
   (function () {
     let slidesBuilt = false;
     let snapTimer = null;
@@ -57,20 +65,20 @@ if (isMobile) {
     // ── Build slides ──
     function buildSlides() {
       clearSlides();
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       if (slidesBuilt) return;
       slidesBuilt = true;
       // Remove old #lightbox-img from flow (CSS hides it, but clear src too)
       let mainImg = domRefs.lightboxImg;
       if (mainImg) { mainImg.removeAttribute('src'); }
-      activePhotos.forEach(function (p, i) {
+      state.activePhotos.forEach(function (p, i) {
         let slide = document.createElement('div');
         slide.className = 'snap-slide';
         slide.dataset.idx = i;
         let img = document.createElement('img');
         img.alt = p.title || '';
         img.draggable = false;
-        img.loading = (Math.abs(i - cur) <= 2) ? 'eager' : 'lazy';
+        img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
         img.src = p.src;
         img.classList.add('zoomable');
         img.addEventListener('click', toggleImageZoom);
@@ -80,7 +88,7 @@ if (isMobile) {
     }
 
     function scrollToSlide(idx, smooth, dir) {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       let w = imgWrap.offsetWidth;
       if (!w) return;
       if (smooth) {
@@ -94,7 +102,7 @@ if (isMobile) {
 
         let info = domRefs.lightboxInfo;
         // Animate OLD text gracefully exiting and trigger the massive BG blur crossfade immediately
-        let finalP = activePhotos[idx];
+        let finalP = state.activePhotos[idx];
         setLightboxBlur(finalP.src);
 
         if (info) {
@@ -157,15 +165,15 @@ if (isMobile) {
     let filmstripReleaseFollowUntil = 0;
     let FILMSTRIP_RELEASE_FOLLOW_MS = 72;
     imgWrap.addEventListener('touchstart', function (e) {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       isUserTouching = true;
       filmstripReleaseFollowUntil = 0;
       if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
     }, { passive: true });
     imgWrap.addEventListener('touchend', function (e) {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       isUserTouching = false;
-      if (Math.abs(lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
+      if (Math.abs(state.lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
       let dx = e.changedTouches[0].clientX - wrapTouchX;
       let maxScroll = imgWrap.scrollWidth - imgWrap.offsetWidth;
       if (imgWrap.scrollLeft >= maxScroll - 5 && dx < -45) {
@@ -173,7 +181,7 @@ if (isMobile) {
         openLightbox(0, 1);
       } else if (imgWrap.scrollLeft <= 5 && dx > 45) {
         // Pulled right while on the first slide -> Loop to end
-        openLightbox(activePhotos.length - 1, -1);
+        openLightbox(state.activePhotos.length - 1, -1);
       } else {
         filmstripReleaseFollowUntil = performance.now() + FILMSTRIP_RELEASE_FOLLOW_MS;
         setTimeout(function () {
@@ -185,10 +193,10 @@ if (isMobile) {
 
     // ── Eager-load nearby slides ──
     function updateLoading() {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       let imgs = imgWrap.querySelectorAll('.snap-slide img');
       for (let i = 0; i < imgs.length; i++) {
-        let shouldEager = (Math.abs(i - cur) <= 2);
+        let shouldEager = (Math.abs(i - state.cur) <= 2);
         imgs[i].loading = shouldEager ? 'eager' : 'lazy';
         if (shouldEager && imgs[i].decode && !imgs[i].dataset.decoded) {
           (function (img) {
@@ -200,18 +208,18 @@ if (isMobile) {
 
     // ── Scroll settle — detect new active slide ──
     function onSnapSettle(targetIdx) {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       if (isUserTouching && typeof targetIdx === 'undefined') return;
-      isManuallyNavigating = false; // Reset navigation flag on settle
+      state.isManuallyNavigating = false; // Reset navigation flag on settle
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let rawNearest = Math.round(imgWrap.scrollLeft / w);
-      let idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, activePhotos.length - 1));
+      let idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, state.activePhotos.length - 1));
 
-      if (idx !== cur) {
-        let dir = idx > cur ? 1 : -1;
-        cur = idx;
-        let p = activePhotos[cur];
+      if (idx !== state.cur) {
+        let dir = idx > state.cur ? 1 : -1;
+        state.cur = idx;
+        let p = state.activePhotos[state.cur];
 
         // blur bg crossfade immediately
         setLightboxBlur(p.src);
@@ -244,31 +252,31 @@ if (isMobile) {
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
     imgWrap.addEventListener('scrollend', function () {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
       if (performance.now() < filmstripReleaseFollowUntil) return;
-      if (!isManuallyNavigating) onSnapSettle();
+      if (!state.isManuallyNavigating) onSnapSettle();
     });
     imgWrap.addEventListener('scroll', function () {
-      if (currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion) return;
       clearTimeout(snapTimer);
       snapTimer = setTimeout(onSnapSettle, 150);
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;
       let nearest = Math.round(f);
-      nearest = Math.max(0, Math.min(nearest, activePhotos.length - 1));
+      nearest = Math.max(0, Math.min(nearest, state.activePhotos.length - 1));
 
       let hint = document.getElementById('swipe-hint');
-      if (hint && Math.abs(imgWrap.scrollLeft - cur * w) > 10) {
+      if (hint && Math.abs(imgWrap.scrollLeft - state.cur * w) > 10) {
         hint.classList.remove('visible');
       }
 
       let isFilmstripDirectPhase = isUserTouching || performance.now() < filmstripReleaseFollowUntil;
 
       // Use exact sync while touching and briefly after release, then rAF-settle the final bit.
-      if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling && !isTouchingFilmstrip) {
+      if (!state.fsRaf && !state.isManuallyNavigating && !window.isAutoRapidScrolling && !state.isTouchingFilmstrip) {
         if (isFilmstripDirectPhase && typeof syncFilmstripToPhotoProgress === 'function') {
           syncFilmstripToPhotoProgress(f);
         } else if (!isFilmstripDirectPhase && typeof settleFilmstripToPhotoProgress === 'function') {
@@ -278,12 +286,12 @@ if (isMobile) {
 
       // rapid scroll mode suspends normal text updates to keep transition fluid
       if (window.isAutoRapidScrolling) {
-        cur = nearest;
+        state.cur = nearest;
         return;
       }
 
       // preload text underneath if we cross 50% mark — but ONLY if not currently holding
-      if (nearest !== cur && !isFilmstripDirectPhase && !isManuallyNavigating) {
+      if (nearest !== state.cur && !isFilmstripDirectPhase && !state.isManuallyNavigating) {
         onSnapSettle(nearest);
       }
 
@@ -292,7 +300,7 @@ if (isMobile) {
       if (info) {
         info.style.animation = 'none';
         info.style.transition = 'none';
-        let swipeDelta = imgWrap.scrollLeft - cur * w;
+        let swipeDelta = imgWrap.scrollLeft - state.cur * w;
 
         if (dist === 0) {
           info.style.opacity = '1';
@@ -314,10 +322,10 @@ if (isMobile) {
 
     // ── Setup on lightbox open ──
     window.addEventListener('lightbox-open', function () {
-      if (currentLightboxIsMotion) {
+      if (state.currentLightboxIsMotion) {
         clearSlides();
         requestAnimationFrame(function () {
-          let motionItem = motionProjects[cur];
+          let motionItem = motionProjects[state.cur];
           if (motionItem) {
             setLightboxContent(motionItem);
             animateInfo(0);
@@ -327,22 +335,21 @@ if (isMobile) {
       }
       buildSlides();
       requestAnimationFrame(function () {
-        scrollToSlide(cur, false);
+        scrollToSlide(state.cur, false);
         updateLoading();
-        onSnapSettle(cur);
-        let p = activePhotos[cur];
+        onSnapSettle(state.cur);
+        let p = state.activePhotos[state.cur];
         setLightboxContent(p);
         animateInfo(0);
       });
     });
 
-    // Override loadSwipeNeighbors
-    loadSwipeNeighbors = function () { updateLoading(); };
+    setLoadSwipeNeighbors(function () { updateLoading(); });
 
     // Re-align on resize/orientation change
     window.addEventListener('resize', function () {
       if (lbEl.classList.contains('open')) {
-        scrollToSlide(cur, false);
+        scrollToSlide(state.cur, false);
       }
     });
 
@@ -360,27 +367,27 @@ if (isMobile) {
       if (e.touches.length === 2 && !dLocked) {
         isPinching = true;
         pinchInitDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        pinchInitLevel = lbZoomLevel;
-        pinchInitPanX = lbZoomPanX;
-        pinchInitPanY = lbZoomPanY;
+        pinchInitLevel = state.lbZoomLevel;
+        pinchInitPanX = state.lbZoomPanX;
+        pinchInitPanY = state.lbZoomPanY;
 
         let cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
         let cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         pinchInitCx = cx;
         pinchInitCy = cy;
         let mWrap = domRefs.lightboxImgWrap;
-        let img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
+        let img = mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img');
         if (img) {
           let rect = img.getBoundingClientRect();
           pinchInitMx = cx - (rect.left + rect.width / 2);
           pinchInitMy = cy - (rect.top + rect.height / 2);
         }
 
-        if (isMobile) {
+        if (state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
           let slides = mWrap.querySelectorAll('.snap-slide');
           for (let i = 0; i < slides.length; i++) {
-            if (parseInt(slides[i].dataset.idx) !== cur) {
+            if (parseInt(slides[i].dataset.idx) !== state.cur) {
               slides[i].style.transition = 'none';
               slides[i].style.opacity = '0';
             }
@@ -391,7 +398,7 @@ if (isMobile) {
 
       if (isPinching) return;
 
-      if (lbZoomLevel > 1 && e.touches.length === 1) {
+      if (state.lbZoomLevel > 1 && e.touches.length === 1) {
         dStartX = e.touches[0].clientX;
         dStartY = e.touches[0].clientY;
         return;
@@ -412,33 +419,33 @@ if (isMobile) {
         let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         let ratio = dist / pinchInitDist;
         let newScale = Math.min(Math.max(1, pinchInitLevel * ratio), 6);
-        if (newScale === lbZoomLevel) return;
+        if (newScale === state.lbZoomLevel) return;
 
         let cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
         let cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         let dx = cx - pinchInitCx;
         let dy = cy - pinchInitCy;
 
-        lbZoomLevel = newScale;
-        lbZoomPanX = pinchInitPanX - pinchInitMx * (newScale / pinchInitLevel - 1) + dx;
-        lbZoomPanY = pinchInitPanY - pinchInitMy * (newScale / pinchInitLevel - 1) + dy;
+        state.lbZoomLevel = newScale;
+        state.lbZoomPanX = pinchInitPanX - pinchInitMx * (newScale / pinchInitLevel - 1) + dx;
+        state.lbZoomPanY = pinchInitPanY - pinchInitMy * (newScale / pinchInitLevel - 1) + dy;
 
         let mWrap = domRefs.lightboxImgWrap;
-        let img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
+        let img = mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img');
         if (img) updateZoomTransform(img);
         return;
       }
 
-      if (lbZoomLevel > 1 && e.touches.length === 1 && !isPinching) {
+      if (state.lbZoomLevel > 1 && e.touches.length === 1 && !isPinching) {
         e.preventDefault();
         let dx = e.touches[0].clientX - dStartX;
         let dy = e.touches[0].clientY - dStartY;
-        lbZoomPanX += dx;
-        lbZoomPanY += dy;
+        state.lbZoomPanX += dx;
+        state.lbZoomPanY += dy;
         dStartX = e.touches[0].clientX;
         dStartY = e.touches[0].clientY;
         let mWrap = domRefs.lightboxImgWrap;
-        let img = mWrap.querySelector('.snap-slide[data-idx="' + cur + '"] img');
+        let img = mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img');
         if (img) updateZoomTransform(img);
         return;
       }
@@ -480,13 +487,13 @@ if (isMobile) {
     lbEl.addEventListener('touchend', function (e) {
       if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
       if (e.touches.length < 2) {
-        if (isPinching && e.touches.length === 1 && lbZoomLevel > 1) {
+        if (isPinching && e.touches.length === 1 && state.lbZoomLevel > 1) {
           dStartX = e.touches[0].clientX;
           dStartY = e.touches[0].clientY;
         }
         isPinching = false;
 
-        if (lbZoomLevel <= 1 && isMobile) {
+        if (state.lbZoomLevel <= 1 && state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
           let slides = mWrap.querySelectorAll('.snap-slide');
           for (let i = 0; i < slides.length; i++) {
@@ -548,8 +555,8 @@ if (isMobile) {
     }, { passive: true });
 
     lbEl.addEventListener('touchend', function (e) {
-      if (!lbEl.classList.contains('open') || !currentLightboxIsMotion) return;
-      if (isPinching || dLocked || e.changedTouches.length !== 1 || lbZoomLevel > 1) return;
+      if (!lbEl.classList.contains('open') || !state.currentLightboxIsMotion) return;
+      if (isPinching || dLocked || e.changedTouches.length !== 1 || state.lbZoomLevel > 1) return;
       if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, button')) return;
 
       let dx = e.changedTouches[0].clientX - dStartX;

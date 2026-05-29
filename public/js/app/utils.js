@@ -13,8 +13,3 @@ export function slugify(text) {
     .replace(/[^\w-]+/g, '')
     .replace(/--+/g, '-');
 }
-
-if (typeof window !== 'undefined') {
-  window.escapeHtml = escapeHtml;
-  window.slugify = slugify;
-}

@@ -1,24 +1,24 @@
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  let SMOOTH_SCROLL_CONFIG = window.APP_CONFIG.smoothScroll;
+import { APP_CONFIG } from './app/config.js';
+import { state } from './app/state.js';
 
-  let lenis = new Lenis({
-    lerp: SMOOTH_SCROLL_CONFIG.lerp,
+export function initSmoothScroll(options = {}) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const smoothScrollConfig = APP_CONFIG.smoothScroll;
+  const lenis = new Lenis({
+    lerp: smoothScrollConfig.lerp,
     smoothWheel: true,
-    wheelMultiplier: SMOOTH_SCROLL_CONFIG.wheelMultiplier,
+    wheelMultiplier: smoothScrollConfig.wheelMultiplier,
     infinite: false,
     autoResize: false
   });
   window.lenis = lenis;
 
-  // ── DESYNC WATCHER ──
-  // Catches browser scroll restoration after refresh, back/forward nav,
-  // or any other situation where the real scroll position drifts from
-  // what lenis thinks. Runs on every native scroll event.
   function syncLenisToReality() {
     if (!window.lenis || window._scrollbarDragging) return;
-    let pos = document.documentElement.scrollTop || 0;
-    let delta = Math.abs(window.lenis.animatedScroll - pos);
-    if (delta > SMOOTH_SCROLL_CONFIG.desyncThreshold) {
+    const pos = document.documentElement.scrollTop || 0;
+    const delta = Math.abs(window.lenis.animatedScroll - pos);
+    if (delta > smoothScrollConfig.desyncThreshold) {
       window.lenis.animatedScroll = pos;
       window.lenis.targetScroll = pos;
       window.lenis.velocity = 0;
@@ -26,16 +26,14 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       if (window.lenis.animate) window.lenis.animate.stop();
     }
   }
+
   window.addEventListener('scroll', syncLenisToReality, { passive: true });
-  // Also catch the first wheel event (user might scroll before restoration fires)
   window.addEventListener('wheel', syncLenisToReality, { capture: true, passive: true });
-  // And catch late browser restoration
   window.addEventListener('pageshow', function () {
     requestAnimationFrame(syncLenisToReality);
   });
 
-  // ── Filmstrip Lenis ──
-  let filmstripEl = document.getElementById('filmstrip');
+  const filmstripEl = document.getElementById('filmstrip');
   if (filmstripEl) {
     window.fsLenis = new Lenis({
       wrapper: filmstripEl,
@@ -43,36 +41,36 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       orientation: 'horizontal',
       gestureOrientation: 'both',
       smoothWheel: true,
-      lerp: SMOOTH_SCROLL_CONFIG.lerp,
+      lerp: smoothScrollConfig.lerp,
       autoResize: false
     });
 
-    let _fsResizeTimer;
+    let fsResizeTimer;
     new ResizeObserver(function () {
-      clearTimeout(_fsResizeTimer);
-      _fsResizeTimer = setTimeout(function () {
+      clearTimeout(fsResizeTimer);
+      fsResizeTimer = setTimeout(function () {
         if (window.fsLenis) window.fsLenis.resize();
-      }, SMOOTH_SCROLL_CONFIG.resizeDebounce);
+      }, smoothScrollConfig.resizeDebounce);
     }).observe(filmstripEl);
   }
 
-  // ── THE GLOBAL SCROLL HUB ──
-  window.globalScrollHub = function(s) {
-    let scrollPos = (typeof s === 'number') ? s : (window.scrollY || 0);
-    heroScrollY = scrollPos;
-    if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface(scrollPos);
-    if (window.updateCustomScrollbar) window.updateCustomScrollbar();
-  };
+  const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
+  const updateCustomScrollbar = options.updateCustomScrollbar || function () {};
 
-  window.addEventListener('scroll', function() {
-    window.globalScrollHub();
+  function updateScrollDrivenUi(scroll) {
+    const scrollPos = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
+    state.heroScrollY = scrollPos;
+    updateStickyHeaderSurface();
+    updateCustomScrollbar();
+  }
+
+  window.addEventListener('scroll', function () {
+    updateScrollDrivenUi();
   }, { passive: true });
-
 
   function lenisRaf(time) {
     if (window.lenis) {
       if (window._scrollbarDragging) {
-        // Don't let lenis touch the scroll during manual drag
         window.lenis.time = time;
       } else {
         window.lenis.raf(time);
@@ -83,15 +81,15 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   }
   requestAnimationFrame(lenisRaf);
 
-  lenis.on('scroll', function (e) {
-    window.globalScrollHub(e.scroll);
+  lenis.on('scroll', function (event) {
+    updateScrollDrivenUi(event.scroll);
   });
 
-  // Lightbox sync
-  window.addEventListener('lightbox-open', function () { if (window.lenis) window.lenis.stop(); });
+  window.addEventListener('lightbox-open', function () {
+    if (window.lenis) window.lenis.stop();
+  });
 
-  // Override Lenis CSS classes that conflict with site overflow rules
-  let ls = document.createElement('style');
-  ls.textContent = 'html.lenis,html.lenis body{height:auto}html.lenis,html.lenis-scrolling{overflow-x:clip!important;overflow-y:auto!important}html.lenis-stopped{overflow:auto!important}';
-  document.head.appendChild(ls);
+  const lenisStyle = document.createElement('style');
+  lenisStyle.textContent = 'html.lenis,html.lenis body{height:auto}html.lenis,html.lenis-scrolling{overflow-x:clip!important;overflow-y:auto!important}html.lenis-stopped{overflow:auto!important}';
+  document.head.appendChild(lenisStyle);
 }

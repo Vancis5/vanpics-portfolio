@@ -1,29 +1,41 @@
-var domRefs = window.domRefs;
+import { domRefs } from './dom.js';
+import { state } from './state.js';
+
+let filmstripVisibilityHandlers = {};
+let startLoopsCallback = null;
+
+export function setFilmstripVisibilityHandlers(handlers) {
+  filmstripVisibilityHandlers = handlers || {};
+}
+
+export function setStartLoopsCallback(callback) {
+  startLoopsCallback = callback;
+}
 
 
 // ── MOTION: swap this to change which video plays ──
 
-function showFilmstripIfReady() {
-  if (typeof window.showFilmstrip === 'function') window.showFilmstrip();
+export function showFilmstripIfReady() {
+  if (typeof filmstripVisibilityHandlers.show === 'function') filmstripVisibilityHandlers.show();
 }
 
-function hideFilmstripIfReady() {
-  if (typeof window.hideFilmstrip === 'function') window.hideFilmstrip();
+export function hideFilmstripIfReady() {
+  if (typeof filmstripVisibilityHandlers.hide === 'function') filmstripVisibilityHandlers.hide();
 }
 
-function clearFilmstripHideTimerIfReady() {
-  if (typeof filmstripHideTimer !== 'undefined' && filmstripHideTimer) {
-    window.clearTimeout(filmstripHideTimer);
+export function clearFilmstripHideTimerIfReady() {
+  if (typeof state.filmstripHideTimer !== 'undefined' && state.filmstripHideTimer) {
+    window.clearTimeout(state.filmstripHideTimer);
   }
 }
 
-function setFilmstripLiftZoneDisplay(display) {
+export function setFilmstripLiftZoneDisplay(display) {
   const liftZone = domRefs.filmstripLiftZone;
   if (liftZone) liftZone.style.display = display;
 }
 
-function startLoopsIfReady() {
-  if (typeof window.startLoops === 'function') window.startLoops();
+export function startLoopsIfReady() {
+  if (typeof startLoopsCallback === 'function') startLoopsCallback();
 }
 
 // GLOW BALL
@@ -34,7 +46,7 @@ let mouseInHero = false;
 
 // Declared at outer scope so bootstrap.js can always find it via typeof check,
 // even under strict mode or future ES module migration.
-var animateGlow = null;
+export let animateGlow = null;
 
 if (glowBall && domRefs.hero) {
   const hero = domRefs.hero;
@@ -47,7 +59,7 @@ if (glowBall && domRefs.hero) {
   });
   animateGlow = function () {
     const scrollFade = Math.max(0, 1 - (window.scrollY / 350));
-    const targetOp = (mouseInHero && heroVisible && pageVisible) ? scrollFade : 0;
+    const targetOp = (mouseInHero && state.heroVisible && state.pageVisible) ? scrollFade : 0;
 
     if (glowBall.style.opacity != targetOp) {
       glowBall.style.opacity = targetOp;
@@ -55,7 +67,7 @@ if (glowBall && domRefs.hero) {
 
     // Stop loop only if target is 0 AND transition is essentially done
     if (targetOp === 0 && (!glowBall.style.opacity || parseFloat(glowBall.style.opacity) < 0.01)) {
-      glowRafId = null;
+      state.glowRafId = null;
       return;
     }
 
@@ -63,13 +75,6 @@ if (glowBall && domRefs.hero) {
     glowY += (glowTargetY - glowY) * 0.08;
     glowBall.style.left = glowX + 'px';
     glowBall.style.top = glowY + 'px';
-    glowRafId = requestAnimationFrame(animateGlow);
+    state.glowRafId = requestAnimationFrame(animateGlow);
   };
 }
-
-window.showFilmstripIfReady = showFilmstripIfReady;
-window.hideFilmstripIfReady = hideFilmstripIfReady;
-window.clearFilmstripHideTimerIfReady = clearFilmstripHideTimerIfReady;
-window.setFilmstripLiftZoneDisplay = setFilmstripLiftZoneDisplay;
-window.startLoopsIfReady = startLoopsIfReady;
-window.animateGlow = animateGlow;

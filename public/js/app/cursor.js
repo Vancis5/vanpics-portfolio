@@ -1,3 +1,5 @@
+import { domRefs } from './dom.js';
+
 // CURSOR - mouse only
 let isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 if (isMouseDevice) {
