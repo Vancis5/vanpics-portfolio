@@ -261,7 +261,8 @@ if (isMobile) {
         if (thumbs.length > 0) {
           let thumbW = thumbs[0].offsetWidth;
           let gap = 5;
-          let paddingLeft = parseFloat(filmstripEl.style.paddingLeft) || 0;
+          let track = typeof getFilmstripTrack === 'function' ? getFilmstripTrack() : filmstripEl;
+          let paddingLeft = parseFloat(track.style.paddingLeft) || 0;
           let targetCenter = paddingLeft + f * (thumbW + gap) + thumbW / 2;
           startFsSync(targetCenter - filmstripEl.offsetWidth / 2);
         }
