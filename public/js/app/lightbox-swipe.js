@@ -154,9 +154,11 @@ if (isMobile) {
     // Over-scroll loop detection bounds
     let wrapTouchX = 0;
     let isUserTouching = false;
+    let filmstripReleaseFollowUntil = 0;
     imgWrap.addEventListener('touchstart', function (e) {
       if (currentLightboxIsMotion) return;
       isUserTouching = true;
+      filmstripReleaseFollowUntil = 0;
       if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
     }, { passive: true });
     imgWrap.addEventListener('touchend', function (e) {
@@ -172,8 +174,11 @@ if (isMobile) {
         // Pulled right while on the first slide -> Loop to end
         openLightbox(activePhotos.length - 1, -1);
       } else {
-        // Trigger final settle for current position
-        onSnapSettle();
+        filmstripReleaseFollowUntil = performance.now() + 120;
+        setTimeout(function () {
+          filmstripReleaseFollowUntil = 0;
+          onSnapSettle();
+        }, 120);
       }
     }, { passive: true });
 
@@ -241,6 +246,7 @@ if (isMobile) {
       if (currentLightboxIsMotion) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
+      if (performance.now() < filmstripReleaseFollowUntil) return;
       if (!isManuallyNavigating) onSnapSettle();
     });
     imgWrap.addEventListener('scroll', function () {
@@ -258,11 +264,13 @@ if (isMobile) {
         hint.classList.remove('visible');
       }
 
-      // Use exact sync while the finger is down, then a separate rAF settle after release.
+      let isFilmstripDirectPhase = isUserTouching || performance.now() < filmstripReleaseFollowUntil;
+
+      // Use exact sync while touching and briefly after release, then rAF-settle the final bit.
       if (!fsRaf && !isManuallyNavigating && !window.isAutoRapidScrolling && !isTouchingFilmstrip) {
-        if (isUserTouching && typeof syncFilmstripToPhotoProgress === 'function') {
+        if (isFilmstripDirectPhase && typeof syncFilmstripToPhotoProgress === 'function') {
           syncFilmstripToPhotoProgress(f);
-        } else if (!isUserTouching && typeof settleFilmstripToPhotoProgress === 'function') {
+        } else if (!isFilmstripDirectPhase && typeof settleFilmstripToPhotoProgress === 'function') {
           settleFilmstripToPhotoProgress(nearest);
         }
       }
@@ -274,7 +282,7 @@ if (isMobile) {
       }
 
       // preload text underneath if we cross 50% mark — but ONLY if not currently holding
-      if (nearest !== cur && !isUserTouching && !isManuallyNavigating) {
+      if (nearest !== cur && !isFilmstripDirectPhase && !isManuallyNavigating) {
         onSnapSettle(nearest);
       }
 
