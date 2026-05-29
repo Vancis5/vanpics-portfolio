@@ -8,6 +8,7 @@ let FILMSTRIP_CONFIG = window.APP_CONFIG.filmstrip;
 window.addEventListener('category-change', function () {
   filmstripBuilt = false;
   if (typeof filmstripEl !== 'undefined' && filmstripEl) {
+    resetFilmstripTransformScroll();
     getFilmstripTrack().innerHTML = '';
   }
   // Also reset mobile slides if they exist
@@ -29,6 +30,7 @@ function buildFilmstrip() {
   let THUMB_W = currentLightboxIsMotion ? (window.innerWidth >= 640 ? 78 : 68) : (window.innerWidth >= 640 ? 62 : 52);
   let pad = (window.innerWidth / 2) - (THUMB_W / 2);
   let track = getFilmstripTrack();
+  resetFilmstripTransformScroll();
   track.style.paddingLeft = pad + 'px';
   track.style.paddingRight = pad + 'px';
   track.innerHTML = '';
@@ -116,6 +118,14 @@ function commitFilmstripTransformScroll() {
   fsVisualScroll = value;
 }
 
+function resetFilmstripTransformScroll() {
+  if (!filmstripEl) return;
+  fsVisualScroll = 0;
+  fsTransformActive = false;
+  filmstripEl.scrollLeft = 0;
+  getFilmstripTrack().style.transform = '';
+}
+
 // Smooth lerp loop for mobile filmstrip tracking during swipe.
 // Uses frame-rate-independent exponential decay so the filmstrip
 // chases the target position without jitter or abrupt transitions.
@@ -136,7 +146,6 @@ function startFsSync(target) {
     let diff = fsSyncTarget - current;
     if (Math.abs(diff) < 0.5) {
       setFilmstripScroll(fsSyncTarget);
-      commitFilmstripTransformScroll();
       if (window.fsLenis) window.fsLenis.start();
       fsSyncRaf = null;
       fsSyncTarget = null;
@@ -149,11 +158,11 @@ function startFsSync(target) {
   fsSyncRaf = requestAnimationFrame(syncLoop);
 }
 
-function stopFsSync() {
+function stopFsSync(options) {
   if (fsRaf) { cancelAnimationFrame(fsRaf); fsRaf = null; }
   if (fsSyncRaf) { cancelAnimationFrame(fsSyncRaf); fsSyncRaf = null; }
   fsSyncTarget = null;
-  commitFilmstripTransformScroll();
+  if (!options || options.commit !== false) commitFilmstripTransformScroll();
   isManuallyNavigating = false;
   if (window.fsLenis) window.fsLenis.start();
 }
@@ -179,7 +188,7 @@ function updateFilmstrip() {
         startFsSync(fsTarget);
       } else {
         // Cold start: play strict smooth cubic ease 
-        stopFsSync();
+        stopFsSync({ commit: false });
         let startPos = getFilmstripScroll();
         let startTime = null;
         let duration = FILMSTRIP_CONFIG.scrollDuration;
@@ -192,7 +201,6 @@ function updateFilmstrip() {
           let elapsed = time - startTime;
           if (elapsed >= duration) {
             setFilmstripScroll(fsTarget);
-            commitFilmstripTransformScroll();
             if (window.fsLenis) window.fsLenis.start();
             fsRaf = null;
             isManuallyNavigating = false;
