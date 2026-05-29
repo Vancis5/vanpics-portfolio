@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
-import path from 'path';
 
 test.describe('Vanpics Portfolio CMS Admin Portal Tests', () => {
   
   test.beforeEach(async ({ page }) => {
     // Navigate to local admin panel (served by Vite)
-    await page.goto('http://localhost:5173/admin.html');
+    await page.goto('/admin.html');
   });
 
   test('Page loads successfully with branding and styling', async ({ page }) => {

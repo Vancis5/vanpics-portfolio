@@ -2,13 +2,19 @@ import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { getCategorySlug, motionProjects } from './media-data.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
+import { slugify } from './utils.js';
 import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfReady, setFilmstripLiftZoneDisplay } from './core.js';
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 
 let blurFlip = false;
+let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
+
+export function setMobileScrollToSlideCallback(callback) {
+  mobileScrollToSlideCallback = typeof callback === 'function' ? callback : null;
+}
 
 function refreshLightboxInfoRefs() {
   let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
@@ -27,7 +33,7 @@ function refreshLightboxInfoRefs() {
   return info;
 }
 
-function setLightboxBlur(src) {
+export function setLightboxBlur(src) {
   if (!src) return;
   let active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
   let inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
@@ -52,6 +58,7 @@ function clearLightboxPhotoPlaceholder(expectedToken) {
   wrap.classList.remove('photo-error');
   wrap.classList.add('photo-loaded');
   if (img) img.removeAttribute('data-loading-photo');
+  if (img) img.style.opacity = '1';
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
   clearTimeout(photoPlaceholderTimer);
   photoPlaceholderTimer = setTimeout(function () {
@@ -265,7 +272,7 @@ function updateLightboxDescPreview() {
 }
 
 
-function animateInfo(dir) {
+export function animateInfo(dir) {
   let info = domRefs.lightboxInfo;
   if (!info || !info.parentNode) {
     domRefs.lightboxInfo = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
@@ -335,10 +342,10 @@ export function openLightbox(i, direction, isMotion) {
   if (isMotion) clearLightboxPhotoPlaceholder();
 
   // Mobile: already open — natively smooth scroll
-  if (lb.classList.contains('open') && state.isMobile && mobileScrollToSlide && !isMotion) {
+  if (lb.classList.contains('open') && state.isMobile && mobileScrollToSlideCallback && !isMotion) {
     // Fallback to 1 if direction evaluates to 0 or is mathematically missing
     let dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
-    mobileScrollToSlide(i, true, dir);
+    mobileScrollToSlideCallback(i, true, dir);
 
     state.cur = i;
     updateFilmstrip();

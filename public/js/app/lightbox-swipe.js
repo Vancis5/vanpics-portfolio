@@ -2,7 +2,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { motionProjects } from './media-data.js';
-import { closeLightbox, openLightbox, navigateLightbox, setLightboxContent, setLoadSwipeNeighbors } from './lightbox.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback } from './lightbox.js';
 import { resetZoom, toggleImageZoom, updateZoomTransform } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
@@ -158,6 +158,7 @@ if (state.isMobile) {
       }
     }
     mobileScrollToSlide = scrollToSlide;
+    setMobileScrollToSlideCallback(scrollToSlide);
 
     // Over-scroll loop detection bounds
     let wrapTouchX = 0;
