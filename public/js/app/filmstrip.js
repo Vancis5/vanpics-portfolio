@@ -237,26 +237,26 @@ function startFilmstripSettle(target) {
 
   fsSettleTarget = target;
   let startTime = 0;
-  let duration = Math.max(220, Math.min(420, 190 + Math.abs(distance) * 3.2));
-  let initialVelocity = fsDirectVelocity;
-  if (Math.sign(initialVelocity) !== Math.sign(distance)) initialVelocity = 0;
-  let maxVelocity = Math.max(0.08, Math.abs(distance) / duration * 3.5);
-  initialVelocity = Math.max(-maxVelocity, Math.min(maxVelocity, initialVelocity));
+  let duration = Math.max(460, Math.min(760, 390 + Math.abs(distance) * 5.6));
+  let previous = start;
+  let maxStep = Math.max(0.9, Math.min(1.8, Math.abs(distance) / 12));
 
   function settleStep(time) {
     if (!startTime) startTime = time;
     let t = Math.min(1, (time - startTime) / duration);
-    let t2 = t * t;
-    let t3 = t2 * t;
-    let h00 = 2 * t3 - 3 * t2 + 1;
-    let h10 = t3 - 2 * t2 + t;
-    let h01 = -2 * t3 + 3 * t2;
-    let next = h00 * start + h10 * initialVelocity * duration + h01 * target;
+    let ease = 1 - Math.pow(1 - t, 3);
+    let next = start + distance * ease;
+    let step = next - previous;
+
+    if (Math.abs(step) > maxStep) {
+      next = previous + Math.sign(step) * maxStep;
+    }
 
     if (distance > 0) next = Math.min(target, Math.max(start, next));
     else next = Math.max(target, Math.min(start, next));
 
     setFilmstripScroll(next);
+    previous = next;
     if (t < 1) {
       fsSyncRaf = requestAnimationFrame(settleStep);
       return;
