@@ -531,8 +531,17 @@ body::after {
 
 /* MASONRY */
 #masonry {
+  position: relative;
   will-change: transform;
   touch-action: pan-y;
+}
+
+.masonry-panel[hidden] {
+  display: none;
+}
+
+.masonry-panel.is-active {
+  display: block;
 }
 
 .masonry-year-grid {
