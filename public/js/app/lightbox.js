@@ -62,7 +62,7 @@ function showLightboxPhotoError(expectedToken) {
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = 'image failed to load';
 }
 
-function prepareLightboxPhoto(p) {
+export function prepareLightboxPhoto(p) {
   let img = domRefs.lightboxImg;
   let wrap = domRefs.lightboxImgWrap;
   if (!img || !wrap || !p) return;
@@ -142,7 +142,7 @@ function runDescFlipTransition(options) {
 }
 
 // updates text + blur bg only — image src is set separately to avoid double-load
-function setLightboxContent(p) {
+export function setLightboxContent(p) {
   if (!p) return;
   refreshLightboxInfoRefs();
 
@@ -302,12 +302,11 @@ function animateInfo(dir) {
 // increments each navigation so stale callbacks from aborted navigations are ignored
 let navGen = 0;
 
-let currentLightboxIsMotion = false;
 function getCurrentLightboxItems() {
   return currentLightboxIsMotion ? motionProjects : activePhotos;
 }
 
-function openLightbox(i, direction, isMotion) {
+export function openLightbox(i, direction, isMotion) {
   let lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !isPopState) {
     pushNextState = true;
@@ -384,7 +383,7 @@ function openLightbox(i, direction, isMotion) {
       setLightboxContent(p);
       if (!isMotion) {
         prepareLightboxPhoto(p);
-        loadSwipeNeighbors();
+        window.loadSwipeNeighbors();
       }
 
       requestAnimationFrame(function () {
@@ -495,7 +494,7 @@ function openLightbox(i, direction, isMotion) {
       let bSrc = isMotion ? p.thumb : p.src;
       setLightboxBlur(bSrc);
       setLightboxContent(p);
-      if (!isMotion) loadSwipeNeighbors();
+      if (!isMotion) window.loadSwipeNeighbors();
 
       requestAnimationFrame(function () {
         if (openGen !== navGen) return;
@@ -525,7 +524,7 @@ function openLightbox(i, direction, isMotion) {
   }
 }
 
-function renderVideoInLightbox(p) {
+export function renderVideoInLightbox(p) {
   let shell = domRefs.motionPlayerShell;
   if (!shell) return;
   let ratio = p.aspectRatio || (16 / 9);
@@ -536,7 +535,7 @@ function renderVideoInLightbox(p) {
   shell.style.display = 'block'; // Ensure it's not hidden
 }
 
-function startUnifiedMotionPlayer(id) {
+export function startUnifiedMotionPlayer(id) {
   let prime = document.getElementById(id);
   if (!prime) return;
   let video = prime.querySelector('video');
@@ -544,7 +543,7 @@ function startUnifiedMotionPlayer(id) {
   if (video) video.play().catch(function () { });
 }
 
-function closeLightbox() {
+export function closeLightbox() {
   let lb = domRefs.lightbox;
   if (!lb.classList.contains('open')) return;
 
@@ -682,7 +681,7 @@ function closeLightbox() {
   }, 400);
 }
 
-function toggleLightboxDesc() {
+export function toggleLightboxDesc() {
   let content = domRefs.lightboxContent;
   let btn = domRefs.lightboxDescToggle;
   if (!content || !btn || btn.classList.contains('no-desc')) return;
@@ -705,14 +704,14 @@ function toggleLightboxDesc() {
 }
 
 // reset desc expansion on new photo
-function resetDescToggle() {
+export function resetDescToggle() {
   let info = domRefs.lightboxInfo;
   let btn = domRefs.lightboxDescToggle;
   if (info) info.classList.remove('desc-open');
   if (btn) btn.textContent = 'read more';
 }
 
-function loadSwipeNeighbors() {
+export function loadSwipeNeighbors() {
   if (currentLightboxIsMotion) return;
   let currentSet = getCurrentLightboxItems();
   let prev = (cur - 1 + currentSet.length) % currentSet.length;
@@ -721,7 +720,7 @@ function loadSwipeNeighbors() {
   let p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function () { });
 }
 
-function navigateLightbox(d) {
+export function navigateLightbox(d) {
   if (typeof lbZoomLevel !== 'undefined' && lbZoomLevel > 1) resetZoom();
   let currentSet = getCurrentLightboxItems();
   cur = (cur + d + currentSet.length) % currentSet.length;
@@ -743,3 +742,14 @@ document.addEventListener('keydown', function (e) {
 
 // desktop: click bg to close
 if (!isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);
+
+window.prepareLightboxPhoto = prepareLightboxPhoto;
+window.setLightboxContent = setLightboxContent;
+window.openLightbox = openLightbox;
+window.renderVideoInLightbox = renderVideoInLightbox;
+window.startUnifiedMotionPlayer = startUnifiedMotionPlayer;
+window.closeLightbox = closeLightbox;
+window.toggleLightboxDesc = toggleLightboxDesc;
+window.resetDescToggle = resetDescToggle;
+window.loadSwipeNeighbors = loadSwipeNeighbors;
+window.navigateLightbox = navigateLightbox;

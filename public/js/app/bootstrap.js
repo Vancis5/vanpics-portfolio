@@ -77,12 +77,14 @@ window.addEventListener('resize', function () {
 });
 
 // Visibility & Animation Loop Management
-function startLoops() {
+export function startLoops() {
   if (heroVisible && pageVisible) {
     if (!heroRafId) heroRafId = requestAnimationFrame(tick);
     if (!glowRafId && typeof animateGlow === 'function') glowRafId = requestAnimationFrame(animateGlow);
   }
 }
+
+window.startLoops = startLoops;
 
 const heroObs = new IntersectionObserver(function (entries) {
   heroVisible = entries[0].isIntersecting;

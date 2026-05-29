@@ -143,7 +143,7 @@ let cardObserver = new IntersectionObserver(function (entries) {
   scheduleGalleryRevealRepair(getActiveGalleryPanel(), 60);
 }, { rootMargin: '0px 0px -60px 0px' });
 
-function revealCards(scope, options) {
+export function revealCards(scope, options) {
   options = options || {};
   let root = scope || getActiveGalleryPanel() || document;
   root.querySelectorAll('.photo-card').forEach(function (card) {
@@ -420,7 +420,7 @@ function setActiveGalleryPanel(category, options) {
   return activePanel;
 }
 
-function rebuildGallery(newCategory, options) {
+export function rebuildGallery(newCategory, options) {
   options = options || {};
   newCategory = normalizeGalleryCategory(newCategory);
 
@@ -471,7 +471,7 @@ function rebuildGallery(newCategory, options) {
   });
 }
 
-function initFilters() {
+export function initFilters() {
   let photoBtn = document.querySelector('#gallery-header .photographs-btn');
   let figuresBtn = document.querySelector('#gallery-header .figures-btn');
   let motionBtn = document.querySelector('#gallery-header .motion-btn');
@@ -492,7 +492,7 @@ function initFilters() {
   });
 }
 
-function buildMasonry(category) {
+export function buildMasonry(category) {
   let masonry = domRefs.masonry;
   if (!masonry) return;
 
@@ -627,3 +627,8 @@ function buildMasonry(category) {
 
   if (category === currentCategory) setTimeout(function () { revealCards(panel); }, 150);
 }
+
+window.revealCards = revealCards;
+window.rebuildGallery = rebuildGallery;
+window.initFilters = initFilters;
+window.buildMasonry = buildMasonry;

@@ -1,6 +1,3 @@
-// PARALLAX
-let heroScrollY = 0;
-
 // CAROUSEL
 let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
 let CAROUSEL_CONFIG = window.APP_CONFIG.carousel;
@@ -23,7 +20,7 @@ function getCurrentSpeed(frame) {
 let rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
 let easeFrame = 0;
 
-function buildCarousel() {
+export function buildCarousel() {
   let rows = domRefs.heroRows;
 
   // show/hide row-3 based on device
@@ -125,7 +122,7 @@ function buildCarousel() {
   });
 }
 
-function tick() {
+export function tick() {
   if (!heroVisible || !pageVisible) { heroRafId = null; return; }
   let rows = isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
   let speed = getCurrentSpeed(easeFrame);
@@ -145,3 +142,6 @@ function tick() {
 
   heroRafId = requestAnimationFrame(tick);
 }
+
+window.buildCarousel = buildCarousel;
+window.tick = tick;

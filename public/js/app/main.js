@@ -7,6 +7,18 @@ import './media-data.js';
 import './motion-markup.js';
 import './hero-tagline.js';
 import './viewport.js';
+import './state.js';
+import './core.js';
+import './lightbox.js';
+import './lightbox-zoom.js';
+import './lightbox-swipe.js';
+import './gallery.js';
+import './hero-carousel.js';
+import './cursor.js';
+import './custom-scrollbar.js';
+import './filmstrip.js';
+import './bootstrap.js';
+import '../browser-fixes.js';
 
 function loadScript(src, options = {}) {
   return new Promise(function (resolve, reject) {
@@ -37,26 +49,8 @@ async function loadLenis() {
 }
 
 async function bootstrapApp() {
-  const legacyScripts = [
-    '/js/app/core.js',
-    '/js/app/lightbox.js',
-    '/js/app/lightbox-zoom.js',
-    '/js/app/lightbox-swipe.js',
-    '/js/app/gallery.js',
-    '/js/app/hero-carousel.js',
-    '/js/app/cursor.js',
-    '/js/app/custom-scrollbar.js',
-    '/js/app/filmstrip.js',
-    '/js/app/bootstrap.js',
-    '/js/browser-fixes.js'
-  ];
-
-  for (const src of legacyScripts) {
-    await loadScript(src);
-  }
-
   await loadLenis();
-  await loadScript('/js/smooth-scroll.js');
+  await import('../smooth-scroll.js');
 }
 
 bootstrapApp().catch(function (error) {

@@ -1,18 +1,7 @@
-let pushNextState = false;
-let isPopState = false;
 var domRefs = window.domRefs;
-var escapeHtml = window.escapeHtml;
-var slugify = window.slugify;
 
-var photoLibrary = window.photoLibrary;
 
 // ── MOTION: swap this to change which video plays ──
-var motionProjects = window.motionProjects;
-var getCategorySlug = window.getCategorySlug;
-var getInternalCategory = window.getInternalCategory;
-var getPhotoLibrary = window.getPhotoLibrary;
-var getMotionThumbnailMarkup = window.getMotionThumbnailMarkup;
-var getVideoPlayerMarkup = window.getVideoPlayerMarkup;
 
 function showFilmstripIfReady() {
   if (typeof window.showFilmstrip === 'function') window.showFilmstrip();
@@ -36,35 +25,6 @@ function setFilmstripLiftZoneDisplay(display) {
 function startLoopsIfReady() {
   if (typeof window.startLoops === 'function') window.startLoops();
 }
-
-let currentCategory = 'all';
-// Initial Route Detection: Determine category before building UI to prevent transition flicker
-if (window.location.hash) {
-  const initialHash = window.location.hash.substring(1).split('/')[0];
-  if (initialHash === 'figures') currentCategory = 'figures';
-  if (initialHash === 'motion') currentCategory = 'motion';
-}
-
-let activePhotos = [];
-let carouselPhotos = [];
-
-function updateActivePhotos() {
-  activePhotos = getPhotoLibrary(currentCategory);
-}
-
-updateActivePhotos();
-carouselPhotos = photoLibrary.filter(function (p) { return p.heroSlide === true && p.title !== ''; });
-if (carouselPhotos.length === 0) carouselPhotos = photoLibrary.filter(function (p) { return p.title !== ''; });
-
-// Pre-cache first 6 carousel images to warm up the browser cache without triggering "unused preload" warnings
-carouselPhotos.slice(0, 6).forEach(function (p) {
-  const img = new Image();
-  img.src = p.src;
-});
-let cur = 0;
-const isMobile = window.matchMedia('(hover: none)').matches;
-let heroVisible = true, pageVisible = true;
-let heroRafId = null, glowRafId = null;
 
 // GLOW BALL
 const glowBall = domRefs.glowBall;
@@ -106,3 +66,10 @@ if (glowBall && domRefs.hero) {
     glowRafId = requestAnimationFrame(animateGlow);
   };
 }
+
+window.showFilmstripIfReady = showFilmstripIfReady;
+window.hideFilmstripIfReady = hideFilmstripIfReady;
+window.clearFilmstripHideTimerIfReady = clearFilmstripHideTimerIfReady;
+window.setFilmstripLiftZoneDisplay = setFilmstripLiftZoneDisplay;
+window.startLoopsIfReady = startLoopsIfReady;
+window.animateGlow = animateGlow;

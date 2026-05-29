@@ -1,12 +1,9 @@
 // Continuous Zoom Physics Framework
-let lbZoomLevel = 1;
-let lbZoomPanX = 0;
-let lbZoomPanY = 0;
 let isDraggingZoom = false;
 let lastDragX = 0;
 let lastDragY = 0;
 
-function updateZoomTransform(img) {
+export function updateZoomTransform(img) {
   let mWrap = domRefs.lightboxImgWrap;
   let lb = domRefs.lightbox;
   if (lb) lb.classList.toggle('zoom-active', lbZoomLevel > 1);
@@ -94,13 +91,13 @@ function updateZoomTransform(img) {
   }
 }
 
-function resetZoom() {
+export function resetZoom() {
   lbZoomLevel = 1;
   let imgs = document.querySelectorAll('.zoomable');
   for (let i = 0; i < imgs.length; i++) updateZoomTransform(imgs[i]);
 }
 
-function toggleImageZoom(e) {
+export function toggleImageZoom(e) {
   if (isMobile) return; // Mobile tap logic is strictly handled in lbEl click listener
   let img = e.target;
   if (!img.classList.contains('zoomable')) return;
@@ -167,3 +164,7 @@ domRefs.lightboxImgWrap.addEventListener('wheel', function (e) {
 
   updateZoomTransform(img);
 }, { passive: false });
+
+window.updateZoomTransform = updateZoomTransform;
+window.resetZoom = resetZoom;
+window.toggleImageZoom = toggleImageZoom;
