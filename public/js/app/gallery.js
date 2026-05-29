@@ -246,7 +246,14 @@ function buildMasonry() {
 
     let overlay = document.createElement('div');
     overlay.className = 'photo-card-overlay';
-    overlay.innerHTML = '<div class="photo-card-title">' + escapeHtml(p.title || "") + '</div><div class="photo-card-date">' + escapeHtml(p.date || "undated") + '</div>';
+    let titleEl = document.createElement('div');
+    titleEl.className = 'photo-card-title';
+    titleEl.textContent = p.title || "";
+    let dateEl = document.createElement('div');
+    dateEl.className = 'photo-card-date';
+    dateEl.textContent = p.date || "undated";
+    overlay.appendChild(titleEl);
+    overlay.appendChild(dateEl);
     card.appendChild(imgEl);
     card.appendChild(overlay);
 
