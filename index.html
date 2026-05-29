@@ -9,11 +9,11 @@
   <meta name="description" content="Photography portfolio by Francis Evan.">
   <meta name="theme-color" content="#111010">
 
-  <!-- Favicons -->
+  <!-- favicon -->
   <link rel="icon" type="image/svg+xml" href="icons/aperture.svg">
   <link rel="apple-touch-icon" href="icons/aperture.svg">
 
-  <!-- Link Preview Meta Tags -->
+  <!-- link preview tags -->
   <meta property="og:url" content="https://vanpics.pages.dev">
   <meta property="og:type" content="website">
   <meta property="og:title" content="vanpics">
@@ -23,7 +23,7 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="800">
 
-  <!-- Twitter Meta Tags -->
+  <!-- twitter tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="twitter:domain" content="vanpics.pages.dev">
   <meta property="twitter:url" content="https://vanpics.pages.dev">
@@ -49,7 +49,7 @@
     integrity="sha384-KX08lNsWYubfaqhixUNDRCPT1gKYzflmBWz1vyfYku2IKsL1Tx9njUH6FcIEtWzk" crossorigin="anonymous"
     onerror="import('/vendor/video-minimal-ui.js')"></script>
   <link rel="stylesheet" href="css/motion-section.css">
-  <!-- Video.js minimal skin CSS -->
+  <!-- video.js -->
   <link rel="stylesheet" href="css/media-minimal-skin.css">
   <link rel="stylesheet" href="css/runtime-effects.css">
 </head>
@@ -161,33 +161,153 @@
 
 
   <template id="motion-player-template">
-      <div class="motion-player-prime">
-        <video-player>
+    <div class="motion-player-prime">
+      <video-player>
         <media-container class="media-minimal-skin media-minimal-skin--video">
           <video playsinline controlslist="nodownload"></video>
           <span data-motion-poster-slot></span>
-        <media-buffering-indicator class="media-buffering-indicator">
-        <svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" aria-hidden="true" viewBox="0 0 18 18"><rect width="2" height="5" x="8" y=".5" opacity=".5" rx="1"><animate attributeName="opacity" begin="0s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="12.243" y="2.257" opacity=".45" rx="1" transform="rotate(45 13.243 4.757)"><animate attributeName="opacity" begin="0.125s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="12.5" y="8" opacity=".4" rx="1"><animate attributeName="opacity" begin="0.25s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="10.743" y="12.243" opacity=".35" rx="1" transform="rotate(45 13.243 13.243)"><animate attributeName="opacity" begin="0.375s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="8" y="12.5" opacity=".3" rx="1"><animate attributeName="opacity" begin="0.5s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="2" height="5" x="3.757" y="10.743" opacity=".25" rx="1" transform="rotate(45 4.757 13.243)"><animate attributeName="opacity" begin="0.625s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x=".5" y="8" opacity=".15" rx="1"><animate attributeName="opacity" begin="0.75s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect><rect width="5" height="2" x="2.257" y="3.757" opacity=".1" rx="1" transform="rotate(45 4.757 4.757)"><animate attributeName="opacity" begin="0.875s" calcMode="linear" dur="1s" repeatCount="indefinite" values="1;0"/></rect></svg>
-        </media-buffering-indicator>
-        <media-controls class="media-controls">
-        <media-tooltip-group>
-        <div class="media-button-group">
-        <media-play-button commandfor="motion-play-tooltip" class="media-button media-button--subtle media-button--icon media-button--play"><svg class="media-icon media-icon--restart" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M9 17a8 8 0 0 1-8-8h1.5a6.5 6.5 0 1 0 1.43-4.07l1.643 1.643A.25.25 0 0 1 5.396 7H1.25A.25.25 0 0 1 1 6.75V2.604a.25.25 0 0 1 .427-.177l1.438 1.438A8 8 0 1 1 9 17"/><path fill="currentColor" d="m11.61 9.639-3.331 2.07a.826.826 0 0 1-1.15-.266.86.86 0 0 1-.129-.452V6.849C7 6.38 7.374 6 7.834 6c.158 0 .312.045.445.13l3.331 2.071a.858.858 0 0 1 0 1.438"/></svg><svg class="media-icon media-icon--play" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="m13.473 10.476-6.845 4.256a1.697 1.697 0 0 1-2.364-.547 1.77 1.77 0 0 1-.264-.93v-8.51C4 3.78 4.768 3 5.714 3c.324 0 .64.093.914.268l6.845 4.255a1.763 1.763 0 0 1 0 2.953"/></svg><svg class="media-icon media-icon--pause" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><rect width="4" height="12" x="3" y="3" fill="currentColor" rx="1.75"/><rect width="4" height="12" x="11" y="3" fill="currentColor" rx="1.75"/></svg></media-play-button>
-        <media-tooltip id="motion-play-tooltip" side="top" class="media-tooltip"></media-tooltip>
-        <media-seek-button commandfor="motion-seek-backward-tooltip" seconds="-10" class="media-button media-button--subtle media-button--icon media-button--seek"><div class="media-icon__container"><svg class="media-icon media-icon--flipped" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></div></media-seek-button>
-        <media-tooltip id="motion-seek-backward-tooltip" side="top" class="media-tooltip">Seek backward 10 seconds</media-tooltip>
-        <media-seek-button commandfor="motion-seek-forward-tooltip" seconds="10" class="media-button media-button--subtle media-button--icon media-button--seek"><div class="media-icon__container"><svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9"/></svg><span class="media-icon__label">10</span></div></media-seek-button>
-        <media-tooltip id="motion-seek-forward-tooltip" side="top" class="media-tooltip">Seek forward 10 seconds</media-tooltip>
-        </div>
-        <div class="media-time-controls"><media-time-group class="media-time-group"><media-time type="current" class="media-time media-time--current"></media-time><media-time-separator class="media-time-separator"></media-time-separator><media-time type="duration" class="media-time media-time--duration"></media-time></media-time-group><media-time-slider class="media-slider"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill><media-slider-buffer class="media-slider__buffer"></media-slider-buffer></media-slider-track><media-slider-thumb class="media-slider__thumb"></media-slider-thumb></media-time-slider></div>
-        <div class="media-button-group"><media-playback-rate-button commandfor="motion-rate-tooltip" class="media-button media-button--subtle media-button--icon media-button--playback-rate"></media-playback-rate-button><media-tooltip id="motion-rate-tooltip" side="top" class="media-tooltip">Toggle playback rate</media-tooltip><media-mute-button commandfor="motion-volume-popover" class="media-button media-button--subtle media-button--icon media-button--mute"><svg class="media-icon media-icon--volume-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752M14.5 7.586l-1.768-1.768a1 1 0 1 0-1.414 1.414L13.085 9l-1.767 1.768a1 1 0 0 0 1.414 1.414l1.768-1.768 1.768 1.768a1 1 0 0 0 1.414-1.414z"/></svg><svg class="media-icon media-icon--volume-low" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg><svg class="media-icon media-icon--volume-high" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M15.6 3.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4C15.4 5.9 16 7.4 16 9s-.6 3.1-1.8 4.3c-.4.4-.4 1 0 1.4.2.2.5.3.7.3.3 0 .5-.1.7-.3C17.1 13.2 18 11.2 18 9s-.9-4.2-2.4-5.7"/><path fill="currentColor" d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402"/></svg></media-mute-button><media-popover id="motion-volume-popover" open-on-hover delay="200" close-delay="100" side="top" class="media-popover media-popover--volume"><media-volume-slider class="media-slider" orientation="vertical" thumb-alignment="edge"><media-slider-track class="media-slider__track"><media-slider-fill class="media-slider__fill"></media-slider-fill></media-slider-track><media-slider-thumb class="media-slider__thumb media-slider__thumb--persistent"></media-slider-thumb></media-volume-slider></media-popover><media-fullscreen-button commandfor="motion-fullscreen-tooltip" class="media-button media-button--subtle media-button--icon media-button--fullscreen"><svg class="media-icon media-icon--fullscreen-enter" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M15.25 2a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V3.5h-3.75a.75.75 0 0 1-.743-.648L10 2.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM2.75 10a.75.75 0 0 1 .75.75v3.75h3.75a.75.75 0 0 1 .743.648L8 15.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg><svg class="media-icon media-icon--fullscreen-exit" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18"><path fill="currentColor" d="M10.75 2a.75.75 0 0 1 .75.75V6.5h3.75a.75.75 0 0 1 .743.648L16 7.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1-.75-.75"/><path fill="currentColor" d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM7.25 10a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V11.5H2.75a.75.75 0 0 1-.743-.648L2 10.75a.75.75 0 0 1 .75-.75z"/><path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z"/></svg></media-fullscreen-button><media-tooltip id="motion-fullscreen-tooltip" side="top" class="media-tooltip"></media-tooltip></div>
-        </media-tooltip-group>
-        </media-controls>
-        <div class="media-overlay"></div>
+          <media-buffering-indicator class="media-buffering-indicator">
+            <svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+              aria-hidden="true" viewBox="0 0 18 18">
+              <rect width="2" height="5" x="8" y=".5" opacity=".5" rx="1">
+                <animate attributeName="opacity" begin="0s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="2" height="5" x="12.243" y="2.257" opacity=".45" rx="1" transform="rotate(45 13.243 4.757)">
+                <animate attributeName="opacity" begin="0.125s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="5" height="2" x="12.5" y="8" opacity=".4" rx="1">
+                <animate attributeName="opacity" begin="0.25s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="5" height="2" x="10.743" y="12.243" opacity=".35" rx="1"
+                transform="rotate(45 13.243 13.243)">
+                <animate attributeName="opacity" begin="0.375s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="2" height="5" x="8" y="12.5" opacity=".3" rx="1">
+                <animate attributeName="opacity" begin="0.5s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="2" height="5" x="3.757" y="10.743" opacity=".25" rx="1" transform="rotate(45 4.757 13.243)">
+                <animate attributeName="opacity" begin="0.625s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="5" height="2" x=".5" y="8" opacity=".15" rx="1">
+                <animate attributeName="opacity" begin="0.75s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+              <rect width="5" height="2" x="2.257" y="3.757" opacity=".1" rx="1" transform="rotate(45 4.757 4.757)">
+                <animate attributeName="opacity" begin="0.875s" calcMode="linear" dur="1s" repeatCount="indefinite"
+                  values="1;0" />
+              </rect>
+            </svg>
+          </media-buffering-indicator>
+          <media-controls class="media-controls">
+            <media-tooltip-group>
+              <div class="media-button-group">
+                <media-play-button commandfor="motion-play-tooltip"
+                  class="media-button media-button--subtle media-button--icon media-button--play"><svg
+                    class="media-icon media-icon--restart" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="M9 17a8 8 0 0 1-8-8h1.5a6.5 6.5 0 1 0 1.43-4.07l1.643 1.643A.25.25 0 0 1 5.396 7H1.25A.25.25 0 0 1 1 6.75V2.604a.25.25 0 0 1 .427-.177l1.438 1.438A8 8 0 1 1 9 17" />
+                    <path fill="currentColor"
+                      d="m11.61 9.639-3.331 2.07a.826.826 0 0 1-1.15-.266.86.86 0 0 1-.129-.452V6.849C7 6.38 7.374 6 7.834 6c.158 0 .312.045.445.13l3.331 2.071a.858.858 0 0 1 0 1.438" />
+                  </svg><svg class="media-icon media-icon--play" xmlns="http://www.w3.org/2000/svg" width="18"
+                    height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="m13.473 10.476-6.845 4.256a1.697 1.697 0 0 1-2.364-.547 1.77 1.77 0 0 1-.264-.93v-8.51C4 3.78 4.768 3 5.714 3c.324 0 .64.093.914.268l6.845 4.255a1.763 1.763 0 0 1 0 2.953" />
+                  </svg><svg class="media-icon media-icon--pause" xmlns="http://www.w3.org/2000/svg" width="18"
+                    height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <rect width="4" height="12" x="3" y="3" fill="currentColor" rx="1.75" />
+                    <rect width="4" height="12" x="11" y="3" fill="currentColor" rx="1.75" />
+                  </svg></media-play-button>
+                <media-tooltip id="motion-play-tooltip" side="top" class="media-tooltip"></media-tooltip>
+                <media-seek-button commandfor="motion-seek-backward-tooltip" seconds="-10"
+                  class="media-button media-button--subtle media-button--icon media-button--seek">
+                  <div class="media-icon__container"><svg class="media-icon media-icon--flipped"
+                      xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" aria-hidden="true"
+                      viewBox="0 0 18 18">
+                      <path fill="currentColor"
+                        d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9" />
+                    </svg><span class="media-icon__label">10</span></div>
+                </media-seek-button>
+                <media-tooltip id="motion-seek-backward-tooltip" side="top" class="media-tooltip">Seek backward 10
+                  seconds</media-tooltip>
+                <media-seek-button commandfor="motion-seek-forward-tooltip" seconds="10"
+                  class="media-button media-button--subtle media-button--icon media-button--seek">
+                  <div class="media-icon__container"><svg class="media-icon" xmlns="http://www.w3.org/2000/svg"
+                      width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                      <path fill="currentColor"
+                        d="M1 9c0 2.21.895 4.21 2.343 5.657l1.06-1.06a6.5 6.5 0 1 1 9.665-8.665l-1.641 1.641a.25.25 0 0 0 .177.427h4.146a.25.25 0 0 0 .25-.25V2.604a.25.25 0 0 0-.427-.177l-1.438 1.438A8 8 0 0 0 1 9" />
+                    </svg><span class="media-icon__label">10</span></div>
+                </media-seek-button>
+                <media-tooltip id="motion-seek-forward-tooltip" side="top" class="media-tooltip">Seek forward 10
+                  seconds</media-tooltip>
+              </div>
+              <div class="media-time-controls"><media-time-group class="media-time-group"><media-time type="current"
+                    class="media-time media-time--current"></media-time><media-time-separator
+                    class="media-time-separator"></media-time-separator><media-time type="duration"
+                    class="media-time media-time--duration"></media-time></media-time-group><media-time-slider
+                  class="media-slider"><media-slider-track class="media-slider__track"><media-slider-fill
+                      class="media-slider__fill"></media-slider-fill><media-slider-buffer
+                      class="media-slider__buffer"></media-slider-buffer></media-slider-track><media-slider-thumb
+                    class="media-slider__thumb"></media-slider-thumb></media-time-slider></div>
+              <div class="media-button-group"><media-playback-rate-button commandfor="motion-rate-tooltip"
+                  class="media-button media-button--subtle media-button--icon media-button--playback-rate"></media-playback-rate-button><media-tooltip
+                  id="motion-rate-tooltip" side="top" class="media-tooltip">Toggle playback
+                  rate</media-tooltip><media-mute-button commandfor="motion-volume-popover"
+                  class="media-button media-button--subtle media-button--icon media-button--mute"><svg
+                    class="media-icon media-icon--volume-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752M14.5 7.586l-1.768-1.768a1 1 0 1 0-1.414 1.414L13.085 9l-1.767 1.768a1 1 0 0 0 1.414 1.414l1.768-1.768 1.768 1.768a1 1 0 0 0 1.414-1.414z" />
+                  </svg><svg class="media-icon media-icon--volume-low" xmlns="http://www.w3.org/2000/svg" width="18"
+                    height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402" />
+                  </svg><svg class="media-icon media-icon--volume-high" xmlns="http://www.w3.org/2000/svg" width="18"
+                    height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="M15.6 3.3c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4C15.4 5.9 16 7.4 16 9s-.6 3.1-1.8 4.3c-.4.4-.4 1 0 1.4.2.2.5.3.7.3.3 0 .5-.1.7-.3C17.1 13.2 18 11.2 18 9s-.9-4.2-2.4-5.7" />
+                    <path fill="currentColor"
+                      d="M.714 6.008h3.072l4.071-3.857c.5-.376 1.143 0 1.143.601V15.28c0 .602-.643.903-1.143.602l-4.071-3.858H.714c-.428 0-.714-.3-.714-.752V6.76c0-.451.286-.752.714-.752m10.568.59a.91.91 0 0 1 0-1.316.91.91 0 0 1 1.316 0c1.203 1.203 1.47 2.216 1.522 3.208q.012.255.011.51c0 1.16-.358 2.733-1.533 3.803a.7.7 0 0 1-.298.156c-.382.106-.873-.011-1.018-.156a.91.91 0 0 1 0-1.316c.57-.57.995-1.551.995-2.487 0-.944-.26-1.667-.995-2.402" />
+                  </svg></media-mute-button><media-popover id="motion-volume-popover" open-on-hover delay="200"
+                  close-delay="100" side="top" class="media-popover media-popover--volume"><media-volume-slider
+                    class="media-slider" orientation="vertical" thumb-alignment="edge"><media-slider-track
+                      class="media-slider__track"><media-slider-fill
+                        class="media-slider__fill"></media-slider-fill></media-slider-track><media-slider-thumb
+                      class="media-slider__thumb media-slider__thumb--persistent"></media-slider-thumb></media-volume-slider></media-popover><media-fullscreen-button
+                  commandfor="motion-fullscreen-tooltip"
+                  class="media-button media-button--subtle media-button--icon media-button--fullscreen"><svg
+                    class="media-icon media-icon--fullscreen-enter" xmlns="http://www.w3.org/2000/svg" width="18"
+                    height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="M15.25 2a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V3.5h-3.75a.75.75 0 0 1-.743-.648L10 2.75a.75.75 0 0 1 .75-.75z" />
+                    <path fill="currentColor"
+                      d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM2.75 10a.75.75 0 0 1 .75.75v3.75h3.75a.75.75 0 0 1 .743.648L8 15.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 .75-.75" />
+                    <path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z" />
+                  </svg><svg class="media-icon media-icon--fullscreen-exit" xmlns="http://www.w3.org/2000/svg"
+                    width="18" height="18" fill="none" aria-hidden="true" viewBox="0 0 18 18">
+                    <path fill="currentColor"
+                      d="M10.75 2a.75.75 0 0 1 .75.75V6.5h3.75a.75.75 0 0 1 .743.648L16 7.25a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1-.75-.75" />
+                    <path fill="currentColor"
+                      d="M14.72 2.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06zM7.25 10a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V11.5H2.75a.75.75 0 0 1-.743-.648L2 10.75a.75.75 0 0 1 .75-.75z" />
+                    <path fill="currentColor" d="M6.72 10.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06z" />
+                  </svg></media-fullscreen-button><media-tooltip id="motion-fullscreen-tooltip" side="top"
+                  class="media-tooltip"></media-tooltip></div>
+            </media-tooltip-group>
+          </media-controls>
+          <div class="media-overlay"></div>
         </media-container>
-        </video-player>
-        <button type="button" class="motion-start-button" aria-label="Play video" data-player-id=""><svg class="motion-start-button__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
-        </div>
+      </video-player>
+      <button type="button" class="motion-start-button" aria-label="Play video" data-player-id=""><svg
+          class="motion-start-button__icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z" />
+        </svg></button>
+    </div>
 
   </template>
   <footer id="site-footer">
@@ -230,7 +350,7 @@
   <script src="/js/app/bootstrap.js"></script>
   <script src="/js/browser-fixes.js"></script>
 
-  <!-- Lenis Smooth Scroll -->
+  <!-- lenis -->
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"
     integrity="sha384-eD5ubmuCcvTdCADWuSchJYE7wcj2nzNr0itbrh6w/KJyBiltSZ8w3VFRBSWu5YQ8"
     crossorigin="anonymous"></script>
