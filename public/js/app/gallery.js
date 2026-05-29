@@ -37,26 +37,111 @@ function saveRatioCache() {
   try { localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCache)); } catch (e) { }
 }
 
+let GALLERY_SCROLL_MEMORY_KEY = 'van_gallery_scroll_v1';
+let galleryScrollPositions = { all: null, figures: null, motion: null };
+let isGallerySwitching = false;
+let galleryScrollSaveRaf = null;
+try {
+  let storedScrollPositions = sessionStorage.getItem(GALLERY_SCROLL_MEMORY_KEY);
+  if (storedScrollPositions) {
+    let parsedScrollPositions = JSON.parse(storedScrollPositions);
+    ['all', 'figures', 'motion'].forEach(function (cat) {
+      let value = parsedScrollPositions[cat];
+      if (Number.isFinite(value)) galleryScrollPositions[cat] = value;
+    });
+  }
+} catch (e) { }
+
+function rememberGalleryScroll(category) {
+  if (!category) return;
+  galleryScrollPositions[category] = window.pageYOffset || document.documentElement.scrollTop || 0;
+  try { sessionStorage.setItem(GALLERY_SCROLL_MEMORY_KEY, JSON.stringify(galleryScrollPositions)); } catch (e) { }
+}
+
+function getActiveGalleryCategory() {
+  let active = document.querySelector('#gallery-header .active');
+  if (!active) return currentCategory;
+  if (active.classList.contains('figures-btn')) return 'figures';
+  if (active.classList.contains('motion-btn')) return 'motion';
+  return 'all';
+}
+
+function queueGalleryScrollMemory() {
+  if (isGallerySwitching || (domRefs.lightbox && domRefs.lightbox.classList.contains('open'))) return;
+  if (galleryScrollSaveRaf) return;
+  galleryScrollSaveRaf = requestAnimationFrame(function () {
+    galleryScrollSaveRaf = null;
+    rememberGalleryScroll(getActiveGalleryCategory());
+  });
+}
+
+window.addEventListener('scroll', queueGalleryScrollMemory, { passive: true });
+
+function getMaxPageScroll() {
+  return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
+
+function getGalleryHeaderScrollY() {
+  let gallerySec = domRefs.gallerySection;
+  if (!gallerySec) return 0;
+  return gallerySec.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+}
+
+function getGalleryTargetScroll(category, fallbackScroll) {
+  let saved = galleryScrollPositions[category];
+  if (Number.isFinite(saved)) return saved;
+  return Number.isFinite(fallbackScroll) ? fallbackScroll : getGalleryHeaderScrollY();
+}
+
+function jumpToGalleryScroll(scrollY) {
+  let clampedScroll = Math.max(0, Math.min(scrollY, getMaxPageScroll()));
+  if (window.lenis) window.lenis.scrollTo(clampedScroll, { immediate: true });
+  else window.scrollTo({ top: clampedScroll, behavior: 'auto' });
+  return clampedScroll;
+}
+
+function refreshGalleryScrollMetrics() {
+  if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
+  if (window.updateStickyHeaderSurface) window.updateStickyHeaderSurface();
+  if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+}
+
 function rebuildGallery(newCategory, options) {
   options = options || {};
   let m = domRefs.masonry;
   if (!m) return;
-  let oldCategory = currentCategory;
+  let oldCategory = getActiveGalleryCategory();
+  let gallerySec = domRefs.gallerySection;
+  let currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  let headerScrollY = getGalleryHeaderScrollY();
+  let targetScrollY = options.preserveScroll
+    ? currentScrollY
+    : getGalleryTargetScroll(newCategory, headerScrollY);
+  let lastRestoredScrollY = null;
 
-  // 1. Height Lock: Keep the page at its current length
+  if (!Number.isFinite(galleryScrollPositions[oldCategory])) {
+    rememberGalleryScroll(oldCategory);
+  }
+  isGallerySwitching = true;
+
+  let restoreTargetScroll = function () {
+    lastRestoredScrollY = jumpToGalleryScroll(targetScrollY);
+  };
+
+  let restoreTargetScrollIfStill = function () {
+    let liveScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    if (lastRestoredScrollY === null || Math.abs(liveScrollY - lastRestoredScrollY) < 16) {
+      restoreTargetScroll();
+    }
+  };
+
+  // 1. Height Lock: Keep the page at its current length while categories swap.
   let currentHeight = m.offsetHeight;
   m.style.minHeight = currentHeight + 'px';
+  if (gallerySec) gallerySec.style.minHeight = gallerySec.offsetHeight + 'px';
 
-  // 1.5 Anchor View: Ensure tap switches begin from the gallery header.
-  // Swipe commits preserve the user's exact scroll position so sticky state doesn't jump.
-  let header = domRefs.galleryHeader;
-  let lockedScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  if (!options.preserveScroll && header) {
-    let headerPos = header.getBoundingClientRect().top + window.pageYOffset;
-    if (lockedScrollY > headerPos) {
-      if (window.lenis) window.lenis.scrollTo(headerPos, { immediate: true });
-      else window.scrollTo({ top: headerPos, behavior: 'auto' });
-    }
+  if (targetScrollY <= getMaxPageScroll()) {
+    restoreTargetScroll();
   }
 
   // 2. Fast Swap
@@ -84,7 +169,6 @@ function rebuildGallery(newCategory, options) {
 
     m.innerHTML = '';
     m.classList.toggle('motion-grid-active', newCategory === 'motion');
-    let gallerySec = domRefs.gallerySection;
     if (gallerySec) gallerySec.classList.toggle('motion-active', newCategory === 'motion');
     m.classList.remove('switching');
     m.style.transition = '';
@@ -104,10 +188,25 @@ function rebuildGallery(newCategory, options) {
         setTimeout(function () { card.style.transition = ''; }, 80);
       });
     }
+
+    let switchCleaned = false;
+    let cleanupSwitch = function () {
+      if (switchCleaned) return;
+      switchCleaned = true;
+      m.style.minHeight = '';
+      if (gallerySec) gallerySec.style.minHeight = '';
+      restoreTargetScrollIfStill();
+      isGallerySwitching = false;
+      rememberGalleryScroll(newCategory);
+      refreshGalleryScrollMetrics();
+    };
+
     requestAnimationFrame(function () {
+      if (switchCleaned) return;
       m.style.minHeight = Math.max(currentHeight, m.offsetHeight) + 'px';
-      if (options.preserveScroll) { if (window.lenis) window.lenis.scrollTo(lockedScrollY, { immediate: true }); else window.scrollTo(0, lockedScrollY); }
-      if (window.updateCustomScrollbar) window.updateCustomScrollbar();
+      restoreTargetScroll();
+      refreshGalleryScrollMetrics();
+      setTimeout(cleanupSwitch, 600);
     });
 
     // 3. Update Nav UI
@@ -122,15 +221,12 @@ function rebuildGallery(newCategory, options) {
     // 4. Cleanup
     let updateCount = 0;
     let updateInterval = setInterval(function () {
-      if (window.updateCustomScrollbar) window.updateCustomScrollbar();
-      if (++updateCount >= 6) clearInterval(updateInterval);
+      restoreTargetScrollIfStill();
+      refreshGalleryScrollMetrics();
+      if (++updateCount >= 12) clearInterval(updateInterval);
     }, 100);
 
-    setTimeout(function () {
-      m.style.minHeight = '';
-      if (options.preserveScroll) { if (window.lenis) window.lenis.scrollTo(lockedScrollY, { immediate: true }); else window.scrollTo(0, lockedScrollY); }
-      if (window.updateCustomScrollbar) window.updateCustomScrollbar();
-    }, 600);
+    setTimeout(cleanupSwitch, 1200);
 
     if (typeof options.onReady === 'function') options.onReady();
   }, 0);
