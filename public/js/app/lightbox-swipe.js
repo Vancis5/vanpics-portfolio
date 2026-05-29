@@ -155,6 +155,7 @@ if (isMobile) {
     let wrapTouchX = 0;
     let isUserTouching = false;
     let filmstripReleaseFollowUntil = 0;
+    let FILMSTRIP_RELEASE_FOLLOW_MS = 72;
     imgWrap.addEventListener('touchstart', function (e) {
       if (currentLightboxIsMotion) return;
       isUserTouching = true;
@@ -174,11 +175,11 @@ if (isMobile) {
         // Pulled right while on the first slide -> Loop to end
         openLightbox(activePhotos.length - 1, -1);
       } else {
-        filmstripReleaseFollowUntil = performance.now() + 120;
+        filmstripReleaseFollowUntil = performance.now() + FILMSTRIP_RELEASE_FOLLOW_MS;
         setTimeout(function () {
           filmstripReleaseFollowUntil = 0;
           onSnapSettle();
-        }, 120);
+        }, FILMSTRIP_RELEASE_FOLLOW_MS);
       }
     }, { passive: true });
 
