@@ -83,6 +83,26 @@ function getGalleryAnchorScrollY() {
   return section.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
 }
 
+function getGalleryStickyStartScrollY() {
+  let section = domRefs.gallerySection;
+  let header = document.querySelector('#gallery-header');
+  if (!section || !header) return getGalleryAnchorScrollY();
+
+  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  let sectionTop = section.getBoundingClientRect().top + scrollY;
+  let sectionStyles = window.getComputedStyle(section);
+  let headerStyles = window.getComputedStyle(header);
+  let sectionPaddingTop = parseFloat(sectionStyles.paddingTop) || 0;
+  let stickyTop = parseFloat(headerStyles.top) || 0;
+
+  return Math.max(0, sectionTop + sectionPaddingTop - stickyTop);
+}
+
+function isGalleryHeaderStuck() {
+  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  return scrollY >= getGalleryStickyStartScrollY() - 1;
+}
+
 function getMaxPageScroll() {
   return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 }
@@ -94,10 +114,17 @@ function restoreWindowScroll(scrollY) {
   return clampedScroll;
 }
 
-function getGalleryTargetScroll(category) {
+function getGalleryTargetScroll(category, options) {
+  options = options || {};
   category = normalizeGalleryCategory(category);
   let saved = galleryScrollPositions[category];
-  return Number.isFinite(saved) ? saved : getGalleryAnchorScrollY();
+  let targetScrollY = Number.isFinite(saved) ? saved : getGalleryAnchorScrollY();
+
+  if (options.lockToStickyStart) {
+    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY());
+  }
+
+  return targetScrollY;
 }
 
 function refreshGalleryScrollMetrics() {
@@ -206,7 +233,10 @@ function rebuildGallery(newCategory, options) {
 
   let previousCategory = normalizeGalleryCategory(currentCategory);
   let currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let targetScrollY = options.preserveScroll ? currentScrollY : getGalleryTargetScroll(newCategory);
+  let lockToStickyStart = !options.preserveScroll && isGalleryHeaderStuck();
+  let targetScrollY = options.preserveScroll ? currentScrollY : getGalleryTargetScroll(newCategory, {
+    lockToStickyStart: lockToStickyStart
+  });
 
   if (previousCategory !== newCategory && !Number.isFinite(galleryScrollPositions[previousCategory])) {
     rememberGalleryScroll(previousCategory);
@@ -272,7 +302,9 @@ function buildMasonry(category) {
 
     if (shouldRestoreScroll) {
       requestAnimationFrame(function () {
-        restoreWindowScroll(getGalleryTargetScroll(currentCategory));
+        restoreWindowScroll(getGalleryTargetScroll(currentCategory, {
+          lockToStickyStart: isGalleryHeaderStuck()
+        }));
         refreshGalleryScrollMetrics();
       });
     }
