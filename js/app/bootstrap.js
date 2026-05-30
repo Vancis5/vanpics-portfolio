@@ -159,7 +159,15 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 // ─── DYNAMIC CLOUDFLARE R2/D1 DATABASE UPGRADE ───
 // Fetches the latest media dynamically in the background without blocking the initial page load/LCP.
 (async function loadDynamicMedia() {
-  const API_BASE_URL = (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') || window.location.origin.startsWith('file://') || !window.location.origin)
+  const API_BASE_URL = (
+    !window.location.origin || 
+    window.location.origin.includes('localhost') || 
+    window.location.origin.includes('127.0.0.1') || 
+    window.location.origin.includes('192.168.') || 
+    window.location.origin.includes('10.') || 
+    window.location.origin.includes('172.') || 
+    window.location.origin.startsWith('file://')
+  )
     ? 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev'
     : '';
 

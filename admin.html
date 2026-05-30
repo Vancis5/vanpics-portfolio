@@ -329,6 +329,13 @@
       stroke: var(--text-faint);
     }
 
+    .dropdowns-group {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     /* Category selection pill bars */
     .filter-pills {
       display: flex;
@@ -1068,8 +1075,16 @@
       header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1.2rem;
-        padding: 1.5rem 1.2rem;
+        gap: 1rem;
+        padding: 1.25rem 1rem;
+      }
+
+      .logo-area h1 {
+        font-size: 1.25rem;
+      }
+
+      .logo-area p {
+        font-size: 0.62rem;
       }
 
       .auth-container {
@@ -1087,21 +1102,22 @@
       }
 
       main {
-        padding: 0 1.2rem;
-        margin: 1.5rem auto;
+        padding: 0 1rem;
+        margin: 1.25rem auto;
       }
 
       .control-panel {
         flex-direction: column;
         align-items: stretch;
-        padding: 1.2rem;
-        gap: 1rem;
+        padding: 1rem;
+        gap: 0.75rem;
+        border-radius: 8px;
       }
 
       .search-filter-group {
         flex-direction: column;
         align-items: stretch;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .search-wrapper {
@@ -1109,18 +1125,96 @@
       }
 
       .filter-pills {
-        overflow-x: auto;
-        padding-bottom: 0.2rem;
+        display: flex !important;
+        gap: 0.4rem !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        padding-bottom: 0.35rem !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .filter-pill {
+        padding: 0.35rem 0.9rem !important;
+        font-size: 0.68rem !important;
+        flex-shrink: 0 !important;
+      }
+
+      .dropdowns-group {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.4rem !important;
+        width: 100% !important;
+      }
+
+      .select-wrapper {
+        width: 100% !important;
+      }
+
+      .filter-select {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.55rem 1.6rem 0.55rem 0.55rem !important;
+        font-size: 0.65rem !important;
+      }
+
+      .select-arrow {
+        right: 0.5rem !important;
       }
 
       .btn-create-trigger {
         width: 100%;
         justify-content: center;
+        height: 36px;
+        font-size: 0.68rem;
       }
 
       .modal-wrapper {
-        max-height: 100vh;
-        border-radius: 0;
+        max-height: 100% !important;
+        height: 100% !important;
+        border-radius: 0 !important;
+      }
+
+      .modal-header {
+        padding: 1rem 1.25rem !important;
+      }
+
+      .modal-body {
+        padding: 1.25rem !important;
+      }
+
+      .drop-zone-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .asset-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.75rem !important;
+      }
+
+      .card-preview-wrapper {
+        padding-top: 70% !important;
+      }
+
+      .card-info {
+        padding: 0.8rem 0.8rem 1rem 0.8rem !important;
+        gap: 0.5rem !important;
+      }
+
+      .card-title {
+        font-size: 0.72rem !important;
+      }
+
+      .badge {
+        font-size: 0.52rem !important;
+        padding: 0.1rem 0.25rem !important;
+      }
+
+      .card-meta-row {
+        font-size: 0.6rem !important;
+        gap: 0.25rem !important;
       }
     }
   </style>
@@ -1159,13 +1253,13 @@
   <main>
     <!-- Google Drive dashboard control panel -->
     <div class="control-panel">
-      <div class="search-filter-group" style="display: flex; gap: 1rem; flex-wrap: wrap; flex-grow: 1; align-items: center;">
-        <div class="search-wrapper" style="flex: 1 1 250px;">
+      <div class="search-filter-group">
+        <div class="search-wrapper">
           <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" id="dashboard-search" placeholder="search archives by title...">
         </div>
         
-        <div class="dropdowns-group" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <div class="dropdowns-group">
           <!-- Filter by Type -->
           <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
             <select id="filter-type" class="filter-select" style="min-width: 150px;">
@@ -1454,7 +1548,15 @@
 
   <!-- Client-side image processor using HTML5 Canvas -->
   <script>
-    const API_BASE_URL = (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') || window.location.origin.startsWith('file://') || !window.location.origin)
+    const API_BASE_URL = (
+      !window.location.origin || 
+      window.location.origin.includes('localhost') || 
+      window.location.origin.includes('127.0.0.1') || 
+      window.location.origin.includes('192.168.') || 
+      window.location.origin.includes('10.') || 
+      window.location.origin.includes('172.') || 
+      window.location.origin.startsWith('file://')
+    )
       ? 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev'
       : '';
 
