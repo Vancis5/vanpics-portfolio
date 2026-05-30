@@ -1155,10 +1155,67 @@
         font-size: 0.68rem;
       }
 
-      .modal-wrapper {
+      #upload-modal-overlay .modal-wrapper,
+      #edit-modal-overlay .modal-wrapper {
         max-height: 100% !important;
         height: 100% !important;
         border-radius: 0 !important;
+      }
+
+      /* Compact Centered Confirmation Overlay on Mobile */
+      #confirm-modal-overlay .modal-wrapper {
+        width: calc(100% - 2rem) !important;
+        max-width: 380px !important;
+        height: auto !important;
+        max-height: auto !important;
+        border-radius: 12px !important;
+        margin: auto !important;
+        padding: 1.5rem !important;
+        gap: 1.2rem !important;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.9rem !important;
+        margin-bottom: 1.5rem !important;
+      }
+
+      .field-group.full-width {
+        grid-column: span 1 !important;
+      }
+
+      .drop-zone {
+        padding: 1.75rem 1rem !important;
+        gap: 0.5rem !important;
+      }
+
+      .drop-zone svg {
+        width: 22px !important;
+        height: 22px !important;
+      }
+
+      .drop-zone p {
+        font-size: 0.65rem !important;
+      }
+
+      .drop-zone span {
+        font-size: 0.55rem !important;
+      }
+
+      .tabs-container {
+        margin-bottom: 1.5rem !important;
+      }
+
+      .tab-btn {
+        padding: 0.55rem 0.85rem !important;
+        font-size: 0.68rem !important;
+      }
+
+      /* Premium touch targets for action buttons */
+      #submit-btn,
+      .edit-modal-actions button {
+        height: 44px !important;
+        font-size: 0.72rem !important;
       }
 
       .modal-header {
