@@ -1182,21 +1182,23 @@ body::after {
   font-weight: 400;
   font-style: italic;
   line-height: 1.15;
-  color: var(--text);
+  color: var(--dynamic-text-color, var(--text));
   min-width: 0;
+  transition: color 0.4s ease;
 }
 
 #lightbox-desc {
   font-size: clamp(0.88rem, 2.5vw, 1rem);
   font-weight: 400;
   line-height: 1.75;
-  color: var(--text-muted);
+  color: var(--dynamic-text-muted, var(--text-muted));
   margin-bottom: 1rem;
   max-width: 38ch;
+  transition: color 0.4s ease;
 }
 
 #lightbox-desc a {
-  color: var(--text-muted);
+  color: var(--dynamic-text-muted, var(--text-muted));
   text-decoration: underline;
   text-decoration-color: var(--text-faint);
   text-underline-offset: 3px;
@@ -1260,8 +1262,8 @@ body::after {
     min-height: 1.35rem;
     background: none;
     border: 0;
-    border-bottom: 1px solid rgba(221, 216, 207, 0.22);
-    color: rgba(221, 216, 207, 0.52);
+    border-bottom: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.22));
+    color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.52));
     font-family: 'DM Mono', monospace;
     font-size: 0.5rem;
     letter-spacing: 0.16em;
@@ -1277,8 +1279,8 @@ body::after {
     filter: blur(0);
     visibility: visible;
     transition:
-      color 0.2s ease,
-      border-color 0.2s ease,
+      color 0.4s ease,
+      border-color 0.4s ease,
       opacity 0.28s ease,
       filter 0.28s ease,
       visibility 0s linear 0s;
@@ -1309,12 +1311,13 @@ body::after {
   font-weight: 400;
   font-size: 0.55rem;
   letter-spacing: 0.16em;
-  color: var(--text-faint);
+  color: var(--dynamic-text-faint, var(--text-faint));
   text-transform: lowercase;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
   align-items: flex-start;
+  transition: color 0.4s ease;
 }
 
 @media (hover: none) and (max-width: 767px) {
@@ -1439,16 +1442,16 @@ body::after {
   background: rgba(17, 16, 16, 0.76);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(221, 216, 207, 0.12);
+  border: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.12));
   border-radius: 4px;
-  color: rgba(221, 216, 207, 0.60);
+  color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.60));
   font-family: 'DM Mono', monospace;
   font-weight: 400;
   font-size: 0.57rem;
   letter-spacing: 0.14em;
   cursor: pointer;
   padding: 0.5rem 0.85rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
   text-transform: lowercase;
   -webkit-tap-highlight-color: transparent;
   min-height: 40px;
@@ -1457,8 +1460,8 @@ body::after {
 
 #lightbox-close:hover,
 #lightbox-close:active {
-  color: var(--text);
-  border-color: rgba(221, 216, 207, 0.28);
+  color: var(--dynamic-text-color, var(--text));
+  border-color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.28));
 }
 
 /* kill focus rings on all lightbox interactive elements — Firefox mobile shows them on tap */

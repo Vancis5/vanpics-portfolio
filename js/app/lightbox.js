@@ -125,6 +125,7 @@ export function prepareLightboxPhoto(p) {
     img.onerror = null;
     showLightboxPhotoError(token);
   };
+  img.crossOrigin = 'anonymous';
   img.src = p.src;
 
   if (img.complete && img.naturalWidth > 0) {
@@ -173,12 +174,132 @@ function runDescFlipTransition(options) {
       }, 450);
     });
   });
+}function rgbToHsl(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max === min) {
+    h = s = 0; // achromatic
+  } else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100)
+  };
+}
+
+function resetDynamicTextColor() {
+  const lbEl = domRefs.lightbox;
+  if (lbEl) {
+    lbEl.style.removeProperty('--dynamic-text-color');
+    lbEl.style.removeProperty('--dynamic-text-muted');
+    lbEl.style.removeProperty('--dynamic-text-faint');
+  }
+}
+
+function updateDynamicTextColor(p) {
+  if (state.currentLightboxIsMotion) {
+    resetDynamicTextColor();
+    return;
+  }
+
+  const img = state.isMobile
+    ? (domRefs.lightboxImgWrap ? domRefs.lightboxImgWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') : null)
+    : domRefs.lightboxImg;
+
+  if (!img) {
+    resetDynamicTextColor();
+    return;
+  }
+
+  function processColor() {
+    // Verify that we are still displaying the same photo
+    if (state.isMobile) {
+      const parentSlide = img.closest('.snap-slide');
+      if (parentSlide && parseInt(parentSlide.dataset.idx) !== state.cur) return;
+    } else {
+      if (!img.src || (p && !img.src.includes(p.src))) return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 10;
+      canvas.height = 10;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 10, 10);
+      const imgData = ctx.getImageData(0, 0, 10, 10).data;
+
+      let rSum = 0, gSum = 0, bSum = 0, count = 0;
+      for (let i = 0; i < imgData.length; i += 4) {
+        const r = imgData[i];
+        const g = imgData[i + 1];
+        const b = imgData[i + 2];
+        const a = imgData[i + 3];
+        if (a > 200) {
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        const r = Math.round(rSum / count);
+        const g = Math.round(gSum / count);
+        const b = Math.round(bSum / count);
+        
+        const hsl = rgbToHsl(r, g, b);
+        
+        // Mute saturation to a beautiful elegant range (18% - 35%)
+        const s = Math.min(Math.max(hsl.s * 0.75, 18), 35);
+        
+        // Lightness kept high and highly readable (82% - 85%) to guarantee contrast
+        const l = Math.min(Math.max(hsl.l, 82), 85);
+
+        const lbEl = domRefs.lightbox;
+        if (lbEl) {
+          lbEl.style.setProperty('--dynamic-text-color', `hsl(${hsl.h}, ${s}%, ${l}%)`);
+          lbEl.style.setProperty('--dynamic-text-muted', `hsla(${hsl.h}, ${s}%, ${l}%, 0.48)`);
+          lbEl.style.setProperty('--dynamic-text-faint', `hsla(${hsl.h}, ${s}%, ${l}%, 0.22)`);
+        }
+      } else {
+        resetDynamicTextColor();
+      }
+    } catch (e) {
+      console.warn("Dynamic text color extraction failed (possibly CORS):", e);
+      resetDynamicTextColor();
+    }
+  }
+
+  if (img.complete && img.naturalWidth > 0) {
+    processColor();
+  } else {
+    img.addEventListener('load', function onImgLoad() {
+      img.removeEventListener('load', onImgLoad);
+      processColor();
+    });
+  }
 }
 
 // updates text + blur bg only — image src is set separately to avoid double-load
 export function setLightboxContent(p) {
   if (!p) return;
   refreshLightboxInfoRefs();
+  updateDynamicTextColor(p);
 
   let safeTitle = p.title || '';
   let safeDesc = p.desc || '';

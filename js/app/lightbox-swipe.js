@@ -94,6 +94,7 @@ if (state.isMobile) {
           inner.classList.remove('photo-loading');
           inner.classList.add('photo-error');
         };
+        img.crossOrigin = 'anonymous';
         img.src = p.src;
         img.classList.add('zoomable');
         img.addEventListener('click', toggleImageZoom);
