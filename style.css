@@ -778,6 +778,18 @@ body::after {
   }
 }
 
+@media (hover: none) {
+  .motion-card .photo-card-overlay {
+    display: flex !important;
+    opacity: 1;
+    background: rgba(17, 16, 16, 0.45);
+  }
+
+  .motion-card img {
+    filter: brightness(0.72) saturate(0.85) blur(3px) !important;
+  }
+}
+
 /* mobile specific motion card adjustments */
 @media (max-width: 640px) {
   .motion-card .photo-card-title {
