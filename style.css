@@ -2079,6 +2079,7 @@ html {
   border-radius: 4px;
 }
 
+
 #gallery-header .active:focus-visible,
 #gallery-header .inactive:focus-visible {
   outline: 2px solid var(--text, #ddd8cf) !important;
@@ -2096,6 +2097,23 @@ html {
 #lightbox-close:focus:not(:focus-visible),
 .filmstrip-thumb:focus:not(:focus-visible) {
   outline: none !important;
+}
+
+/* The close button lives inside a dark overlay with clear hover/active states —
+   programmatic .focus() on page load always triggers :focus-visible, so we
+   suppress the outline entirely and rely on the button's own border for feedback */
+#lightbox-close:focus,
+#lightbox-close:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+/* Programmatic focus suppression — kept on until blur, not a timer */
+.prevent-focus-ring,
+.prevent-focus-ring:focus,
+.prevent-focus-ring:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
 }
 
 /* 2.4.11 Focus Not Obscured (Minimum) - Clear sticky elements (header/footer) */

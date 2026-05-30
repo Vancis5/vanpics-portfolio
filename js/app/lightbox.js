@@ -597,7 +597,16 @@ export function openLightbox(i, direction, isMotion) {
 
     lb.classList.add('open');
     let closeBtn = document.getElementById('lightbox-close');
-    if (closeBtn) closeBtn.focus();
+    if (closeBtn) {
+      if (state.lastInputType !== 'keyboard') {
+        closeBtn.classList.add('prevent-focus-ring');
+        closeBtn.addEventListener('blur', function removePFR() {
+          closeBtn.classList.remove('prevent-focus-ring');
+          closeBtn.removeEventListener('blur', removePFR);
+        });
+      }
+      closeBtn.focus();
+    }
     document.body.classList.add('lightbox-open');
     lb.scrollTop = 0;
     document.body.style.overflow = 'hidden';
@@ -701,7 +710,15 @@ export function startUnifiedMotionPlayer(id) {
   if (video) video.play().catch(function () { });
 }
 
-export function closeLightbox() {
+export function closeLightbox(eventOrIsKeyboard = false) {
+  let isKeyboard = false;
+  if (typeof eventOrIsKeyboard === 'boolean') {
+    isKeyboard = eventOrIsKeyboard;
+  } else if (eventOrIsKeyboard && eventOrIsKeyboard.type === 'click') {
+    let e = eventOrIsKeyboard;
+    isKeyboard = e.detail === 0 && (!e.pointerType || e.pointerType === '');
+  }
+
   let lb = domRefs.lightbox;
   if (!lb.classList.contains('open')) return;
 
@@ -714,7 +731,15 @@ export function closeLightbox() {
   let activeGen = ++navGen; // invalidates all pending callbacks
   lb.classList.remove('open');
   if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
-    previouslyFocusedElement.focus();
+    let el = previouslyFocusedElement;
+    if (!(isKeyboard || state.lastInputType === 'keyboard')) {
+      el.classList.add('prevent-focus-ring');
+      el.addEventListener('blur', function removePFR() {
+        el.classList.remove('prevent-focus-ring');
+        el.removeEventListener('blur', removePFR);
+      });
+    }
+    el.focus();
   }
   previouslyFocusedElement = null;
   document.body.classList.remove('lightbox-open');
@@ -900,7 +925,7 @@ document.addEventListener('keydown', function (e) {
   );
   if (isTyping || !domRefs.lightbox.classList.contains('open')) return;
   if (e.key === 'Escape') {
-    closeLightbox();
+    closeLightbox(true);
   }
   if (e.key === 'ArrowRight') navigateLightbox(1);
   if (e.key === 'ArrowLeft') navigateLightbox(-1);

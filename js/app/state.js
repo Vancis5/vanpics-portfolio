@@ -36,7 +36,8 @@ export const state = {
   filmstripHideTimer: null,
   lbZoomLevel: 1,
   lbZoomPanX: 0,
-  lbZoomPanY: 0
+  lbZoomPanY: 0,
+  lastInputType: 'pointer'
 };
 
 export function updateActivePhotos() {
@@ -50,3 +51,15 @@ state.carouselPhotos.slice(0, 6).forEach(function (photo) {
   const img = new Image();
   img.src = photo.src;
 });
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', function () {
+    state.lastInputType = 'keyboard';
+  }, { passive: true });
+  window.addEventListener('mousedown', function () {
+    state.lastInputType = 'pointer';
+  }, { passive: true });
+  window.addEventListener('touchstart', function () {
+    state.lastInputType = 'pointer';
+  }, { passive: true });
+}
