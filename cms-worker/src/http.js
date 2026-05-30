@@ -1,22 +1,36 @@
-const DEV_ORIGINS = new Set([
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:5174',
-]);
-
 export function getAllowedOrigins(env) {
   const configured = (env.ALLOWED_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return new Set([...DEV_ORIGINS, ...configured]);
+  return new Set(configured);
+}
+
+export function isOriginAllowed(origin, env) {
+  if (!origin) return false;
+  
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname;
+    
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.')
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  const allowed = getAllowedOrigins(env);
+  return allowed.has(origin);
 }
 
 export function corsHeaders(request, env) {
   const origin = request.headers.get('Origin');
-  const allowedOrigins = getAllowedOrigins(env);
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
@@ -24,7 +38,7 @@ export function corsHeaders(request, env) {
     Vary: 'Origin',
   };
 
-  if (origin && allowedOrigins.has(origin)) {
+  if (origin && isOriginAllowed(origin, env)) {
     headers['Access-Control-Allow-Origin'] = origin;
   }
 
