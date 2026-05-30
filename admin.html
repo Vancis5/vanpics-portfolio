@@ -22,7 +22,7 @@
       --surface-accent: rgba(212, 175, 55, 0.03);
       --accent: #d4af37; /* Luxe warm gold */
       --accent-glow: rgba(212, 175, 55, 0.15);
-      --radius: 6px;
+      --radius: 8px;
       --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       --danger: #d96868;
       --success: #82a878;
@@ -62,7 +62,7 @@
     header {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 2rem 2rem;
+      padding: 2rem 2rem 1.5rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -72,7 +72,7 @@
     .logo-area h1 {
       font-family: 'Cormorant Garamond', serif;
       font-weight: 400;
-      font-size: 1.8rem;
+      font-size: 1.9rem;
       letter-spacing: 0.05em;
       color: var(--text);
     }
@@ -194,7 +194,7 @@
       gap: 0.4rem;
       cursor: pointer;
       user-select: none;
-      margin-top: 0.5rem;
+      margin-top: 0.25rem;
     }
 
     .remember-checkbox-wrapper input[type="checkbox"] {
@@ -235,56 +235,372 @@
       letter-spacing: 0.05em;
     }
 
-    /* Main layout grid */
+    /* Workspace Dashboard Layout */
     main {
       max-width: 1400px;
-      margin: 2rem auto;
+      margin: 1.5rem auto 4rem auto;
       padding: 0 2rem;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 3rem;
     }
 
-    @media (max-width: 1024px) {
-      main {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
-    }
-
-    /* Monochrome Frosted Panel styling */
-    .panel {
+    /* Unified Control Panel (Search & Filter Bar) */
+    .control-panel {
       background: var(--surface);
-      backdrop-filter: blur(15px) saturate(110%);
-      -webkit-backdrop-filter: blur(15px) saturate(110%);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 2.5rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+      padding: 1.25rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .search-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-grow: 1;
+    }
+
+    .search-wrapper {
+      position: relative;
+      width: 320px;
+    }
+
+    .search-wrapper input {
+      width: 100%;
+      padding-left: 2.2rem;
+      height: 38px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      stroke: var(--text-faint);
+    }
+
+    /* Category selection pill bars */
+    .filter-pills {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .filter-pill {
+      background: rgba(17, 16, 16, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      padding: 0.4rem 1.1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: lowercase;
+      cursor: pointer;
       transition: var(--transition);
     }
 
-    .panel:hover {
-      border-color: rgba(244, 238, 225, 0.12);
+    .filter-pill:hover {
+      color: var(--text);
+      border-color: var(--border-focus);
     }
 
-    .panel-title {
+    .filter-pill.active {
+      background: var(--accent);
+      color: #0c0b0b;
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Primary CTA Button - floating layout */
+    .btn-create-trigger {
+      background: var(--accent);
+      color: #0c0b0b;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0 1.5rem;
+      height: 38px;
       font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      font-weight: 400;
-      margin-bottom: 2rem;
+      font-weight: 500;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: var(--text);
+      gap: 0.5rem;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px var(--accent-glow);
     }
 
-    .panel-title svg {
-      width: 16px;
-      height: 16px;
-      stroke: var(--text-muted);
+    .btn-create-trigger svg {
+      stroke: #0c0b0b;
+    }
+
+    .btn-create-trigger:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+    }
+
+    /* Google Drive Grid View */
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Asset Card */
+    .asset-card {
+      background: var(--surface);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .asset-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(244, 238, 225, 0.15);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    }
+
+    .card-preview-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 65%; /* 16:10 aspect grid preview */
+      background: #050505;
+      overflow: hidden;
+    }
+
+    .card-preview-media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.85);
+      transition: var(--transition);
+    }
+
+    .asset-card:hover .card-preview-media {
+      filter: brightness(1.05);
+      transform: scale(1.03);
+    }
+
+    /* Play overlay for video cards */
+    .video-play-indicator {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-play-indicator svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--text);
+      opacity: 0.8;
+      transition: var(--transition);
+    }
+
+    .asset-card:hover .video-play-indicator svg {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+
+    .card-info {
+      padding: 1.2rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-grow: 1;
+    }
+
+    .card-meta-row {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .card-actions-row {
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.4rem;
+    }
+
+    .btn-card-action {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .btn-card-action:hover {
+      color: var(--accent);
+      border-color: var(--border-focus);
+      background: rgba(212, 175, 55, 0.05);
+    }
+
+    .btn-card-action.danger:hover {
+      color: var(--danger);
+      border-color: rgba(217, 104, 104, 0.2);
+      background: rgba(217, 104, 104, 0.05);
+    }
+
+    .btn-card-action svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Elegant Custom Dark Mode Overlay Scrollbar System */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(244, 238, 225, 0.1);
+      border-radius: 10px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      transition: background 0.3s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(244, 238, 225, 0.25);
+    }
+
+    /* Firefox Support */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(244, 238, 225, 0.15) transparent;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 4, 4, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-wrapper {
+      background: #0f0e0e;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow: hidden; /* Prevent double scrollbars; modal-body handles scrolling */
+      box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+      transform: translateY(30px);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-overlay.open .modal-wrapper {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0; /* Keep header size fixed */
+    }
+
+    .modal-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-close-modal {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      cursor: pointer;
+      padding: 0.5rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .btn-close-modal:hover {
+      color: var(--text);
+      background: rgba(244, 238, 225, 0.05);
+    }
+
+    .modal-body {
+      padding: 2rem;
+      overflow-y: auto; /* Handle all modal scrolling with custom scrollbar */
+      flex-grow: 1;
     }
 
     /* Segmented Tab Bar */
@@ -294,7 +610,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 0.25rem;
-      margin-bottom: 2.2rem;
+      margin-bottom: 2rem;
       gap: 0.25rem;
     }
 
@@ -337,27 +653,21 @@
       stroke: #0c0b0b;
     }
 
-    /* File Drop Zone wrapper */
+    /* Dropzones */
     .drop-zones-wrapper {
-      margin-bottom: 2.5rem;
+      margin-bottom: 2.2rem;
     }
 
     .drop-zone-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    @media (max-width: 640px) {
-      .drop-zone-grid {
-        grid-template-columns: 1fr;
-      }
+      gap: 1.25rem;
     }
 
     .drop-zone {
       border: 1px dashed var(--border);
       border-radius: var(--radius);
-      padding: 3rem 1.5rem;
+      padding: 2.5rem 1.2rem;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
@@ -365,7 +675,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.7rem;
       position: relative;
       overflow: hidden;
     }
@@ -377,8 +687,8 @@
     }
 
     .drop-zone svg {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       stroke: var(--text-faint);
       transition: var(--transition);
     }
@@ -388,16 +698,14 @@
     }
 
     .drop-zone p {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: lowercase;
     }
 
     .drop-zone span {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       color: var(--text-faint);
       text-transform: lowercase;
       border: 1px solid var(--border);
@@ -442,8 +750,6 @@
       align-items: center;
       justify-content: center;
       transition: var(--transition);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.85rem;
       z-index: 20;
     }
 
@@ -453,12 +759,12 @@
       border-color: transparent;
     }
 
-    /* Form Fields grid */
+    /* Form grid layout */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2.5rem;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
     }
 
     .field-group {
@@ -472,15 +778,11 @@
     }
 
     label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 400;
+      font-size: 0.65rem;
       color: var(--text-muted);
       text-transform: lowercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
     }
-
-    /* All inputs inherit DM Mono from body */
 
     /* Elegant toggle switch */
     .toggle-wrapper {
@@ -494,8 +796,7 @@
     }
 
     .toggle-wrapper span {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       text-transform: lowercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
@@ -547,18 +848,18 @@
       background-color: var(--accent);
     }
 
-    /* Luxe warm-gold minimalist button */
+    /* Luxe gold button */
     .btn {
       background: transparent;
       color: var(--text);
       border: 1px solid var(--text-faint);
       border-radius: var(--radius);
-      padding: 0.85rem 2rem;
+      padding: 0.8rem 2rem;
       font-family: 'DM Mono', monospace;
       font-weight: 400;
       font-size: 0.78rem;
       text-transform: uppercase;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.15em;
       cursor: pointer;
       transition: var(--transition);
       display: flex;
@@ -586,10 +887,6 @@
       stroke: var(--accent);
     }
 
-    .btn:active {
-      background: rgba(212, 175, 55, 0.06);
-    }
-
     .btn:disabled {
       border-color: var(--border);
       color: var(--text-faint);
@@ -602,10 +899,10 @@
       stroke: var(--text-faint);
     }
 
-    /* Processing visualizer */
+    /* Pipeline Status */
     .pipeline-status {
       display: none;
-      margin-top: 2rem;
+      margin-top: 1.5rem;
       background: rgba(17, 16, 16, 0.6);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -616,7 +913,6 @@
       display: flex;
       align-items: center;
       gap: 0.65rem;
-      font-family: 'DM Mono', monospace;
       font-size: 0.72rem;
       margin-bottom: 0.65rem;
       color: var(--text-muted);
@@ -655,194 +951,7 @@
       80%, 100% { content: '...'; }
     }
 
-    /* Sidebar listings */
-    .list-panel {
-      display: flex;
-      flex-direction: column;
-      max-height: 850px;
-    }
-
-    .items-container {
-      overflow-y: overlay;
-      overflow-y: auto;
-      flex-grow: 1;
-      margin-top: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(244, 238, 225, 0.12) transparent;
-    }
-
-    /* Overlay scrollbar — floats on top, no layout shift */
-    .items-container::-webkit-scrollbar {
-      width: 5px;
-      background: transparent;
-    }
-
-    .items-container::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .items-container::-webkit-scrollbar-thumb {
-      background: rgba(244, 238, 225, 0.12);
-      border-radius: 4px;
-    }
-
-    .items-container::-webkit-scrollbar-thumb:hover {
-      background: rgba(244, 238, 225, 0.25);
-    }
-
-    .archive-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: rgba(17, 16, 16, 0.4);
-      border: 1px solid var(--border);
-      padding: 0.75rem;
-      border-radius: var(--radius);
-      transition: var(--transition);
-    }
-
-    .archive-item:hover {
-      border-color: rgba(244, 238, 225, 0.15);
-      background: rgba(17, 16, 16, 0.7);
-    }
-
-    /* Aspect Wrapper for media item list */
-    .archive-media-wrapper {
-      position: relative;
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius);
-      overflow: hidden;
-      background: #000;
-      flex-shrink: 0;
-    }
-
-    .archive-thumb {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      filter: brightness(0.8);
-      transition: var(--transition);
-    }
-
-    .archive-item:hover .archive-thumb {
-      filter: brightness(1.05);
-      transform: scale(1.05);
-    }
-
-    .play-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: var(--transition);
-    }
-
-    .play-overlay svg {
-      width: 16px;
-      height: 16px;
-      fill: var(--text);
-      opacity: 0.85;
-      transition: var(--transition);
-    }
-
-    .archive-item:hover .play-overlay {
-      background: rgba(0, 0, 0, 0.2);
-    }
-
-    .archive-item:hover .play-overlay svg {
-      opacity: 1;
-      transform: scale(1.15);
-    }
-
-    .archive-info {
-      flex-grow: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-    }
-
-    .archive-title-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .archive-title {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.82rem;
-      font-style: normal;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text);
-    }
-
-    /* Visual High Fidelity Badges */
-    .badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.58rem;
-      padding: 0.12rem 0.35rem;
-      border-radius: 3px;
-      text-transform: uppercase;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-    }
-
-    .badge-photo {
-      color: var(--accent);
-      border: 1px solid rgba(212, 175, 55, 0.25);
-      background: rgba(212, 175, 55, 0.04);
-    }
-
-    .badge-video {
-      color: #ff9800;
-      border: 1px solid rgba(255, 152, 0, 0.25);
-      background: rgba(255, 152, 0, 0.04);
-    }
-
-    .badge-figures {
-      color: #a18cd1;
-      border: 1px solid rgba(161, 140, 209, 0.25);
-      background: rgba(161, 140, 209, 0.04);
-    }
-
-    .archive-meta {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      text-transform: lowercase;
-    }
-
-    .btn-delete {
-      background: none;
-      border: none;
-      color: var(--text-faint);
-      cursor: pointer;
-      padding: 0.4rem;
-      border-radius: var(--radius);
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-delete svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    .btn-delete:hover {
-      color: var(--danger);
-      background: rgba(217, 104, 104, 0.08);
-    }
-
+    /* Toast */
     .toast {
       position: fixed;
       bottom: 2rem;
@@ -875,7 +984,36 @@
     .toast-success { border-left: 2px solid var(--accent); }
     .toast-error { border-left: 2px solid var(--danger); }
 
-    /* ─── Mobile Responsive ─── */
+    /* Visual High Fidelity Badges */
+    .badge {
+      font-size: 0.58rem;
+      padding: 0.12rem 0.35rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      display: inline-block;
+    }
+
+    .badge-photo {
+      color: var(--accent);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      background: rgba(212, 175, 55, 0.04);
+    }
+
+    .badge-video {
+      color: #ff9800;
+      border: 1px solid rgba(255, 152, 0, 0.25);
+      background: rgba(255, 152, 0, 0.04);
+    }
+
+    .badge-figures {
+      color: #a18cd1;
+      border: 1px solid rgba(161, 140, 209, 0.25);
+      background: rgba(161, 140, 209, 0.04);
+    }
+
+    /* ─── Responsive Grid ─── */
     @media (max-width: 768px) {
       header {
         flex-direction: column;
@@ -901,130 +1039,38 @@
       main {
         padding: 0 1.2rem;
         margin: 1.5rem auto;
-        gap: 1.5rem;
       }
 
-      .panel {
-        padding: 1.5rem 1.2rem;
-      }
-
-      .panel-title {
-        font-size: 0.68rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .tabs-container {
-        margin-bottom: 1.5rem;
-      }
-
-      .tab-btn {
-        padding: 0.6rem 0.5rem;
-        font-size: 0.6rem;
-        letter-spacing: 0.08em;
-      }
-
-      .form-grid {
-        grid-template-columns: 1fr;
-        gap: 1.2rem;
-        margin-bottom: 2rem;
-      }
-
-      .field-group.full-width {
-        grid-column: span 1;
-      }
-
-      .drop-zone {
-        padding: 2rem 1rem;
-      }
-
-      .drop-zone p { font-size: 0.58rem; }
-      .drop-zone svg { width: 24px; height: 24px; }
-
-      .drop-zone-grid {
-        grid-template-columns: 1fr;
+      .control-panel {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1.2rem;
         gap: 1rem;
       }
 
-      .btn {
-        padding: 0.75rem 1.2rem;
-        font-size: 0.65rem;
-      }
-
-      .list-panel {
-        max-height: 500px;
-      }
-
-      .archive-item {
-        padding: 0.6rem;
-        gap: 0.75rem;
-      }
-
-      .archive-media-wrapper {
-        width: 40px;
-        height: 40px;
-      }
-
-      .archive-title {
-        font-size: 0.68rem;
-      }
-
-      .archive-meta {
-        font-size: 0.52rem;
-      }
-
-      .badge {
-        font-size: 0.48rem;
-        padding: 0.1rem 0.3rem;
-      }
-
-      .toast {
-        left: 1rem;
-        right: 1rem;
-        bottom: 1rem;
-        font-size: 0.6rem;
-      }
-
-      .pipeline-step {
-        font-size: 0.56rem;
-      }
-    }
-
-    @media (max-width: 420px) {
-      header {
-        padding: 1.2rem 1rem;
-      }
-
-      main {
-        padding: 0 1rem;
-        margin: 1rem auto;
-      }
-
-      .panel {
-        padding: 1.2rem 1rem;
-      }
-
-      .logo-area h1 {
-        font-size: 1.4rem;
-      }
-
-      .logo-area p {
-        font-size: 0.58rem;
-      }
-
-      .tab-btn {
-        font-size: 0.55rem;
-        gap: 0.3rem;
-      }
-
-      .tab-btn svg {
-        width: 12px;
-        height: 12px;
-      }
-
-      .archive-title-wrapper {
+      .search-filter-group {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .search-wrapper {
+        width: 100%;
+      }
+
+      .filter-pills {
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+      }
+
+      .btn-create-trigger {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .modal-wrapper {
+        max-height: 100vh;
+        border-radius: 0;
       }
     }
   </style>
@@ -1040,18 +1086,16 @@
     <div class="auth-container">
       <div class="auth-input-wrapper">
         <div class="auth-status-icon" id="auth-status" title="Token status: Unverified">
-          <!-- Secured Admin (Gold/Green Lock) -->
+          <!-- Secured Admin -->
           <svg class="lock-icon" id="lock-secured" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-          <!-- Unverified (Orange/Yellow Lock) -->
+          <!-- Unverified -->
           <svg class="lock-icon text-warning" id="lock-unverified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <!-- Verification in progress spinner -->
           <div class="spinner" id="auth-spinner" style="display:none;"></div>
         </div>
         <input type="password" id="secret-token" class="secret-input" placeholder="secret token">
         <button type="button" class="btn-toggle-password" id="toggle-password-btn" title="Toggle token visibility">
-          <!-- Eye Show -->
           <svg id="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <!-- Eye Hide -->
           <svg id="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </button>
       </div>
@@ -1063,148 +1107,247 @@
   </header>
 
   <main>
-    <!-- Left panel: Upload Form & Browser Pipeline -->
-    <div class="panel">
-      <h2 class="panel-title">
-        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
-        catalog new media
-      </h2>
-
-      <!-- Segmented Tab switcher for Photo vs Video Upload Mode -->
-      <div class="tabs-container">
-        <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
-          photo archive
-        </button>
-        <button type="button" class="tab-btn" id="tab-video" data-mode="video">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
-          video archive
-        </button>
+    <!-- Google Drive dashboard control panel -->
+    <div class="control-panel">
+      <div class="search-filter-group">
+        <div class="search-wrapper">
+          <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="dashboard-search" placeholder="search archives by title...">
+        </div>
+        
+        <div class="filter-pills" id="filter-pills">
+          <button class="filter-pill active" data-filter="all">all</button>
+          <button class="filter-pill" data-filter="photo">photos</button>
+          <button class="filter-pill" data-filter="video">videos</button>
+          <button class="filter-pill" data-filter="figures">figures</button>
+        </div>
       </div>
       
-      <!-- Drag/Drop Media Container Wrapper -->
-      <div class="drop-zones-wrapper">
-        <!-- Photo Mode Dropzone -->
-        <div class="drop-zone" id="drop-zone-photo">
-          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
-          </svg>
-          <p>drag raw photo here or click to browse</p>
-          <span>supports jpeg, png, webp</span>
-          <input type="file" id="file-input-photo" accept="image/*">
-          
-          <div class="preview-container" id="preview-container-photo">
-            <img id="image-preview-photo" class="preview-image" src="" alt="preview">
-            <button class="remove-file" id="remove-btn-photo" type="button">&times;</button>
-          </div>
+      <button class="btn-create-trigger" id="btn-open-upload-modal">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+        add new asset
+      </button>
+    </div>
+
+    <!-- Main visual directory cards grid -->
+    <div class="asset-grid" id="items-container">
+      <p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.05em;">loading active archives...</p>
+    </div>
+  </main>
+
+  <!-- Gorgeous CREATE/UPLOAD Modal overlay -->
+  <div class="modal-overlay" id="upload-modal-overlay">
+    <div class="modal-wrapper">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
+          catalog new media
+        </h3>
+        <button class="btn-close-modal" id="btn-close-upload-modal" aria-label="Close modal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Segmented Tab switcher for Photo vs Video Upload Mode -->
+        <div class="tabs-container">
+          <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+            photo archive
+          </button>
+          <button type="button" class="tab-btn" id="tab-video" data-mode="video">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
+            video archive
+          </button>
         </div>
-
-        <!-- Video Mode Dual Dropzone Grid -->
-        <div class="drop-zone-grid" id="drop-zone-video-grid" style="display: none;">
-          <!-- Video File Drop Zone -->
-          <div class="drop-zone" id="drop-zone-video">
-            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
-            </svg>
-            <p>drag raw mp4/webm file here</p>
-            <span>supports mp4, webm, mov</span>
-            <input type="file" id="file-input-video" accept="video/mp4,video/webm,video/quicktime">
-            
-            <div class="preview-container" id="preview-container-video">
-              <video id="video-preview" class="preview-image" muted loop playsinline></video>
-              <button class="remove-file" id="remove-btn-video" type="button">&times;</button>
-            </div>
-          </div>
-
-          <!-- Video Poster Drop Zone -->
-          <div class="drop-zone" id="drop-zone-poster">
+        
+        <!-- Drag/Drop Media Container Wrapper -->
+        <div class="drop-zones-wrapper">
+          <!-- Photo Mode Dropzone -->
+          <div class="drop-zone" id="drop-zone-photo">
             <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
             </svg>
-            <p>drag poster image here</p>
+            <p>drag raw photo here or click to browse</p>
             <span>supports jpeg, png, webp</span>
-            <input type="file" id="file-input-poster" accept="image/*">
+            <input type="file" id="file-input-photo" accept="image/*">
             
-            <div class="preview-container" id="preview-container-poster">
-              <img id="image-preview-poster" class="preview-image" src="" alt="preview">
-              <button class="remove-file" id="remove-btn-poster" type="button">&times;</button>
+            <div class="preview-container" id="preview-container-photo">
+              <img id="image-preview-photo" class="preview-image" src="" alt="preview">
+              <button class="remove-file" id="remove-btn-photo" type="button">&times;</button>
+            </div>
+          </div>
+
+          <!-- Video Mode Dual Dropzone Grid -->
+          <div class="drop-zone-grid" id="drop-zone-video-grid" style="display: none;">
+            <!-- Video File Drop Zone -->
+            <div class="drop-zone" id="drop-zone-video">
+              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+              </svg>
+              <p>drag raw mp4/webm file here</p>
+              <span>supports mp4, webm, mov</span>
+              <input type="file" id="file-input-video" accept="video/mp4,video/webm,video/quicktime">
+              
+              <div class="preview-container" id="preview-container-video">
+                <video id="video-preview" class="preview-image" muted loop playsinline></video>
+                <button class="remove-file" id="remove-btn-video" type="button">&times;</button>
+              </div>
+            </div>
+
+            <!-- Video Poster Drop Zone -->
+            <div class="drop-zone" id="drop-zone-poster">
+              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+              </svg>
+              <p>drag poster image here</p>
+              <span>supports jpeg, png, webp</span>
+              <input type="file" id="file-input-poster" accept="image/*">
+              
+              <div class="preview-container" id="preview-container-poster">
+                <img id="image-preview-poster" class="preview-image" src="" alt="preview">
+                <button class="remove-file" id="remove-btn-poster" type="button">&times;</button>
+              </div>
             </div>
           </div>
         </div>
+
+        <form id="cms-form">
+          <div class="form-grid">
+            <div class="field-group">
+              <label for="title">photo title</label>
+              <input type="text" id="title" placeholder="e.g. harbinger" required>
+            </div>
+            
+            <div class="field-group">
+              <label for="date">capture date</label>
+              <input type="text" id="date" placeholder="e.g. mar 22, 2026">
+            </div>
+            
+            <div class="field-group">
+              <label for="location">location</label>
+              <input type="text" id="location" placeholder="e.g. macrohon, southern leyte">
+            </div>
+
+            <!-- Photo Mode Only: Category select -->
+            <div class="field-group photo-only">
+              <label for="category">category segment</label>
+              <select id="category">
+                <option value="">photographs (default)</option>
+                <option value="figures">figures</option>
+              </select>
+            </div>
+
+            <!-- Video Mode Only: Soundtrack name -->
+            <div class="field-group video-only" style="display: none;">
+              <label for="music">soundtrack / music info</label>
+              <input type="text" id="music" placeholder="e.g. dawn over tides - artist">
+            </div>
+
+            <div class="field-group full-width">
+              <label for="desc">narrative</label>
+              <textarea id="desc" rows="3" placeholder="describe the context or story..."></textarea>
+            </div>
+
+            <!-- Photo Mode Only: Hero Carousel Toggle -->
+            <div class="field-group full-width photo-only">
+              <div class="toggle-wrapper">
+                <span>show in carousel</span>
+                <label class="switch">
+                  <input type="checkbox" id="hero-slide">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn" id="submit-btn" disabled>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span id="submit-btn-text">catalog and upload</span>
+          </button>
+        </form>
+
+        <!-- Client Side pipeline status -->
+        <div class="pipeline-status" id="pipeline-status"></div>
       </div>
+    </div>
+  </div>
 
-      <form id="cms-form">
-        <div class="form-grid">
-          <div class="field-group">
-            <label for="title">photo title</label>
-            <input type="text" id="title" placeholder="e.g. harbinger" required>
-          </div>
-          
-          <div class="field-group">
-            <label for="date">capture date</label>
-            <input type="text" id="date" placeholder="e.g. mar 22, 2026">
-          </div>
-          
-          <div class="field-group">
-            <label for="location">location</label>
-            <input type="text" id="location" placeholder="e.g. macrohon, southern leyte">
-          </div>
-
-          <!-- Photo Mode Only: Category select -->
-          <div class="field-group photo-only">
-            <label for="category">category segment</label>
-            <select id="category">
-              <option value="">photographs (default)</option>
-              <option value="figures">figures</option>
-            </select>
-          </div>
-
-          <!-- Video Mode Only: Soundtrack name -->
-          <div class="field-group video-only" style="display: none;">
-            <label for="music">soundtrack / music info</label>
-            <input type="text" id="music" placeholder="e.g. dawn over tides - artist">
-          </div>
-
-          <div class="field-group full-width">
-            <label for="desc">narrative</label>
-            <textarea id="desc" rows="3" placeholder="describe the context or story..."></textarea>
-          </div>
-
-          <!-- Photo Mode Only: Hero Carousel Toggle -->
-          <div class="field-group full-width photo-only">
-            <div class="toggle-wrapper">
-              <span>show in carousel</span>
-              <label class="switch">
-                <input type="checkbox" id="hero-slide">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" class="btn" id="submit-btn" disabled>
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          <span id="submit-btn-text">catalog and upload</span>
+  <!-- Gorgeous EDIT/UPDATE Details Modal overlay -->
+  <div class="modal-overlay" id="edit-modal-overlay">
+    <div class="modal-wrapper">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          edit asset details
+        </h3>
+        <button class="btn-close-modal" id="btn-close-edit-modal" aria-label="Close modal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-      </form>
+      </div>
+      <div class="modal-body">
+        <form id="edit-cms-form">
+          <div class="form-grid">
+            <div class="field-group">
+              <label for="edit-title">asset title</label>
+              <input type="text" id="edit-title" required>
+            </div>
+            
+            <div class="field-group">
+              <label for="edit-date">capture date</label>
+              <input type="text" id="edit-date" placeholder="e.g. mar 22, 2026">
+            </div>
+            
+            <div class="field-group">
+              <label for="edit-location">location</label>
+              <input type="text" id="edit-location" placeholder="e.g. macrohon, southern leyte">
+            </div>
 
-      <!-- Client Side pipeline status -->
-      <div class="pipeline-status" id="pipeline-status"></div>
-    </div>
+            <!-- Edit Photo Aspect Ratio -->
+            <div class="field-group">
+              <label for="edit-aspect-ratio">aspect ratio (float)</label>
+              <input type="number" step="0.0001" id="edit-aspect-ratio" required>
+            </div>
 
-    <!-- Right panel: Active database items -->
-    <div class="panel list-panel">
-      <h2 class="panel-title">
-        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        current archives
-      </h2>
-      <p style="font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--text-muted); text-transform: lowercase; margin-top: -1rem; margin-bottom: 1.5rem; letter-spacing: 0.05em;">deleting here removes the item from both r2 and d1 archives.</p>
-      
-      <div class="items-container" id="items-container">
-        <p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.65rem; text-transform: lowercase;">loading active archives...</p>
+            <!-- Edit Photo Mode Only: Category select -->
+            <div class="field-group edit-photo-only">
+              <label for="edit-category">category segment</label>
+              <select id="edit-category">
+                <option value="">photographs (default)</option>
+                <option value="figures">figures</option>
+              </select>
+            </div>
+
+            <!-- Edit Video Mode Only: Soundtrack name -->
+            <div class="field-group edit-video-only">
+              <label for="edit-music">soundtrack / music info</label>
+              <input type="text" id="edit-music" placeholder="e.g. dawn over tides - artist">
+            </div>
+
+            <div class="field-group full-width">
+              <label for="edit-desc">narrative</label>
+              <textarea id="edit-desc" rows="3" placeholder="describe the context or story..."></textarea>
+            </div>
+
+            <!-- Edit Photo Mode Only: Hero Carousel Toggle -->
+            <div class="field-group full-width edit-photo-only">
+              <div class="toggle-wrapper">
+                <span>show in carousel</span>
+                <label class="switch">
+                  <input type="checkbox" id="edit-hero-slide">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn" id="edit-submit-btn">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+            <span>save changes</span>
+          </button>
+        </form>
       </div>
     </div>
-  </main>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -1223,6 +1366,25 @@
 
     // Form mode state
     let currentMode = 'photo'; // 'photo' or 'video'
+
+    // Dashboard navigation state
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let globalArchivesList = []; // Caches all items for instantaneous filtering
+
+    // Modal elements
+    const uploadModal = document.getElementById('upload-modal-overlay');
+    const openUploadModalBtn = document.getElementById('btn-open-upload-modal');
+    const closeUploadModalBtn = document.getElementById('btn-close-upload-modal');
+
+    const editModal = document.getElementById('edit-modal-overlay');
+    const closeEditModalBtn = document.getElementById('btn-close-edit-modal');
+    const editForm = document.getElementById('edit-cms-form');
+    let currentlyEditingItem = null;
+
+    // Search and Filter Pills
+    const searchInput = document.getElementById('dashboard-search');
+    const filterPills = document.querySelectorAll('.filter-pill');
 
     // Tab buttons
     const tabPhotoBtn = document.getElementById('tab-photo');
@@ -1300,6 +1462,37 @@
         toast.classList.remove('show');
       }, 4000);
     }
+
+    // Modal Triggers
+    openUploadModalBtn.addEventListener('click', () => {
+      uploadModal.classList.add('open');
+    });
+
+    closeUploadModalBtn.addEventListener('click', () => {
+      uploadModal.classList.remove('open');
+      resetFileSelection();
+      form.reset();
+    });
+
+    closeEditModalBtn.addEventListener('click', () => {
+      editModal.classList.remove('open');
+      currentlyEditingItem = null;
+      editForm.reset();
+    });
+
+    // Close on overlay click
+    window.addEventListener('click', (e) => {
+      if (e.target === uploadModal) {
+        uploadModal.classList.remove('open');
+        resetFileSelection();
+        form.reset();
+      }
+      if (e.target === editModal) {
+        editModal.classList.remove('open');
+        currentlyEditingItem = null;
+        editForm.reset();
+      }
+    });
 
     // Toggle Password Visibility
     togglePasswordBtn.addEventListener('click', () => {
@@ -1399,12 +1592,10 @@
           setAuthStatus('secured');
         } else {
           setAuthStatus('failed');
-          // Clear persisted token on explicit auth rejection
           localStorage.removeItem('vanpics_admin_token');
           sessionStorage.removeItem('vanpics_admin_token');
         }
       } catch (err) {
-        // Network error — don't clear token, server might just be down
         setAuthStatus('unverified');
       }
     }
@@ -1422,12 +1613,10 @@
       if (currentMode === mode) return;
       currentMode = mode;
       
-      // Update tab active states
       if (mode === 'photo') {
         tabPhotoBtn.classList.add('active');
         tabVideoBtn.classList.remove('active');
         
-        // Show photo fields, hide video fields
         dropZonePhoto.style.display = 'flex';
         dropZoneVideoGrid.style.display = 'none';
         
@@ -1440,7 +1629,6 @@
         tabVideoBtn.classList.add('active');
         tabPhotoBtn.classList.remove('active');
         
-        // Show video fields, hide photo fields
         dropZonePhoto.style.display = 'none';
         dropZoneVideoGrid.style.display = 'grid';
         
@@ -1624,7 +1812,7 @@
       setStepState('dimensions', 'success');
 
       setStepState('video-check', 'active');
-      processedVideoBlob = videoFile; // Use raw blob since browser-side video compression is not supported natively
+      processedVideoBlob = videoFile;
       setStepState('video-check', 'success');
 
       checkFormState();
@@ -1636,7 +1824,6 @@
     async function processPosterPipeline(imgSrc) {
       pipelineStatus.style.display = 'block';
       
-      // Append poster processing steps if they don't exist
       if (!document.getElementById('step-poster-compress')) {
         const posterStep = document.createElement('div');
         posterStep.className = 'pipeline-step';
@@ -1741,8 +1928,8 @@
     async function loadArchives() {
       try {
         const [photosRes, videosRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/photos?limit=50`),
-          fetch(`${API_BASE_URL}/api/videos?limit=50`)
+          fetch(`${API_BASE_URL}/api/photos?limit=100`),
+          fetch(`${API_BASE_URL}/api/videos?limit=100`)
         ]);
 
         if (!photosRes.ok || !videosRes.ok) throw new Error('API server down');
@@ -1753,74 +1940,231 @@
         const photos = Array.isArray(photosData) ? photosData : photosData.items || [];
         const videos = Array.isArray(videosData) ? videosData : videosData.items || [];
 
-        // Mix and standardise the model list items
-        const items = [
+        // Cache globally for filters
+        globalArchivesList = [
           ...photos.map(p => ({ ...p, type: 'photo' })),
           ...videos.map(v => ({ ...v, type: 'video' }))
         ];
 
         // Sort items by creation date
-        items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        globalArchivesList.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-        if (items.length === 0) {
-          itemsContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.6rem; text-transform: lowercase;">no archives found.</p>';
-          return;
+        renderArchives();
+      } catch (err) {
+        itemsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase;">failed to connect to local database.</p>`;
+      }
+    }
+
+    // Renders matching and sorted archive items to our Google Drive directory grid
+    function renderArchives() {
+      const filtered = globalArchivesList.filter(item => {
+        // Filter by category segment pills
+        if (activeFilter === 'photo' && item.type !== 'photo') return false;
+        if (activeFilter === 'video' && item.type !== 'video') return false;
+        if (activeFilter === 'figures' && (item.type !== 'photo' || item.category !== 'figures')) return false;
+
+        // Filter by text search query
+        if (searchQuery) {
+          const title = (item.title || '').toLowerCase();
+          const location = (item.location || '').toLowerCase();
+          const desc = (item.desc || '').toLowerCase();
+          const query = searchQuery.toLowerCase();
+          
+          if (!title.includes(query) && !location.includes(query) && !desc.includes(query)) return false;
         }
 
-        itemsContainer.innerHTML = items.map(p => {
-          const isVideo = p.type === 'video';
-          const typeLabel = isVideo ? 'video' : (p.category || 'photo');
-          const typeClass = isVideo ? 'badge-video' : (p.category === 'figures' ? 'badge-figures' : 'badge-photo');
-          const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
+        return true;
+      });
 
-          return `
-            <div class="archive-item">
-              <div class="archive-media-wrapper">
-                <img class="archive-thumb" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
-                ${isVideo ? `
-                  <div class="play-overlay">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
-                ` : ''}
-              </div>
-              <div class="archive-info">
-                <div class="archive-title-wrapper">
-                  <div class="archive-title">${escapeHtml(p.title || 'untitled')}</div>
-                  <span class="badge ${typeClass}">${typeLabel}</span>
-                </div>
-                <div class="archive-meta">${escapeHtml(p.location || 'unknown location')} • ${escapeHtml(p.date || 'undated')}</div>
-              </div>
-              <button class="btn-delete" data-type="${p.type}" data-id="${p.id}" data-title="${escapeHtml(p.title || 'untitled')}">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              </button>
-            </div>
-          `;
-        }).join('');
-      } catch (err) {
-        itemsContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.6rem; text-transform: lowercase;">failed to connect to local database.</p>';
+      if (filtered.length === 0) {
+        itemsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.05em;">no matching archives found.</p>`;
+        return;
       }
+
+      itemsContainer.innerHTML = filtered.map(p => {
+        const isVideo = p.type === 'video';
+        const typeLabel = isVideo ? 'video' : (p.category || 'photo');
+        const typeClass = isVideo ? 'badge-video' : (p.category === 'figures' ? 'badge-figures' : 'badge-photo');
+        const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
+
+        return `
+          <div class="asset-card">
+            <div class="card-preview-wrapper">
+              <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
+              ${isVideo ? `
+                <div class="video-play-indicator">
+                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              ` : ''}
+            </div>
+            <div class="card-info">
+              <div class="card-header-row">
+                <div class="card-title" title="${escapeHtml(p.title || 'untitled')}">${escapeHtml(p.title || 'untitled')}</div>
+                <span class="badge ${typeClass}">${typeLabel}</span>
+              </div>
+              
+              <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.2rem;">
+                <div style="display: flex; align-items: center; gap: 0.45rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>${escapeHtml(p.location || 'unknown location')}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.45rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>${escapeHtml(p.date || 'undated')}</span>
+                </div>
+              </div>
+              
+              <div class="card-actions-row">
+                <button class="btn-card-action btn-edit" data-id="${p.id}" data-type="${p.type}" title="Edit asset metadata">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </button>
+                <button class="btn-card-action danger btn-delete" data-id="${p.id}" data-type="${p.type}" data-title="${escapeHtml(p.title || 'untitled')}" title="Delete asset permanently">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    // Handles Search and Filter events instantly
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderArchives();
+    });
+
+    filterPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        filterPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeFilter = pill.dataset.filter;
+        renderArchives();
+      });
+    });
+
+    // Delegate grid clicks for CRUD Actions (Delete & Update/Edit)
     itemsContainer.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-delete');
-      if (btn) {
-        const id = btn.dataset.id;
-        const title = btn.dataset.title;
-        const type = btn.dataset.type;
+      const deleteBtn = e.target.closest('.btn-delete');
+      const editBtn = e.target.closest('.btn-edit');
+      
+      if (deleteBtn) {
+        const id = deleteBtn.dataset.id;
+        const title = deleteBtn.dataset.title;
+        const type = deleteBtn.dataset.type;
         deleteItem(type, id, title);
+      } else if (editBtn) {
+        const id = editBtn.dataset.id;
+        const type = editBtn.dataset.type;
+        openEditModal(type, id);
       }
     });
 
+    // Populate and open edit details modal (Read & Update setup)
+    function openEditModal(type, id) {
+      const item = globalArchivesList.find(i => i.id == id && i.type === type);
+      if (!item) return;
+
+      currentlyEditingItem = item;
+      
+      // Populate fields
+      document.getElementById('edit-title').value = item.title || '';
+      document.getElementById('edit-date').value = item.date || '';
+      document.getElementById('edit-location').value = item.location || '';
+      document.getElementById('edit-desc').value = item.desc || '';
+      document.getElementById('edit-aspect-ratio').value = item.aspect_ratio || 1.0;
+
+      const editPhotoOnly = document.querySelectorAll('.edit-photo-only');
+      const editVideoOnly = document.querySelectorAll('.edit-video-only');
+
+      if (type === 'photo') {
+        editPhotoOnly.forEach(el => el.style.display = '');
+        editVideoOnly.forEach(el => el.style.display = 'none');
+        
+        document.getElementById('edit-category').value = item.category || '';
+        document.getElementById('edit-hero-slide').checked = item.hero_slide === 1 || item.hero_slide === 'true';
+      } else {
+        editPhotoOnly.forEach(el => el.style.display = 'none');
+        editVideoOnly.forEach(el => el.style.display = '');
+        
+        document.getElementById('edit-music').value = item.music || '';
+      }
+
+      editModal.classList.add('open');
+    }
+
+    // Submit metadata update to backend (Update CRUD action)
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentlyEditingItem) return;
+
+      const submitBtn = document.getElementById('edit-submit-btn');
+      const submitText = submitBtn.querySelector('span');
+      
+      submitBtn.disabled = true;
+      submitText.innerText = 'saving changes...';
+
+      const id = currentlyEditingItem.id;
+      const type = currentlyEditingItem.type;
+      const token = secretInput.value.trim();
+
+      const payload = {
+        title: document.getElementById('edit-title').value,
+        date: document.getElementById('edit-date').value,
+        location: document.getElementById('edit-location').value,
+        desc: document.getElementById('edit-desc').value,
+        aspectRatio: parseFloat(document.getElementById('edit-aspect-ratio').value),
+      };
+
+      if (type === 'photo') {
+        payload.category = document.getElementById('edit-category').value;
+        payload.heroSlide = document.getElementById('edit-hero-slide').checked;
+      } else {
+        payload.music = document.getElementById('edit-music').value;
+      }
+
+      const endpoint = type === 'photo'
+        ? `${API_BASE_URL}/api/admin/photo/${id}`
+        : `${API_BASE_URL}/api/admin/video/${id}`;
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': token
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('asset updated successfully', 'success');
+          editModal.classList.remove('open');
+          currentlyEditingItem = null;
+          loadArchives();
+        } else {
+          showToast(data.error || 'update failed', 'error');
+        }
+      } catch (err) {
+        showToast('server connection failed', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitText.innerText = 'save changes';
+      }
+    });
+
+    // Delete CRUD Action
     async function deleteItem(type, id, title) {
       if (!confirm(`are you sure you want to delete ${type} "${title}"?`)) {
         return;
       }
       
-      const token = document.getElementById('secret-token').value;
+      const token = secretInput.value.trim();
       const endpoint = type === 'video' 
         ? `${API_BASE_URL}/api/admin/video/${id}`
         : `${API_BASE_URL}/api/admin/photo/${id}`;
@@ -1850,6 +2194,7 @@
       return deleteItem('photo', id, title);
     }
 
+    // Submit photo/video catalog creation (Create CRUD Action)
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -1868,7 +2213,7 @@
       submitBtn.disabled = true;
       submitBtnText.innerText = 'cataloging...';
       
-      const token = document.getElementById('secret-token').value;
+      const token = secretInput.value.trim();
       const formData = new FormData();
       const endpoint = currentMode === 'photo'
         ? `${API_BASE_URL}/api/admin/upload-photo`
@@ -1906,6 +2251,7 @@
           showToast('archived successfully', 'success');
           form.reset();
           resetFileSelection();
+          uploadModal.classList.remove('open');
           loadArchives();
         } else {
           showToast(data.error || 'upload failed', 'error');

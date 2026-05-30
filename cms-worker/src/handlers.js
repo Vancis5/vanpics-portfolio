@@ -12,6 +12,9 @@ import {
   parsePagination,
   validatePhotoFields,
   validateVideoFields,
+  cleanText,
+  parseAspectRatio,
+  ALLOWED_CATEGORIES,
 } from './validation.js';
 
 // 10 MB for images, 100 MB for videos
@@ -288,3 +291,79 @@ export async function uploadVideo(request, env) {
     }),
   });
 }
+
+export async function updatePhoto(request, env, params) {
+  const photoId = Number.parseInt(params.id, 10);
+  if (!Number.isInteger(photoId) || photoId < 1) {
+    return errorResponse(request, env, 'invalid photo id', 400);
+  }
+
+  const json = await request.json();
+  const errors = [];
+  
+  const title = cleanText(json.title || 'Untitled', 'title', errors, { required: true });
+  const category = cleanText(json.category, 'category', errors);
+  const location = cleanText(json.location, 'location', errors);
+  const date = cleanText(json.date, 'date', errors);
+  const desc = cleanText(json.desc, 'desc', errors);
+  const aspectRatio = parseAspectRatio(json.aspectRatio, errors);
+  const heroSlide = json.heroSlide === true || json.heroSlide === 1 || json.heroSlide === 'true' ? 1 : 0;
+
+  if (!ALLOWED_CATEGORIES.has(category)) {
+    errors.push('category is not supported');
+  }
+
+  if (errors.length > 0) {
+    return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
+  }
+
+  const result = await env.DB.prepare(
+    `UPDATE photos 
+     SET title = ?, category = ?, location = ?, date = ?, desc = ?, aspect_ratio = ?, hero_slide = ?
+     WHERE id = ?`
+  )
+  .bind(title, category, location, date, desc, aspectRatio, heroSlide, photoId)
+  .run();
+
+  if (result.meta.changes === 0) {
+    return errorResponse(request, env, 'photo not found', 404);
+  }
+
+  return jsonResponse(request, env, { success: true });
+}
+
+export async function updateVideo(request, env, params) {
+  const videoId = Number.parseInt(params.id, 10);
+  if (!Number.isInteger(videoId) || videoId < 1) {
+    return errorResponse(request, env, 'invalid video id', 400);
+  }
+
+  const json = await request.json();
+  const errors = [];
+
+  const title = cleanText(json.title || 'Untitled', 'title', errors, { required: true });
+  const location = cleanText(json.location, 'location', errors);
+  const date = cleanText(json.date, 'date', errors);
+  const desc = cleanText(json.desc, 'desc', errors);
+  const aspectRatio = parseAspectRatio(json.aspectRatio, errors);
+  const music = cleanText(json.music, 'music', errors, { max: 200 });
+
+  if (errors.length > 0) {
+    return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
+  }
+
+  const result = await env.DB.prepare(
+    `UPDATE videos 
+     SET title = ?, location = ?, date = ?, desc = ?, aspect_ratio = ?, music = ?
+     WHERE id = ?`
+  )
+  .bind(title, location, date, desc, aspectRatio, music, videoId)
+  .run();
+
+  if (result.meta.changes === 0) {
+    return errorResponse(request, env, 'video not found', 404);
+  }
+
+  return jsonResponse(request, env, { success: true });
+}
+

@@ -6,7 +6,7 @@ const TEXT_LIMITS = {
   desc: 1000,
 };
 
-const ALLOWED_CATEGORIES = new Set(['', 'figures']);
+export const ALLOWED_CATEGORIES = new Set(['', 'figures']);
 
 export function cleanText(value, fieldName, errors, options = {}) {
   const max = options.max || TEXT_LIMITS[fieldName] || 255;
