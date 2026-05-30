@@ -15,15 +15,15 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 
-const PHOTOS_FILE = path.join(__dirname, '..', 'public', 'data', 'photos.js');
+const PHOTOS_FILE = path.join(__dirname, '..', 'js', 'data', 'photos.js');
 
 async function addRatios() {
   if (!fs.existsSync(PHOTOS_FILE)) {
-    console.error('Error: public/data/photos.js not found!');
+    console.error('Error: js/data/photos.js not found!');
     return;
   }
 
-  console.log('Reading public/data/photos.js...');
+  console.log('Reading js/data/photos.js...');
   const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
 
   // Extract array using markers
@@ -91,7 +91,7 @@ async function addRatios() {
   const finalOutput = `${header}\n${serializedPhotos}\n${footer}`;
 
   fs.writeFileSync(PHOTOS_FILE, finalOutput, 'utf8');
-  console.log('Done! aspectRatios added to public/data/photos.js.');
+  console.log('Done! aspectRatios added to js/data/photos.js.');
 }
 
 addRatios();

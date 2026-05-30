@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PHOTOS_FILE = path.join(__dirname, '..', 'public', 'data', 'photos.js');
+const PHOTOS_FILE = path.join(__dirname, '..', 'js', 'data', 'photos.js');
 
 function getPhotoDate(photo) {
   const dateStr = photo.date ? photo.date.trim().toLowerCase() : '';
@@ -37,11 +37,11 @@ function getPhotoDate(photo) {
 
 function sortPhotos() {
   if (!fs.existsSync(PHOTOS_FILE)) {
-    console.error('Error: public/data/photos.js not found!');
+    console.error('Error: js/data/photos.js not found!');
     return;
   }
 
-  console.log('Reading public/data/photos.js...');
+  console.log('Reading js/data/photos.js...');
   const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
 
   // Extract array using markers
@@ -107,7 +107,7 @@ function sortPhotos() {
   const finalOutput = `${header}\n${serializedPhotos}\n${footer}`;
 
   fs.writeFileSync(PHOTOS_FILE, finalOutput, 'utf8');
-  console.log('Done! public/data/photos.js has been sorted by date.');
+  console.log('Done! js/data/photos.js has been sorted by date.');
 }
 
 sortPhotos();

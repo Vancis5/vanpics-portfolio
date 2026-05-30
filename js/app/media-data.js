@@ -1,5 +1,5 @@
-import { photos } from '../../public/data/photos.js';
-import { videos } from '../../public/data/videos.js';
+import { photos } from '../data/photos.js';
+import { videos } from '../data/videos.js';
 
 export const photoLibrary = Array.isArray(photos) ? photos : [];
 

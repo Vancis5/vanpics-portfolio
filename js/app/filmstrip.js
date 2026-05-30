@@ -240,20 +240,14 @@ function startFilmstripSettle(target) {
 
   fsSettleTarget = target;
   let startTime = 0;
-  let duration = Math.max(460, Math.min(760, 390 + Math.abs(distance) * 5.6));
+  let duration = Math.max(300, Math.min(500, 250 + Math.abs(distance) * 0.4));
   let previous = start;
-  let maxStep = Math.max(0.9, Math.min(1.8, Math.abs(distance) / 12));
 
   function settleStep(time) {
     if (!startTime) startTime = time;
     let t = Math.min(1, (time - startTime) / duration);
     let ease = 1 - Math.pow(1 - t, 3);
     let next = start + distance * ease;
-    let step = next - previous;
-
-    if (Math.abs(step) > maxStep) {
-      next = previous + Math.sign(step) * maxStep;
-    }
 
     if (distance > 0) next = Math.min(target, Math.max(start, next));
     else next = Math.max(target, Math.min(start, next));

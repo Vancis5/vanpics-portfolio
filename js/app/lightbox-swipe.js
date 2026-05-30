@@ -215,7 +215,7 @@ if (state.isMobile) {
 
     // ── Scroll settle — detect new active slide ──
     function onSnapSettle(targetIdx) {
-      if (state.currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (isUserTouching && typeof targetIdx === 'undefined') return;
       state.isManuallyNavigating = false; // Reset navigation flag on settle
       let w = imgWrap.offsetWidth;
@@ -259,14 +259,14 @@ if (state.isMobile) {
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
     imgWrap.addEventListener('scrollend', function () {
-      if (state.currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
       if (performance.now() < filmstripReleaseFollowUntil) return;
       if (!state.isManuallyNavigating) onSnapSettle();
     });
     imgWrap.addEventListener('scroll', function () {
-      if (state.currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       clearTimeout(snapTimer);
       snapTimer = setTimeout(onSnapSettle, 150);
       let w = imgWrap.offsetWidth;
@@ -375,9 +375,12 @@ if (state.isMobile) {
         wasPinchingOrZooming = false;
       }
 
+      if (e.touches.length >= 2) {
+        wasPinchingOrZooming = true;
+      }
+
       if (e.touches.length === 2 && !dLocked) {
         isPinching = true;
-        wasPinchingOrZooming = true;
         pinchInitDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         pinchInitLevel = state.lbZoomLevel;
         pinchInitPanX = state.lbZoomPanX;
