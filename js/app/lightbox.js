@@ -38,8 +38,11 @@ function refreshLightboxInfoRefs() {
 export function setLightboxBlur(src) {
   if (!src) return;
 
-  // Resolve blur path: strip 'thumbs/' if present so it points to the correct blur asset
-  let blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+  // Resolve blur path: if it's already a blur URL or doesn't have 'photos/', use it directly!
+  let blurPath = src;
+  if (!src.includes('/blur/') && !src.includes('photos/blur/')) {
+    blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+  }
   let token = ++blurToken;
 
   let active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
@@ -533,7 +536,7 @@ export function openLightbox(i, direction, isMotion) {
       playerShell.style.opacity = '0';
 
       // Start the new media immediately instead of waiting for decode.
-      let bSrc = isMotion ? p.thumb : p.src;
+      let bSrc = isMotion ? p.thumb : (p.blur || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) {
@@ -658,7 +661,7 @@ export function openLightbox(i, direction, isMotion) {
         img.onerror = null;
       }
 
-      let bSrc = isMotion ? p.thumb : p.src;
+      let bSrc = isMotion ? p.thumb : (p.blur || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) loadSwipeNeighbors();

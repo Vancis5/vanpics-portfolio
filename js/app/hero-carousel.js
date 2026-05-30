@@ -93,7 +93,7 @@ export function buildCarousel() {
     for (let c = 0; c < copies * 2; c++) {
       group.forEach(function (p) {
         let img = document.createElement('img');
-        let thumbPath = p.src.replace('photos/', 'photos/thumbs/');
+        let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
         if (c === 0) {
           img.loading = 'eager';

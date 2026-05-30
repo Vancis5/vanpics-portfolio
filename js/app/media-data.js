@@ -1,11 +1,22 @@
 import { photos } from '../data/photos.js';
 import { videos } from '../data/videos.js';
 
-export const photoLibrary = Array.isArray(photos) ? photos : [];
+export let photoLibrary = Array.isArray(photos) ? [...photos] : [];
 
-export const motionProjects = (Array.isArray(videos) ? videos : []).filter(function (video) {
+export let motionProjects = (Array.isArray(videos) ? [...videos] : []).filter(function (video) {
   return !!video.thumb || !!video.src;
 });
+
+export function updateMediaLibrary(newPhotos, newVideos) {
+  if (Array.isArray(newPhotos) && newPhotos.length > 0) {
+    photoLibrary.length = 0;
+    photoLibrary.push(...newPhotos);
+  }
+  if (Array.isArray(newVideos) && newVideos.length > 0) {
+    motionProjects.length = 0;
+    motionProjects.push(...newVideos.filter(v => !!v.thumb || !!v.src));
+  }
+}
 
 export function getCategorySlug(category) {
   if (category === 'all') return 'photographs';

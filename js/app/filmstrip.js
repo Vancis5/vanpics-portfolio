@@ -50,7 +50,7 @@ export function buildFilmstrip() {
     thumb.setAttribute('role', 'button');
     thumb.setAttribute('aria-label', p.title ? `Go to ${p.title}` : 'Go to thumbnail');
     let img = document.createElement('img');
-    let thumbPath = state.currentLightboxIsMotion ? p.thumb : p.src.replace('photos/', 'photos/thumbs/');
+    let thumbPath = state.currentLightboxIsMotion ? p.thumb : (p.thumb || p.src.replace('photos/', 'photos/thumbs/'));
     img.src = thumbPath;
     img.alt = p.title;
     img.loading = 'lazy';

@@ -586,7 +586,7 @@ export function buildMasonry(category) {
     let imgEl = document.createElement('img');
 
     let basePath = isMotion ? (p.thumb || "") : (p.src || "");
-    let thumbPath = basePath.includes('thumbs/') ? basePath : basePath.replace('photos/', 'photos/thumbs/');
+    let thumbPath = p.thumb || (basePath.includes('thumbs/') ? basePath : basePath.replace('photos/', 'photos/thumbs/'));
 
     imgEl.src = thumbPath;
     imgEl.alt = p.title || "video";
