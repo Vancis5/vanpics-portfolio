@@ -138,7 +138,7 @@ function runDescFlipTransition(options) {
   let applyLayoutChange = options.applyLayoutChange;
   let cleanup = options.cleanup;
 
-  if (!imgWrap || !infoWrap || state.isMobile) {
+  if (!imgWrap || !infoWrap) {
     applyLayoutChange();
     if (cleanup) cleanup();
     return;
