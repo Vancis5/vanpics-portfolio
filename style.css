@@ -990,10 +990,11 @@ body::after {
   position: fixed;
   inset: calc(-1 * var(--liquid-edge-bleed));
   z-index: -1;
-  transform: scale(1.12);
+  transform: scale(1.12) translate3d(0, 0, 0);
   opacity: 0;
-  transition: opacity 0.55s ease;
+  transition: opacity 0.55s cubic-bezier(0.25, 1, 0.5, 1);
   pointer-events: none;
+  will-change: opacity, transform;
 }
 
 .lightbox-bg-blur.active {
@@ -1006,7 +1007,10 @@ body::after {
   inset: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(2px) brightness(0.22) saturate(0.65);
+  filter: blur(3px) brightness(0.22) saturate(0.65);
+  transform: translate3d(0, 0, 0);
+  will-change: filter;
+  backface-visibility: hidden;
 }
 
 #lightbox-content {

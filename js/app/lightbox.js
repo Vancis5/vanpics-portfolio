@@ -8,6 +8,7 @@ import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 
 let blurFlip = false;
+let blurToken = 0;
 let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
@@ -36,18 +37,33 @@ function refreshLightboxInfoRefs() {
 
 export function setLightboxBlur(src) {
   if (!src) return;
-  let active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
-  let inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
 
   // Resolve blur path: strip 'thumbs/' if present so it points to the correct blur asset
   let blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+  let token = ++blurToken;
+
+  let active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
+  let inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
+
   let inner = active.querySelector('.lightbox-bg-blur-inner');
-  if (inner) inner.style.backgroundImage = 'url(' + blurPath + ')';
 
-  active.classList.add('active');
-  inactive.classList.remove('active');
+  let img = new Image();
+  img.src = blurPath;
 
-  blurFlip = !blurFlip;
+  function doSwap() {
+    if (token !== blurToken) return; // Stale request, ignore it
+    if (inner) inner.style.backgroundImage = 'url(' + blurPath + ')';
+    active.classList.add('active');
+    inactive.classList.remove('active');
+    blurFlip = !blurFlip;
+  }
+
+  if (img.decode) {
+    img.decode().then(doSwap).catch(doSwap);
+  } else {
+    img.onload = doSwap;
+    img.onerror = doSwap;
+  }
 }
 
 function clearLightboxPhotoPlaceholder(expectedToken) {
