@@ -174,6 +174,12 @@ if (state.isMobile) {
     imgWrap.addEventListener('touchend', function (e) {
       if (state.currentLightboxIsMotion) return;
       isUserTouching = false;
+      if (wasPinchingOrZooming) {
+        if (e.touches.length === 0) {
+          wasPinchingOrZooming = false;
+        }
+        return;
+      }
       if (Math.abs(state.lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
       let dx = e.changedTouches[0].clientX - wrapTouchX;
       let maxScroll = imgWrap.scrollWidth - imgWrap.offsetWidth;
@@ -358,15 +364,20 @@ if (state.isMobile) {
     let dStartX = 0, dStartY = 0, dDY = 0;
     let dLocked = false, dChecked = false;
     let dPts = [];
-    let isPinching = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
+    let isPinching = false, wasPinchingOrZooming = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
       // stricter check to prevent interaction fight between filmstrip and dismiss gesture
       if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
 
+      if (e.touches.length === 1) {
+        wasPinchingOrZooming = false;
+      }
+
       if (e.touches.length === 2 && !dLocked) {
         isPinching = true;
+        wasPinchingOrZooming = true;
         pinchInitDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         pinchInitLevel = state.lbZoomLevel;
         pinchInitPanX = state.lbZoomPanX;

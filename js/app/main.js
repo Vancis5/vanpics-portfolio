@@ -1,5 +1,5 @@
-import '../../data/photos.js';
-import '../../data/videos.js';
+import '../../public/data/photos.js';
+import '../../public/data/videos.js';
 import './config.js';
 import './utils.js';
 import './dom.js';

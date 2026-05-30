@@ -253,6 +253,7 @@ body::after {
   position: relative;
   z-index: 2;
   will-change: transform;
+  cursor: grab;
 }
 
 .carousel-row img {
@@ -262,7 +263,7 @@ body::after {
   object-fit: cover;
   border-radius: 3px;
   flex-shrink: 0;
-  cursor: pointer;
+  cursor: grab;
   display: block;
   filter: brightness(0.78) saturate(0.85);
   transition: opacity 1.2s ease, filter 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -270,6 +271,10 @@ body::after {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.carousel-row:active, .carousel-row img:active {
+  cursor: grabbing !important;
 }
 
 /* mobile: 4 rows fill screen */
@@ -770,6 +775,27 @@ body::after {
 @media (max-width: 640px) {
   .motion-card .photo-card-title {
     font-size: 1.25rem;
+  }
+}
+
+/* MOTION COLUMN AND GRID LAYOUT OVERRIDES */
+.masonry-panel[data-category="motion"] .masonry-year-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.masonry-panel[data-category="motion"] .photo-card {
+  display: block;
+  margin-bottom: 0;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .masonry-panel[data-category="motion"] .masonry-year-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
   }
 }
 

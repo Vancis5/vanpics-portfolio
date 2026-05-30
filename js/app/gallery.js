@@ -557,12 +557,14 @@ export function buildMasonry(category) {
 
       columns = [];
       colHeights = [];
-      for (let c = 0; c < numCols; c++) {
-        let col = document.createElement('div');
-        col.className = 'masonry-column';
-        yearGrid.appendChild(col);
-        columns.push(col);
-        colHeights.push(0);
+      if (!isMotion) {
+        for (let c = 0; c < numCols; c++) {
+          let col = document.createElement('div');
+          col.className = 'masonry-column';
+          yearGrid.appendChild(col);
+          columns.push(col);
+          colHeights.push(0);
+        }
       }
 
       panel.appendChild(yearSection);
@@ -618,18 +620,22 @@ export function buildMasonry(category) {
       };
     })(i, category));
 
-    let shortestIdx = 0;
-    let minH = colHeights[0];
-    for (let h = 1; h < numCols; h++) {
-      if (colHeights[h] < minH) {
-        minH = colHeights[h];
-        shortestIdx = h;
+    if (isMotion) {
+      yearGrid.appendChild(card);
+    } else {
+      let shortestIdx = 0;
+      let minH = colHeights[0];
+      for (let h = 1; h < numCols; h++) {
+        if (colHeights[h] < minH) {
+          minH = colHeights[h];
+          shortestIdx = h;
+        }
       }
-    }
 
-    if (columns[shortestIdx]) {
-      columns[shortestIdx].appendChild(card);
-      colHeights[shortestIdx] += (1 / r);
+      if (columns[shortestIdx]) {
+        columns[shortestIdx].appendChild(card);
+        colHeights[shortestIdx] += (1 / r);
+      }
     }
   });
 

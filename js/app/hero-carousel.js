@@ -33,6 +33,14 @@ function getCurrentSpeed(frame) {
 let rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
 let easeFrame = 0;
 
+// Drag states
+let isDragging = false;
+let dragRowIndex = -1;
+let dragStartX = 0;
+let dragStartY = 0;
+let dragStartOffset = 0;
+let globalHasDragged = false;
+
 export function buildCarousel() {
   let rows = domRefs.heroRows;
 
@@ -58,6 +66,27 @@ export function buildCarousel() {
   let eagerImgs = [];
 
   activeRows.forEach(function (row, ri) {
+    // Add event listeners for mouse/touch down
+    row.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      dragRowIndex = ri;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragStartOffset = rowState[ri].offset;
+      globalHasDragged = false;
+    });
+
+    row.addEventListener('touchstart', function (e) {
+      if (e.touches.length > 0) {
+        isDragging = true;
+        dragRowIndex = ri;
+        dragStartX = e.touches[0].clientX;
+        dragStartY = e.touches[0].clientY;
+        dragStartOffset = rowState[ri].offset;
+        globalHasDragged = false;
+      }
+    }, { passive: true });
+
     let group = groups[ri].length > 0 ? groups[ri] : state.carouselPhotos;
     let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
 
@@ -76,7 +105,8 @@ export function buildCarousel() {
         } else {
           img.loading = 'lazy';
         }
-        img.addEventListener('click', function () {
+        img.addEventListener('click', function (e) {
+          if (globalHasDragged) return;
           let targetCat = (p.category === 'figures') ? 'figures' : 'all';
           if (state.currentCategory === targetCat) {
             let idx = state.activePhotos.indexOf(p);
@@ -145,6 +175,10 @@ export function tick() {
 
   rowState.forEach(function (state, ri) {
     if (ri >= rows.length) return;
+    if (isDragging && dragRowIndex === ri) {
+      rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
+      return;
+    }
     state.offset += speed * state.dir;
     if (state.setWidth > 0) {
       if (state.dir === -1 && state.offset < -state.setWidth) state.offset += state.setWidth;
@@ -155,3 +189,69 @@ export function tick() {
 
   state.heroRafId = requestAnimationFrame(tick);
 }
+
+// Window listeners for moving/releasing drag
+window.addEventListener('mousemove', function (e) {
+  if (!isDragging || dragRowIndex === -1) return;
+  let dx = e.clientX - dragStartX;
+  if (Math.abs(dx) > 5) {
+    globalHasDragged = true;
+  }
+  
+  let ri = dragRowIndex;
+  let newOffset = dragStartOffset + dx;
+  let setWidth = rowState[ri].setWidth;
+  if (setWidth > 0) {
+    if (newOffset < -setWidth) {
+      newOffset += setWidth;
+      dragStartX -= setWidth;
+      dragStartOffset += setWidth;
+    } else if (newOffset > 0) {
+      newOffset -= setWidth;
+      dragStartX += setWidth;
+      dragStartOffset -= setWidth;
+    }
+  }
+  rowState[ri].offset = newOffset;
+});
+
+window.addEventListener('touchmove', function (e) {
+  if (!isDragging || dragRowIndex === -1 || !e.touches || e.touches.length === 0) return;
+  let clientX = e.touches[0].clientX;
+  let clientY = e.touches[0].clientY;
+  
+  let dx = clientX - dragStartX;
+  let dy = clientY - dragStartY;
+  
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (e.cancelable) e.preventDefault();
+  }
+  
+  if (Math.abs(dx) > 5) {
+    globalHasDragged = true;
+  }
+  
+  let ri = dragRowIndex;
+  let newOffset = dragStartOffset + dx;
+  let setWidth = rowState[ri].setWidth;
+  if (setWidth > 0) {
+    if (newOffset < -setWidth) {
+      newOffset += setWidth;
+      dragStartX -= setWidth;
+      dragStartOffset += setWidth;
+    } else if (newOffset > 0) {
+      newOffset -= setWidth;
+      dragStartX += setWidth;
+      dragStartOffset -= setWidth;
+    }
+  }
+  rowState[ri].offset = newOffset;
+}, { passive: false });
+
+function endDrag() {
+  isDragging = false;
+  dragRowIndex = -1;
+}
+
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('touchend', endDrag);
