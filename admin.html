@@ -29,6 +29,11 @@
       --warning: #cca05a;
     }
 
+    html {
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -45,6 +50,45 @@
       overflow-x: hidden;
       position: relative;
     }
+
+    body.modal-open {
+      overflow: hidden !important;
+    }
+
+    .filter-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: rgba(17, 16, 16, 0.7);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.65rem 2.2rem 0.65rem 1rem;
+      color: #e5dfd3; /* pristine high-contrast warm off-white */
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: var(--transition);
+      letter-spacing: 0.05em;
+      outline: none;
+    }
+
+    .filter-select:hover {
+      border-color: rgba(244, 238, 225, 0.25) !important;
+      background: rgba(28, 26, 26, 0.9) !important;
+      color: #ffffff !important;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.12) !important;
+      background: rgba(28, 26, 26, 0.9) !important;
+      color: #ffffff !important;
+    }
+
+    .filter-select option {
+      background: #0d0c0c;
+      color: #e5dfd3;
+    }
+
 
     /* grain texture overlay */
     body::after {
@@ -823,7 +867,7 @@
       right: 0;
       bottom: 0;
       background-color: rgba(244, 238, 225, 0.08);
-      transition: .4s;
+      transition: .18s cubic-bezier(0.25, 1, 0.5, 1);
       border-radius: var(--radius);
     }
 
@@ -835,7 +879,7 @@
       left: 3px;
       bottom: 3px;
       background-color: var(--text-muted);
-      transition: .4s;
+      transition: .18s cubic-bezier(0.25, 1, 0.5, 1);
       border-radius: 50%;
     }
 
@@ -1013,6 +1057,12 @@
       background: rgba(161, 140, 209, 0.04);
     }
 
+    .badge-draft {
+      color: #9e9e9e;
+      border: 1px solid rgba(158, 158, 158, 0.25);
+      background: rgba(158, 158, 158, 0.04);
+    }
+
     /* ─── Responsive Grid ─── */
     @media (max-width: 768px) {
       header {
@@ -1109,17 +1159,45 @@
   <main>
     <!-- Google Drive dashboard control panel -->
     <div class="control-panel">
-      <div class="search-filter-group">
-        <div class="search-wrapper">
+      <div class="search-filter-group" style="display: flex; gap: 1rem; flex-wrap: wrap; flex-grow: 1; align-items: center;">
+        <div class="search-wrapper" style="flex: 1 1 250px;">
           <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" id="dashboard-search" placeholder="search archives by title...">
         </div>
         
-        <div class="filter-pills" id="filter-pills">
-          <button class="filter-pill active" data-filter="all">all</button>
-          <button class="filter-pill" data-filter="photo">photos</button>
-          <button class="filter-pill" data-filter="video">videos</button>
-          <button class="filter-pill" data-filter="figures">figures</button>
+        <div class="dropdowns-group" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <!-- Filter by Type -->
+          <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
+            <select id="filter-type" class="filter-select" style="min-width: 150px;">
+              <option value="all">type: all</option>
+              <option value="photo">type: photos</option>
+              <option value="video">type: videos</option>
+              <option value="figures">type: figures</option>
+              <option value="draft">type: drafts</option>
+            </select>
+            <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+
+          <!-- Sort by -->
+          <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
+            <select id="filter-sort" class="filter-select" style="min-width: 180px;">
+              <option value="date-desc">sort: newest</option>
+              <option value="date-asc">sort: oldest</option>
+              <option value="name-asc">sort: alphabetical (a-z)</option>
+              <option value="name-desc">sort: alphabetical (z-a)</option>
+            </select>
+            <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+
+          <!-- Group by -->
+          <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
+            <select id="filter-group" class="filter-select" style="min-width: 150px;">
+              <option value="none">group: none</option>
+              <option value="year">group: year</option>
+              <option value="type">group: media type</option>
+            </select>
+            <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
         </div>
       </div>
       
@@ -1152,11 +1230,11 @@
         <div class="tabs-container">
           <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
-            photo archive
+            photo
           </button>
           <button type="button" class="tab-btn" id="tab-video" data-mode="video">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
-            video archive
+            video
           </button>
         </div>
         
@@ -1340,11 +1418,34 @@
             </div>
           </div>
 
-          <button type="submit" class="btn" id="edit-submit-btn">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-            <span>save changes</span>
-          </button>
+          <div class="edit-modal-actions" style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="button" class="btn" id="edit-delete-btn" style="border-color: rgba(217, 104, 104, 0.4); color: var(--danger); background: rgba(217, 104, 104, 0.02); display: flex; align-items: center; justify-content: center; gap: 0.65rem; flex: 1;">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="stroke: var(--danger);"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              <span>delete</span>
+            </button>
+            <button type="submit" class="btn" id="edit-submit-btn" style="flex: 2;">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+              <span>save changes</span>
+            </button>
+          </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- High Fidelity Custom Confirmation Dialog -->
+  <div class="modal-overlay" id="confirm-modal-overlay" style="z-index: 2000;">
+    <div class="modal-wrapper" style="max-width: 420px; padding: 2rem; border-radius: 12px; text-align: center; gap: 1.5rem; background: #0f0e0e; border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,0.8); display: flex; flex-direction: column;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(217, 104, 104, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+          <svg width="24" height="24" fill="none" stroke="var(--danger)" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </div>
+        <h4 style="font-family: 'DM Mono', monospace; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text);">confirm deletion</h4>
+        <p id="confirm-delete-text" style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.6; margin: 0 0.5rem; font-family: 'DM Mono', monospace; letter-spacing: 0.05em; text-transform: lowercase;">are you sure you want to permanently delete this asset? this action cannot be undone.</p>
+      </div>
+      <div style="display: flex; gap: 1rem; width: 100%;">
+        <button type="button" class="btn" id="btn-cancel-delete" style="flex: 1; padding: 0.7rem 0;">cancel</button>
+        <button type="button" class="btn" id="btn-confirm-delete" style="flex: 1; padding: 0.7rem 0; border-color: rgba(217, 104, 104, 0.4); color: var(--danger); background: rgba(217, 104, 104, 0.05);">delete</button>
       </div>
     </div>
   </div>
@@ -1382,9 +1483,8 @@
     const editForm = document.getElementById('edit-cms-form');
     let currentlyEditingItem = null;
 
-    // Search and Filter Pills
+    // Search and Filter Elements
     const searchInput = document.getElementById('dashboard-search');
-    const filterPills = document.querySelectorAll('.filter-pill');
 
     // Tab buttons
     const tabPhotoBtn = document.getElementById('tab-photo');
@@ -1463,21 +1563,40 @@
       }, 4000);
     }
 
+    // Modal & Scroll State management
+    const confirmModal = document.getElementById('confirm-modal-overlay');
+    const cancelDeleteBtn = document.getElementById('btn-cancel-delete');
+    const confirmDeleteBtn = document.getElementById('btn-confirm-delete');
+    const editDeleteBtn = document.getElementById('edit-delete-btn');
+    const confirmDeleteText = document.getElementById('confirm-delete-text');
+
+    function updateBodyScrollState() {
+      const openModals = document.querySelectorAll('.modal-overlay.open');
+      if (openModals.length > 0) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+    }
+
     // Modal Triggers
     openUploadModalBtn.addEventListener('click', () => {
       uploadModal.classList.add('open');
+      updateBodyScrollState();
     });
 
     closeUploadModalBtn.addEventListener('click', () => {
       uploadModal.classList.remove('open');
       resetFileSelection();
       form.reset();
+      updateBodyScrollState();
     });
 
     closeEditModalBtn.addEventListener('click', () => {
       editModal.classList.remove('open');
       currentlyEditingItem = null;
       editForm.reset();
+      updateBodyScrollState();
     });
 
     // Close on overlay click
@@ -1486,12 +1605,43 @@
         uploadModal.classList.remove('open');
         resetFileSelection();
         form.reset();
+        updateBodyScrollState();
       }
       if (e.target === editModal) {
         editModal.classList.remove('open');
         currentlyEditingItem = null;
         editForm.reset();
+        updateBodyScrollState();
       }
+      if (e.target === confirmModal) {
+        confirmModal.classList.remove('open');
+        updateBodyScrollState();
+      }
+    });
+
+    // Delete actions within Edit Modal with Confirmation Dialog
+    editDeleteBtn.addEventListener('click', () => {
+      if (!currentlyEditingItem) return;
+      confirmDeleteText.innerText = `are you sure you want to permanently delete the ${currentlyEditingItem.type} "${currentlyEditingItem.title || 'untitled'}"? this action cannot be undone.`;
+      confirmModal.classList.add('open');
+      updateBodyScrollState();
+    });
+
+    cancelDeleteBtn.addEventListener('click', () => {
+      confirmModal.classList.remove('open');
+      updateBodyScrollState();
+    });
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      if (!currentlyEditingItem) return;
+      confirmModal.classList.remove('open');
+      const id = currentlyEditingItem.id;
+      const type = currentlyEditingItem.type;
+      const title = currentlyEditingItem.title;
+      await deleteItem(type, id, title);
+      editModal.classList.remove('open');
+      currentlyEditingItem = null;
+      updateBodyScrollState();
     });
 
     // Toggle Password Visibility
@@ -1955,13 +2105,118 @@
       }
     }
 
+    function getYearFromDate(dateStr) {
+      if (!dateStr) return 'undated';
+      const match = dateStr.match(/\b(19|20)\d{2}\b/);
+      return match ? match[0] : 'undated';
+    }
+
+    function isUntitled(item) {
+      const title = (item.title || '').toLowerCase().trim();
+      return !title || title === 'untitled';
+    }
+
+    function parseDate(item) {
+      if (!item) return 0;
+      
+      const tryParse = (str) => {
+        if (!str) return NaN;
+        let cleaned = String(str).trim()
+          .replace(/-/g, '/')
+          .replace(/\s+/g, ' ');
+        let d = new Date(cleaned);
+        if (!isNaN(d.getTime())) return d.getTime();
+        
+        d = new Date(str);
+        if (!isNaN(d.getTime())) return d.getTime();
+        
+        return NaN;
+      };
+
+      // Try item.date FIRST (actual date the photo was taken)
+      if (item.date) {
+        const val = tryParse(item.date);
+        if (!isNaN(val)) return val;
+        
+        // Manual fallback for custom formats like "dec 29, 2025"
+        const dateStr = String(item.date).trim().toLowerCase();
+        const months = {
+          jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+          jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+          january: 0, february: 1, march: 2, april: 3, june: 5,
+          july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+        };
+        const matchMonthDayYear = dateStr.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+        if (matchMonthDayYear) {
+          const mStr = matchMonthDayYear[1];
+          const day = parseInt(matchMonthDayYear[2], 10);
+          const year = parseInt(matchMonthDayYear[3], 10);
+          const month = months[mStr] !== undefined ? months[mStr] : 0;
+          return new Date(year, month, day).getTime();
+        }
+        
+        const matchYear = dateStr.match(/\b\d{4}\b/);
+        if (matchYear) {
+          const year = parseInt(matchYear[0], 10);
+          return new Date(year, 0, 1).getTime();
+        }
+      }
+
+      // Fallback to created_at (database upload time)
+      if (item.created_at) {
+        const val = tryParse(item.created_at);
+        if (!isNaN(val)) return val;
+      }
+      
+      return 0;
+    }
+
+    function renderSingleCardHtml(p) {
+      const isVideo = p.type === 'video';
+      const isDraft = isUntitled(p);
+      const typeLabel = isDraft ? 'draft' : (isVideo ? 'video' : (p.category || 'photo'));
+      const typeClass = isDraft ? 'badge-draft' : (isVideo ? 'badge-video' : (p.category === 'figures' ? 'badge-figures' : 'badge-photo'));
+      const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
+
+      return `
+        <div class="asset-card" data-id="${p.id}" data-type="${p.type}" style="cursor: pointer;">
+          <div class="card-preview-wrapper">
+            <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
+            ${isVideo ? `
+              <div class="video-play-indicator">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            ` : ''}
+          </div>
+          <div class="card-info" style="padding: 1.2rem 1.2rem 1.4rem 1.2rem;">
+            <div class="card-header-row">
+              <div class="card-title" title="${escapeHtml(p.title || 'untitled')}">${escapeHtml(p.title || 'untitled')}</div>
+              <span class="badge ${typeClass}">${typeLabel}</span>
+            </div>
+            
+            <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.3rem;">
+              <div style="display: flex; align-items: center; gap: 0.45rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>${escapeHtml(p.location || 'unknown location')}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.45rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>${escapeHtml(p.date || 'undated')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     // Renders matching and sorted archive items to our Google Drive directory grid
     function renderArchives() {
       const filtered = globalArchivesList.filter(item => {
-        // Filter by category segment pills
+        // Filter by category segment dropdown option
         if (activeFilter === 'photo' && item.type !== 'photo') return false;
         if (activeFilter === 'video' && item.type !== 'video') return false;
         if (activeFilter === 'figures' && (item.type !== 'photo' || item.category !== 'figures')) return false;
+        if (activeFilter === 'draft' && !isUntitled(item)) return false;
 
         // Filter by text search query
         if (searchQuery) {
@@ -1976,56 +2231,79 @@
         return true;
       });
 
+      // Sort filtered items (always placing draft items at the bottom of the list)
+      const sortVal = document.getElementById('filter-sort').value;
+      filtered.sort((a, b) => {
+        const draftA = isUntitled(a);
+        const draftB = isUntitled(b);
+        if (draftA && !draftB) return 1;
+        if (!draftA && draftB) return -1;
+
+        if (sortVal === 'date-desc') {
+          return parseDate(b) - parseDate(a);
+        } else if (sortVal === 'date-asc') {
+          return parseDate(a) - parseDate(b);
+        } else if (sortVal === 'name-asc') {
+          return (a.title || '').localeCompare(b.title || '');
+        } else if (sortVal === 'name-desc') {
+          return (b.title || '').localeCompare(a.title || '');
+        }
+        return 0;
+      });
+
       if (filtered.length === 0) {
         itemsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.05em;">no matching archives found.</p>`;
         return;
       }
 
-      itemsContainer.innerHTML = filtered.map(p => {
-        const isVideo = p.type === 'video';
-        const typeLabel = isVideo ? 'video' : (p.category || 'photo');
-        const typeClass = isVideo ? 'badge-video' : (p.category === 'figures' ? 'badge-figures' : 'badge-photo');
-        const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
+      const groupVal = document.getElementById('filter-group').value;
+      if (groupVal === 'none') {
+        itemsContainer.innerHTML = filtered.map(p => renderSingleCardHtml(p)).join('');
+      } else {
+        const groups = {};
+        filtered.forEach(item => {
+          let groupKey = '';
+          if (groupVal === 'year') {
+            groupKey = getYearFromDate(item.date);
+          } else if (groupVal === 'type') {
+            if (isUntitled(item)) {
+              groupKey = 'drafts';
+            } else {
+              groupKey = item.type === 'video' ? 'videos' : (item.category || 'photographs');
+            }
+          }
+          if (!groups[groupKey]) groups[groupKey] = [];
+          groups[groupKey].push(item);
+        });
 
-        return `
-          <div class="asset-card">
-            <div class="card-preview-wrapper">
-              <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
-              ${isVideo ? `
-                <div class="video-play-indicator">
-                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-              ` : ''}
-            </div>
-            <div class="card-info">
-              <div class="card-header-row">
-                <div class="card-title" title="${escapeHtml(p.title || 'untitled')}">${escapeHtml(p.title || 'untitled')}</div>
-                <span class="badge ${typeClass}">${typeLabel}</span>
+        const groupKeys = Object.keys(groups).sort((a, b) => {
+          if (groupVal === 'year') {
+            if (a === 'undated') return 1;
+            if (b === 'undated') return -1;
+            return b.localeCompare(a); // Descending years
+          }
+          if (a === 'drafts') return 1;
+          if (b === 'drafts') return -1;
+          return a.localeCompare(b);
+        });
+
+        itemsContainer.innerHTML = groupKeys.map(groupKey => {
+          const groupItems = groups[groupKey];
+          const renderedCards = groupItems.map(p => renderSingleCardHtml(p)).join('');
+          return `
+            <div class="group-section" style="grid-column: 1 / -1; margin-bottom: 2.5rem; width: 100%;">
+              <div class="group-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                <h3 style="font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); white-space: nowrap;">${groupKey}</h3>
+                <div style="flex-grow: 1; height: 1px; background: var(--border);"></div>
+                <span style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-faint); letter-spacing: 0.05em;">${groupItems.length} item${groupItems.length > 1 ? 's' : ''}</span>
               </div>
-              
-              <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.2rem;">
-                <div style="display: flex; align-items: center; gap: 0.45rem;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-                  <span>${escapeHtml(p.location || 'unknown location')}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.45rem;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>${escapeHtml(p.date || 'undated')}</span>
-                </div>
-              </div>
-              
-              <div class="card-actions-row">
-                <button class="btn-card-action btn-edit" data-id="${p.id}" data-type="${p.type}" title="Edit asset metadata">
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                </button>
-                <button class="btn-card-action danger btn-delete" data-id="${p.id}" data-type="${p.type}" data-title="${escapeHtml(p.title || 'untitled')}" title="Delete asset permanently">
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
+              <div class="asset-grid">
+                ${renderedCards}
               </div>
             </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
     }
 
     function escapeHtml(str) {
@@ -2038,29 +2316,28 @@
       renderArchives();
     });
 
-    filterPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        filterPills.forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        activeFilter = pill.dataset.filter;
-        renderArchives();
-      });
+    document.getElementById('filter-type').addEventListener('change', (e) => {
+      activeFilter = e.target.value;
+      renderArchives();
     });
 
-    // Delegate grid clicks for CRUD Actions (Delete & Update/Edit)
+    document.getElementById('filter-sort').addEventListener('change', () => {
+      renderArchives();
+    });
+
+    document.getElementById('filter-group').addEventListener('change', () => {
+      renderArchives();
+    });
+
+    // Delegate grid clicks for opening the edit modal
     itemsContainer.addEventListener('click', (e) => {
-      const deleteBtn = e.target.closest('.btn-delete');
-      const editBtn = e.target.closest('.btn-edit');
-      
-      if (deleteBtn) {
-        const id = deleteBtn.dataset.id;
-        const title = deleteBtn.dataset.title;
-        const type = deleteBtn.dataset.type;
-        deleteItem(type, id, title);
-      } else if (editBtn) {
-        const id = editBtn.dataset.id;
-        const type = editBtn.dataset.type;
-        openEditModal(type, id);
+      const card = e.target.closest('.asset-card');
+      if (card) {
+        const id = card.dataset.id;
+        const type = card.dataset.type;
+        if (id && type) {
+          openEditModal(type, id);
+        }
       }
     });
 
