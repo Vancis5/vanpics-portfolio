@@ -14,8 +14,28 @@ import {
   validateVideoFields,
 } from './validation.js';
 
+// 10 MB for images, 100 MB for videos
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+
+// Reject keys that could traverse R2 bucket structure
+function isValidMediaKey(key) {
+  if (!key || typeof key !== 'string') return false;
+  if (key.includes('..') || key.startsWith('/') || key.startsWith('\\')) return false;
+  // Only allow alphanumeric, hyphens, underscores, dots, and forward slashes
+  return /^[a-zA-Z0-9\-_./]+$/.test(key);
+}
+
 export async function serveMedia(request, env, params) {
   const fileKey = decodeURIComponent(params.key);
+
+  if (!isValidMediaKey(fileKey)) {
+    return new Response('Invalid media key', {
+      status: 400,
+      headers: corsHeaders(request, env),
+    });
+  }
+
   const object = await env.MEDIA_BUCKET.get(fileKey);
 
   if (!object) {
@@ -28,7 +48,8 @@ export async function serveMedia(request, env, params) {
   const headers = new Headers(corsHeaders(request, env));
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
-  headers.set('Cache-Control', 'public, max-age=31536000');
+  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  headers.set('X-Content-Type-Options', 'nosniff');
 
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', inferContentType(fileKey));
@@ -140,6 +161,11 @@ export async function uploadPhoto(request, env) {
     errors.push('missing processed image assets');
   }
 
+  // Enforce file size limits
+  if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (blurFile?.size > MAX_IMAGE_SIZE) errors.push(`blur exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
   }
@@ -209,6 +235,10 @@ export async function uploadVideo(request, env) {
   if (!isFileLike(posterFile, 'image/')) {
     errors.push('missing poster image asset');
   }
+
+  // Enforce file size limits
+  if (videoFile?.size > MAX_VIDEO_SIZE) errors.push(`video exceeds ${MAX_VIDEO_SIZE / 1024 / 1024}MB limit`);
+  if (posterFile?.size > MAX_IMAGE_SIZE) errors.push(`poster exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });

@@ -1,21 +1,22 @@
 const DEV_ORIGINS = new Set([
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
 ]);
 
-export function getAllowedOrigins(env, requestUrl) {
+export function getAllowedOrigins(env) {
   const configured = (env.ALLOWED_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return new Set([...DEV_ORIGINS, requestUrl.origin, ...configured]);
+  return new Set([...DEV_ORIGINS, ...configured]);
 }
 
 export function corsHeaders(request, env) {
-  const requestUrl = new URL(request.url);
   const origin = request.headers.get('Origin');
-  const allowedOrigins = getAllowedOrigins(env, requestUrl);
+  const allowedOrigins = getAllowedOrigins(env);
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
@@ -62,24 +63,31 @@ export async function assertAdmin(request, env) {
 
   const adminToken = request.headers.get('X-Admin-Token');
   if (!adminToken) {
-    return { ok: false, status: 401, error: 'unauthorized: invalid admin secret' };
+    return { ok: false, status: 401, error: 'unauthorized: missing admin token' };
+  }
+
+  // Reject tokens that are unreasonably long (> 512 chars) to avoid hash-DoS
+  if (adminToken.length > 512) {
+    return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
   // Timing-safe comparison using SHA-256 to mitigate timing attacks
   const encoder = new TextEncoder();
-  const tokenHash = await crypto.subtle.digest('SHA-256', encoder.encode(adminToken));
-  const secretHash = await crypto.subtle.digest('SHA-256', encoder.encode(env.ADMIN_SECRET));
+  const [tokenHash, secretHash] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(adminToken)),
+    crypto.subtle.digest('SHA-256', encoder.encode(env.ADMIN_SECRET)),
+  ]);
 
   const tokenArr = new Uint8Array(tokenHash);
   const secretArr = new Uint8Array(secretHash);
 
-  let match = 0;
+  let mismatch = 0;
   for (let i = 0; i < tokenArr.length; i++) {
-    match |= tokenArr[i] ^ secretArr[i];
+    mismatch |= tokenArr[i] ^ secretArr[i];
   }
 
-  if (match !== 0) {
-    return { ok: false, status: 401, error: 'unauthorized: invalid admin secret' };
+  if (mismatch !== 0) {
+    return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
   return { ok: true };

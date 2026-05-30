@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>vanpics — admin cms</title>
   
-  <!-- Fonts: Outfit (UI elements), Cormorant Garamond (Serif Headings), DM Mono (Tech metadata) -->
+  <!-- Fonts: Cormorant Garamond (Logo only), DM Mono (Everything else) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
   
   <style>
     :root {
       --bg: #090808;
       --text: #f4eee1;
-      --text-muted: rgba(244, 238, 225, 0.52);
-      --text-faint: rgba(244, 238, 225, 0.22);
+      --text-muted: rgba(244, 238, 225, 0.65);
+      --text-faint: rgba(244, 238, 225, 0.38);
       --border: rgba(244, 238, 225, 0.08);
       --border-focus: rgba(212, 175, 55, 0.4);
       --surface: rgba(22, 21, 21, 0.6);
@@ -39,7 +39,8 @@
       background-color: var(--bg);
       background-image: radial-gradient(circle at 50% 50%, #151414 0%, #080808 100%);
       color: var(--text);
-      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
@@ -78,7 +79,7 @@
 
     .logo-area p {
       font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       text-transform: lowercase;
       letter-spacing: 0.15em;
@@ -144,8 +145,8 @@
       border-radius: var(--radius);
       color: var(--text);
       padding: 0.65rem 0.85rem;
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.9rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
       transition: var(--transition);
       outline: none;
     }
@@ -159,7 +160,7 @@
     .secret-input {
       width: 190px;
       font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       letter-spacing: 0.08em;
       border: none !important;
       background: transparent !important;
@@ -190,22 +191,45 @@
     .remember-checkbox-wrapper {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.4rem;
       cursor: pointer;
       user-select: none;
+      margin-top: 0.5rem;
     }
 
-    .remember-checkbox-wrapper input {
-      accent-color: var(--accent);
+    .remember-checkbox-wrapper input[type="checkbox"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border: 1px solid var(--text-faint);
+      border-radius: 2px;
+      background: transparent;
       cursor: pointer;
-      width: auto;
+      position: relative;
+      flex-shrink: 0;
       padding: 0;
       margin: 0;
     }
 
+    .remember-checkbox-wrapper input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .remember-checkbox-wrapper input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: -1px;
+      left: 1px;
+      font-size: 0.6rem;
+      color: #0c0b0b;
+      font-weight: bold;
+    }
+
     .remember-checkbox-wrapper span {
       font-family: 'DM Mono', monospace;
-      font-size: 0.52rem;
+      font-size: 0.62rem;
       color: var(--text-muted);
       text-transform: lowercase;
       letter-spacing: 0.05em;
@@ -246,7 +270,7 @@
 
     .panel-title {
       font-family: 'DM Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 400;
       margin-bottom: 2rem;
       display: flex;
@@ -282,7 +306,7 @@
       padding: 0.7rem 1rem;
       border-radius: calc(var(--radius) - 2px);
       font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       cursor: pointer;
@@ -365,7 +389,7 @@
 
     .drop-zone p {
       font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       letter-spacing: 0.06em;
       text-transform: lowercase;
@@ -373,7 +397,7 @@
 
     .drop-zone span {
       font-family: 'DM Mono', monospace;
-      font-size: 0.55rem;
+      font-size: 0.62rem;
       color: var(--text-faint);
       text-transform: lowercase;
       border: 1px solid var(--border);
@@ -449,18 +473,14 @@
 
     label {
       font-family: 'DM Mono', monospace;
-      font-size: 0.58rem;
+      font-size: 0.68rem;
       font-weight: 400;
       color: var(--text-muted);
       text-transform: lowercase;
       letter-spacing: 0.12em;
     }
 
-    /* Monospaced fields */
-    #date, #location, #music, select {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.8rem;
-    }
+    /* All inputs inherit DM Mono from body */
 
     /* Elegant toggle switch */
     .toggle-wrapper {
@@ -475,7 +495,7 @@
 
     .toggle-wrapper span {
       font-family: 'DM Mono', monospace;
-      font-size: 0.58rem;
+      font-size: 0.72rem;
       text-transform: lowercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
@@ -536,7 +556,7 @@
       padding: 0.85rem 2rem;
       font-family: 'DM Mono', monospace;
       font-weight: 400;
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.18em;
       cursor: pointer;
@@ -597,7 +617,7 @@
       align-items: center;
       gap: 0.65rem;
       font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
+      font-size: 0.72rem;
       margin-bottom: 0.65rem;
       color: var(--text-muted);
       text-transform: lowercase;
@@ -643,18 +663,21 @@
     }
 
     .items-container {
+      overflow-y: overlay;
       overflow-y: auto;
       flex-grow: 1;
       margin-top: 1.5rem;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      padding-right: 0.5rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(244, 238, 225, 0.12) transparent;
     }
 
-    /* Elegant Custom Scrollbar */
+    /* Overlay scrollbar — floats on top, no layout shift */
     .items-container::-webkit-scrollbar {
-      width: 4px;
+      width: 5px;
+      background: transparent;
     }
 
     .items-container::-webkit-scrollbar-track {
@@ -662,12 +685,12 @@
     }
 
     .items-container::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 2px;
+      background: rgba(244, 238, 225, 0.12);
+      border-radius: 4px;
     }
 
     .items-container::-webkit-scrollbar-thumb:hover {
-      background: var(--text-faint);
+      background: rgba(244, 238, 225, 0.25);
     }
 
     .archive-item {
@@ -752,9 +775,9 @@
     }
 
     .archive-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 0.98rem;
-      font-style: italic;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      font-style: normal;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -764,7 +787,7 @@
     /* Visual High Fidelity Badges */
     .badge {
       font-family: 'DM Mono', monospace;
-      font-size: 0.52rem;
+      font-size: 0.58rem;
       padding: 0.12rem 0.35rem;
       border-radius: 3px;
       text-transform: uppercase;
@@ -792,7 +815,7 @@
 
     .archive-meta {
       font-family: 'DM Mono', monospace;
-      font-size: 0.58rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
       text-transform: lowercase;
     }
@@ -839,7 +862,7 @@
       transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 10000;
       font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       text-transform: lowercase;
       letter-spacing: 0.05em;
     }
@@ -851,6 +874,159 @@
 
     .toast-success { border-left: 2px solid var(--accent); }
     .toast-error { border-left: 2px solid var(--danger); }
+
+    /* ─── Mobile Responsive ─── */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.2rem;
+        padding: 1.5rem 1.2rem;
+      }
+
+      .auth-container {
+        width: 100%;
+        align-items: stretch;
+      }
+
+      .auth-input-wrapper {
+        width: 100%;
+      }
+
+      .secret-input {
+        width: 100% !important;
+        flex: 1;
+      }
+
+      main {
+        padding: 0 1.2rem;
+        margin: 1.5rem auto;
+        gap: 1.5rem;
+      }
+
+      .panel {
+        padding: 1.5rem 1.2rem;
+      }
+
+      .panel-title {
+        font-size: 0.68rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .tabs-container {
+        margin-bottom: 1.5rem;
+      }
+
+      .tab-btn {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+      }
+
+      .field-group.full-width {
+        grid-column: span 1;
+      }
+
+      .drop-zone {
+        padding: 2rem 1rem;
+      }
+
+      .drop-zone p { font-size: 0.58rem; }
+      .drop-zone svg { width: 24px; height: 24px; }
+
+      .drop-zone-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.2rem;
+        font-size: 0.65rem;
+      }
+
+      .list-panel {
+        max-height: 500px;
+      }
+
+      .archive-item {
+        padding: 0.6rem;
+        gap: 0.75rem;
+      }
+
+      .archive-media-wrapper {
+        width: 40px;
+        height: 40px;
+      }
+
+      .archive-title {
+        font-size: 0.68rem;
+      }
+
+      .archive-meta {
+        font-size: 0.52rem;
+      }
+
+      .badge {
+        font-size: 0.48rem;
+        padding: 0.1rem 0.3rem;
+      }
+
+      .toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        font-size: 0.6rem;
+      }
+
+      .pipeline-step {
+        font-size: 0.56rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      header {
+        padding: 1.2rem 1rem;
+      }
+
+      main {
+        padding: 0 1rem;
+        margin: 1rem auto;
+      }
+
+      .panel {
+        padding: 1.2rem 1rem;
+      }
+
+      .logo-area h1 {
+        font-size: 1.4rem;
+      }
+
+      .logo-area p {
+        font-size: 0.58rem;
+      }
+
+      .tab-btn {
+        font-size: 0.55rem;
+        gap: 0.3rem;
+      }
+
+      .tab-btn svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .archive-title-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -997,7 +1173,7 @@
           <!-- Photo Mode Only: Hero Carousel Toggle -->
           <div class="field-group full-width photo-only">
             <div class="toggle-wrapper">
-              <span>feature in hero carousel</span>
+              <span>show in carousel</span>
               <label class="switch">
                 <input type="checkbox" id="hero-slide">
                 <span class="slider"></span>
@@ -1036,7 +1212,14 @@
   <script>
     const API_BASE_URL = window.location.origin.includes('localhost') 
       ? 'http://localhost:8787' 
-      : ''; 
+      : '';
+
+    // Client-side file size limits (match worker limits)
+    const MAX_IMAGE_BYTES = 10 * 1024 * 1024;  // 10 MB
+    const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB
+
+    // Local placeholder data URI (no external requests)
+    const PLACEHOLDER_SRC = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%23222"><rect width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="11" font-family="monospace">no img</text></svg>');
 
     // Form mode state
     let currentMode = 'photo'; // 'photo' or 'video'
@@ -1216,8 +1399,12 @@
           setAuthStatus('secured');
         } else {
           setAuthStatus('failed');
+          // Clear persisted token on explicit auth rejection
+          localStorage.removeItem('vanpics_admin_token');
+          sessionStorage.removeItem('vanpics_admin_token');
         }
       } catch (err) {
+        // Network error — don't clear token, server might just be down
         setAuthStatus('unverified');
       }
     }
@@ -1369,6 +1556,10 @@
           showToast('file is not a video', 'error');
           return;
         }
+        if (file.size > MAX_VIDEO_BYTES) {
+          showToast(`video exceeds ${MAX_VIDEO_BYTES / 1024 / 1024}mb limit`, 'error');
+          return;
+        }
         selectedVideoFile = file;
         previewEl.src = URL.createObjectURL(file);
         previewContainer.style.display = 'block';
@@ -1376,6 +1567,10 @@
       } else if (type === 'poster') {
         if (!file.type.startsWith('image/')) {
           showToast('file is not an image', 'error');
+          return;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+          showToast(`image exceeds ${MAX_IMAGE_BYTES / 1024 / 1024}mb limit`, 'error');
           return;
         }
         selectedPosterFile = file;
@@ -1389,6 +1584,10 @@
       } else {
         if (!file.type.startsWith('image/')) {
           showToast('file is not an image', 'error');
+          return;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+          showToast(`image exceeds ${MAX_IMAGE_BYTES / 1024 / 1024}mb limit`, 'error');
           return;
         }
         selectedFile = file;
@@ -1577,7 +1776,7 @@
           return `
             <div class="archive-item">
               <div class="archive-media-wrapper">
-                <img class="archive-thumb" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.src='https://placehold.co/100x100?text=mock'">
+                <img class="archive-thumb" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
                 ${isVideo ? `
                   <div class="play-overlay">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
