@@ -3,8 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
   <title>vanpics</title>
   <meta name="description" content="Photography portfolio by Francis Evan.">
   <meta name="theme-color" content="#111010">
@@ -65,7 +65,8 @@
   <div id="custom-scrollbar">
     <div id="custom-scrollbar-thumb"></div>
   </div>
-  <section id="hero">
+  <main>
+    <section id="hero" aria-label="Intro and Slideshow">
     <div id="glow-ball"></div>
     <div class="carousel-row" id="row-0"></div>
     <div class="carousel-row" id="row-1"></div>
@@ -81,7 +82,7 @@
     </div>
   </section>
 
-  <section id="gallery-section">
+  <section id="gallery-section" aria-label="Creative works portfolio">
     <header id="gallery-header">
       <p>
         <span class="active photographs-btn" role="button" tabindex="0" aria-label="Show photographs gallery">photographs</span>
@@ -93,8 +94,9 @@
     </header>
     <div id="masonry"></div>
   </section>
+  </main>
 
-  <div id="lightbox">
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="Media Lightbox">
     <div id="lightbox-bg"></div>
     <div id="blur-layer-a" class="lightbox-bg-blur">
       <div class="lightbox-bg-blur-inner"></div>

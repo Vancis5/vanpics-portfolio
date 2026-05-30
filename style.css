@@ -353,7 +353,7 @@ body::after {
   font-weight: 400;
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   letter-spacing: 0.1em;
-  color: var(--text-muted);
+  color: rgba(221, 216, 207, 0.60);
   margin-top: 0.25rem;
   text-transform: lowercase;
 }
@@ -384,7 +384,7 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-size: 0.57rem;
   letter-spacing: 0.18em;
-  color: var(--text-faint);
+  color: rgba(221, 216, 207, 0.60);
   text-transform: lowercase;
 }
 
@@ -496,7 +496,7 @@ body::after {
 }
 
 #gallery-header .inactive {
-  color: var(--text-faint);
+  color: rgba(221, 216, 207, 0.60);
   cursor: pointer;
   transition: color 0.3s ease;
   /* Full-height Hitbox */
@@ -505,7 +505,7 @@ body::after {
 }
 
 #gallery-header .inactive:hover {
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 #gallery-header .active {
@@ -622,13 +622,13 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.25em;
-  color: var(--text-faint);
+  color: rgba(221, 216, 207, 0.60);
   text-transform: uppercase;
   margin: 4.5rem 0 0;
   padding-bottom: 2.1rem;
   position: relative;
   width: 100%;
-  opacity: 0.8;
+  opacity: 1;
 }
 
 .date-header::after {
@@ -1437,7 +1437,7 @@ body::after {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(221, 216, 207, 0.12);
   border-radius: 4px;
-  color: var(--text-muted);
+  color: rgba(221, 216, 207, 0.60);
   font-family: 'DM Mono', monospace;
   font-weight: 400;
   font-size: 0.57rem;
@@ -1816,7 +1816,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: var(--text-faint);
+  color: rgba(221, 216, 207, 0.60);
   white-space: nowrap;
 }
 
@@ -1827,7 +1827,7 @@ body::after {
   margin-top: 0.95rem;
   align-items: center;
   justify-content: center;
-  color: var(--text-faint);
+  color: rgba(221, 216, 207, 0.60);
   transition:
     color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1856,7 +1856,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.65;
   letter-spacing: 0.1em;
-  color: var(--text-faint);
+  color: rgba(221, 216, 207, 0.60);
 }
 
 .footer-copyright {
@@ -1865,7 +1865,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.19);
+  color: rgba(221, 216, 207, 0.50);
 }
 
 #site-footer:hover .footer-brand h2,
@@ -1879,7 +1879,7 @@ body::after {
 #site-footer.is-visible .footer-bio p,
 #site-footer:hover .footer-instagram,
 #site-footer.is-visible .footer-instagram {
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 #site-footer:hover .footer-copyright,

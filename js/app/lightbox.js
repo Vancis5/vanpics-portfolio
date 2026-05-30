@@ -90,6 +90,8 @@ export function prepareLightboxPhoto(p) {
   wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
   wrap.classList.add('photo-loading');
   img.dataset.loadingPhoto = 'true';
+  img.alt = p.title || '';
+  img.removeAttribute('title');
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
   requestAnimationFrame(function () {
     wrap.classList.add('photo-placeholder-visible');
