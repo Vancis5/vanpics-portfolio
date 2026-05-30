@@ -5,22 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>vanpics — admin cms</title>
   
-  <!-- Cormorant Garamond & DM Mono Fonts -->
+  <!-- Fonts: Outfit (UI elements), Cormorant Garamond (Serif Headings), DM Mono (Tech metadata) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg: #111010;
-      --text: #ddd8cf;
-      --text-muted: rgba(221, 216, 207, 0.48);
-      --text-faint: rgba(221, 216, 207, 0.22);
-      --border: rgba(221, 216, 207, 0.09);
-      --surface: #1a1919;
-      --radius: 3px;
-      --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      --danger: rgba(221, 216, 207, 0.5);
+      --bg: #090808;
+      --text: #f4eee1;
+      --text-muted: rgba(244, 238, 225, 0.52);
+      --text-faint: rgba(244, 238, 225, 0.22);
+      --border: rgba(244, 238, 225, 0.08);
+      --border-focus: rgba(212, 175, 55, 0.4);
+      --surface: rgba(22, 21, 21, 0.6);
+      --surface-accent: rgba(212, 175, 55, 0.03);
+      --accent: #d4af37; /* Luxe warm gold */
+      --accent-glow: rgba(212, 175, 55, 0.15);
+      --radius: 6px;
+      --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      --danger: #d96868;
+      --success: #82a878;
+      --warning: #cca05a;
     }
 
     * {
@@ -31,8 +37,9 @@
 
     body {
       background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% 50%, #151414 0%, #080808 100%);
       color: var(--text);
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
@@ -54,7 +61,7 @@
     header {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 2.5rem 2rem;
+      padding: 2rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -64,8 +71,8 @@
     .logo-area h1 {
       font-family: 'Cormorant Garamond', serif;
       font-weight: 400;
-      font-size: 1.6rem;
-      letter-spacing: 0.04em;
+      font-size: 1.8rem;
+      letter-spacing: 0.05em;
       color: var(--text);
     }
 
@@ -78,32 +85,130 @@
       margin-top: 0.3rem;
     }
 
+    /* Advanced Auth Controls */
+    .auth-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.4rem;
+    }
+
     .auth-input-wrapper {
       display: flex;
-      gap: 0.5rem;
+      align-items: center;
+      background: rgba(17, 16, 16, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0 0.65rem;
+      transition: var(--transition);
+    }
+
+    .auth-input-wrapper:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .auth-status-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.4rem;
+    }
+
+    .auth-status-icon svg {
+      width: 15px;
+      height: 15px;
+      transition: var(--transition);
+    }
+
+    .auth-status-icon svg.text-warning { color: var(--warning); }
+    .auth-status-icon svg.text-success { color: var(--success); }
+    .auth-status-icon svg.text-danger { color: var(--danger); }
+
+    /* Auth spinner */
+    .spinner {
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(244, 238, 225, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     input, textarea, select {
-      background: var(--bg);
+      background: rgba(17, 16, 16, 0.5);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       color: var(--text);
       padding: 0.65rem 0.85rem;
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 0.95rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
       transition: var(--transition);
       outline: none;
     }
 
     input:focus, textarea:focus, select:focus {
-      border-color: var(--text-muted);
+      border-color: var(--border-focus);
+      background: rgba(17, 16, 16, 0.8);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     .secret-input {
-      width: 220px;
+      width: 190px;
       font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       letter-spacing: 0.08em;
+      border: none !important;
+      background: transparent !important;
+      padding: 0.65rem 0.2rem;
+      box-shadow: none !important;
+    }
+
+    .btn-toggle-password {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      cursor: pointer;
+      padding: 0.2rem;
+      display: flex;
+      align-items: center;
+      transition: var(--transition);
+    }
+
+    .btn-toggle-password:hover {
+      color: var(--text-muted);
+    }
+
+    .btn-toggle-password svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .remember-checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember-checkbox-wrapper input {
+      accent-color: var(--accent);
+      cursor: pointer;
+      width: auto;
+      padding: 0;
+      margin: 0;
+    }
+
+    .remember-checkbox-wrapper span {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.52rem;
+      color: var(--text-muted);
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
     }
 
     /* Main layout grid */
@@ -112,7 +217,7 @@
       margin: 2rem auto;
       padding: 0 2rem;
       display: grid;
-      grid-template-columns: 1.25fr 0.75fr;
+      grid-template-columns: 1.2fr 0.8fr;
       gap: 3rem;
     }
 
@@ -123,12 +228,20 @@
       }
     }
 
-    /* Monochrome Panel styling */
+    /* Monochrome Frosted Panel styling */
     .panel {
       background: var(--surface);
+      backdrop-filter: blur(15px) saturate(110%);
+      -webkit-backdrop-filter: blur(15px) saturate(110%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 2.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+      transition: var(--transition);
+    }
+
+    .panel:hover {
+      border-color: rgba(244, 238, 225, 0.12);
     }
 
     .panel-title {
@@ -150,51 +263,117 @@
       stroke: var(--text-muted);
     }
 
-    /* File Drop Zone */
+    /* Segmented Tab Bar */
+    .tabs-container {
+      display: flex;
+      background: rgba(17, 16, 16, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.25rem;
+      margin-bottom: 2.2rem;
+      gap: 0.25rem;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.7rem 1rem;
+      border-radius: calc(var(--radius) - 2px);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .tab-btn svg {
+      transition: var(--transition);
+      stroke: var(--text-muted);
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(244, 238, 225, 0.02);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0c0b0b;
+      font-weight: 500;
+    }
+
+    .tab-btn.active svg {
+      stroke: #0c0b0b;
+    }
+
+    /* File Drop Zone wrapper */
+    .drop-zones-wrapper {
+      margin-bottom: 2.5rem;
+    }
+
+    .drop-zone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .drop-zone-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .drop-zone {
       border: 1px dashed var(--border);
       border-radius: var(--radius);
-      padding: 3.5rem 2rem;
+      padding: 3rem 1.5rem;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
-      background: rgba(17, 16, 16, 0.4);
+      background: rgba(17, 16, 16, 0.3);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.85rem;
-      margin-bottom: 2.5rem;
+      gap: 0.8rem;
       position: relative;
       overflow: hidden;
     }
 
     .drop-zone:hover, .drop-zone.dragover {
-      border-color: var(--text-muted);
-      background: rgba(221, 216, 207, 0.02);
+      border-color: var(--accent);
+      background: var(--surface-accent);
+      box-shadow: 0 0 15px var(--accent-glow);
     }
 
     .drop-zone svg {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       stroke: var(--text-faint);
       transition: var(--transition);
     }
 
     .drop-zone:hover svg {
-      stroke: var(--text-muted);
+      stroke: var(--accent);
     }
 
     .drop-zone p {
       font-family: 'DM Mono', monospace;
       font-size: 0.62rem;
       color: var(--text-muted);
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       text-transform: lowercase;
     }
 
     .drop-zone span {
       font-family: 'DM Mono', monospace;
-      font-size: 0.58rem;
+      font-size: 0.55rem;
       color: var(--text-faint);
       text-transform: lowercase;
       border: 1px solid var(--border);
@@ -202,26 +381,25 @@
       border-radius: var(--radius);
     }
 
-    #file-input {
+    .drop-zone input[type="file"] {
       display: none;
     }
 
     /* Preview area */
     .preview-container {
       display: none;
+      position: absolute;
+      inset: 0;
       width: 100%;
-      margin-top: 1rem;
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: 1px solid var(--border);
-      position: relative;
+      height: 100%;
+      z-index: 10;
+      background: #0d0c0c;
     }
 
     .preview-image {
       width: 100%;
-      max-height: 350px;
-      object-fit: contain;
-      background: var(--bg);
+      height: 100%;
+      object-fit: cover;
       display: block;
     }
 
@@ -229,11 +407,11 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      background: rgba(17, 16, 16, 0.85);
+      background: rgba(9, 8, 8, 0.85);
       border: 1px solid var(--border);
       color: var(--text);
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: var(--radius);
       cursor: pointer;
       display: flex;
@@ -241,12 +419,13 @@
       justify-content: center;
       transition: var(--transition);
       font-family: 'DM Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
+      z-index: 20;
     }
 
     .remove-file:hover {
       background: var(--danger);
-      color: var(--bg);
+      color: #000;
       border-color: transparent;
     }
 
@@ -278,7 +457,7 @@
     }
 
     /* Monospaced fields */
-    #date, #location, .secret-input, select {
+    #date, #location, #music, select {
       font-family: 'DM Mono', monospace;
       font-size: 0.8rem;
     }
@@ -322,7 +501,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: rgba(221, 216, 207, 0.1);
+      background-color: rgba(244, 238, 225, 0.08);
       transition: .4s;
       border-radius: var(--radius);
     }
@@ -340,15 +519,15 @@
     }
 
     input:checked + .slider {
-      background-color: rgba(221, 216, 207, 0.3);
+      background-color: rgba(212, 175, 55, 0.35);
     }
 
     input:checked + .slider:before {
       transform: translateX(18px);
-      background-color: var(--text);
+      background-color: var(--accent);
     }
 
-    /* Monochrome minimalist button */
+    /* Luxe warm-gold minimalist button */
     .btn {
       background: transparent;
       color: var(--text);
@@ -357,7 +536,7 @@
       padding: 0.85rem 2rem;
       font-family: 'DM Mono', monospace;
       font-weight: 400;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.18em;
       cursor: pointer;
@@ -372,15 +551,23 @@
     .btn svg {
       width: 14px;
       height: 14px;
+      stroke: var(--text-muted);
+      transition: var(--transition);
     }
 
     .btn:hover {
-      border-color: var(--text-muted);
-      background: rgba(221, 216, 207, 0.03);
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(212, 175, 55, 0.03);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.08);
+    }
+
+    .btn:hover svg {
+      stroke: var(--accent);
     }
 
     .btn:active {
-      background: rgba(221, 216, 207, 0.06);
+      background: rgba(212, 175, 55, 0.06);
     }
 
     .btn:disabled {
@@ -388,6 +575,11 @@
       color: var(--text-faint);
       cursor: not-allowed;
       background: transparent;
+      box-shadow: none;
+    }
+
+    .btn:disabled svg {
+      stroke: var(--text-faint);
     }
 
     /* Processing visualizer */
@@ -405,7 +597,7 @@
       align-items: center;
       gap: 0.65rem;
       font-family: 'DM Mono', monospace;
-      font-size: 0.6rem;
+      font-size: 0.62rem;
       margin-bottom: 0.65rem;
       color: var(--text-muted);
       text-transform: lowercase;
@@ -423,11 +615,12 @@
     .pipeline-step.success::before {
       content: '✓';
       margin-right: 0.25rem;
-      color: rgba(221, 216, 207, 0.6);
+      color: var(--success);
+      font-weight: bold;
     }
 
     .pipeline-step.active {
-      color: var(--text);
+      color: var(--accent);
     }
 
     .pipeline-step.active::after {
@@ -446,7 +639,7 @@
     .list-panel {
       display: flex;
       flex-direction: column;
-      max-height: 800px;
+      max-height: 850px;
     }
 
     .items-container {
@@ -455,12 +648,26 @@
       margin-top: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 0.65rem;
+      gap: 0.75rem;
       padding-right: 0.5rem;
     }
 
+    /* Elegant Custom Scrollbar */
     .items-container::-webkit-scrollbar {
-      display: none;
+      width: 4px;
+    }
+
+    .items-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .items-container::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .items-container::-webkit-scrollbar-thumb:hover {
+      background: var(--text-faint);
     }
 
     .archive-item {
@@ -475,32 +682,78 @@
     }
 
     .archive-item:hover {
-      border-color: var(--text-faint);
+      border-color: rgba(244, 238, 225, 0.15);
       background: rgba(17, 16, 16, 0.7);
     }
 
-    .archive-thumb {
+    /* Aspect Wrapper for media item list */
+    .archive-media-wrapper {
+      position: relative;
       width: 48px;
       height: 48px;
       border-radius: var(--radius);
-      object-fit: cover;
+      overflow: hidden;
       background: #000;
+      flex-shrink: 0;
+    }
+
+    .archive-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       filter: brightness(0.8);
       transition: var(--transition);
     }
 
     .archive-item:hover .archive-thumb {
-      filter: brightness(1);
+      filter: brightness(1.05);
+      transform: scale(1.05);
+    }
+
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .play-overlay svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--text);
+      opacity: 0.85;
+      transition: var(--transition);
+    }
+
+    .archive-item:hover .play-overlay {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .archive-item:hover .play-overlay svg {
+      opacity: 1;
+      transform: scale(1.15);
     }
 
     .archive-info {
       flex-grow: 1;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .archive-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .archive-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 0.95rem;
+      font-size: 0.98rem;
       font-style: italic;
       white-space: nowrap;
       overflow: hidden;
@@ -508,11 +761,39 @@
       color: var(--text);
     }
 
+    /* Visual High Fidelity Badges */
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.52rem;
+      padding: 0.12rem 0.35rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-photo {
+      color: var(--accent);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      background: rgba(212, 175, 55, 0.04);
+    }
+
+    .badge-video {
+      color: #ff9800;
+      border: 1px solid rgba(255, 152, 0, 0.25);
+      background: rgba(255, 152, 0, 0.04);
+    }
+
+    .badge-figures {
+      color: #a18cd1;
+      border: 1px solid rgba(161, 140, 209, 0.25);
+      background: rgba(161, 140, 209, 0.04);
+    }
+
     .archive-meta {
       font-family: 'DM Mono', monospace;
       font-size: 0.58rem;
       color: var(--text-muted);
-      margin-top: 0.2rem;
       text-transform: lowercase;
     }
 
@@ -535,8 +816,8 @@
     }
 
     .btn-delete:hover {
-      color: var(--text);
-      background: rgba(221, 216, 207, 0.05);
+      color: var(--danger);
+      background: rgba(217, 104, 104, 0.08);
     }
 
     .toast {
@@ -544,19 +825,21 @@
       bottom: 2rem;
       right: 2rem;
       background: var(--surface);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 0.85rem 1.25rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      padding: 0.9rem 1.4rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.75rem;
       transform: translateY(100px);
       opacity: 0;
       transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1000;
+      z-index: 10000;
       font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
+      font-size: 0.65rem;
       text-transform: lowercase;
       letter-spacing: 0.05em;
     }
@@ -566,7 +849,7 @@
       opacity: 1;
     }
 
-    .toast-success { border-left: 2px solid rgba(221, 216, 207, 0.5); }
+    .toast-success { border-left: 2px solid var(--accent); }
     .toast-error { border-left: 2px solid var(--danger); }
   </style>
 </head>
@@ -578,8 +861,28 @@
       <p>media archives cms</p>
     </div>
     
-    <div class="auth-input-wrapper">
-      <input type="password" id="secret-token" class="secret-input" placeholder="secret token">
+    <div class="auth-container">
+      <div class="auth-input-wrapper">
+        <div class="auth-status-icon" id="auth-status" title="Token status: Unverified">
+          <!-- Secured Admin (Gold/Green Lock) -->
+          <svg class="lock-icon" id="lock-secured" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <!-- Unverified (Orange/Yellow Lock) -->
+          <svg class="lock-icon text-warning" id="lock-unverified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <!-- Verification in progress spinner -->
+          <div class="spinner" id="auth-spinner" style="display:none;"></div>
+        </div>
+        <input type="password" id="secret-token" class="secret-input" placeholder="secret token">
+        <button type="button" class="btn-toggle-password" id="toggle-password-btn" title="Toggle token visibility">
+          <!-- Eye Show -->
+          <svg id="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <!-- Eye Hide -->
+          <svg id="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+      <label class="remember-checkbox-wrapper">
+        <input type="checkbox" id="remember-token">
+        <span>remember token</span>
+      </label>
     </div>
   </header>
 
@@ -590,19 +893,67 @@
         <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
         catalog new media
       </h2>
+
+      <!-- Segmented Tab switcher for Photo vs Video Upload Mode -->
+      <div class="tabs-container">
+        <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+          photo archive
+        </button>
+        <button type="button" class="tab-btn" id="tab-video" data-mode="video">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
+          video archive
+        </button>
+      </div>
       
-      <!-- Drag/Drop Container -->
-      <div class="drop-zone" id="drop-zone">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
-        </svg>
-        <p>drag raw photo here or click to browse</p>
-        <span>supports jpeg, png, webp</span>
-        <input type="file" id="file-input" accept="image/*">
-        
-        <div class="preview-container" id="preview-container">
-          <img id="image-preview" class="preview-image" src="" alt="preview">
-          <button class="remove-file" id="remove-btn" type="button">&times;</button>
+      <!-- Drag/Drop Media Container Wrapper -->
+      <div class="drop-zones-wrapper">
+        <!-- Photo Mode Dropzone -->
+        <div class="drop-zone" id="drop-zone-photo">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+          </svg>
+          <p>drag raw photo here or click to browse</p>
+          <span>supports jpeg, png, webp</span>
+          <input type="file" id="file-input-photo" accept="image/*">
+          
+          <div class="preview-container" id="preview-container-photo">
+            <img id="image-preview-photo" class="preview-image" src="" alt="preview">
+            <button class="remove-file" id="remove-btn-photo" type="button">&times;</button>
+          </div>
+        </div>
+
+        <!-- Video Mode Dual Dropzone Grid -->
+        <div class="drop-zone-grid" id="drop-zone-video-grid" style="display: none;">
+          <!-- Video File Drop Zone -->
+          <div class="drop-zone" id="drop-zone-video">
+            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+            </svg>
+            <p>drag raw mp4/webm file here</p>
+            <span>supports mp4, webm, mov</span>
+            <input type="file" id="file-input-video" accept="video/mp4,video/webm,video/quicktime">
+            
+            <div class="preview-container" id="preview-container-video">
+              <video id="video-preview" class="preview-image" muted loop playsinline></video>
+              <button class="remove-file" id="remove-btn-video" type="button">&times;</button>
+            </div>
+          </div>
+
+          <!-- Video Poster Drop Zone -->
+          <div class="drop-zone" id="drop-zone-poster">
+            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+            </svg>
+            <p>drag poster image here</p>
+            <span>supports jpeg, png, webp</span>
+            <input type="file" id="file-input-poster" accept="image/*">
+            
+            <div class="preview-container" id="preview-container-poster">
+              <img id="image-preview-poster" class="preview-image" src="" alt="preview">
+              <button class="remove-file" id="remove-btn-poster" type="button">&times;</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -623,7 +974,8 @@
             <input type="text" id="location" placeholder="e.g. macrohon, southern leyte">
           </div>
 
-          <div class="field-group">
+          <!-- Photo Mode Only: Category select -->
+          <div class="field-group photo-only">
             <label for="category">category segment</label>
             <select id="category">
               <option value="">photographs (default)</option>
@@ -631,12 +983,19 @@
             </select>
           </div>
 
+          <!-- Video Mode Only: Soundtrack name -->
+          <div class="field-group video-only" style="display: none;">
+            <label for="music">soundtrack / music info</label>
+            <input type="text" id="music" placeholder="e.g. dawn over tides - artist">
+          </div>
+
           <div class="field-group full-width">
             <label for="desc">narrative</label>
             <textarea id="desc" rows="3" placeholder="describe the context or story..."></textarea>
           </div>
 
-          <div class="field-group full-width">
+          <!-- Photo Mode Only: Hero Carousel Toggle -->
+          <div class="field-group full-width photo-only">
             <div class="toggle-wrapper">
               <span>feature in hero carousel</span>
               <label class="switch">
@@ -649,17 +1008,12 @@
 
         <button type="submit" class="btn" id="submit-btn" disabled>
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          catalog and upload
+          <span id="submit-btn-text">catalog and upload</span>
         </button>
       </form>
 
       <!-- Client Side pipeline status -->
-      <div class="pipeline-status" id="pipeline-status">
-        <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
-        <div class="pipeline-step" id="step-compress">compressing raw photo (2500px, webp)...</div>
-        <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail...</div>
-        <div class="pipeline-step" id="step-blur">rendering 40px pre-blurred background...</div>
-      </div>
+      <div class="pipeline-status" id="pipeline-status"></div>
     </div>
 
     <!-- Right panel: Active database items -->
@@ -684,23 +1038,77 @@
       ? 'http://localhost:8787' 
       : ''; 
 
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const previewContainer = document.getElementById('preview-container');
-    const imgPreview = document.getElementById('image-preview');
-    const removeBtn = document.getElementById('remove-btn');
+    // Form mode state
+    let currentMode = 'photo'; // 'photo' or 'video'
+
+    // Tab buttons
+    const tabPhotoBtn = document.getElementById('tab-photo');
+    const tabVideoBtn = document.getElementById('tab-video');
+
+    // UI elements mapping - Photo Mode
+    const dropZonePhoto = document.getElementById('drop-zone-photo');
+    const fileInputPhoto = document.getElementById('file-input-photo');
+    const previewContainerPhoto = document.getElementById('preview-container-photo');
+    const imgPreviewPhoto = document.getElementById('image-preview-photo');
+    const removeBtnPhoto = document.getElementById('remove-btn-photo');
+
+    // UI elements mapping - Video Mode
+    const dropZoneVideoGrid = document.getElementById('drop-zone-video-grid');
+    const dropZoneVideo = document.getElementById('drop-zone-video');
+    const fileInputVideo = document.getElementById('file-input-video');
+    const previewContainerVideo = document.getElementById('preview-container-video');
+    const videoPreview = document.getElementById('video-preview');
+    const removeBtnVideo = document.getElementById('remove-btn-video');
+
+    const dropZonePoster = document.getElementById('drop-zone-poster');
+    const fileInputPoster = document.getElementById('file-input-poster');
+    const previewContainerPoster = document.getElementById('preview-container-poster');
+    const imgPreviewPoster = document.getElementById('image-preview-poster');
+    const removeBtnPoster = document.getElementById('remove-btn-poster');
+
+    // Photo-only & Video-only field wrappers
+    const photoOnlyElements = document.querySelectorAll('.photo-only');
+    const videoOnlyElements = document.querySelectorAll('.video-only');
+
+    // Global handles to ensure no Playwright test gets broken
+    const dropZone = dropZonePhoto;
+    const fileInput = fileInputPhoto;
+    const previewContainer = previewContainerPhoto;
+    const imgPreview = imgPreviewPhoto;
+    const removeBtn = removeBtnPhoto;
+
     const form = document.getElementById('cms-form');
     const submitBtn = document.getElementById('submit-btn');
+    const submitBtnText = document.getElementById('submit-btn-text');
     const pipelineStatus = document.getElementById('pipeline-status');
     const itemsContainer = document.getElementById('items-container');
     const toast = document.getElementById('toast');
 
-    let selectedFile = null;
+    // Auth verification elements
+    const secretInput = document.getElementById('secret-token');
+    const rememberCheckbox = document.getElementById('remember-token');
+    const authStatus = document.getElementById('auth-status');
+    const lockSecured = document.getElementById('lock-secured');
+    const lockUnverified = document.getElementById('lock-unverified');
+    const authSpinner = document.getElementById('auth-spinner');
+    const togglePasswordBtn = document.getElementById('toggle-password-btn');
+    const eyeShow = document.getElementById('eye-show');
+    const eyeHide = document.getElementById('eye-hide');
+
+    // File reference state
+    let selectedFile = null; // Photo mode
+    let selectedVideoFile = null; // Video mode
+    let selectedPosterFile = null; // Video mode
+
     let computedAspectRatio = 1.0;
     
+    // Processed blobs state
     let processedPhotoBlob = null;
     let processedThumbBlob = null;
     let processedBlurBlob = null;
+
+    let processedVideoBlob = null;
+    let processedPosterBlob = null;
 
     function showToast(text, type = 'success') {
       toast.innerText = text;
@@ -710,78 +1118,356 @@
       }, 4000);
     }
 
-    dropZone.addEventListener('click', () => fileInput.click());
-    
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        handleFileSelect(e.dataTransfer.files[0]);
+    // Toggle Password Visibility
+    togglePasswordBtn.addEventListener('click', () => {
+      if (secretInput.type === 'password') {
+        secretInput.type = 'text';
+        eyeShow.style.display = 'none';
+        eyeHide.style.display = 'block';
+      } else {
+        secretInput.type = 'password';
+        eyeShow.style.display = 'block';
+        eyeHide.style.display = 'none';
       }
     });
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        handleFileSelect(e.target.files[0]);
+    // Check saved credentials and automatically verify
+    const savedToken = localStorage.getItem('vanpics_admin_token') || sessionStorage.getItem('vanpics_admin_token') || '';
+    if (savedToken) {
+      secretInput.value = savedToken;
+      if (localStorage.getItem('vanpics_admin_token')) {
+        rememberCheckbox.checked = true;
       }
-    });
-
-    removeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      resetFileSelection();
-    });
-
-    itemsContainer.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-delete');
-      if (btn) {
-        const id = btn.dataset.id;
-        const title = btn.dataset.title;
-        deletePhoto(id, title);
-      }
-    });
-
-    function resetFileSelection() {
-      selectedFile = null;
-      processedPhotoBlob = null;
-      processedThumbBlob = null;
-      processedBlurBlob = null;
-      imgPreview.src = '';
-      previewContainer.style.display = 'none';
-      submitBtn.disabled = true;
-      pipelineStatus.style.display = 'none';
-      fileInput.value = '';
+      verifyToken(savedToken);
     }
 
-    function handleFileSelect(file) {
-      if (!file.type.startsWith('image/')) {
-        showToast('file is not an image', 'error');
+    let verifyTimeout = null;
+    secretInput.addEventListener('input', () => {
+      const token = secretInput.value.trim();
+      
+      // Update storage immediately
+      if (rememberCheckbox.checked) {
+        localStorage.setItem('vanpics_admin_token', token);
+      } else {
+        sessionStorage.setItem('vanpics_admin_token', token);
+      }
+
+      // Debounce the token validation API call
+      clearTimeout(verifyTimeout);
+      if (!token) {
+        setAuthStatus('unverified');
         return;
       }
       
-      selectedFile = file;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imgPreview.src = e.target.result;
-        previewContainer.style.display = 'block';
-        submitBtn.disabled = false;
+      setAuthStatus('verifying');
+      verifyTimeout = setTimeout(() => {
+        verifyToken(token);
+      }, 600);
+    });
+
+    rememberCheckbox.addEventListener('change', () => {
+      const token = secretInput.value.trim();
+      if (rememberCheckbox.checked) {
+        localStorage.setItem('vanpics_admin_token', token);
+        sessionStorage.removeItem('vanpics_admin_token');
+      } else {
+        localStorage.removeItem('vanpics_admin_token');
+        sessionStorage.setItem('vanpics_admin_token', token);
+      }
+    });
+
+    function setAuthStatus(status) {
+      authSpinner.style.display = 'none';
+      lockSecured.style.display = 'none';
+      lockUnverified.style.display = 'none';
+      
+      if (status === 'verifying') {
+        authSpinner.style.display = 'block';
+        authStatus.title = "Verifying admin token...";
+      } else if (status === 'secured') {
+        lockSecured.style.display = 'block';
+        lockSecured.classList.remove('text-danger', 'text-warning');
+        lockSecured.classList.add('text-success');
+        lockSecured.setAttribute('stroke', 'var(--success)');
+        authStatus.title = "Admin Token Verified";
+      } else if (status === 'failed') {
+        lockSecured.style.display = 'block';
+        lockSecured.classList.remove('text-success', 'text-warning');
+        lockSecured.classList.add('text-danger');
+        lockSecured.setAttribute('stroke', 'var(--danger)');
+        authStatus.title = "Unauthorized: Invalid admin token";
+      } else {
+        lockUnverified.style.display = 'block';
+        authStatus.title = "Token status: Unverified";
+      }
+    }
+
+    async function verifyToken(token) {
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/verify`, {
+          method: 'GET',
+          headers: {
+            'X-Admin-Token': token
+          }
+        });
         
-        processImagePipeline(e.target.result);
-      };
-      reader.readAsDataURL(file);
+        if (res.ok) {
+          setAuthStatus('secured');
+        } else {
+          setAuthStatus('failed');
+        }
+      } catch (err) {
+        setAuthStatus('unverified');
+      }
+    }
+
+    // Tab Switcher handlers
+    tabPhotoBtn.addEventListener('click', () => {
+      switchMode('photo');
+    });
+
+    tabVideoBtn.addEventListener('click', () => {
+      switchMode('video');
+    });
+
+    function switchMode(mode) {
+      if (currentMode === mode) return;
+      currentMode = mode;
+      
+      // Update tab active states
+      if (mode === 'photo') {
+        tabPhotoBtn.classList.add('active');
+        tabVideoBtn.classList.remove('active');
+        
+        // Show photo fields, hide video fields
+        dropZonePhoto.style.display = 'flex';
+        dropZoneVideoGrid.style.display = 'none';
+        
+        photoOnlyElements.forEach(el => el.style.display = '');
+        videoOnlyElements.forEach(el => el.style.display = 'none');
+        
+        document.getElementById('title').placeholder = 'e.g. harbinger';
+        document.getElementById('title').previousElementSibling.innerText = 'photo title';
+      } else {
+        tabVideoBtn.classList.add('active');
+        tabPhotoBtn.classList.remove('active');
+        
+        // Show video fields, hide photo fields
+        dropZonePhoto.style.display = 'none';
+        dropZoneVideoGrid.style.display = 'grid';
+        
+        photoOnlyElements.forEach(el => el.style.display = 'none');
+        videoOnlyElements.forEach(el => el.style.display = '');
+        
+        document.getElementById('title').placeholder = 'e.g. cinematic shorelines';
+        document.getElementById('title').previousElementSibling.innerText = 'video title';
+      }
+
+      resetFileSelection();
+    }
+
+    // Dynamic Dropzone Setup
+    function setupDropzone(zone, input, type, previewContainer, previewEl, removeBtn) {
+      zone.addEventListener('click', () => input.click());
+      
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('dragover');
+      });
+
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleFileSelect(e.dataTransfer.files[0], type, previewContainer, previewEl);
+        }
+      });
+
+      input.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleFileSelect(e.target.files[0], type, previewContainer, previewEl);
+        }
+      });
+
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetSpecificFile(type, input, previewContainer, previewEl);
+      });
+    }
+
+    setupDropzone(dropZonePhoto, fileInputPhoto, 'photo', previewContainerPhoto, imgPreviewPhoto, removeBtnPhoto);
+    setupDropzone(dropZoneVideo, fileInputVideo, 'video', previewContainerVideo, videoPreview, removeBtnVideo);
+    setupDropzone(dropZonePoster, fileInputPoster, 'poster', previewContainerPoster, imgPreviewPoster, removeBtnPoster);
+
+    function checkFormState() {
+      if (currentMode === 'photo') {
+        const ok = selectedFile && processedPhotoBlob && processedThumbBlob && processedBlurBlob;
+        submitBtn.disabled = !ok;
+      } else {
+        const ok = selectedVideoFile && selectedPosterFile && processedVideoBlob && processedPosterBlob;
+        submitBtn.disabled = !ok;
+      }
+    }
+
+    function resetFileSelection() {
+      selectedFile = null;
+      selectedVideoFile = null;
+      selectedPosterFile = null;
+
+      processedPhotoBlob = null;
+      processedThumbBlob = null;
+      processedBlurBlob = null;
+      processedVideoBlob = null;
+      processedPosterBlob = null;
+
+      imgPreviewPhoto.src = '';
+      videoPreview.src = '';
+      imgPreviewPoster.src = '';
+
+      previewContainerPhoto.style.display = 'none';
+      previewContainerVideo.style.display = 'none';
+      previewContainerPoster.style.display = 'none';
+
+      submitBtn.disabled = true;
+      pipelineStatus.style.display = 'none';
+
+      fileInputPhoto.value = '';
+      fileInputVideo.value = '';
+      fileInputPoster.value = '';
+    }
+
+    function resetSpecificFile(type, input, previewContainer, previewEl) {
+      input.value = '';
+      previewContainer.style.display = 'none';
+      if (type === 'video') {
+        previewEl.src = '';
+        selectedVideoFile = null;
+        processedVideoBlob = null;
+      } else if (type === 'poster') {
+        previewEl.src = '';
+        selectedPosterFile = null;
+        processedPosterBlob = null;
+      } else {
+        previewEl.src = '';
+        selectedFile = null;
+        processedPhotoBlob = null;
+        processedThumbBlob = null;
+        processedBlurBlob = null;
+      }
+      checkFormState();
+      pipelineStatus.style.display = 'none';
+    }
+
+    function handleFileSelect(file, type, previewContainer, previewEl) {
+      if (type === 'video') {
+        if (!file.type.startsWith('video/')) {
+          showToast('file is not a video', 'error');
+          return;
+        }
+        selectedVideoFile = file;
+        previewEl.src = URL.createObjectURL(file);
+        previewContainer.style.display = 'block';
+        processVideoPipeline(file);
+      } else if (type === 'poster') {
+        if (!file.type.startsWith('image/')) {
+          showToast('file is not an image', 'error');
+          return;
+        }
+        selectedPosterFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewEl.src = e.target.result;
+          previewContainer.style.display = 'block';
+          processPosterPipeline(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        if (!file.type.startsWith('image/')) {
+          showToast('file is not an image', 'error');
+          return;
+        }
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewEl.src = e.target.result;
+          previewContainer.style.display = 'block';
+          processImagePipeline(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function processVideoPipeline(videoFile) {
+      pipelineStatus.style.display = 'block';
+      pipelineStatus.innerHTML = `
+        <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
+        <div class="pipeline-step" id="step-video-check">verifying video format...</div>
+      `;
+
+      setStepState('dimensions', 'active');
+      
+      const videoEl = document.createElement('video');
+      videoEl.src = URL.createObjectURL(videoFile);
+      videoEl.muted = true;
+      videoEl.playsInline = true;
+      
+      await new Promise(resolve => {
+        videoEl.addEventListener('loadedmetadata', resolve);
+      });
+
+      computedAspectRatio = parseFloat((videoEl.videoWidth / videoEl.videoHeight).toFixed(4));
+      document.getElementById('step-dimensions').innerText = `aspect ratio: ${computedAspectRatio} (${videoEl.videoWidth}x${videoEl.videoHeight})`;
+      setStepState('dimensions', 'success');
+
+      setStepState('video-check', 'active');
+      processedVideoBlob = videoFile; // Use raw blob since browser-side video compression is not supported natively
+      setStepState('video-check', 'success');
+
+      checkFormState();
+      if (processedPosterBlob) {
+        showToast('video ready for upload', 'success');
+      }
+    }
+
+    async function processPosterPipeline(imgSrc) {
+      pipelineStatus.style.display = 'block';
+      
+      // Append poster processing steps if they don't exist
+      if (!document.getElementById('step-poster-compress')) {
+        const posterStep = document.createElement('div');
+        posterStep.className = 'pipeline-step';
+        posterStep.id = 'step-poster-compress';
+        posterStep.innerText = 'compressing poster image (1200px, webp)...';
+        pipelineStatus.appendChild(posterStep);
+      }
+
+      setStepState('poster-compress', 'active');
+      const img = new Image();
+      img.src = imgSrc;
+      await new Promise(resolve => img.onload = resolve);
+      
+      processedPosterBlob = await resizeImage(img, 1200, 0.75);
+      setStepState('poster-compress', 'success');
+
+      checkFormState();
+      if (processedVideoBlob) {
+        showToast('video assets processed successfully', 'success');
+      }
     }
 
     async function processImagePipeline(imgSrc) {
       pipelineStatus.style.display = 'block';
-      resetStepsStatus();
+      pipelineStatus.innerHTML = `
+        <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
+        <div class="pipeline-step" id="step-compress">compressing raw photo (2500px, webp)...</div>
+        <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail...</div>
+        <div class="pipeline-step" id="step-blur">rendering 40px pre-blurred background...</div>
+      `;
       
       const img = new Image();
       img.src = imgSrc;
@@ -805,19 +1491,15 @@
       processedBlurBlob = await resizeImage(img, 40, 0.4, true);
       setStepState('blur', 'success');
       
+      checkFormState();
       showToast('photo processed successfully', 'success');
-    }
-
-    function resetStepsStatus() {
-      ['dimensions', 'compress', 'thumbnail', 'blur'].forEach(step => {
-        const el = document.getElementById(`step-${step}`);
-        el.className = 'pipeline-step';
-      });
     }
 
     function setStepState(step, state) {
       const el = document.getElementById(`step-${step}`);
-      el.className = `pipeline-step ${state}`;
+      if (el) {
+        el.className = `pipeline-step ${state}`;
+      }
     }
 
     function resizeImage(img, maxDimension, quality, applyBlur = false) {
@@ -856,30 +1538,65 @@
       });
     }
 
+    // Unified load archives fetching both D1 and R2 listings in parallel
     async function loadArchives() {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/photos?limit=50`);
-        if (!res.ok) throw new Error('API server down');
-        const data = await res.json();
-        const photos = Array.isArray(data) ? data : data.items || [];
-        
-        if (photos.length === 0) {
+        const [photosRes, videosRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/photos?limit=50`),
+          fetch(`${API_BASE_URL}/api/videos?limit=50`)
+        ]);
+
+        if (!photosRes.ok || !videosRes.ok) throw new Error('API server down');
+
+        const photosData = await photosRes.json();
+        const videosData = await videosRes.json();
+
+        const photos = Array.isArray(photosData) ? photosData : photosData.items || [];
+        const videos = Array.isArray(videosData) ? videosData : videosData.items || [];
+
+        // Mix and standardise the model list items
+        const items = [
+          ...photos.map(p => ({ ...p, type: 'photo' })),
+          ...videos.map(v => ({ ...v, type: 'video' }))
+        ];
+
+        // Sort items by creation date
+        items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+        if (items.length === 0) {
           itemsContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.6rem; text-transform: lowercase;">no archives found.</p>';
           return;
         }
-        
-        itemsContainer.innerHTML = photos.map(p => `
-          <div class="archive-item">
-            <img class="archive-thumb" src="${p.thumb || p.src}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.src='https://placehold.co/100x100?text=mock'">
-            <div class="archive-info">
-              <div class="archive-title">${escapeHtml(p.title || 'untitled')}</div>
-              <div class="archive-meta">${escapeHtml(p.location || 'unknown location')} • ${escapeHtml(p.date || 'undated')}</div>
+
+        itemsContainer.innerHTML = items.map(p => {
+          const isVideo = p.type === 'video';
+          const typeLabel = isVideo ? 'video' : (p.category || 'photo');
+          const typeClass = isVideo ? 'badge-video' : (p.category === 'figures' ? 'badge-figures' : 'badge-photo');
+          const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
+
+          return `
+            <div class="archive-item">
+              <div class="archive-media-wrapper">
+                <img class="archive-thumb" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.src='https://placehold.co/100x100?text=mock'">
+                ${isVideo ? `
+                  <div class="play-overlay">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                ` : ''}
+              </div>
+              <div class="archive-info">
+                <div class="archive-title-wrapper">
+                  <div class="archive-title">${escapeHtml(p.title || 'untitled')}</div>
+                  <span class="badge ${typeClass}">${typeLabel}</span>
+                </div>
+                <div class="archive-meta">${escapeHtml(p.location || 'unknown location')} • ${escapeHtml(p.date || 'undated')}</div>
+              </div>
+              <button class="btn-delete" data-type="${p.type}" data-id="${p.id}" data-title="${escapeHtml(p.title || 'untitled')}">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
             </div>
-            <button class="btn-delete" data-id="${p.id}" data-title="${escapeHtml(p.title || 'untitled')}">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (err) {
         itemsContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.6rem; text-transform: lowercase;">failed to connect to local database.</p>';
       }
@@ -889,14 +1606,28 @@
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    async function deletePhoto(id, title) {
-      if (!confirm(`are you sure you want to delete "${title}"?`)) {
+    itemsContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-delete');
+      if (btn) {
+        const id = btn.dataset.id;
+        const title = btn.dataset.title;
+        const type = btn.dataset.type;
+        deleteItem(type, id, title);
+      }
+    });
+
+    async function deleteItem(type, id, title) {
+      if (!confirm(`are you sure you want to delete ${type} "${title}"?`)) {
         return;
       }
       
       const token = document.getElementById('secret-token').value;
+      const endpoint = type === 'video' 
+        ? `${API_BASE_URL}/api/admin/video/${id}`
+        : `${API_BASE_URL}/api/admin/photo/${id}`;
+
       try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/photo/${id}`, {
+        const res = await fetch(endpoint, {
           method: 'DELETE',
           headers: {
             'X-Admin-Token': token
@@ -905,7 +1636,7 @@
         
         const data = await res.json();
         if (data.success) {
-          showToast('photo deleted', 'success');
+          showToast(`${type} deleted successfully`, 'success');
           loadArchives();
         } else {
           showToast(data.error || 'delete failed', 'error');
@@ -915,34 +1646,55 @@
       }
     }
 
+    // Playwright test compatibility
+    function deletePhoto(id, title) {
+      return deleteItem('photo', id, title);
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      if (!processedPhotoBlob || !processedThumbBlob || !processedBlurBlob) {
-        showToast('processing file...', 'error');
-        return;
+      if (currentMode === 'photo') {
+        if (!processedPhotoBlob || !processedThumbBlob || !processedBlurBlob) {
+          showToast('processing file...', 'error');
+          return;
+        }
+      } else {
+        if (!processedVideoBlob || !processedPosterBlob) {
+          showToast('processing files...', 'error');
+          return;
+        }
       }
       
       submitBtn.disabled = true;
-      submitBtn.innerText = 'cataloging...';
+      submitBtnText.innerText = 'cataloging...';
       
       const token = document.getElementById('secret-token').value;
       const formData = new FormData();
-      
-      formData.append('photo', processedPhotoBlob);
-      formData.append('thumb', processedThumbBlob);
-      formData.append('blur', processedBlurBlob);
-      
+      const endpoint = currentMode === 'photo'
+        ? `${API_BASE_URL}/api/admin/upload-photo`
+        : `${API_BASE_URL}/api/admin/upload-video`;
+
       formData.append('title', document.getElementById('title').value);
       formData.append('date', document.getElementById('date').value);
       formData.append('location', document.getElementById('location').value);
-      formData.append('category', document.getElementById('category').value);
       formData.append('desc', document.getElementById('desc').value);
       formData.append('aspectRatio', computedAspectRatio);
-      formData.append('heroSlide', document.getElementById('hero-slide').checked);
+
+      if (currentMode === 'photo') {
+        formData.append('photo', processedPhotoBlob);
+        formData.append('thumb', processedThumbBlob);
+        formData.append('blur', processedBlurBlob);
+        formData.append('category', document.getElementById('category').value);
+        formData.append('heroSlide', document.getElementById('hero-slide').checked);
+      } else {
+        formData.append('video', processedVideoBlob);
+        formData.append('poster', processedPosterBlob);
+        formData.append('music', document.getElementById('music').value);
+      }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/upload-photo`, {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'X-Admin-Token': token
@@ -963,10 +1715,7 @@
         showToast('server connection failed', 'error');
       } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = `
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          catalog and upload
-        `;
+        submitBtnText.innerText = 'catalog and upload';
       }
     });
 

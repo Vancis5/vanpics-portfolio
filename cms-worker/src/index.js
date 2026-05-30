@@ -1,4 +1,4 @@
-import { assertAdmin, emptyCorsResponse, errorResponse } from './http.js';
+import { assertAdmin, emptyCorsResponse, errorResponse, jsonResponse } from './http.js';
 import {
   deletePhoto,
   deleteVideo,
@@ -13,6 +13,7 @@ const ROUTES = [
   { method: 'GET', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
   { method: 'GET', pattern: /^\/api\/photos$/, handler: listPhotos, public: true },
   { method: 'GET', pattern: /^\/api\/videos$/, handler: listVideos, public: true },
+  { method: 'GET', pattern: /^\/api\/admin\/verify$/, handler: async (request, env) => jsonResponse(request, env, { success: true }) },
   { method: 'DELETE', pattern: /^\/api\/admin\/photo\/(?<id>\d+)$/, handler: deletePhoto },
   { method: 'DELETE', pattern: /^\/api\/admin\/video\/(?<id>\d+)$/, handler: deleteVideo },
   { method: 'POST', pattern: /^\/api\/admin\/upload-photo$/, handler: uploadPhoto },
@@ -48,7 +49,7 @@ export default {
     const { route, params } = match;
 
     if (!route.public) {
-      const auth = assertAdmin(request, env);
+      const auth = await assertAdmin(request, env);
       if (!auth.ok) {
         return errorResponse(request, env, auth.error, auth.status);
       }
