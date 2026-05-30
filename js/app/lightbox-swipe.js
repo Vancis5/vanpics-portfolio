@@ -75,14 +75,40 @@ if (state.isMobile) {
         let slide = document.createElement('div');
         slide.className = 'snap-slide';
         slide.dataset.idx = i;
+
+        let inner = document.createElement('div');
+        inner.className = 'snap-slide-inner photo-loading';
+        let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+        inner.style.setProperty('--lightbox-photo-ratio', ratio);
+
         let img = document.createElement('img');
         img.alt = p.title || '';
         img.draggable = false;
         img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
+        
+        img.onload = function () {
+          inner.classList.remove('photo-loading');
+          inner.classList.add('photo-loaded');
+        };
+        img.onerror = function () {
+          inner.classList.remove('photo-loading');
+          inner.classList.add('photo-error');
+        };
         img.src = p.src;
         img.classList.add('zoomable');
         img.addEventListener('click', toggleImageZoom);
-        slide.appendChild(img);
+
+        if (img.complete && img.naturalWidth > 0) {
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+          inner.classList.add('photo-loaded');
+        } else {
+          requestAnimationFrame(function () {
+            inner.classList.add('photo-placeholder-visible');
+          });
+        }
+
+        inner.appendChild(img);
+        slide.appendChild(inner);
         imgWrap.appendChild(slide);
       });
     }
