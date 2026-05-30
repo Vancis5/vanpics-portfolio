@@ -497,6 +497,13 @@ export function initFilters() {
       if (state.currentCategory === item.category) return;
       rebuildGallery(item.category, { animate: true });
     });
+
+    item.button.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        item.button.click();
+      }
+    });
   });
 }
 
@@ -573,6 +580,9 @@ export function buildMasonry(category) {
 
     let card = document.createElement('div');
     card.className = isMotion ? 'photo-card motion-card' : 'photo-card';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', p.title ? `View ${p.title}` : 'View photo');
     let imgEl = document.createElement('img');
 
     let basePath = isMotion ? (p.thumb || "") : (p.src || "");
@@ -619,6 +629,13 @@ export function buildMasonry(category) {
         openLightbox(idx, 0, cardCategory === 'motion');
       };
     })(i, category));
+
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.click();
+      }
+    });
 
     if (isMotion) {
       yearGrid.appendChild(card);

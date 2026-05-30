@@ -11,6 +11,7 @@ let blurFlip = false;
 let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
+let previouslyFocusedElement = null;
 
 export function setMobileScrollToSlideCallback(callback) {
   mobileScrollToSlideCallback = typeof callback === 'function' ? callback : null;
@@ -429,6 +430,7 @@ export function openLightbox(i, direction, isMotion) {
   } else {
     // INITIAL OPEN
     let openGen = ++navGen;
+    previouslyFocusedElement = document.activeElement;
 
     // media starts invisible — no content yet
     img.onload = null; img.onerror = null;
@@ -455,6 +457,8 @@ export function openLightbox(i, direction, isMotion) {
     let masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
     lb.classList.add('open');
+    let closeBtn = document.getElementById('lightbox-close');
+    if (closeBtn) closeBtn.focus();
     document.body.classList.add('lightbox-open');
     lb.scrollTop = 0;
     document.body.style.overflow = 'hidden';
@@ -570,6 +574,10 @@ export function closeLightbox() {
   let img = domRefs.lightboxImg;
   let activeGen = ++navGen; // invalidates all pending callbacks
   lb.classList.remove('open');
+  if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+    previouslyFocusedElement.focus();
+  }
+  previouslyFocusedElement = null;
   document.body.classList.remove('lightbox-open');
   document.body.style.overflow = '';
   clearFilmstripHideTimerIfReady();

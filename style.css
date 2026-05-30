@@ -2052,3 +2052,64 @@ html {
   scrollbar-gutter: stable !important;
   overflow-y: scroll !important;
 }
+
+
+
+/* ==========================================================================
+   WCAG 2.2 Level AA Accessibility Enhancements
+   ========================================================================== */
+
+/* 2.4.7 Focus Visible & 2.4.11 Focus Appearance (Contrast & Offset) */
+:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: 4px !important;
+}
+
+/* Specific focus style overrides to fit the dark aesthetic beautifully */
+.photo-card:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: 6px !important;
+  border-radius: 4px;
+}
+
+#gallery-header .active:focus-visible,
+#gallery-header .inactive:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: -4px !important;
+  border-radius: 2px;
+}
+
+.filmstrip-thumb:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: 2px !important;
+}
+
+/* Ensure focus-visible behaves nicely in lightbox */
+#lightbox *:focus:not(:focus-visible),
+#lightbox-close:focus:not(:focus-visible),
+.filmstrip-thumb:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* 2.4.11 Focus Not Obscured (Minimum) - Clear sticky elements (header/footer) */
+.photo-card, 
+#gallery-header [role="button"],
+.footer-instagram,
+#lightbox-close,
+#lightbox-desc-toggle,
+.filmstrip-thumb {
+  scroll-margin-top: 100px;
+  scroll-margin-bottom: 120px;
+}
+
+/* 2.5.8 Target Size (Minimum) - Ensure all interactive controls meet 24x24px minimum */
+#lightbox-desc-toggle {
+  min-height: 24px !important;
+}
+
+.footer-instagram {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+

@@ -46,6 +46,9 @@ export function buildFilmstrip() {
     thumb.className = 'filmstrip-thumb';
     if (state.currentLightboxIsMotion) thumb.classList.add('mode-motion');
     thumb.dataset.idx = i;
+    thumb.tabIndex = 0;
+    thumb.setAttribute('role', 'button');
+    thumb.setAttribute('aria-label', p.title ? `Go to ${p.title}` : 'Go to thumbnail');
     let img = document.createElement('img');
     let thumbPath = state.currentLightboxIsMotion ? p.thumb : p.src.replace('photos/', 'photos/thumbs/');
     img.src = thumbPath;
@@ -59,6 +62,12 @@ export function buildFilmstrip() {
         openLightbox(idx, d, state.currentLightboxIsMotion);
       };
     })(i));
+    thumb.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        thumb.click();
+      }
+    });
     track.appendChild(thumb);
   });
 
