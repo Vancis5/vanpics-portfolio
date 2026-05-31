@@ -64,3 +64,16 @@ export async function uploadArchiveItem(type, formData, token) {
 
   return res;
 }
+
+export async function replacePhotoItem(id, formData, token) {
+  const endpoint = `${API_BASE_URL}/api/admin/photo/${id}/replace`;
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'X-Admin-Token': token
+    },
+    body: formData
+  });
+  return res;
+}
+

@@ -310,7 +310,7 @@
 
   <!-- Gorgeous EDIT/UPDATE Details Modal overlay -->
   <div class="modal-overlay" id="edit-modal-overlay">
-    <div class="modal-wrapper">
+    <div class="modal-wrapper" style="max-width: 900px; width: 95%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
       <div class="modal-header">
         <h3 class="modal-title">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -320,71 +320,103 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <div class="modal-body">
-        <form id="edit-cms-form">
-          <div class="form-grid">
-            <div class="field-group">
-              <label for="edit-title">asset title</label>
-              <input type="text" id="edit-title" required>
-            </div>
-            
-            <div class="field-group">
-              <label for="edit-date">capture date</label>
-              <input type="text" id="edit-date" placeholder="e.g. mar 22, 2026">
-            </div>
-            
-            <div class="field-group">
-              <label for="edit-location">location</label>
-              <input type="text" id="edit-location" placeholder="e.g. macrohon, southern leyte">
-            </div>
+      <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; flex: 1;">
+        <form id="edit-cms-form" style="display: grid; grid-template-columns: 1.1fr 1.3fr; gap: 0; width: 100%; height: 100%;">
+          <!-- LEFT SIDE: Media Preview & Actions -->
+          <div class="edit-media-sidebar" style="background: rgba(10, 9, 9, 0.4); border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; width: 100%; text-align: left;">media preview</span>
+              <div class="edit-preview-container" style="width: 100%; height: 260px; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; position: relative;">
+                <img id="edit-media-preview-img" src="" alt="preview" style="width: 100%; height: 100%; object-fit: contain;">
+                <div id="edit-media-preview-placeholder" style="display: none; font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-muted);">video preview</div>
+                
+                <!-- OVERLAID BUTTONS BAR -->
+                <div style="position: absolute; bottom: 0.75rem; right: 0.75rem; display: flex; gap: 0.5rem; z-index: 10;">
+                  <!-- Replace button uploader -->
+                  <div class="edit-photo-only" style="position: relative;">
+                    <button type="button" class="btn" style="height: 32px; display: flex; align-items: center; justify-content: center; gap: 0.4rem; border-color: rgba(255, 255, 255, 0.15); color: #fff; background: rgba(22, 21, 21, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 0 0.8rem; font-family: 'DM Mono', monospace; font-size: 0.65rem; text-transform: lowercase; cursor: pointer; border-radius: var(--radius); transition: var(--transition);">
+                      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                      <span id="edit-photo-file-status">replace</span>
+                    </button>
+                    <input type="file" id="edit-photo-file-input" accept="image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                  </div>
 
-            <!-- Edit Photo Aspect Ratio -->
-            <div class="field-group">
-              <label for="edit-aspect-ratio">aspect ratio (float)</label>
-              <input type="number" step="0.0001" id="edit-aspect-ratio" required>
-            </div>
-
-            <!-- Edit Photo Mode Only: Category select -->
-            <div class="field-group edit-photo-only">
-              <label for="edit-category">category segment</label>
-              <select id="edit-category">
-                <option value="">photographs (default)</option>
-                <option value="figures">figures</option>
-              </select>
-            </div>
-
-            <!-- Edit Video Mode Only: Soundtrack name -->
-            <div class="field-group edit-video-only">
-              <label for="edit-music">soundtrack / music info</label>
-              <input type="text" id="edit-music" placeholder="e.g. dawn over tides - artist">
-            </div>
-
-            <div class="field-group full-width">
-              <label for="edit-desc">narrative</label>
-              <textarea id="edit-desc" rows="3" placeholder="describe the context or story..."></textarea>
-            </div>
-
-            <!-- Edit Photo Mode Only: Hero Carousel Toggle -->
-            <div class="field-group full-width edit-photo-only">
-              <div class="toggle-wrapper">
-                <span>show in carousel</span>
-                <label class="switch">
-                  <input type="checkbox" id="edit-hero-slide">
-                  <span class="slider"></span>
-                </label>
+                  <button type="button" class="btn" id="edit-delete-btn" style="height: 32px; border-color: rgba(217, 104, 104, 0.25); color: var(--danger); background: rgba(217, 104, 104, 0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0 0.8rem; font-family: 'DM Mono', monospace; font-size: 0.65rem; text-transform: lowercase; cursor: pointer;">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="stroke: var(--danger);"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>delete</span>
+                  </button>
+                </div>
               </div>
             </div>
+
+            <div class="pipeline-status" id="edit-pipeline-status" style="display: none; width: 100%; font-size: 0.65rem; max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 0.75rem; border-radius: var(--radius); border: 1px solid var(--border);"></div>
           </div>
 
-          <div class="edit-modal-actions" style="display: flex; gap: 1rem; margin-top: 2rem;">
-            <button type="button" class="btn" id="edit-delete-btn" style="border-color: rgba(217, 104, 104, 0.4); color: var(--danger); background: rgba(217, 104, 104, 0.02); display: flex; align-items: center; justify-content: center; gap: 0.65rem; flex: 1;">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="stroke: var(--danger);"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              <span>delete</span>
-            </button>
-            <button type="submit" class="btn" id="edit-submit-btn" style="flex: 2;">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-              <span>save changes</span>
-            </button>
+          <!-- RIGHT SIDE: Metadata Form -->
+          <div class="edit-metadata-form" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; overflow-y: auto;">
+            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="field-group" style="grid-column: span 2;">
+                <label for="edit-title">asset title</label>
+                <input type="text" id="edit-title" required>
+              </div>
+              
+              <div class="field-group">
+                <label for="edit-date">capture date</label>
+                <input type="text" id="edit-date" placeholder="e.g. mar 22, 2026">
+              </div>
+              
+              <div class="field-group">
+                <label for="edit-location">location</label>
+                <input type="text" id="edit-location" placeholder="e.g. macrohon, southern leyte">
+              </div>
+
+              <!-- Edit Photo Aspect Ratio -->
+              <div class="field-group">
+                <label for="edit-aspect-ratio">aspect ratio (float)</label>
+                <input type="number" step="0.0001" id="edit-aspect-ratio" required>
+              </div>
+
+              <!-- Edit Photo Mode Only: Category select -->
+              <div class="field-group edit-photo-only">
+                <label for="edit-category">category segment</label>
+                <select id="edit-category">
+                  <option value="">photographs (default)</option>
+                  <option value="figures">figures</option>
+                </select>
+              </div>
+
+              <!-- Edit Video Mode Only: Soundtrack name -->
+              <div class="field-group edit-video-only" style="grid-column: span 2;">
+                <label for="edit-music">soundtrack / music info</label>
+                <input type="text" id="edit-music" placeholder="e.g. dawn over tides - artist">
+              </div>
+
+              <div class="field-group full-width" style="grid-column: span 2;">
+                <label for="edit-desc">narrative</label>
+                <textarea id="edit-desc" rows="3" placeholder="describe the context or story..." style="resize: none;"></textarea>
+              </div>
+
+              <!-- Edit Photo Mode Only: Hero Carousel Toggle -->
+              <div class="field-group full-width edit-photo-only" style="grid-column: span 2;">
+                <div class="toggle-wrapper" style="display: flex; justify-content: space-between; align-items: center; background: rgba(22, 21, 21, 0.4); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.85rem;">
+                  <span>show in carousel</span>
+                  <label class="switch">
+                    <input type="checkbox" id="edit-hero-slide">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="edit-modal-actions" style="display: flex; gap: 1rem; width: 100%; border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: auto;">
+              <button type="button" class="btn" id="edit-cancel-btn" style="flex: 1; height: 38px; border: 1px solid var(--border) !important; background: transparent; cursor: pointer;">
+                <span style="color: var(--text-muted) !important;">cancel</span>
+              </button>
+              <button type="submit" class="btn" id="edit-submit-btn" style="flex: 2; height: 38px; background: var(--text) !important; border: none; cursor: pointer;">
+                <svg width="14" height="14" fill="none" stroke="#0a0a0a" stroke-width="2.5" viewBox="0 0 24 24" style="stroke: #0a0a0a !important; display: block;"><path d="M5 13l4 4L19 7"/></svg>
+                <span style="color: #0a0a0a !important; font-weight: 600;">save changes</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
