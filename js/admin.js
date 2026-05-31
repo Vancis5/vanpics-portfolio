@@ -11,8 +11,8 @@
     let currentMode = 'photo'; // 'photo' or 'video'
 
     // Dashboard navigation state
-    let activeFilter = 'all';
-    let searchQuery = '';
+    let activeFilter = localStorage.getItem('vanpics_cms_filter_type') || 'all';
+    let searchQuery = localStorage.getItem('vanpics_cms_search') || '';
     let globalArchivesList = []; // Caches all items for instantaneous filtering
 
     // Modal elements
@@ -27,6 +27,23 @@
 
     // Search and Filter Elements
     const searchInput = document.getElementById('dashboard-search');
+
+    // Restore cached search and filter parameters on load
+    if (searchInput) {
+      searchInput.value = searchQuery;
+    }
+    const filterTypeEl = document.getElementById('filter-type');
+    if (filterTypeEl) {
+      filterTypeEl.value = activeFilter;
+    }
+    const filterSortEl = document.getElementById('filter-sort');
+    if (filterSortEl) {
+      filterSortEl.value = localStorage.getItem('vanpics_cms_filter_sort') || 'date-desc';
+    }
+    const filterGroupEl = document.getElementById('filter-group');
+    if (filterGroupEl) {
+      filterGroupEl.value = localStorage.getItem('vanpics_cms_filter_group') || 'none';
+    }
 
     // Tab buttons
     const tabPhotoBtn = document.getElementById('tab-photo');
@@ -910,19 +927,23 @@
     // Handles Search and Filter events instantly
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim();
+      localStorage.setItem('vanpics_cms_search', searchQuery);
       renderArchives();
     });
 
     document.getElementById('filter-type').addEventListener('change', (e) => {
       activeFilter = e.target.value;
+      localStorage.setItem('vanpics_cms_filter_type', activeFilter);
       renderArchives();
     });
 
-    document.getElementById('filter-sort').addEventListener('change', () => {
+    document.getElementById('filter-sort').addEventListener('change', (e) => {
+      localStorage.setItem('vanpics_cms_filter_sort', e.target.value);
       renderArchives();
     });
 
-    document.getElementById('filter-group').addEventListener('change', () => {
+    document.getElementById('filter-group').addEventListener('change', (e) => {
+      localStorage.setItem('vanpics_cms_filter_group', e.target.value);
       renderArchives();
     });
 
