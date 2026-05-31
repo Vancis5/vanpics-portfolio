@@ -748,6 +748,58 @@
       }
     }
 
+    function plaintextToHtml(text) {
+      if (!text) return '';
+      
+      const links = [];
+      // 1. Convert Markdown links [Text](URL) to placeholder tokens
+      let html = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, label, url) => {
+        links.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+        return `___LINK_PLACEHOLDER_${links.length - 1}___`;
+      });
+      
+      // 2. Convert remaining raw URLs to placeholder tokens
+      html = html.replace(/(https?:\/\/[^\s<]+)/g, (match) => {
+        links.push(`<a href="${match}" target="_blank" rel="noopener noreferrer">${match}</a>`);
+        return `___LINK_PLACEHOLDER_${links.length - 1}___`;
+      });
+
+      // 3. Restore all link tokens in order
+      for (let i = 0; i < links.length; i++) {
+        html = html.replace(`___LINK_PLACEHOLDER_${i}___`, links[i]);
+      }
+
+      // 4. Convert single newlines to <br>
+      html = html.replace(/\r?\n/g, ' <br> ');
+      
+      return html.trim();
+    }
+
+    function htmlToPlaintext(html) {
+      if (!html) return '';
+      
+      let text = html;
+      
+      // 1. Convert <a href="URL" ...>Text</a> to [Text](URL)
+      text = text.replace(/<a\s+(?:[^>]*?\s+)?href=(['"])(.*?)\1[^>]*?>(.*?)<\/a>/gi, (match, quote, url, label) => {
+        if (label.trim() === url.trim()) {
+          return url;
+        }
+        return `[${label}](${url})`;
+      });
+      
+      // 2. Convert <br> or <br/> to \n
+      text = text.replace(/<br\s*\/?>/gi, '\n');
+      
+      // Remove any remaining HTML tags (safety cleanup)
+      text = text.replace(/<[^>]*>/g, '');
+      
+      // Clean up spacing around newlines
+      text = text.replace(/ \n /g, '\n').replace(/ \n/g, '\n').replace(/\n /g, '\n');
+      
+      return text.trim();
+    }
+
     function getYearFromDate(dateStr) {
       if (!dateStr) return 'undated';
       const match = dateStr.match(/\b(19|20)\d{2}\b/);
@@ -999,7 +1051,7 @@
       document.getElementById('edit-title').value = item.title || '';
       document.getElementById('edit-date').value = item.date || '';
       document.getElementById('edit-location').value = item.location || '';
-      document.getElementById('edit-desc').value = item.desc || '';
+      document.getElementById('edit-desc').value = htmlToPlaintext(item.desc || '');
       document.getElementById('edit-aspect-ratio').value = item.aspect_ratio || 1.0;
 
       const editPhotoOnly = document.querySelectorAll('.edit-photo-only');
@@ -1041,7 +1093,7 @@
         title: document.getElementById('edit-title').value,
         date: document.getElementById('edit-date').value,
         location: document.getElementById('edit-location').value,
-        desc: document.getElementById('edit-desc').value,
+        desc: plaintextToHtml(document.getElementById('edit-desc').value),
         aspectRatio: parseFloat(document.getElementById('edit-aspect-ratio').value),
       };
 
@@ -1148,7 +1200,7 @@
       formData.append('title', document.getElementById('title').value);
       formData.append('date', document.getElementById('date').value);
       formData.append('location', document.getElementById('location').value);
-      formData.append('desc', document.getElementById('desc').value);
+      formData.append('desc', plaintextToHtml(document.getElementById('desc').value));
       formData.append('aspectRatio', computedAspectRatio);
 
       if (currentMode === 'photo') {
