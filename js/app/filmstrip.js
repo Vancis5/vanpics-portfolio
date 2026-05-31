@@ -63,6 +63,9 @@ export function buildFilmstrip() {
     thumb.appendChild(img);
     thumb.addEventListener('click', (function (idx) {
       return function () {
+        if (domRefs.lightbox && domRefs.lightbox.classList.contains('open') && idx === state.cur) {
+          return;
+        }
         let d = idx === state.cur ? 0 : (idx > state.cur ? 1 : -1);
         state.cur = idx;
         openLightbox(idx, d, state.currentLightboxIsMotion);

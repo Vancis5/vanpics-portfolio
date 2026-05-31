@@ -439,3 +439,126 @@ export async function updateVideo(request, env, params) {
   return jsonResponse(request, env, { success: true });
 }
 
+export async function purgeCache(request, env) {
+  const cache = caches.default;
+  const origin = new URL(request.url).origin;
+  
+  const urls = [
+    `${origin}/api/photos`,
+    `${origin}/api/photos?limit=100`,
+    `${origin}/api/videos`,
+    `${origin}/api/videos?limit=100`
+  ];
+  
+  let purgedCount = 0;
+  for (const url of urls) {
+    const deleted = await cache.delete(new Request(url));
+    if (deleted) purgedCount++;
+  }
+  
+  return jsonResponse(request, env, { success: true, purgedCount });
+}
+
+export async function sortDatabase(request, env) {
+  // 1. Sort Photos
+  const { results: photos } = await env.DB.prepare(
+    'SELECT id, date, created_at FROM photos'
+  ).all();
+
+  function parsePhotoDate(dateStr) {
+    if (!dateStr) return null;
+    const cleanStr = dateStr.trim().toLowerCase();
+    const d = new Date(cleanStr);
+    if (!isNaN(d.getTime())) return d;
+    if (/^\d{4}$/.test(cleanStr)) {
+      return new Date(`${cleanStr}-01-01`);
+    }
+    return null;
+  }
+
+  // Sort photos newest first
+  photos.sort((a, b) => {
+    const dateA = parsePhotoDate(a.date);
+    const dateB = parsePhotoDate(b.date);
+
+    if (dateA && dateB) {
+      return dateB - dateA;
+    }
+    if (dateA) return -1;
+    if (dateB) return 1;
+
+    // Fallback to original created_at
+    const timeA = new Date(a.created_at || 0).getTime();
+    const timeB = new Date(b.created_at || 0).getTime();
+    return timeB - timeA;
+  });
+
+  // Batch update photos
+  const baseTime = Date.now();
+  const photoStatements = photos.map((photo, index) => {
+    const itemTime = new Date(baseTime - index * 10000);
+    const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
+    
+    return env.DB.prepare(
+      'UPDATE photos SET created_at = ? WHERE id = ?'
+    ).bind(isoString, photo.id);
+  });
+
+  if (photoStatements.length > 0) {
+    await env.DB.batch(photoStatements);
+  }
+
+  // 2. Sort Videos
+  const { results: videos } = await env.DB.prepare(
+    'SELECT id, date, created_at FROM videos'
+  ).all();
+
+  videos.sort((a, b) => {
+    const dateA = parsePhotoDate(a.date);
+    const dateB = parsePhotoDate(b.date);
+
+    if (dateA && dateB) {
+      return dateB - dateA;
+    }
+    if (dateA) return -1;
+    if (dateB) return 1;
+
+    const timeA = new Date(a.created_at || 0).getTime();
+    const timeB = new Date(b.created_at || 0).getTime();
+    return timeB - timeA;
+  });
+
+  const videoStatements = videos.map((video, index) => {
+    const itemTime = new Date(baseTime - index * 10000);
+    const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
+    
+    return env.DB.prepare(
+      'UPDATE videos SET created_at = ? WHERE id = ?'
+    ).bind(isoString, video.id);
+  });
+
+  if (videoStatements.length > 0) {
+    await env.DB.batch(videoStatements);
+  }
+
+  // Purge the cache immediately after sorting so order propagates instantly!
+  const cache = caches.default;
+  const origin = new URL(request.url).origin;
+  const urls = [
+    `${origin}/api/photos`,
+    `${origin}/api/photos?limit=100`,
+    `${origin}/api/videos`,
+    `${origin}/api/videos?limit=100`
+  ];
+  for (const url of urls) {
+    await cache.delete(new Request(url));
+  }
+
+  return jsonResponse(request, env, { 
+    success: true, 
+    sortedPhotos: photos.length, 
+    sortedVideos: videos.length 
+  });
+}
+
+

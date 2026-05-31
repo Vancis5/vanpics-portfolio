@@ -9,6 +9,8 @@ import {
   uploadVideo,
   updatePhoto,
   updateVideo,
+  purgeCache,
+  sortDatabase,
 } from './handlers.js';
 
 const ROUTES = [
@@ -22,6 +24,8 @@ const ROUTES = [
   { method: 'PUT', pattern: /^\/api\/admin\/video\/(?<id>\d+)$/, handler: updateVideo },
   { method: 'POST', pattern: /^\/api\/admin\/upload-photo$/, handler: uploadPhoto },
   { method: 'POST', pattern: /^\/api\/admin\/upload-video$/, handler: uploadVideo },
+  { method: 'POST', pattern: /^\/api\/admin\/purge-cache$/, handler: purgeCache },
+  { method: 'POST', pattern: /^\/api\/admin\/sort-db$/, handler: sortDatabase },
 ];
 
 function matchRoute(method, pathname) {

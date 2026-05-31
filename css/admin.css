@@ -151,6 +151,30 @@
       box-shadow: 0 0 12px rgba(217, 104, 104, 0.1);
     }
 
+    .btn-utilities {
+      background: rgba(22, 21, 21, 0.5);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      padding: 0.55rem 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: lowercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .btn-utilities:hover {
+      background: rgba(212, 163, 89, 0.08);
+      border-color: rgba(212, 163, 89, 0.3);
+      color: var(--warning);
+      box-shadow: 0 0 12px rgba(212, 163, 89, 0.1);
+    }
+
     .auth-input-wrapper {
       display: flex;
       align-items: center;
