@@ -11,6 +11,14 @@ import {
   parseDate
 } from './admin/utils.js';
 
+import {
+  fetchArchives,
+  deleteArchiveItem,
+  updateArchiveItem,
+  uploadArchiveItem
+} from './admin/api.js';
+
+import { renderArchivesList } from './admin/render.js';
 import { resizeImage } from './admin/pipeline.js';
 
 // Form mode state
@@ -154,7 +162,6 @@ function preventDefaultScroll(e) {
         const clientHeight = modalBody.clientHeight;
         const delta = e.deltaY || -e.detail || e.wheelDelta;
         
-        // Allow normal scrolling within bounds, block scroll-chaining at boundaries
         if (delta < 0 && scrollTop <= 0) {
           e.preventDefault();
         } else if (delta > 0 && scrollTop + clientHeight >= scrollHeight) {
@@ -172,7 +179,7 @@ function preventDefaultKeys(e) {
   if (keys.includes(e.code)) {
     if (e.target && typeof e.target.closest === 'function') {
       const modalBody = e.target.closest('.modal-body');
-      if (modalBody) return; // Allow keyboard navigation inside the modal body
+      if (modalBody) return;
     }
     e.preventDefault();
   }
@@ -329,14 +336,12 @@ if (secretInput) {
   secretInput.addEventListener('input', () => {
     const token = secretInput.value.trim();
     
-    // Update storage immediately
     if (rememberCheckbox.checked) {
       localStorage.setItem('vanpics_admin_token', token);
     } else {
       sessionStorage.setItem('vanpics_admin_token', token);
     }
 
-    // Debounce the token validation API call
     clearTimeout(verifyTimeout);
     if (!token) {
       setAuthStatus('unverified');
@@ -405,7 +410,6 @@ async function verifyToken(token) {
     if (res.ok) {
       const data = await res.json();
       if (data && data.token) {
-        // Save the returned session JWT instead of the raw master password
         if (secretInput) {
           secretInput.value = data.token;
         }
@@ -725,26 +729,22 @@ function setStepState(step, state) {
   }
 }
 
+// Trigger render helper
+function renderArchives() {
+  const sortVal = document.getElementById('filter-sort')?.value || 'date-desc';
+  const groupVal = document.getElementById('filter-group')?.value || 'none';
+  renderArchivesList(itemsContainer, globalArchivesList, activeFilter, searchQuery, sortVal, groupVal);
+}
+
 // Unified load archives fetching both D1 and R2 listings in parallel
 async function loadArchives() {
   try {
-    const [photosRes, videosRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/photos?limit=50`),
-      fetch(`${API_BASE_URL}/api/videos?limit=50`)
-    ]);
-
-    if (!photosRes.ok || !videosRes.ok) throw new Error('API server down');
-
-    const photosData = await photosRes.json();
-    const videosData = await videosRes.json();
-
-    const photos = Array.isArray(photosData) ? photosData : photosData.items || [];
-    const videos = Array.isArray(videosData) ? videosData : videosData.items || [];
+    const data = await fetchArchives();
 
     // Cache globally for filters
     globalArchivesList = [
-      ...photos.map(p => ({ ...p, type: 'photo' })),
-      ...videos.map(v => ({ ...v, type: 'video' }))
+      ...data.photos.map(p => ({ ...p, type: 'photo' })),
+      ...data.videos.map(v => ({ ...v, type: 'video' }))
     ];
 
     // Sort items by creation date
@@ -755,143 +755,6 @@ async function loadArchives() {
     if (itemsContainer) {
       itemsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase;">failed to connect to local database.</p>`;
     }
-  }
-}
-
-function renderSingleCardHtml(p) {
-  const isVideo = p.type === 'video';
-  const isDraft = isUntitled(p);
-  const typeLabel = isDraft ? 'draft' : (isVideo ? 'video' : (p.category || 'photo'));
-  const typeClass = isDraft ? 'badge-draft' : (isVideo ? 'badge-video' : (p.category === 'figures' ? 'badge-figures' : 'badge-photo'));
-  const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
-
-  return `
-    <div class="asset-card" data-id="${p.id}" data-type="${p.type}" style="cursor: pointer;">
-      <div class="card-preview-wrapper">
-        <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
-        ${isVideo ? `
-          <div class="video-play-indicator">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
-        ` : ''}
-      </div>
-      <div class="card-info" style="padding: 1.2rem 1.2rem 1.4rem 1.2rem;">
-        <div class="card-header-row">
-          <div class="card-title" title="${escapeHtml(p.title || 'untitled')}">${escapeHtml(p.title || 'untitled')}</div>
-          <span class="badge ${typeClass}">${typeLabel}</span>
-        </div>
-        
-        <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.3rem;">
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-            <span>${escapeHtml(p.location || 'unknown location')}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span>${escapeHtml(p.date || 'undated')}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// Renders matching and sorted archive items to our Google Drive directory grid
-function renderArchives() {
-  if (!itemsContainer) return;
-
-  const filtered = globalArchivesList.filter(item => {
-    // Filter by category segment dropdown option
-    if (activeFilter === 'photo' && item.type !== 'photo') return false;
-    if (activeFilter === 'video' && item.type !== 'video') return false;
-    if (activeFilter === 'figures' && (item.type !== 'photo' || item.category !== 'figures')) return false;
-    if (activeFilter === 'draft' && !isUntitled(item)) return false;
-
-    // Filter by text search query
-    if (searchQuery) {
-      const title = (item.title || '').toLowerCase();
-      const location = (item.location || '').toLowerCase();
-      const desc = (item.desc || '').toLowerCase();
-      const query = searchQuery.toLowerCase();
-      
-      if (!title.includes(query) && !location.includes(query) && !desc.includes(query)) return false;
-    }
-
-    return true;
-  });
-
-  // Sort filtered items (always placing draft items at the bottom of the list)
-  const sortVal = document.getElementById('filter-sort')?.value || 'date-desc';
-  filtered.sort((a, b) => {
-    const draftA = isUntitled(a);
-    const draftB = isUntitled(b);
-    if (draftA && !draftB) return 1;
-    if (!draftA && draftB) return -1;
-
-    if (sortVal === 'date-desc') {
-      return parseDate(b) - parseDate(a);
-    } else if (sortVal === 'date-asc') {
-      return parseDate(a) - parseDate(b);
-    } else if (sortVal === 'name-asc') {
-      return (a.title || '').localeCompare(b.title || '');
-    } else if (sortVal === 'name-desc') {
-      return (b.title || '').localeCompare(a.title || '');
-    }
-    return 0;
-  });
-
-  if (filtered.length === 0) {
-    itemsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.05em;">no matching archives found.</p>`;
-    return;
-  }
-
-  const groupVal = document.getElementById('filter-group')?.value || 'none';
-  if (groupVal === 'none') {
-    itemsContainer.innerHTML = filtered.map(p => renderSingleCardHtml(p)).join('');
-  } else {
-    const groups = {};
-    filtered.forEach(item => {
-      let groupKey = '';
-      if (groupVal === 'year') {
-        groupKey = getYearFromDate(item.date);
-      } else if (groupVal === 'type') {
-        if (isUntitled(item)) {
-          groupKey = 'drafts';
-        } else {
-          groupKey = item.type === 'video' ? 'videos' : (item.category || 'photographs');
-        }
-      }
-      if (!groups[groupKey]) groups[groupKey] = [];
-      groups[groupKey].push(item);
-    });
-
-    const groupKeys = Object.keys(groups).sort((a, b) => {
-      if (groupVal === 'year') {
-        if (a === 'undated') return 1;
-        if (b === 'undated') return -1;
-        return b.localeCompare(a); // Descending years
-      }
-      if (a === 'drafts') return 1;
-      if (b === 'drafts') return -1;
-      return a.localeCompare(b);
-    });
-
-    itemsContainer.innerHTML = groupKeys.map(groupKey => {
-      const groupItems = groups[groupKey];
-      const renderedCards = groupItems.map(p => renderSingleCardHtml(p)).join('');
-      return `
-        <div class="group-section" style="grid-column: 1 / -1; margin-bottom: 2.5rem; width: 100%;">
-          <div class="group-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-            <h3 style="font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); white-space: nowrap;">${groupKey}</h3>
-            <div style="flex-grow: 1; height: 1px; background: var(--border);"></div>
-            <span style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-faint); letter-spacing: 0.05em;">${groupItems.length} item${groupItems.length > 1 ? 's' : ''}</span>
-          </div>
-          <div class="asset-grid">
-            ${renderedCards}
-          </div>
-        </div>
-      `;
-    }).join('');
   }
 }
 
@@ -1008,19 +871,8 @@ if (editForm) {
       payload.music = document.getElementById('edit-music').value;
     }
 
-    const endpoint = type === 'photo'
-      ? `${API_BASE_URL}/api/admin/photo/${id}`
-      : `${API_BASE_URL}/api/admin/video/${id}`;
-
     try {
-      const res = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Token': token
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await updateArchiveItem(type, id, payload, token);
 
       if (handleUnauthorized(res)) return;
 
@@ -1046,17 +898,8 @@ if (editForm) {
 // Delete CRUD Action
 async function deleteItem(type, id, title) {
   const token = secretInput.value.trim();
-  const endpoint = type === 'video' 
-    ? `${API_BASE_URL}/api/admin/video/${id}`
-    : `${API_BASE_URL}/api/admin/photo/${id}`;
-
   try {
-    const res = await fetch(endpoint, {
-      method: 'DELETE',
-      headers: {
-        'X-Admin-Token': token
-      }
-    });
+    const res = await deleteArchiveItem(type, id, token);
     
     if (handleUnauthorized(res)) return;
 
@@ -1077,7 +920,6 @@ function deletePhoto(id, title) {
   return deleteItem('photo', id, title);
 }
 
-// Expose Playwright test hook on window
 window.deletePhoto = deletePhoto;
 
 // Submit photo/video catalog creation (Create CRUD Action)
@@ -1102,9 +944,6 @@ if (form) {
     
     const token = secretInput.value.trim();
     const formData = new FormData();
-    const endpoint = currentMode === 'photo'
-      ? `${API_BASE_URL}/api/admin/upload-photo`
-      : `${API_BASE_URL}/api/admin/upload-video`;
 
     formData.append('title', document.getElementById('title').value);
     formData.append('date', document.getElementById('date').value);
@@ -1125,13 +964,7 @@ if (form) {
     }
 
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'X-Admin-Token': token
-        },
-        body: formData
-      });
+      const res = await uploadArchiveItem(currentMode, formData, token);
       
       if (handleUnauthorized(res)) return;
 
