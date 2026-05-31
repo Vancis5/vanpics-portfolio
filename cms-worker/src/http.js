@@ -70,6 +70,76 @@ export function errorResponse(request, env, message, status) {
   return jsonResponse(request, env, { error: message }, { status });
 }
 
+// Base64Url helpers for native Web Crypto signature encoding
+function base64UrlEncode(str) {
+  return btoa(str)
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+function base64UrlDecode(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return atob(str);
+}
+
+// Generate JWT signature natively with HMAC SHA-256
+async function signJWT(payload, secret) {
+  const encoder = new TextEncoder();
+  const header = { alg: 'HS256', typ: 'JWT' };
+  
+  const headerStr = base64UrlEncode(JSON.stringify(header));
+  const payloadStr = base64UrlEncode(JSON.stringify(payload));
+  const dataToSign = encoder.encode(`${headerStr}.${payloadStr}`);
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', key, dataToSign);
+  const signatureStr = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
+  
+  return `${headerStr}.${payloadStr}.${signatureStr}`;
+}
+
+// Verify JWT signature natively with HMAC SHA-256
+async function verifyJWT(token, secret) {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  
+  const [headerStr, payloadStr, signatureStr] = parts;
+  const encoder = new TextEncoder();
+  const dataToVerify = encoder.encode(`${headerStr}.${payloadStr}`);
+  
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    
+    const sigBinary = base64UrlDecode(signatureStr);
+    const sigArr = new Uint8Array(sigBinary.length);
+    for (let i = 0; i < sigBinary.length; i++) {
+      sigArr[i] = sigBinary.charCodeAt(i);
+    }
+    
+    const isValid = await crypto.subtle.verify('HMAC', key, sigArr, dataToVerify);
+    if (!isValid) return null;
+    
+    return JSON.parse(base64UrlDecode(payloadStr));
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function assertAdmin(request, env) {
   if (!env.ADMIN_SECRET) {
     return { ok: false, status: 503, error: 'admin secret is not configured' };
@@ -80,12 +150,22 @@ export async function assertAdmin(request, env) {
     return { ok: false, status: 401, error: 'unauthorized: missing admin token' };
   }
 
-  // Reject tokens that are unreasonably long (> 512 chars) to avoid hash-DoS
+  // Reject tokens that are unreasonably long to avoid hash-DoS
   if (adminToken.length > 512) {
     return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
-  // Timing-safe comparison using SHA-256 to mitigate timing attacks
+  // 1. If it's a JWT, verify the signature & expiry
+  const parts = adminToken.split('.');
+  if (parts.length === 3) {
+    const payload = await verifyJWT(adminToken, env.ADMIN_SECRET);
+    if (payload && payload.exp && payload.exp > Date.now()) {
+      return { ok: true, token: adminToken };
+    }
+    return { ok: false, status: 401, error: 'unauthorized: session expired or invalid' };
+  }
+
+  // 2. Otherwise, check if it's the raw master password (Timing-safe comparison using SHA-256)
   const encoder = new TextEncoder();
   const [tokenHash, secretHash] = await Promise.all([
     crypto.subtle.digest('SHA-256', encoder.encode(adminToken)),
@@ -104,5 +184,12 @@ export async function assertAdmin(request, env) {
     return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
-  return { ok: true };
+  // Correct master password! Issue a secure signed JWT valid for 24 hours
+  const payload = {
+    sub: 'admin',
+    exp: Date.now() + 24 * 60 * 60 * 1000
+  };
+  const jwt = await signJWT(payload, env.ADMIN_SECRET);
+
+  return { ok: true, token: jwt };
 }

@@ -49,7 +49,7 @@ updateActivePhotos();
 
 state.carouselPhotos.slice(0, 6).forEach(function (photo) {
   const img = new Image();
-  img.src = photo.src;
+  img.src = photo.thumb || photo.src;
 });
 
 if (typeof window !== 'undefined') {

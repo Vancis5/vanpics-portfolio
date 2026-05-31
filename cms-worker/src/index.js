@@ -15,7 +15,7 @@ const ROUTES = [
   { method: 'GET', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
   { method: 'GET', pattern: /^\/api\/photos$/, handler: listPhotos, public: true },
   { method: 'GET', pattern: /^\/api\/videos$/, handler: listVideos, public: true },
-  { method: 'GET', pattern: /^\/api\/admin\/verify$/, handler: async (request, env) => jsonResponse(request, env, { success: true }) },
+  { method: 'GET', pattern: /^\/api\/admin\/verify$/, handler: async (request, env) => jsonResponse(request, env, { success: true, token: request.auth?.token }) },
   { method: 'DELETE', pattern: /^\/api\/admin\/photo\/(?<id>\d+)$/, handler: deletePhoto },
   { method: 'DELETE', pattern: /^\/api\/admin\/video\/(?<id>\d+)$/, handler: deleteVideo },
   { method: 'PUT', pattern: /^\/api\/admin\/photo\/(?<id>\d+)$/, handler: updatePhoto },
@@ -57,6 +57,7 @@ export default {
       if (!auth.ok) {
         return errorResponse(request, env, auth.error, auth.status);
       }
+      request.auth = auth;
     }
 
     try {

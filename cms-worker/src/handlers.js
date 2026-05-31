@@ -202,13 +202,13 @@ export async function uploadPhoto(request, env) {
 
   await Promise.all([
     env.MEDIA_BUCKET.put(photoKey, await photoFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp' },
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
     env.MEDIA_BUCKET.put(thumbKey, await thumbFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp' },
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
     env.MEDIA_BUCKET.put(blurKey, await blurFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp' },
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
   ]);
 
@@ -276,10 +276,10 @@ export async function uploadVideo(request, env) {
 
   await Promise.all([
     env.MEDIA_BUCKET.put(videoKey, await videoFile.arrayBuffer(), {
-      httpMetadata: { contentType: videoFile.type || 'video/mp4' },
+      httpMetadata: { contentType: videoFile.type || 'video/mp4', cacheControl: 'public, max-age=31536000, immutable' },
     }),
     env.MEDIA_BUCKET.put(posterKey, await posterFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp' },
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
   ]);
 

@@ -1,14 +1,4 @@
-    const API_BASE_URL = (
-      !window.location.origin || 
-      window.location.origin.includes('localhost') || 
-      window.location.origin.includes('127.0.0.1') || 
-      window.location.origin.includes('192.168.') || 
-      window.location.origin.includes('10.') || 
-      window.location.origin.includes('172.') || 
-      window.location.origin.startsWith('file://')
-    )
-      ? 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev'
-      : '';
+    const API_BASE_URL = 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
 
     // Client-side file size limits (match worker limits)
     const MAX_IMAGE_BYTES = 10 * 1024 * 1024;  // 10 MB
@@ -336,6 +326,16 @@
         });
         
         if (res.ok) {
+          const data = await res.json();
+          if (data && data.token) {
+            // Save the returned session JWT instead of the raw master password
+            secretInput.value = data.token;
+            if (rememberCheckbox.checked) {
+              localStorage.setItem('vanpics_admin_token', data.token);
+            } else {
+              sessionStorage.setItem('vanpics_admin_token', data.token);
+            }
+          }
           setAuthStatus('secured');
         } else {
           setAuthStatus('failed');

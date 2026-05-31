@@ -228,6 +228,14 @@ function updateDynamicTextColor(p) {
     return;
   }
 
+  // Pre-emptively bypass cross-origin remote R2 images to avoid DOM SecurityErrors and thread stutters
+  const src = img.src || '';
+  const isCrossOrigin = src.startsWith('http') && !src.includes(window.location.host);
+  if (isCrossOrigin) {
+    resetDynamicTextColor();
+    return;
+  }
+
   function processColor() {
     // Verify that we are still displaying the same photo
     if (state.isMobile) {
@@ -288,11 +296,19 @@ function updateDynamicTextColor(p) {
   }
 
   if (img.complete && img.naturalWidth > 0) {
-    processColor();
+    // If already complete, defer execution slightly so we never block active transitions
+    setTimeout(processColor, 350);
   } else {
     img.addEventListener('load', function onImgLoad() {
       img.removeEventListener('load', onImgLoad);
-      processColor();
+      // Wait for the slide transition to fully finish before decoding on the main thread
+      setTimeout(function () {
+        if (img.decode) {
+          img.decode().then(processColor).catch(processColor);
+        } else {
+          processColor();
+        }
+      }, 350);
     });
   }
 }
@@ -535,7 +551,7 @@ export function openLightbox(i, direction, isMotion) {
       playerShell.style.opacity = '0';
 
       // Start the new media immediately instead of waiting for decode.
-      let bSrc = isMotion ? p.thumb : (p.blur || p.src);
+      let bSrc = isMotion ? p.thumb : (p.blur || p.thumb || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) {
@@ -660,7 +676,7 @@ export function openLightbox(i, direction, isMotion) {
         img.onerror = null;
       }
 
-      let bSrc = isMotion ? p.thumb : (p.blur || p.src);
+      let bSrc = isMotion ? p.thumb : (p.blur || p.thumb || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) loadSwipeNeighbors();

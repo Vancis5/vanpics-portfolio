@@ -159,17 +159,7 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 // ─── DYNAMIC CLOUDFLARE R2/D1 DATABASE UPGRADE ───
 // Fetches the latest media dynamically in the background without blocking the initial page load/LCP.
 (async function loadDynamicMedia() {
-  const API_BASE_URL = (
-    !window.location.origin || 
-    window.location.origin.includes('localhost') || 
-    window.location.origin.includes('127.0.0.1') || 
-    window.location.origin.includes('192.168.') || 
-    window.location.origin.includes('10.') || 
-    window.location.origin.includes('172.') || 
-    window.location.origin.startsWith('file://')
-  )
-    ? 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev'
-    : '';
+  const API_BASE_URL = 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
 
   try {
     const [photosRes, videosRes] = await Promise.all([
@@ -201,7 +191,7 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 
       // Preload the first 8 masonry thumbnails + first 6 carousel photos in the background to completely eliminate flashes!
       const masonryPreloads = newPhotos.slice(0, 8).map(p => p.thumb || p.src);
-      const carouselPreloads = newPhotos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.src);
+      const carouselPreloads = newPhotos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src);
       const uniquePreloads = Array.from(new Set([...masonryPreloads, ...carouselPreloads]));
       
       try {
