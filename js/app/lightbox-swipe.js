@@ -82,6 +82,7 @@ if (state.isMobile) {
         inner.style.setProperty('--lightbox-photo-ratio', ratio);
 
         let img = document.createElement('img');
+        img.crossOrigin = 'anonymous';
         img.alt = p.title || '';
         img.draggable = false;
         img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
