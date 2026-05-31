@@ -21,7 +21,7 @@ preview_bucket_name = "vanpics-media-local-preview"
 [vars]
 # Comma-separate production frontend origins, for example:
 # ALLOWED_ORIGINS = "https://vanpics.example.com,https://www.vanpics.example.com"
-ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,https://vanpics.pages.dev"
 
 [observability]
 enabled = false
