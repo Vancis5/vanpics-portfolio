@@ -261,14 +261,38 @@
       }
     });
 
+    function handleUnauthorized(res) {
+      if (res.status === 401) {
+        showToast('session expired, please re-authenticate', 'error');
+        localStorage.removeItem('vanpics_admin_token');
+        sessionStorage.removeItem('vanpics_admin_token');
+        setTimeout(() => {
+          window.location.replace('login.html');
+        }, 1500);
+        return true;
+      }
+      return false;
+    }
+
     // Check saved credentials and automatically verify
     const savedToken = localStorage.getItem('vanpics_admin_token') || sessionStorage.getItem('vanpics_admin_token') || '';
     if (savedToken) {
       secretInput.value = savedToken;
-      if (localStorage.getItem('vanpics_admin_token')) {
-        rememberCheckbox.checked = true;
-      }
+      const isRemembered = !!localStorage.getItem('vanpics_admin_token');
+      rememberCheckbox.checked = isRemembered;
       verifyToken(savedToken);
+    } else {
+      window.location.replace('login.html');
+    }
+
+    // Logout Action
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('vanpics_admin_token');
+        sessionStorage.removeItem('vanpics_admin_token');
+        window.location.replace('login.html');
+      });
     }
 
     let verifyTimeout = null;
@@ -334,6 +358,8 @@
 
     async function verifyToken(token) {
       if (!token) return;
+      
+      setAuthStatus('verifying');
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/verify`, {
           method: 'GET',
@@ -358,6 +384,9 @@
           setAuthStatus('failed');
           localStorage.removeItem('vanpics_admin_token');
           sessionStorage.removeItem('vanpics_admin_token');
+          setTimeout(() => {
+            window.location.replace('login.html');
+          }, 1000);
         }
       } catch (err) {
         setAuthStatus('unverified');
@@ -1037,6 +1066,8 @@
           body: JSON.stringify(payload)
         });
 
+        if (handleUnauthorized(res)) return;
+
         const data = await res.json();
         if (res.ok && data.success) {
           showToast('asset updated successfully', 'success');
@@ -1070,6 +1101,8 @@
           }
         });
         
+        if (handleUnauthorized(res)) return;
+
         const data = await res.json();
         if (data.success) {
           showToast(`${type} deleted successfully`, 'success');
@@ -1139,6 +1172,8 @@
           body: formData
         });
         
+        if (handleUnauthorized(res)) return;
+
         const data = await res.json();
         if (res.ok && data.success) {
           showToast('archived successfully', 'success');
