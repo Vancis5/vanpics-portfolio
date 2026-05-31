@@ -561,4 +561,72 @@ export async function sortDatabase(request, env) {
   });
 }
 
+export async function replacePhotoFile(request, env, params) {
+  const photoId = Number.parseInt(params.id, 10);
+  if (!Number.isInteger(photoId) || photoId < 1) {
+    return errorResponse(request, env, 'invalid photo id', 400);
+  }
+
+  const formData = await request.formData();
+  const photoFile = formData.get('photo');
+  const thumbFile = formData.get('thumb');
+  const blurFile = formData.get('blur');
+  const aspectRatio = parseFloat(formData.get('aspectRatio'));
+
+  const errors = [];
+  if (!photoFile || !thumbFile || !blurFile) {
+    errors.push('missing processed image assets');
+  }
+  if (isNaN(aspectRatio)) {
+    errors.push('invalid aspect ratio');
+  }
+
+  if (errors.length > 0) {
+    return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
+  }
+
+  // 1. Get the existing keys from D1
+  const photo = await env.DB.prepare(
+    'SELECT src, thumb, blur FROM photos WHERE id = ?'
+  ).bind(photoId).first();
+
+  if (!photo) {
+    return errorResponse(request, env, 'photo record not found', 404);
+  }
+
+  // 2. Put / overwrite the files in R2 using the existing keys
+  await Promise.all([
+    env.MEDIA_BUCKET.put(photo.src, await photoFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
+    }),
+    env.MEDIA_BUCKET.put(photo.thumb, await thumbFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
+    }),
+    env.MEDIA_BUCKET.put(photo.blur, await blurFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
+    }),
+  ]);
+
+  // 3. Update the aspect_ratio in D1
+  await env.DB.prepare(
+    'UPDATE photos SET aspect_ratio = ? WHERE id = ?'
+  ).bind(aspectRatio, photoId).run();
+
+  // 4. Purge the CDN cache for all API feeds instantly!
+  const cache = caches.default;
+  const origin = new URL(request.url).origin;
+  const urls = [
+    `${origin}/api/photos`,
+    `${origin}/api/photos?limit=100`,
+    `${origin}/api/videos`,
+    `${origin}/api/videos?limit=100`
+  ];
+  for (const url of urls) {
+    await cache.delete(new Request(url));
+  }
+
+  return jsonResponse(request, env, { success: true });
+}
+
+
 

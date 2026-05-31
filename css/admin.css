@@ -26,6 +26,7 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -1340,6 +1341,19 @@
       .drop-zone-grid {
         grid-template-columns: 1fr !important;
         gap: 0.75rem !important;
+      }
+
+      #edit-cms-form {
+        grid-template-columns: 1fr !important;
+        height: auto !important;
+        max-height: calc(90vh - 60px) !important;
+        overflow-y: auto !important;
+      }
+
+      .edit-media-sidebar {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 1.25rem !important;
       }
     }
 

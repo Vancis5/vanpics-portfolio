@@ -15,7 +15,8 @@ import {
   fetchArchives,
   deleteArchiveItem,
   updateArchiveItem,
-  uploadArchiveItem
+  uploadArchiveItem,
+  replacePhotoItem
 } from './admin/api.js';
 
 import { renderArchivesList } from './admin/render.js';
@@ -51,6 +52,12 @@ const utilityTerminal = document.getElementById('utility-terminal');
 
 // Search and Filter Elements
 const searchInput = document.getElementById('dashboard-search');
+
+// Replacement photo states
+let processedEditPhotoBlob = null;
+let processedEditThumbBlob = null;
+let processedEditBlurBlob = null;
+let computedEditAspectRatio = null;
 
 // Restore cached search and filter parameters on load
 if (searchInput) {
@@ -949,6 +956,24 @@ function openEditModal(type, id) {
 
   currentlyEditingItem = item;
   
+  // Reset replacement photo states
+  processedEditPhotoBlob = null;
+  processedEditThumbBlob = null;
+  processedEditBlurBlob = null;
+  computedEditAspectRatio = null;
+  
+  const editFileStatus = document.getElementById('edit-photo-file-status');
+  if (editFileStatus) editFileStatus.innerText = 'replace';
+  
+  const editPipeline = document.getElementById('edit-pipeline-status');
+  if (editPipeline) {
+    editPipeline.style.display = 'none';
+    editPipeline.innerHTML = '';
+  }
+  
+  const editFileInput = document.getElementById('edit-photo-file-input');
+  if (editFileInput) editFileInput.value = '';
+
   // Populate fields
   document.getElementById('edit-title').value = item.title || '';
   document.getElementById('edit-date').value = item.date || '';
@@ -972,8 +997,97 @@ function openEditModal(type, id) {
     document.getElementById('edit-music').value = item.music || '';
   }
 
+  const imgPreview = document.getElementById('edit-media-preview-img');
+  const placeholderPreview = document.getElementById('edit-media-preview-placeholder');
+
+  if (type === 'photo') {
+    if (imgPreview) {
+      imgPreview.src = item.src;
+      imgPreview.style.display = '';
+    }
+    if (placeholderPreview) placeholderPreview.style.display = 'none';
+  } else {
+    if (imgPreview) {
+      if (item.poster) {
+        imgPreview.src = item.poster;
+        imgPreview.style.display = '';
+      } else {
+        imgPreview.style.display = 'none';
+      }
+    }
+    if (placeholderPreview) {
+      placeholderPreview.style.display = '';
+      placeholderPreview.textContent = 'video asset';
+    }
+  }
+
   editModal.classList.add('open');
   updateBodyScrollState();
+}
+
+async function processEditImagePipeline(imgSrc) {
+  const pipeline = document.getElementById('edit-pipeline-status');
+  if (!pipeline) return;
+  pipeline.style.display = 'block';
+  pipeline.innerHTML = `
+    <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio...</div>
+    <div class="pipeline-step" id="step-edit-compress">compressing raw photo (2500px, webp)...</div>
+    <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail...</div>
+    <div class="pipeline-step" id="step-edit-blur">rendering 40px pre-blurred background...</div>
+  `;
+  
+  const img = new Image();
+  img.src = imgSrc;
+  
+  await new Promise(resolve => img.onload = resolve);
+  
+  setStepState('edit-dimensions', 'active');
+  computedEditAspectRatio = parseFloat((img.width / img.height).toFixed(4));
+  document.getElementById('step-edit-dimensions').innerText = `aspect ratio: ${computedEditAspectRatio} (${img.width}x${img.height})`;
+  
+  document.getElementById('edit-aspect-ratio').value = computedEditAspectRatio;
+  setStepState('edit-dimensions', 'success');
+
+  setStepState('edit-compress', 'active');
+  processedEditPhotoBlob = await resizeImage(img, 2500, 0.75);
+  setStepState('edit-compress', 'success');
+
+  setStepState('edit-thumbnail', 'active');
+  processedEditThumbBlob = await resizeImage(img, 600, 0.75);
+  setStepState('edit-thumbnail', 'success');
+
+  setStepState('edit-blur', 'active');
+  processedEditBlurBlob = await resizeImage(img, 40, 0.4, true);
+  setStepState('edit-blur', 'success');
+  
+  showToast('replacement photo processed successfully', 'success');
+}
+
+const editFileInput = document.getElementById('edit-photo-file-input');
+const editFileStatus = document.getElementById('edit-photo-file-status');
+if (editFileInput) {
+  editFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (editFileStatus) editFileStatus.innerText = `selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const imgPreview = document.getElementById('edit-media-preview-img');
+      if (imgPreview) imgPreview.src = event.target.result;
+      await processEditImagePipeline(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+const editCancelBtn = document.getElementById('edit-cancel-btn');
+if (editCancelBtn) {
+  editCancelBtn.addEventListener('click', () => {
+    editModal.classList.remove('open');
+    updateBodyScrollState();
+  });
 }
 
 // Submit metadata update to backend (Update CRUD action)
@@ -1008,6 +1122,29 @@ if (editForm) {
     }
 
     try {
+      // If we have a replacement photo, run the R2 replace action first!
+      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditBlurBlob) {
+        submitText.innerText = 'replacing R2 asset file...';
+        const fileFormData = new FormData();
+        fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
+        fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
+        fileFormData.append('blur', processedEditBlurBlob, 'blur.webp');
+        fileFormData.append('aspectRatio', computedEditAspectRatio);
+
+        const fileRes = await replacePhotoItem(id, fileFormData, token);
+        if (handleUnauthorized(fileRes)) return;
+
+        const fileData = await fileRes.json();
+        if (!fileRes.ok || !fileData.success) {
+          showToast(fileData.error || 'file replacement failed', 'error');
+          editSubmitBtn.disabled = false;
+          submitText.innerText = 'save changes';
+          return;
+        }
+        showToast('photo files replaced successfully in R2', 'success');
+      }
+
+      submitText.innerText = 'saving changes...';
       const res = await updateArchiveItem(type, id, payload, token);
 
       if (handleUnauthorized(res)) return;
