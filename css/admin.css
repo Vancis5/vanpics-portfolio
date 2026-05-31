@@ -11,7 +11,7 @@
       /* warm gold */
       --accent-glow: rgba(212, 175, 55, 0.15);
       --radius: 8px;
-      --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      --transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, background-color 0.25s ease, color 0.2s ease;
       --danger: #d96868;
       --success: #82a878;
       --warning: #cca05a;
@@ -411,14 +411,13 @@
     /* Asset Card */
     .asset-card {
       background: var(--surface);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: var(--transition);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+      will-change: transform;
       position: relative;
     }
 
@@ -444,7 +443,8 @@
       height: 100%;
       object-fit: cover;
       filter: brightness(0.85);
-      transition: var(--transition);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, filter;
     }
 
     .asset-card:hover .card-preview-media {
@@ -624,6 +624,7 @@
       box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
       transform: translateY(30px);
       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
       display: flex;
       flex-direction: column;
       touch-action: pan-y;
@@ -1062,7 +1063,8 @@
       gap: 0.75rem;
       transform: translateY(100px);
       opacity: 0;
-      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, opacity;
       z-index: 10000;
       font-family: 'DM Mono', monospace;
       font-size: 0.75rem;

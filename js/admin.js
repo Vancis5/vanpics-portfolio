@@ -675,8 +675,8 @@
     async function loadArchives() {
       try {
         const [photosRes, videosRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/photos?limit=100`),
-          fetch(`${API_BASE_URL}/api/videos?limit=100`)
+          fetch(`${API_BASE_URL}/api/photos?limit=50`),
+          fetch(`${API_BASE_URL}/api/videos?limit=50`)
         ]);
 
         if (!photosRes.ok || !videosRes.ok) throw new Error('API server down');
