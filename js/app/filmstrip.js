@@ -23,6 +23,12 @@ window.addEventListener('category-change', function () {
     let slides = imgWrap.querySelectorAll('.snap-slide');
     for (let i = 0; i < slides.length; i++) slides[i].remove();
   }
+
+  // Rebuild filmstrip & slides immediately if lightbox is open to prevent visual cutoff/loss of UI assets
+  if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
+    window.dispatchEvent(new Event('lightbox-open'));
+    showFilmstrip();
+  }
 });
 let liftZone = domRefs.filmstripLiftZone;
 
