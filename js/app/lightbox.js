@@ -228,13 +228,7 @@ function updateDynamicTextColor(p) {
     return;
   }
 
-  // Pre-emptively bypass cross-origin remote R2 images to avoid DOM SecurityErrors and thread stutters
-  const src = img.src || '';
-  const isCrossOrigin = src.startsWith('http') && !src.includes(window.location.host);
-  if (isCrossOrigin) {
-    resetDynamicTextColor();
-    return;
-  }
+
 
   function processColor() {
     // Verify that we are still displaying the same photo

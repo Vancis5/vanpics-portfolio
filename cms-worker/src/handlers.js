@@ -39,18 +39,29 @@ export async function serveMedia(request, env, params) {
     });
   }
 
-  // 1. Try to fetch from the Cloudflare CDN edge cache first
-  const cacheUrl = new URL(request.url);
-  const cacheKey = new Request(cacheUrl.toString(), request);
-  const cache = caches.default;
-  
-  let cachedResponse = await cache.match(cacheKey);
-  if (cachedResponse) {
-    return cachedResponse;
+  const rangeHeader = request.headers.get('Range');
+
+  // 1. Try to fetch from the Cloudflare CDN edge cache first (only for non-range requests)
+  let cacheKey;
+  let cache;
+  if (!rangeHeader) {
+    const cacheUrl = new URL(request.url);
+    cacheKey = new Request(cacheUrl.toString(), request);
+    cache = caches.default;
+    
+    let cachedResponse = await cache.match(cacheKey);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
   }
 
-  // 2. Fallback to fetching from R2 bucket
-  const object = await env.MEDIA_BUCKET.get(fileKey);
+  // 2. Fallback to fetching from R2 bucket (supporting range slices)
+  const getOptions = {};
+  if (rangeHeader) {
+    getOptions.range = request.headers;
+  }
+
+  const object = await env.MEDIA_BUCKET.get(fileKey, getOptions);
 
   if (!object) {
     return new Response('Media asset not found', {
@@ -64,15 +75,29 @@ export async function serveMedia(request, env, params) {
   headers.set('etag', object.httpEtag);
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Access-Control-Allow-Origin', '*');
 
-  if (!headers.has('Content-Type')) {
+  if (!headers.has('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
     headers.set('Content-Type', inferContentType(fileKey));
   }
 
-  const response = new Response(object.body, { headers });
+  const status = rangeHeader && object.range ? 206 : 200;
 
-  // 3. Cache the served response in background for future requests
-  if (request.method === 'GET' && object.size > 0) {
+  if (status === 206 && object.range) {
+    const start = object.range.offset;
+    const length = object.range.length;
+    const end = start + length - 1;
+    headers.set('Content-Range', `bytes ${start}-${end}/${object.size}`);
+    headers.set('Content-Length', length.toString());
+  } else {
+    headers.set('Content-Length', object.size.toString());
+  }
+
+  const response = new Response(object.body, { status, headers });
+
+  // 3. Cache the served response in background for future requests (only for full 200 OK responses)
+  if (!rangeHeader && request.method === 'GET' && object.size > 0 && cache) {
     const putPromise = cache.put(cacheKey, response.clone());
     if (env.waitUntil) {
       env.waitUntil(putPromise);

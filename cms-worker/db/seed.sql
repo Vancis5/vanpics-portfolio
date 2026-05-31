@@ -95,4 +95,4 @@ VALUES ('', 'photos/wires-crescent-pink.webp', 'thumbs/wires-crescent-pink.webp'
 
 -- Seed Videos
 INSERT INTO videos (title, src, poster, aspect_ratio, location, date, desc, music)
-VALUES ('after hours', 'https://vanpics-proxy.lorzanofrancisevan.workers.dev/after-hours.mp4', 'posters/after-hours.webp', 1.777, 'maasin city', 'aug 11, 2025', 'filmed with a friend from 3am to 6am. completely impromptu. the entire city was asleep and we had it to ourselves <br> <br> stabilization failed us but i tried to make everything look intentional', 'Cigarettes After Sex - Sunsetz');
+VALUES ('after hours', 'videos/after-hours.mp4', 'posters/after-hours.webp', 1.777, 'maasin city', 'aug 11, 2025', 'filmed with a friend from 3am to 6am. completely impromptu. the entire city was asleep and we had it to ourselves <br> <br> stabilization failed us but i tried to make everything look intentional', 'Cigarettes After Sex - Sunsetz');
