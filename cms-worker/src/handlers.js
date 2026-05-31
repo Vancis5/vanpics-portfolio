@@ -39,6 +39,17 @@ export async function serveMedia(request, env, params) {
     });
   }
 
+  // 1. Try to fetch from the Cloudflare CDN edge cache first
+  const cacheUrl = new URL(request.url);
+  const cacheKey = new Request(cacheUrl.toString(), request);
+  const cache = caches.default;
+  
+  let cachedResponse = await cache.match(cacheKey);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  // 2. Fallback to fetching from R2 bucket
   const object = await env.MEDIA_BUCKET.get(fileKey);
 
   if (!object) {
@@ -58,7 +69,19 @@ export async function serveMedia(request, env, params) {
     headers.set('Content-Type', inferContentType(fileKey));
   }
 
-  return new Response(object.body, { headers });
+  const response = new Response(object.body, { headers });
+
+  // 3. Cache the served response in background for future requests
+  if (request.method === 'GET' && object.size > 0) {
+    const putPromise = cache.put(cacheKey, response.clone());
+    if (env.waitUntil) {
+      env.waitUntil(putPromise);
+    } else {
+      await putPromise;
+    }
+  }
+
+  return response;
 }
 
 export async function listPhotos(request, env) {

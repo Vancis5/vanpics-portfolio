@@ -205,15 +205,18 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
       updateMediaLibrary(newPhotos, newVideos);
       updateActivePhotos();
 
-      // Recalculate state.carouselPhotos
-      state.carouselPhotos = state.activePhotos.filter(p => p.heroSlide === true && p.title !== '');
+      // Recalculate state.carouselPhotos using the full newPhotos list (not the filtered activePhotos subset!)
+      state.carouselPhotos = newPhotos.filter(p => p.heroSlide === true && p.title !== '');
       if (state.carouselPhotos.length === 0) {
-        state.carouselPhotos = state.activePhotos.filter(p => p.title !== '');
+        state.carouselPhotos = newPhotos.filter(p => p.title !== '');
       }
 
       // Proactively purge old carousel DOM nodes and rebuild it cleanly
       domRefs.heroRows.forEach(row => row.innerHTML = '');
       buildCarousel();
+
+      // Rebuild the DOM masonry grid since the media database list has updated!
+      buildMasonry();
 
       // Gracefully rebuild gallery masonry layout
       rebuildGallery(state.currentCategory);
