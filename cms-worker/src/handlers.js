@@ -48,20 +48,45 @@ export async function serveMedia(request, env, params) {
     const cacheUrl = new URL(request.url);
     cacheKey = new Request(cacheUrl.toString(), request);
     cache = caches.default;
-    
+
     let cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) {
       return cachedResponse;
     }
   }
 
-  // 2. Fallback to fetching from R2 bucket (supporting range slices)
-  const getOptions = {};
+  // 2. Head the object first to get total size (required for Content-Range calculation)
+  const objectHead = await env.MEDIA_BUCKET.head(fileKey);
+  if (!objectHead) {
+    return new Response('Media asset not found', {
+      status: 404,
+      headers: corsHeaders(request, env),
+    });
+  }
+  const totalSize = objectHead.size;
+
+  // 3. Parse Range header manually and build R2 range options
+  let rangeOptions;
+  let isRangeRequest = false;
   if (rangeHeader) {
-    getOptions.range = request.headers;
+    const match = rangeHeader.match(/^bytes=(\d*)-(\d*)$/);
+    if (match) {
+      isRangeRequest = true;
+      const startStr = match[1];
+      const endStr = match[2];
+      if (startStr === '' && endStr !== '') {
+        // suffix range: bytes=-500
+        rangeOptions = { suffix: parseInt(endStr, 10) };
+      } else {
+        const offset = startStr ? parseInt(startStr, 10) : 0;
+        const endByte = endStr ? parseInt(endStr, 10) : totalSize - 1;
+        rangeOptions = { offset, length: endByte - offset + 1 };
+      }
+    }
   }
 
-  const object = await env.MEDIA_BUCKET.get(fileKey, getOptions);
+  // 4. Fetch from R2 with the parsed range options
+  const object = await env.MEDIA_BUCKET.get(fileKey, rangeOptions ? { range: rangeOptions } : undefined);
 
   if (!object) {
     return new Response('Media asset not found', {
@@ -82,16 +107,15 @@ export async function serveMedia(request, env, params) {
     headers.set('Content-Type', inferContentType(fileKey));
   }
 
-  const status = rangeHeader && object.range ? 206 : 200;
-
-  if (status === 206 && object.range) {
-    const start = object.range.offset;
-    const length = object.range.length;
-    const end = start + length - 1;
-    headers.set('Content-Range', `bytes ${start}-${end}/${object.size}`);
+  let status = 200;
+  if (isRangeRequest && object.range) {
+    status = 206;
+    const offset = object.range.offset ?? rangeOptions?.offset ?? 0;
+    const length = object.range.length ?? rangeOptions?.length ?? totalSize;
+    headers.set('Content-Range', `bytes ${offset}-${offset + length - 1}/${totalSize}`);
     headers.set('Content-Length', length.toString());
   } else {
-    headers.set('Content-Length', object.size.toString());
+    headers.set('Content-Length', totalSize.toString());
   }
 
   const response = new Response(object.body, { status, headers });
