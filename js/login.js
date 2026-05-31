@@ -1,14 +1,11 @@
-(function () {
-  const API_BASE_URL = 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
+import { API_BASE_URL } from './admin/utils.js';
 
-  // 1. Direct Head-Guard: If already authenticated, redirect to dashboard instantly!
-  const savedToken = localStorage.getItem('vanpics_admin_token') || sessionStorage.getItem('vanpics_admin_token') || '';
-  if (savedToken) {
-    // Attempt verification in the background, but redirect immediately to feel instant
-    window.location.replace('admin.html');
-    return;
-  }
-
+// 1. Direct Head-Guard: If already authenticated, redirect to dashboard instantly!
+const savedToken = localStorage.getItem('vanpics_admin_token') || sessionStorage.getItem('vanpics_admin_token') || '';
+if (savedToken) {
+  // Attempt verification in the background, but redirect immediately to feel instant
+  window.location.replace('admin.html');
+} else {
   document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const loginSecretInput = document.getElementById('login-secret-token');
@@ -97,4 +94,4 @@
       });
     }
   });
-})();
+}
