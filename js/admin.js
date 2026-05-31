@@ -122,12 +122,57 @@
     const editDeleteBtn = document.getElementById('edit-delete-btn');
     const confirmDeleteText = document.getElementById('confirm-delete-text');
 
+    function preventDefaultScroll(e) {
+      if (e.target && typeof e.target.closest === 'function') {
+        const modalBody = e.target.closest('.modal-body');
+        if (modalBody) {
+          const isScrollable = modalBody.scrollHeight > modalBody.clientHeight;
+          if (isScrollable) {
+            const scrollTop = modalBody.scrollTop;
+            const scrollHeight = modalBody.scrollHeight;
+            const clientHeight = modalBody.clientHeight;
+            const delta = e.deltaY || -e.detail || e.wheelDelta;
+            
+            // Allow normal scrolling within bounds, block scroll-chaining at boundaries
+            if (delta < 0 && scrollTop <= 0) {
+              e.preventDefault();
+            } else if (delta > 0 && scrollTop + clientHeight >= scrollHeight) {
+              e.preventDefault();
+            }
+            return;
+          }
+        }
+      }
+      e.preventDefault();
+    }
+
+    function preventDefaultKeys(e) {
+      const keys = ['Space', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'End', 'Home'];
+      if (keys.includes(e.code)) {
+        if (e.target && typeof e.target.closest === 'function') {
+          const modalBody = e.target.closest('.modal-body');
+          if (modalBody) return; // Allow keyboard navigation inside the modal body
+        }
+        e.preventDefault();
+      }
+    }
+
     function updateBodyScrollState() {
       const openModals = document.querySelectorAll('.modal-overlay.open');
       if (openModals.length > 0) {
         document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
+        
+        window.addEventListener('wheel', preventDefaultScroll, { passive: false });
+        window.addEventListener('touchmove', preventDefaultScroll, { passive: false });
+        window.addEventListener('keydown', preventDefaultKeys, { passive: false });
       } else {
         document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
+        
+        window.removeEventListener('wheel', preventDefaultScroll);
+        window.removeEventListener('touchmove', preventDefaultScroll);
+        window.removeEventListener('keydown', preventDefaultKeys);
       }
     }
 
@@ -924,6 +969,7 @@
       }
 
       editModal.classList.add('open');
+      updateBodyScrollState();
     }
 
     // Submit metadata update to backend (Update CRUD action)
@@ -975,6 +1021,7 @@
           showToast('asset updated successfully', 'success');
           editModal.classList.remove('open');
           currentlyEditingItem = null;
+          updateBodyScrollState();
           loadArchives();
         } else {
           showToast(data.error || 'update failed', 'error');
@@ -989,10 +1036,6 @@
 
     // Delete CRUD Action
     async function deleteItem(type, id, title) {
-      if (!confirm(`are you sure you want to delete ${type} "${title}"?`)) {
-        return;
-      }
-      
       const token = secretInput.value.trim();
       const endpoint = type === 'video' 
         ? `${API_BASE_URL}/api/admin/video/${id}`

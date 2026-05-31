@@ -7,7 +7,8 @@
       --border-focus: rgba(212, 175, 55, 0.4);
       --surface: rgba(22, 21, 21, 0.6);
       --surface-accent: rgba(212, 175, 55, 0.03);
-      --accent: #d4af37; /* Luxe warm gold */
+      --accent: #d4af37;
+      /* warm gold */
       --accent-glow: rgba(212, 175, 55, 0.15);
       --radius: 8px;
       --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -49,7 +50,8 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 0.65rem 2.2rem 0.65rem 1rem;
-      color: #e5dfd3; /* pristine high-contrast warm off-white */
+      color: #e5dfd3;
+      /* pristine high-contrast warm off-white */
       font-family: 'DM Mono', monospace;
       font-size: 0.72rem;
       cursor: pointer;
@@ -153,9 +155,17 @@
       transition: var(--transition);
     }
 
-    .auth-status-icon svg.text-warning { color: var(--warning); }
-    .auth-status-icon svg.text-success { color: var(--success); }
-    .auth-status-icon svg.text-danger { color: var(--danger); }
+    .auth-status-icon svg.text-warning {
+      color: var(--warning);
+    }
+
+    .auth-status-icon svg.text-success {
+      color: var(--success);
+    }
+
+    .auth-status-icon svg.text-danger {
+      color: var(--danger);
+    }
 
     /* Auth spinner */
     .spinner {
@@ -166,11 +176,16 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
+
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
-    input, textarea, select {
+    input,
+    textarea,
+    select {
       background: rgba(17, 16, 16, 0.5);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -182,7 +197,9 @@
       outline: none;
     }
 
-    input:focus, textarea:focus, select:focus {
+    input:focus,
+    textarea:focus,
+    select:focus {
       border-color: var(--border-focus);
       background: rgba(17, 16, 16, 0.8);
       box-shadow: 0 0 12px var(--accent-glow);
@@ -286,7 +303,7 @@
       align-items: center;
       gap: 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
 
     .search-filter-group {
@@ -408,13 +425,14 @@
     .asset-card:hover {
       transform: translateY(-3px);
       border-color: rgba(244, 238, 225, 0.15);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
     }
 
     .card-preview-wrapper {
       position: relative;
       width: 100%;
-      padding-top: 65%; /* 16:10 aspect grid preview */
+      padding-top: 65%;
+      /* 16:10 aspect grid preview */
       background: #050505;
       overflow: hidden;
     }
@@ -550,10 +568,25 @@
       background: rgba(244, 238, 225, 0.25);
     }
 
+    /* Blur and fade out scrollbar when modal is open to place it behind the backdrop */
+    html.modal-open::-webkit-scrollbar-thumb,
+    body.modal-open::-webkit-scrollbar-thumb,
+    .modal-open *::-webkit-scrollbar-thumb {
+      background: transparent !important;
+      background-color: transparent !important;
+      border-color: transparent !important;
+    }
+
     /* Firefox Support */
     * {
       scrollbar-width: thin;
       scrollbar-color: rgba(244, 238, 225, 0.15) transparent;
+    }
+
+    html.modal-open,
+    body.modal-open,
+    .modal-open * {
+      scrollbar-color: transparent transparent !important;
     }
 
     /* Modal Overlay */
@@ -570,6 +603,8 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overscroll-behavior: contain;
+      touch-action: none;
     }
 
     .modal-overlay.open {
@@ -584,12 +619,14 @@
       width: 100%;
       max-width: 680px;
       max-height: 90vh;
-      overflow: hidden; /* Prevent double scrollbars; modal-body handles scrolling */
-      box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+      overflow: hidden;
+      /* Prevent double scrollbars; modal-body handles scrolling */
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
       transform: translateY(30px);
       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
+      touch-action: pan-y;
     }
 
     .modal-overlay.open .modal-wrapper {
@@ -602,7 +639,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-shrink: 0; /* Keep header size fixed */
+      flex-shrink: 0;
+      /* Keep header size fixed */
     }
 
     .modal-title {
@@ -637,8 +675,11 @@
 
     .modal-body {
       padding: 2rem;
-      overflow-y: auto; /* Handle all modal scrolling with custom scrollbar */
+      overflow-y: auto;
+      /* Handle all modal scrolling with custom scrollbar */
       flex-grow: 1;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
     }
 
     /* Segmented Tab Bar */
@@ -718,7 +759,8 @@
       overflow: hidden;
     }
 
-    .drop-zone:hover, .drop-zone.dragover {
+    .drop-zone:hover,
+    .drop-zone.dragover {
       border-color: var(--accent);
       background: var(--surface-accent);
       box-shadow: 0 0 15px var(--accent-glow);
@@ -877,11 +919,11 @@
       border-radius: 50%;
     }
 
-    input:checked + .slider {
+    input:checked+.slider {
       background-color: rgba(212, 175, 55, 0.35);
     }
 
-    input:checked + .slider:before {
+    input:checked+.slider:before {
       transform: translateX(18px);
       background-color: var(--accent);
     }
@@ -983,10 +1025,24 @@
     }
 
     @keyframes dots {
-      0%, 20% { content: ''; }
-      40% { content: '.'; }
-      60% { content: '..'; }
-      80%, 100% { content: '...'; }
+
+      0%,
+      20% {
+        content: '';
+      }
+
+      40% {
+        content: '.';
+      }
+
+      60% {
+        content: '..';
+      }
+
+      80%,
+      100% {
+        content: '...';
+      }
     }
 
     /* Toast */
@@ -1019,8 +1075,13 @@
       opacity: 1;
     }
 
-    .toast-success { border-left: 2px solid var(--accent); }
-    .toast-error { border-left: 2px solid var(--danger); }
+    .toast-success {
+      border-left: 2px solid var(--accent);
+    }
+
+    .toast-error {
+      border-left: 2px solid var(--danger);
+    }
 
     /* Visual High Fidelity Badges */
     .badge {
