@@ -39,6 +39,16 @@ const closeEditModalBtn = document.getElementById('btn-close-edit-modal');
 const editForm = document.getElementById('edit-cms-form');
 let currentlyEditingItem = null;
 
+// Utilities Modal elements
+const utilitiesModal = document.getElementById('utilities-modal-overlay');
+const openUtilitiesModalBtn = document.getElementById('btn-open-utilities-modal');
+const closeUtilitiesModalBtn = document.getElementById('btn-close-utilities-modal');
+const runDbSortBtn = document.getElementById('btn-run-db-sort');
+const runDbSortText = document.getElementById('btn-run-db-sort-text');
+const purgeCdnCacheBtn = document.getElementById('btn-purge-cdn-cache');
+const purgeCdnCacheText = document.getElementById('btn-purge-cdn-cache-text');
+const utilityTerminal = document.getElementById('utility-terminal');
+
 // Search and Filter Elements
 const searchInput = document.getElementById('dashboard-search');
 
@@ -230,6 +240,128 @@ if (closeEditModalBtn) {
   });
 }
 
+// Utilities Modal Triggers
+if (openUtilitiesModalBtn) {
+  openUtilitiesModalBtn.addEventListener('click', () => {
+    utilitiesModal.classList.add('open');
+    updateBodyScrollState();
+    if (utilityTerminal) {
+      utilityTerminal.style.display = 'none';
+      utilityTerminal.innerText = '';
+    }
+  });
+}
+
+if (closeUtilitiesModalBtn) {
+  closeUtilitiesModalBtn.addEventListener('click', () => {
+    utilitiesModal.classList.remove('open');
+    updateBodyScrollState();
+  });
+}
+
+if (runDbSortBtn) {
+  runDbSortBtn.addEventListener('click', async () => {
+    const token = secretInput.value.trim();
+    if (!token) {
+      showToast('please verify your admin token first', 'error');
+      return;
+    }
+
+    runDbSortBtn.disabled = true;
+    runDbSortText.innerText = 'sorting collections...';
+    
+    if (utilityTerminal) {
+      utilityTerminal.style.display = 'block';
+      utilityTerminal.innerText = '> connecting to worker...\n';
+    }
+
+    try {
+      if (utilityTerminal) utilityTerminal.innerText += '> POST /api/admin/sort-db\n';
+      const res = await fetch(`${API_BASE_URL}/api/admin/sort-db`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Token': token
+        }
+      });
+
+      if (handleUnauthorized(res)) return;
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('database sorted successfully', 'success');
+        if (utilityTerminal) {
+          utilityTerminal.innerText += `> success! parsed and sorted:\n  - ${data.sortedPhotos} photos\n  - ${data.sortedVideos} videos\n> flushed api cache successfully!\n`;
+        }
+        loadArchives();
+      } else {
+        showToast(data.error || 'sorting failed', 'error');
+        if (utilityTerminal) {
+          utilityTerminal.innerText += `> error: ${data.error || 'failed to execute database sort.'}\n`;
+        }
+      }
+    } catch (err) {
+      showToast('server connection failed', 'error');
+      if (utilityTerminal) {
+        utilityTerminal.innerText += `> error: connection to backend failed.\n`;
+      }
+    } finally {
+      runDbSortBtn.disabled = false;
+      runDbSortText.innerText = 'run database sorter';
+    }
+  });
+}
+
+if (purgeCdnCacheBtn) {
+  purgeCdnCacheBtn.addEventListener('click', async () => {
+    const token = secretInput.value.trim();
+    if (!token) {
+      showToast('please verify your admin token first', 'error');
+      return;
+    }
+
+    purgeCdnCacheBtn.disabled = true;
+    purgeCdnCacheText.innerText = 'purging cache...';
+
+    if (utilityTerminal) {
+      utilityTerminal.style.display = 'block';
+      utilityTerminal.innerText = '> invalidating edge cache keys...\n';
+    }
+
+    try {
+      if (utilityTerminal) utilityTerminal.innerText += '> POST /api/admin/purge-cache\n';
+      const res = await fetch(`${API_BASE_URL}/api/admin/purge-cache`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Token': token
+        }
+      });
+
+      if (handleUnauthorized(res)) return;
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('edge cdn cache purged successfully', 'success');
+        if (utilityTerminal) {
+          utilityTerminal.innerText += `> success! successfully invalidated ${data.purgedCount} endpoint cache objects.\n> changes should propagate to all clients instantly!\n`;
+        }
+      } else {
+        showToast(data.error || 'purge failed', 'error');
+        if (utilityTerminal) {
+          utilityTerminal.innerText += `> error: ${data.error || 'failed to purge cache.'}\n`;
+        }
+      }
+    } catch (err) {
+      showToast('server connection failed', 'error');
+      if (utilityTerminal) {
+        utilityTerminal.innerText += `> error: connection to cdn gateway failed.\n`;
+      }
+    } finally {
+      purgeCdnCacheBtn.disabled = false;
+      purgeCdnCacheText.innerText = 'purge edge cache';
+    }
+  });
+}
+
 // Close on overlay click
 window.addEventListener('click', (e) => {
   if (e.target === uploadModal) {
@@ -242,6 +374,10 @@ window.addEventListener('click', (e) => {
     editModal.classList.remove('open');
     currentlyEditingItem = null;
     editForm.reset();
+    updateBodyScrollState();
+  }
+  if (e.target === utilitiesModal) {
+    utilitiesModal.classList.remove('open');
     updateBodyScrollState();
   }
   if (e.target === confirmModal) {
