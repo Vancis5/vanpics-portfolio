@@ -199,6 +199,24 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
         aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : parseFloat(v.aspect_ratio || 1.777)
       }));
 
+      // Preload the first 8 masonry thumbnails + first 6 carousel photos in the background to completely eliminate flashes!
+      const masonryPreloads = newPhotos.slice(0, 8).map(p => p.thumb || p.src);
+      const carouselPreloads = newPhotos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.src);
+      const uniquePreloads = Array.from(new Set([...masonryPreloads, ...carouselPreloads]));
+      
+      try {
+        await Promise.all(uniquePreloads.map(url => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        }));
+      } catch (e) {
+        console.warn('Pre-caching background assets failed:', e);
+      }
+
       const { updateMediaLibrary } = await import('./media-data.js');
       const { updateActivePhotos } = await import('./state.js');
 

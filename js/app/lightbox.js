@@ -128,7 +128,6 @@ export function prepareLightboxPhoto(p) {
     img.onerror = null;
     showLightboxPhotoError(token);
   };
-  img.crossOrigin = 'anonymous';
   img.src = p.src;
 
   if (img.complete && img.naturalWidth > 0) {
