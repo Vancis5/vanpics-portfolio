@@ -15,7 +15,8 @@ export default {
     rollupOptions: {
       input: {
         main: path.resolve('index.html'),
-        admin: path.resolve('admin.html')
+        admin: path.resolve('admin.html'),
+        login: path.resolve('login.html')
       }
     }
   },
@@ -31,6 +32,8 @@ export default {
         const destPreview = path.resolve('dist/preview.jpg');
         const srcAdminJs = path.resolve('js/admin.js');
         const destAdminJs = path.resolve('dist/js/admin.js');
+        const srcLoginJs = path.resolve('js/login.js');
+        const destLoginJs = path.resolve('dist/js/login.js');
 
         try {
           if (fs.existsSync(srcPhotos)) {
@@ -64,6 +67,15 @@ export default {
             console.log('   ✅ admin.js copied successfully!');
           } else {
             console.warn('   ⚠️ admin.js not found at:', srcAdminJs);
+          }
+
+          if (fs.existsSync(srcLoginJs)) {
+            console.log('⚙️ [Vite Plugin] Copying login.js to dist/js/...');
+            fs.mkdirSync(path.resolve('dist/js'), { recursive: true });
+            fs.copyFileSync(srcLoginJs, destLoginJs);
+            console.log('   ✅ login.js copied successfully!');
+          } else {
+            console.warn('   ⚠️ login.js not found at:', srcLoginJs);
           }
         } catch (err) {
           console.error('❌ [Vite Plugin] Error copying assets to dist:', err);
