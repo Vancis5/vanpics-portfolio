@@ -19,12 +19,37 @@ const _imgCache = new Map();
 const _IMG_CACHE_MAX = 30;
 
 function _cacheImage(src) {
-  if (!src || _imgCache.has(src)) return;
+  if (!src) return null;
+  if (_imgCache.has(src)) return _imgCache.get(src);
   if (_imgCache.size >= _IMG_CACHE_MAX) _imgCache.delete(_imgCache.keys().next().value); // evict oldest
   const img = new Image();
-  img.src = src;
-  if (img.decode) img.decode().catch(() => {});
-  _imgCache.set(src, img);
+  const entry = {
+    img,
+    decoded: false,
+    decodePromise: null
+  };
+  entry.decodePromise = new Promise(resolve => {
+    function markDecoded() {
+      if (img.decode) {
+        img.decode().then(function () {
+          entry.decoded = true;
+          resolve(entry);
+        }).catch(function () {
+          resolve(entry);
+        });
+      } else {
+        entry.decoded = true;
+        resolve(entry);
+      }
+    }
+
+    img.onload = markDecoded;
+    img.onerror = function () { resolve(entry); };
+    img.src = src;
+    if (img.complete && img.naturalWidth > 0) markDecoded();
+  });
+  _imgCache.set(src, entry);
+  return entry;
 }
 
 export function setMobileScrollToSlideCallback(callback) {
@@ -125,7 +150,7 @@ export function prepareLightboxPhoto(p) {
 
   // ── Cache hit: image already decoded, swap instantly with no placeholder ──
   const cached = _imgCache.get(p.src);
-  if (cached && cached.complete && cached.naturalWidth > 0) {
+  if (cached && cached.decoded) {
     wrap.classList.remove('photo-placeholder-visible', 'photo-loading', 'photo-error');
     img.dataset.loadingPhoto = 'true';
     img.src = p.src;
@@ -135,18 +160,24 @@ export function prepareLightboxPhoto(p) {
 
   // ── Cache miss: show placeholder while loading ──
   wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading');
+  wrap.classList.add('photo-loading', 'photo-placeholder-visible');
   img.dataset.loadingPhoto = 'true';
-  requestAnimationFrame(function () {
-    wrap.classList.add('photo-placeholder-visible');
-  });
+
+  function finishDecoded() {
+    if (token !== photoPlaceholderToken) return;
+    img.onload = null;
+    img.onerror = null;
+    const entry = _cacheImage(p.src);
+    if (entry) entry.decoded = true;
+    clearLightboxPhotoPlaceholder(token);
+  }
 
   img.onload = function () {
     if (token !== photoPlaceholderToken) return;
     img.onload = null;
     img.onerror = null;
-    _cacheImage(p.src); // warm the cache so revisiting this photo is instant
-    clearLightboxPhotoPlaceholder(token);
+    if (img.decode) img.decode().then(finishDecoded).catch(finishDecoded);
+    else finishDecoded();
   };
   img.onerror = function () {
     if (token !== photoPlaceholderToken) return;
@@ -157,7 +188,8 @@ export function prepareLightboxPhoto(p) {
   img.src = p.src;
 
   if (img.complete && img.naturalWidth > 0) {
-    requestAnimationFrame(function () { clearLightboxPhotoPlaceholder(token); });
+    if (img.decode) img.decode().then(finishDecoded).catch(finishDecoded);
+    else requestAnimationFrame(finishDecoded);
   }
 }
 
