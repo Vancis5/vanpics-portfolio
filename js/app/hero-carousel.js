@@ -30,6 +30,28 @@ function getCurrentSpeed(frame) {
   return CRUISE_SPEED * START_SPEED_MULT + (CRUISE_SPEED - CRUISE_SPEED * START_SPEED_MULT) * easeOutCubic(t);
 }
 
+function waitForDecodedImage(img, timeoutMs) {
+  return new Promise(resolve => {
+    let settled = false;
+    const done = function () {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(done, timeoutMs || 1800);
+
+    function finish() {
+      if (img.decode) img.decode().then(done).catch(done);
+      else done();
+    }
+
+    img.addEventListener('load', finish, { once: true });
+    img.addEventListener('error', done, { once: true });
+    if (img.complete) finish();
+  });
+}
+
 let rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
 let easeFrame = 0;
 
@@ -54,7 +76,7 @@ export function buildCarousel() {
   let activeRows = state.isMobile ? rows : rows.slice(0, 3);
   let activeRowCount = activeRows.length;
 
-  if (state.carouselPhotos.length === 0) { startLoopsIfReady(); return; }
+  if (state.carouselPhotos.length === 0) { carouselReadyCallback(); startLoopsIfReady(); return; }
 
   // rows stay visible; eager images handle their own fade-in
   activeRows.forEach(function (r) { r.style.opacity = '1'; });
@@ -125,11 +147,9 @@ export function buildCarousel() {
     }
   });
 
-  let loaded = 0;
   let total = eagerImgs.length;
 
-  function onImageReady() {
-    if (++loaded < total) return;
+  function finishCarouselReady() {
     // defer to next paint — Firefox offsetWidth is 0 if read before layout pass
     requestAnimationFrame(function () {
       activeRows.forEach(function (row, ri) {
@@ -147,22 +167,16 @@ export function buildCarousel() {
     });
   }
 
-  if (total === 0) { activeRows.forEach(function (r) { r.style.opacity = '1'; }); startLoopsIfReady(); return; }
-  eagerImgs.forEach(function (img) {
-    let counted = false;
-    function countOnce() { if (!counted) { counted = true; onImageReady(); } }
-    img.addEventListener('load', countOnce);
-    img.addEventListener('error', countOnce);
-    if (img.complete) {
-      // already cached — decode() waits for pixel decode before resolving
-      if (img.decode) {
-        img.decode().then(countOnce).catch(countOnce);
-      } else {
-        // no decode() — nudge src to retrigger load event (cached, no network hit)
-        let s = img.src; img.src = ''; img.src = s;
-      }
-    }
-  });
+  if (total === 0) {
+    activeRows.forEach(function (r) { r.style.opacity = '1'; });
+    carouselReadyCallback();
+    startLoopsIfReady();
+    return;
+  }
+
+  Promise.all(eagerImgs.map(function (img) {
+    return waitForDecodedImage(img, 1800);
+  })).then(finishCarouselReady);
 }
 
 export function tick() {

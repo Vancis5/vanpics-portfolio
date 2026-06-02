@@ -174,6 +174,47 @@ function applyCarouselPhotos(photos) {
   if (state.carouselPhotos.length === 0) state.carouselPhotos = photos.filter(p => p.title !== '');
 }
 
+function getStartupImageUrls(photos) {
+  return Array.from(new Set([
+    ...photos.slice(0, 8).map(p => p.thumb || p.src),
+    ...photos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src)
+  ].filter(Boolean)));
+}
+
+function decodeImageUrl(url, timeoutMs) {
+  return new Promise(resolve => {
+    if (!url) {
+      resolve();
+      return;
+    }
+
+    const img = new Image();
+    let settled = false;
+    const done = function () {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(done, timeoutMs || 1600);
+
+    function finish() {
+      if (img.decode) img.decode().then(done).catch(done);
+      else done();
+    }
+
+    img.onload = finish;
+    img.onerror = done;
+    img.src = url;
+
+    if (img.complete) finish();
+  });
+}
+
+async function warmStartupImages(photos) {
+  await Promise.all(getStartupImageUrls(photos).map(url => decodeImageUrl(url, 1800)));
+}
+
 function renderUI(photos, videos) {
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
@@ -197,10 +238,10 @@ function renderUI(photos, videos) {
     if (raw) {
       const { photos, videos } = JSON.parse(raw);
       if (Array.isArray(photos) && photos.length > 0) {
+        await warmStartupImages(photos);
         renderUI(photos, videos || []);
         renderedFromCache = true;
-        // Lift curtain after 2 rAFs — carousel structure is painted, images load from HTTP cache
-        requestAnimationFrame(() => requestAnimationFrame(() => safeLift()));
+        // Carousel readiness lifts the curtain after the first hero thumbnails decode.
       }
     }
   } catch (e) {
@@ -235,17 +276,8 @@ function renderUI(photos, videos) {
   if (!renderedFromCache) {
     // ── First ever visit: preload key images then render ──
     if (newPhotos.length > 0) {
-      const toPreload = Array.from(new Set([
-        ...newPhotos.slice(0, 8).map(p => p.thumb || p.src),
-        ...newPhotos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src)
-      ]));
       try {
-        await Promise.all(toPreload.map(url => new Promise(resolve => {
-          const img = new Image();
-          img.src = url;
-          img.onload = resolve;
-          img.onerror = resolve;
-        })));
+        await warmStartupImages(newPhotos);
       } catch (e) { console.warn('Pre-caching assets failed:', e); }
     }
     renderUI(newPhotos, newVideos);
