@@ -131,12 +131,12 @@ export function buildCarousel() {
           if (globalHasDragged) return;
           let targetCat = (p.category === 'figures') ? 'figures' : 'all';
           if (state.currentCategory === targetCat) {
-            let idx = state.activePhotos.indexOf(p);
+            let idx = state.activePhotos.findIndex(item => (item.id && item.id === p.id) || item.src === p.src);
             if (idx >= 0) openLightbox(idx);
           } else {
             rebuildGallery(targetCat, {
               onReady: function () {
-                let idx = state.activePhotos.indexOf(p);
+                let idx = state.activePhotos.findIndex(item => (item.id && item.id === p.id) || item.src === p.src);
                 if (idx >= 0) openLightbox(idx);
               }
             });
