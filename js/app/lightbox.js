@@ -14,6 +14,19 @@ let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
 let previouslyFocusedElement = null;
 
+// In-memory decoded image cache — prevents placeholder flash on revisited photos
+const _imgCache = new Map();
+const _IMG_CACHE_MAX = 30;
+
+function _cacheImage(src) {
+  if (!src || _imgCache.has(src)) return;
+  if (_imgCache.size >= _IMG_CACHE_MAX) _imgCache.delete(_imgCache.keys().next().value); // evict oldest
+  const img = new Image();
+  img.src = src;
+  if (img.decode) img.decode().catch(() => {});
+  _imgCache.set(src, img);
+}
+
 export function setMobileScrollToSlideCallback(callback) {
   mobileScrollToSlideCallback = typeof callback === 'function' ? callback : null;
 }
@@ -106,12 +119,24 @@ export function prepareLightboxPhoto(p) {
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
   wrap.style.setProperty('--lightbox-photo-ratio', ratio);
-  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading');
-  img.dataset.loadingPhoto = 'true';
   img.alt = p.title || '';
   img.removeAttribute('title');
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
+
+  // ── Cache hit: image already decoded, swap instantly with no placeholder ──
+  const cached = _imgCache.get(p.src);
+  if (cached && cached.complete && cached.naturalWidth > 0) {
+    wrap.classList.remove('photo-placeholder-visible', 'photo-loading', 'photo-error');
+    img.dataset.loadingPhoto = 'true';
+    img.src = p.src;
+    requestAnimationFrame(() => clearLightboxPhotoPlaceholder(token));
+    return;
+  }
+
+  // ── Cache miss: show placeholder while loading ──
+  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
+  wrap.classList.add('photo-loading');
+  img.dataset.loadingPhoto = 'true';
   requestAnimationFrame(function () {
     wrap.classList.add('photo-placeholder-visible');
   });
@@ -120,6 +145,7 @@ export function prepareLightboxPhoto(p) {
     if (token !== photoPlaceholderToken) return;
     img.onload = null;
     img.onerror = null;
+    _cacheImage(p.src); // warm the cache so revisiting this photo is instant
     clearLightboxPhotoPlaceholder(token);
   };
   img.onerror = function () {
@@ -913,10 +939,12 @@ export function resetDescToggle() {
 export let loadSwipeNeighbors = function () {
   if (state.currentLightboxIsMotion) return;
   let currentSet = getCurrentLightboxItems();
-  let prev = (state.cur - 1 + currentSet.length) % currentSet.length;
-  let next = (state.cur + 1) % currentSet.length;
-  let p1 = new Image(); p1.src = currentSet[prev].src; if (p1.decode) p1.decode().catch(function () { });
-  let p2 = new Image(); p2.src = currentSet[next].src; if (p2.decode) p2.decode().catch(function () { });
+  let len = currentSet.length;
+  // Preload & cache ±2 neighbors so navigation feels instant
+  [-2, -1, 1, 2].forEach(function (offset) {
+    let p = currentSet[(state.cur + offset + len) % len];
+    if (p && p.src) _cacheImage(p.src);
+  });
 };
 
 export function setLoadSwipeNeighbors(fn) {
