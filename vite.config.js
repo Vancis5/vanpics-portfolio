@@ -24,21 +24,12 @@ export default {
     {
       name: 'copy-assets-plugin',
       closeBundle() {
-        const srcPhotos = path.resolve('photos');
-        const destPhotos = path.resolve('dist/photos');
         const srcIcons = path.resolve('icons');
         const destIcons = path.resolve('dist/icons');
         const srcPreview = path.resolve('preview.jpg');
         const destPreview = path.resolve('dist/preview.jpg');
 
         try {
-          if (fs.existsSync(srcPhotos)) {
-            console.log('📸 [Vite Plugin] Copying photos to dist...');
-            fs.cpSync(srcPhotos, destPhotos, { recursive: true });
-            console.log('   ✅ Photos copied successfully!');
-          } else {
-            console.warn('   ⚠️ Photos directory not found at:', srcPhotos);
-          }
 
           if (fs.existsSync(srcIcons)) {
             console.log('✨ [Vite Plugin] Copying icons to dist...');

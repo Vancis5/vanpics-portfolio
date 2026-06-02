@@ -1,11 +1,6 @@
-import { photos } from '../data/photos.js';
-import { videos } from '../data/videos.js';
+export let photoLibrary = [];
 
-export let photoLibrary = Array.isArray(photos) ? [...photos] : [];
-
-export let motionProjects = (Array.isArray(videos) ? [...videos] : []).filter(function (video) {
-  return !!video.thumb || !!video.src;
-});
+export let motionProjects = [];
 
 function parseDate(item) {
   if (!item.date) return new Date(0);

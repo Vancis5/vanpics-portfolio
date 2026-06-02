@@ -21,7 +21,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function waitForGallery(page) {
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#hero-identity h1')).toHaveText('vanpics');
   await page.waitForSelector('.masonry-panel[data-category="all"] .photo-card', { timeout: 15000 });
 }

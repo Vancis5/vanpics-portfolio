@@ -1,5 +1,3 @@
-import '../data/photos.js';
-import '../data/videos.js';
 import './config.js';
 import './utils.js';
 import './dom.js';
