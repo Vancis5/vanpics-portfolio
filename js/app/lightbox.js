@@ -151,10 +151,23 @@ export function prepareLightboxPhoto(p) {
   // ── Cache hit: image already decoded, swap instantly with no placeholder ──
   const cached = _imgCache.get(p.src);
   if (cached && cached.decoded) {
-    wrap.classList.remove('photo-placeholder-visible', 'photo-loading', 'photo-error');
+    wrap.classList.remove('photo-loaded', 'photo-error');
+    wrap.classList.add('photo-loading', 'photo-placeholder-visible');
     img.dataset.loadingPhoto = 'true';
     img.src = p.src;
-    requestAnimationFrame(() => clearLightboxPhotoPlaceholder(token));
+
+    const finishCachedDecoded = () => {
+      if (token !== photoPlaceholderToken) return;
+      clearLightboxPhotoPlaceholder(token);
+    };
+
+    if (img.complete && img.naturalWidth > 0) {
+      if (img.decode) img.decode().then(finishCachedDecoded).catch(finishCachedDecoded);
+      else requestAnimationFrame(finishCachedDecoded);
+    } else {
+      img.onload = finishCachedDecoded;
+      img.onerror = finishCachedDecoded;
+    }
     return;
   }
 
