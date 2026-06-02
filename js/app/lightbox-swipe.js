@@ -88,11 +88,15 @@ if (state.isMobile) {
         img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
         
         img.onload = function () {
-          inner.classList.remove('photo-loading');
+          if (inner.classList.contains('photo-loaded')) return;
           inner.classList.add('photo-loaded');
+          inner.classList.remove('photo-placeholder-visible');
+          setTimeout(function () {
+            inner.classList.remove('photo-loading', 'photo-loaded');
+          }, 260);
         };
         img.onerror = function () {
-          inner.classList.remove('photo-loading');
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
           inner.classList.add('photo-error');
         };
         img.src = p.src;
@@ -104,7 +108,9 @@ if (state.isMobile) {
           inner.classList.add('photo-loaded');
         } else {
           requestAnimationFrame(function () {
-            inner.classList.add('photo-placeholder-visible');
+            if (!inner.classList.contains('photo-loaded') && !inner.classList.contains('photo-error')) {
+              inner.classList.add('photo-placeholder-visible');
+            }
           });
         }
 

@@ -1582,7 +1582,7 @@ body::after {
     opacity: 0;
   }
 
-  .snap-slide-inner.photo-loading img {
+  .snap-slide-inner.photo-loading.photo-placeholder-visible img {
     opacity: 0 !important;
   }
 
