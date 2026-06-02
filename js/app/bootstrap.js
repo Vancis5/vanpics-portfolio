@@ -54,9 +54,6 @@ function bindStaticUiHandlers() {
 }
 
 bindStaticUiHandlers();
-buildCarousel();
-buildMasonry();
-initFilters();
 
 updateStickyHeaderSurface();
 window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });
@@ -153,13 +150,13 @@ window.addEventListener('popstate', function () {
   setTimeout(function () { state.isPopState = false; }, ROUTING_CONFIG.popstateResetDelay);
 });
 
-// Defer slightly to ensure layout is ready
-setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
-
-// ─── DYNAMIC CLOUDFLARE R2/D1 DATABASE UPGRADE ───
-// Fetches the latest media dynamically in the background without blocking the initial page load/LCP.
+// ─── CLOUDFLARE R2/D1 DATABASE LOADING ───
+// Fetches photos and videos from R2, initializes the UI components, and lifts the loader.
 (async function loadDynamicMedia() {
   const API_BASE_URL = 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
+
+  let newPhotos = [];
+  let newVideos = [];
 
   try {
     const [photosRes, videosRes] = await Promise.all([
@@ -167,29 +164,27 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
       fetch(`${API_BASE_URL}/api/videos?limit=100`)
     ]);
 
-    if (!photosRes.ok || !videosRes.ok) return;
+    if (photosRes.ok && videosRes.ok) {
+      const photosData = await photosRes.json();
+      const videosData = await videosRes.json();
 
-    const photosData = await photosRes.json();
-    const videosData = await videosRes.json();
+      const rawPhotos = Array.isArray(photosData) ? photosData : photosData.items || [];
+      const rawVideos = Array.isArray(videosData) ? videosData : videosData.items || [];
 
-    const rawPhotos = Array.isArray(photosData) ? photosData : photosData.items || [];
-    const rawVideos = Array.isArray(videosData) ? videosData : videosData.items || [];
-
-    if (rawPhotos.length > 0 || rawVideos.length > 0) {
       // Map SQLite snake_case schema to frontend camelCase properties
-      const newPhotos = rawPhotos.map(p => ({
+      newPhotos = rawPhotos.map(p => ({
         ...p,
         aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : parseFloat(p.aspect_ratio || 1.0),
         heroSlide: p.hero_slide === 1 || p.hero_slide === true
       }));
 
-      const newVideos = rawVideos.map(v => ({
+      newVideos = rawVideos.map(v => ({
         ...v,
         thumb: v.poster || '',
         aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : parseFloat(v.aspect_ratio || 1.777)
       }));
 
-      // Preload the first 8 masonry thumbnails + first 6 carousel photos in the background to completely eliminate flashes!
+      // Preload the first 8 masonry thumbnails + first 6 carousel photos to completely eliminate flashes!
       const masonryPreloads = newPhotos.slice(0, 8).map(p => p.thumb || p.src);
       const carouselPreloads = newPhotos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src);
       const uniquePreloads = Array.from(new Set([...masonryPreloads, ...carouselPreloads]));
@@ -206,33 +201,33 @@ setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
       } catch (e) {
         console.warn('Pre-caching background assets failed:', e);
       }
-
-      const { updateMediaLibrary } = await import('./media-data.js');
-      const { updateActivePhotos } = await import('./state.js');
-
-      updateMediaLibrary(newPhotos, newVideos);
-      updateActivePhotos();
-
-      // Recalculate state.carouselPhotos using the full newPhotos list (not the filtered activePhotos subset!)
-      state.carouselPhotos = newPhotos.filter(p => p.heroSlide === true && p.title !== '');
-      if (state.carouselPhotos.length === 0) {
-        state.carouselPhotos = newPhotos.filter(p => p.title !== '');
-      }
-
-      // Proactively purge old carousel DOM nodes and rebuild it cleanly
-      domRefs.heroRows.forEach(row => row.innerHTML = '');
-      buildCarousel();
-
-      // Rebuild the DOM masonry grid since the media database list has updated!
-      buildMasonry();
-
-      // Gracefully rebuild gallery masonry layout
-      rebuildGallery(state.currentCategory);
-
-      // Re-trigger deep linking hash checks to resolve correct media when navigating on a fresh boot
-      checkHash();
     }
   } catch (err) {
-    console.warn('Dynamic R2/D1 database upgrade skipped. Using static fallback library.', err);
+    console.warn('Failed to fetch media from Cloudflare R2:', err);
+  }
+
+  const { updateMediaLibrary } = await import('./media-data.js');
+  const { updateActivePhotos } = await import('./state.js');
+
+  updateMediaLibrary(newPhotos, newVideos);
+  updateActivePhotos();
+
+  // Recalculate state.carouselPhotos using the full newPhotos list
+  state.carouselPhotos = newPhotos.filter(p => p.heroSlide === true && p.title !== '');
+  if (state.carouselPhotos.length === 0) {
+    state.carouselPhotos = newPhotos.filter(p => p.title !== '');
+  }
+
+  // Initialize UI components after data is ready
+  buildCarousel();
+  buildMasonry();
+  initFilters();
+
+  // Defer slightly to ensure layout is ready before checking deep link hash
+  setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
+
+  // If there are no carousel photos to load and trigger the callback, lift loader now
+  if (state.carouselPhotos.length === 0) {
+    safeLift();
   }
 })();
