@@ -37,12 +37,12 @@ async function processPhotos() {
         const blurPath = path.join(blurDir, photo);
 
         try {
-            // Generate PRE-BLURRED background (40px wide + heavy blur)
+            // Generate PRE-BLURRED background (800px wide + 20px blur)
             // This relieves the browser from doing any CSS filter math
             await sharp(inputPath)
-                .resize(40) 
-                .blur(10) // Small radius on a small image = massive blur effect
-                .webp({ quality: 40 })
+                .resize(800, null, { withoutEnlargement: true }) 
+                .blur(20)
+                .webp({ quality: 50 })
                 .toFile(blurPath);
 
             count++;
