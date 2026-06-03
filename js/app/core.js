@@ -58,23 +58,29 @@ if (glowBall && domRefs.hero) {
     glowTargetY = e.clientY - rect.top;
   });
   animateGlow = function () {
-    const scrollFade = Math.max(0, 1 - (window.scrollY / 350));
-    const targetOp = (mouseInHero && state.heroVisible && state.pageVisible) ? scrollFade : 0;
+    try {
+      const scrollFade = Math.max(0, 1 - (window.scrollY / 350));
+      const targetOp = (mouseInHero && state.heroVisible && state.pageVisible) ? scrollFade : 0;
 
-    if (glowBall.style.opacity != targetOp) {
-      glowBall.style.opacity = targetOp;
-    }
+      if (glowBall.style.opacity != targetOp) {
+        glowBall.style.opacity = targetOp;
+      }
 
-    // Stop loop only if target is 0 AND transition is essentially done
-    if (targetOp === 0 && (!glowBall.style.opacity || parseFloat(glowBall.style.opacity) < 0.01)) {
+      // Stop loop only if target is 0 AND transition is essentially done
+      if (targetOp === 0 && (!glowBall.style.opacity || parseFloat(glowBall.style.opacity) < 0.01)) {
+        state.glowRafId = null;
+        return;
+      }
+
+      glowX += (glowTargetX - glowX) * 0.08;
+      glowY += (glowTargetY - glowY) * 0.08;
+      glowBall.style.left = glowX + 'px';
+      glowBall.style.top = glowY + 'px';
+    } catch (error) {
+      console.error('Error in glow animation loop:', error);
       state.glowRafId = null;
       return;
     }
-
-    glowX += (glowTargetX - glowX) * 0.08;
-    glowY += (glowTargetY - glowY) * 0.08;
-    glowBall.style.left = glowX + 'px';
-    glowBall.style.top = glowY + 'px';
     state.glowRafId = requestAnimationFrame(animateGlow);
   };
 }

@@ -1,3 +1,4 @@
+import Lenis from 'lenis';
 import { APP_CONFIG } from './app/config.js';
 import { state } from './app/state.js';
 

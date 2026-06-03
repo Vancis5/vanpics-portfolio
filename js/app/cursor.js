@@ -23,10 +23,16 @@ if (isMouseDevice) {
     startRingAnimation();
   }
   function animateRing() {
-    rx += (mx - rx) * 0.2;
-    ry += (my - ry) * 0.2;
-    ring.style.left = rx + 'px';
-    ring.style.top = ry + 'px';
+    try {
+      rx += (mx - rx) * 0.2;
+      ry += (my - ry) * 0.2;
+      ring.style.left = rx + 'px';
+      ring.style.top = ry + 'px';
+    } catch (error) {
+      console.error('Error in cursor ring animation loop:', error);
+      ringRafId = null;
+      return;
+    }
     ringRafId = requestAnimationFrame(animateRing);
   }
   function startRingAnimation() {
