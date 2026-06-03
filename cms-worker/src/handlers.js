@@ -24,8 +24,10 @@ const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 // Reject keys that could traverse R2 bucket structure
 function isValidMediaKey(key) {
   if (!key || typeof key !== 'string') return false;
-  if (key.includes('..') || key.startsWith('/') || key.startsWith('\\')) return false;
-  // Only allow alphanumeric, hyphens, underscores, dots, and forward slashes
+  if (key.includes('\\')) return false;
+  if (key.includes('..') || key.includes('./') || key.includes('/.')) return false;
+  if (key.includes('//')) return false;
+  if (key.startsWith('/') || key.endsWith('/') || key.startsWith('.') || key.endsWith('.')) return false;
   return /^[a-zA-Z0-9\-_./]+$/.test(key);
 }
 
