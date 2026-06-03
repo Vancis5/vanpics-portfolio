@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
 
 // Client-side file size limits (match worker limits)
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;  // 10 MB

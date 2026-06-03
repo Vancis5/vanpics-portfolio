@@ -229,7 +229,7 @@ function renderUI(photos, videos) {
 // Stale-while-revalidate: renders instantly from localStorage cache on repeat visits,
 // always fetches fresh data in background to keep the cache warm.
 (async function loadDynamicMedia() {
-  const API_BASE_URL = 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
   let renderedFromCache = false;
 
   // ── 1. Instant render from localStorage cache ──

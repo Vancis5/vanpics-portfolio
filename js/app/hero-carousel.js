@@ -180,28 +180,34 @@ export function buildCarousel() {
 }
 
 export function tick() {
-  if (!state.heroVisible || !state.pageVisible) { state.heroRafId = null; return; }
-  let rows = state.isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
+  try {
+    if (!state.heroVisible || !state.pageVisible) { state.heroRafId = null; return; }
+    let rows = state.isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
 
-  const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
-  let speed = isLifting ? getCurrentSpeed(easeFrame) : 0;
-  if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame++;
+    const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
+    let speed = isLifting ? getCurrentSpeed(easeFrame) : 0;
+    if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame++;
 
-  let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22, -state.heroScrollY * 0.15];
+    let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22, -state.heroScrollY * 0.15];
 
-  rowState.forEach(function (state, ri) {
-    if (ri >= rows.length) return;
-    if (isDragging && dragRowIndex === ri) {
+    rowState.forEach(function (state, ri) {
+      if (ri >= rows.length) return;
+      if (isDragging && dragRowIndex === ri) {
+        rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
+        return;
+      }
+      state.offset += speed * state.dir;
+      if (state.setWidth > 0) {
+        if (state.dir === -1 && state.offset < -state.setWidth) state.offset += state.setWidth;
+        if (state.dir === 1 && state.offset > 0) state.offset -= state.setWidth;
+      }
       rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
-      return;
-    }
-    state.offset += speed * state.dir;
-    if (state.setWidth > 0) {
-      if (state.dir === -1 && state.offset < -state.setWidth) state.offset += state.setWidth;
-      if (state.dir === 1 && state.offset > 0) state.offset -= state.setWidth;
-    }
-    rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
-  });
+    });
+  } catch (error) {
+    console.error('Error in hero carousel tick loop:', error);
+    state.heroRafId = null;
+    return;
+  }
 
   state.heroRafId = requestAnimationFrame(tick);
 }
