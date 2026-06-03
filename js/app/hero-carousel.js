@@ -182,8 +182,10 @@ export function buildCarousel() {
 export function tick() {
   if (!state.heroVisible || !state.pageVisible) { state.heroRafId = null; return; }
   let rows = state.isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
-  let speed = getCurrentSpeed(easeFrame);
-  if (easeFrame < EASE_FRAMES + 10) easeFrame++;
+
+  const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
+  let speed = isLifting ? getCurrentSpeed(easeFrame) : 0;
+  if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame++;
 
   let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22, -state.heroScrollY * 0.15];
 
