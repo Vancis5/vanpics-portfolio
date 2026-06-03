@@ -989,7 +989,19 @@ export let loadSwipeNeighbors = function () {
   // Preload & cache ±2 neighbors so navigation feels instant
   [-2, -1, 1, 2].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
-    if (p && p.src) _cacheImage(p.src);
+    if (p) {
+      if (p.src) _cacheImage(p.src);
+      
+      // Also preload the background blur image of neighbors
+      let bSrc = p.blur || p.thumb || p.src;
+      if (bSrc) {
+        let blurPath = bSrc;
+        if (!bSrc.includes('/blur/') && !bSrc.includes('photos/blur/')) {
+          blurPath = bSrc.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+        }
+        _cacheImage(blurPath);
+      }
+    }
   });
 };
 
