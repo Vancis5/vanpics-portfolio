@@ -23,6 +23,7 @@ function _cacheImage(src) {
   if (_imgCache.has(src)) return _imgCache.get(src);
   if (_imgCache.size >= _IMG_CACHE_MAX) _imgCache.delete(_imgCache.keys().next().value); // evict oldest
   const img = new Image();
+  img.crossOrigin = 'anonymous';
   const entry = {
     img,
     decoded: false,
