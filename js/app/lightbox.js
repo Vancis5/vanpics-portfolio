@@ -986,13 +986,17 @@ export let loadSwipeNeighbors = function () {
   if (state.currentLightboxIsMotion) return;
   let currentSet = getCurrentLightboxItems();
   let len = currentSet.length;
-  // Preload & cache ±2 neighbors so navigation feels instant
+  
+  // Preload & cache ±2 high-res neighbors (to save bandwidth)
   [-2, -1, 1, 2].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
+    if (p && p.src) _cacheImage(p.src);
+  });
+
+  // Preload & cache ±6 blurred backgrounds (super light, 3.7KB each)
+  [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].forEach(function (offset) {
+    let p = currentSet[(state.cur + offset + len) % len];
     if (p) {
-      if (p.src) _cacheImage(p.src);
-      
-      // Also preload the background blur image of neighbors
       let bSrc = p.blur || p.thumb || p.src;
       if (bSrc) {
         let blurPath = bSrc;
