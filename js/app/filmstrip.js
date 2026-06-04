@@ -56,8 +56,18 @@ export function buildFilmstrip() {
     thumb.setAttribute('role', 'button');
     thumb.setAttribute('aria-label', p.title ? `Go to ${p.title}` : 'Go to thumbnail');
     let img = document.createElement('img');
-    let thumbPath = state.currentLightboxIsMotion ? p.thumb : (p.thumb || p.src.replace('photos/', 'photos/thumbs/'));
+    let originalThumb = state.currentLightboxIsMotion ? p.thumb : (p.thumb || p.src.replace('photos/', 'photos/thumbs/'));
+    let thumbPath = originalThumb;
+    if (!state.currentLightboxIsMotion) {
+      thumbPath = thumbPath.replace('/thumbs/', '/mini/').replace('photos/thumbs/', 'photos/mini/');
+    }
     img.src = thumbPath;
+    if (!state.currentLightboxIsMotion) {
+      img.onerror = function () {
+        img.onerror = null;
+        img.src = originalThumb;
+      };
+    }
     img.alt = p.title;
     img.loading = 'lazy';
     thumb.appendChild(img);

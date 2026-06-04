@@ -24,6 +24,7 @@ context.md
 diff.txt
 
 # raw media and archives
+photos
 photos-raw/
 *.zip
 
