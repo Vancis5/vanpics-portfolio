@@ -195,7 +195,12 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'photo not found', 404);
   }
 
-  const keysToDelete = [mediaKey(photo.src), mediaKey(photo.thumb), mediaKey(photo.blur)].filter(Boolean);
+  const keysToDelete = [
+    mediaKey(photo.src),
+    mediaKey(photo.thumb),
+    mediaKey(photo.blur),
+    photo.thumb ? mediaKey(photo.thumb).replace('thumbs/', 'mini/') : null
+  ].filter(Boolean);
   if (keysToDelete.length > 0) {
     await env.MEDIA_BUCKET.delete(keysToDelete);
   }
@@ -231,6 +236,7 @@ export async function uploadPhoto(request, env) {
   const formData = await request.formData();
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
+  const miniFile = formData.get('mini');
   const blurFile = formData.get('blur');
   const { data, errors } = validatePhotoFields(formData);
 
@@ -241,6 +247,7 @@ export async function uploadPhoto(request, env) {
   // Enforce file size limits
   if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (miniFile?.size > MAX_IMAGE_SIZE) errors.push(`mini thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (blurFile?.size > MAX_IMAGE_SIZE) errors.push(`blur exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
@@ -250,8 +257,9 @@ export async function uploadPhoto(request, env) {
   const photoKey = makeMediaKey('photos', 'webp');
   const thumbKey = makeMediaKey('thumbs', 'webp');
   const blurKey = makeMediaKey('blur', 'webp');
+  const miniKey = thumbKey.replace('thumbs/', 'mini/');
 
-  await Promise.all([
+  const puts = [
     env.MEDIA_BUCKET.put(photoKey, await photoFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
@@ -261,7 +269,15 @@ export async function uploadPhoto(request, env) {
     env.MEDIA_BUCKET.put(blurKey, await blurFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
-  ]);
+  ];
+
+  if (miniFile && isFileLike(miniFile, 'image/')) {
+    puts.push(env.MEDIA_BUCKET.put(miniKey, await miniFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
+    }));
+  }
+
+  await Promise.all(puts);
 
   const result = await env.DB.prepare(
     `INSERT INTO photos (title, src, thumb, blur, aspect_ratio, category, location, date, desc, hero_slide)
@@ -572,6 +588,7 @@ export async function replacePhotoFile(request, env, params) {
   const formData = await request.formData();
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
+  const miniFile = formData.get('mini');
   const blurFile = formData.get('blur');
   const aspectRatio = parseFloat(formData.get('aspectRatio'));
 
@@ -597,7 +614,7 @@ export async function replacePhotoFile(request, env, params) {
   }
 
   // 2. Put / overwrite the files in R2 using the existing keys
-  await Promise.all([
+  const puts = [
     env.MEDIA_BUCKET.put(photo.src, await photoFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
@@ -607,7 +624,16 @@ export async function replacePhotoFile(request, env, params) {
     env.MEDIA_BUCKET.put(photo.blur, await blurFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
-  ]);
+  ];
+
+  if (miniFile && isFileLike(miniFile, 'image/')) {
+    const miniKey = photo.thumb.replace('thumbs/', 'mini/');
+    puts.push(env.MEDIA_BUCKET.put(miniKey, await miniFile.arrayBuffer(), {
+      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
+    }));
+  }
+
+  await Promise.all(puts);
 
   // 3. Update the aspect_ratio in D1
   await env.DB.prepare(

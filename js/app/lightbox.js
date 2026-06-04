@@ -89,16 +89,31 @@ export function setLightboxBlur(src) {
 
   let inner = active.querySelector('.lightbox-bg-blur-inner');
 
-  let img = new Image();
-  img.src = blurPath;
-
   function doSwap() {
     if (token !== blurToken) return; // Stale request, ignore it
     if (inner) inner.style.backgroundImage = 'url(' + blurPath + ')';
-    active.classList.add('active');
-    inactive.classList.remove('active');
-    blurFlip = !blurFlip;
+    
+    // Force transition by letting the style update register and paint first
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        if (token !== blurToken) return;
+        active.classList.add('active');
+        inactive.classList.remove('active');
+        blurFlip = !blurFlip;
+      });
+    });
   }
+
+  // ── Cache hit: if the blur image is already decoded, swap instantly ──
+  const cached = _imgCache.get(blurPath);
+  if (cached && cached.decoded) {
+    doSwap();
+    return;
+  }
+
+  // ── Cache miss: wait for decoding before swapping to avoid white/empty flash ──
+  let img = new Image();
+  img.src = blurPath;
 
   if (img.decode) {
     img.decode().then(doSwap).catch(doSwap);
@@ -152,23 +167,10 @@ export function prepareLightboxPhoto(p) {
   // ── Cache hit: image already decoded, swap instantly with no placeholder ──
   const cached = _imgCache.get(p.src);
   if (cached && cached.decoded) {
-    wrap.classList.remove('photo-loaded', 'photo-error');
-    wrap.classList.add('photo-loading', 'photo-placeholder-visible');
-    img.dataset.loadingPhoto = 'true';
+    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded', 'photo-error');
+    img.removeAttribute('data-loading-photo');
     img.src = p.src;
-
-    const finishCachedDecoded = () => {
-      if (token !== photoPlaceholderToken) return;
-      clearLightboxPhotoPlaceholder(token);
-    };
-
-    if (img.complete && img.naturalWidth > 0) {
-      if (img.decode) img.decode().then(finishCachedDecoded).catch(finishCachedDecoded);
-      else requestAnimationFrame(finishCachedDecoded);
-    } else {
-      img.onload = finishCachedDecoded;
-      img.onerror = finishCachedDecoded;
-    }
+    img.style.opacity = '1';
     return;
   }
 
@@ -177,33 +179,31 @@ export function prepareLightboxPhoto(p) {
   wrap.classList.add('photo-loading', 'photo-placeholder-visible');
   img.dataset.loadingPhoto = 'true';
 
-  function finishDecoded() {
-    if (token !== photoPlaceholderToken) return;
-    img.onload = null;
-    img.onerror = null;
-    const entry = _cacheImage(p.src);
-    if (entry) entry.decoded = true;
-    clearLightboxPhotoPlaceholder(token);
-  }
+  // Load and decode the image entirely off-DOM in the background cache.
+  // This prevents the DOM injection from stalling the CSS entrance animations.
+  let cacheEntry = _cacheImage(p.src);
 
-  img.onload = function () {
-    if (token !== photoPlaceholderToken) return;
-    img.onload = null;
-    img.onerror = null;
-    if (img.decode) img.decode().then(finishDecoded).catch(finishDecoded);
-    else finishDecoded();
-  };
-  img.onerror = function () {
-    if (token !== photoPlaceholderToken) return;
-    img.onload = null;
-    img.onerror = null;
-    showLightboxPhotoError(token);
-  };
-  img.src = p.src;
-
-  if (img.complete && img.naturalWidth > 0) {
-    if (img.decode) img.decode().then(finishDecoded).catch(finishDecoded);
-    else requestAnimationFrame(finishDecoded);
+  if (cacheEntry && cacheEntry.decodePromise) {
+    cacheEntry.decodePromise.then(() => {
+      if (token !== photoPlaceholderToken) return;
+      img.src = p.src;
+      // Allow browser to register the instant src before clearing placeholder
+      requestAnimationFrame(() => {
+        if (token !== photoPlaceholderToken) return;
+        clearLightboxPhotoPlaceholder(token);
+      });
+    });
+  } else {
+    // Fallback just in case
+    img.src = p.src;
+    img.onload = function () {
+      if (token !== photoPlaceholderToken) return;
+      clearLightboxPhotoPlaceholder(token);
+    };
+    img.onerror = function () {
+      if (token !== photoPlaceholderToken) return;
+      showLightboxPhotoError(token);
+    };
   }
 }
 

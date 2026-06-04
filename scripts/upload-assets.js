@@ -47,6 +47,7 @@ async function main() {
 
   const photosDir = path.resolve('photos');
   const thumbsDir = path.resolve('photos/thumbs');
+  const miniDir = path.resolve('photos/mini');
   const blurDir = path.resolve('photos/blur');
 
   const uploadQueue = [];
@@ -77,7 +78,18 @@ async function main() {
     }
   }
 
-  // 3. Queue blurs
+  // 3. Queue mini thumbnails
+  if (fs.existsSync(miniDir)) {
+    const files = fs.readdirSync(miniDir);
+    for (const file of files) {
+      const fullPath = path.join(miniDir, file);
+      if (fs.statSync(fullPath).isFile() && file.endsWith('.webp')) {
+        uploadQueue.push({ localPath: fullPath, r2Key: `mini/${file}` });
+      }
+    }
+  }
+
+  // 4. Queue blurs
   if (fs.existsSync(blurDir)) {
     const files = fs.readdirSync(blurDir);
     for (const file of files) {

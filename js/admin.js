@@ -56,6 +56,7 @@ const searchInput = document.getElementById('dashboard-search');
 // Replacement photo states
 let processedEditPhotoBlob = null;
 let processedEditThumbBlob = null;
+let processedEditMiniBlob = null;
 let processedEditBlurBlob = null;
 let computedEditAspectRatio = null;
 
@@ -147,6 +148,7 @@ let computedAspectRatio = 1.0;
 // Processed blobs state
 let processedPhotoBlob = null;
 let processedThumbBlob = null;
+let processedMiniBlob = null;
 let processedBlurBlob = null;
 
 let processedVideoBlob = null;
@@ -662,7 +664,7 @@ setupDropzone(dropZonePoster, fileInputPoster, 'poster', previewContainerPoster,
 
 function checkFormState() {
   if (currentMode === 'photo') {
-    const ok = selectedFile && processedPhotoBlob && processedThumbBlob && processedBlurBlob;
+    const ok = selectedFile && processedPhotoBlob && processedThumbBlob && processedMiniBlob && processedBlurBlob;
     submitBtn.disabled = !ok;
   } else {
     const ok = selectedVideoFile && selectedPosterFile && processedVideoBlob && processedPosterBlob;
@@ -677,6 +679,7 @@ function resetFileSelection() {
 
   processedPhotoBlob = null;
   processedThumbBlob = null;
+  processedMiniBlob = null;
   processedBlurBlob = null;
   processedVideoBlob = null;
   processedPosterBlob = null;
@@ -713,6 +716,7 @@ function resetSpecificFile(type, input, previewContainer, previewEl) {
     selectedFile = null;
     processedPhotoBlob = null;
     processedThumbBlob = null;
+    processedMiniBlob = null;
     processedBlurBlob = null;
   }
   checkFormState();
@@ -855,6 +859,7 @@ async function processImagePipeline(imgSrc) {
 
   setStepState('thumbnail', 'active');
   processedThumbBlob = await resizeImage(img, 600, 0.75);
+  processedMiniBlob = await resizeImage(img, 120, 0.75);
   setStepState('thumbnail', 'success');
 
   setStepState('blur', 'active');
@@ -959,6 +964,7 @@ function openEditModal(type, id) {
   // Reset replacement photo states
   processedEditPhotoBlob = null;
   processedEditThumbBlob = null;
+  processedEditMiniBlob = null;
   processedEditBlurBlob = null;
   computedEditAspectRatio = null;
   
@@ -1054,6 +1060,7 @@ async function processEditImagePipeline(imgSrc) {
 
   setStepState('edit-thumbnail', 'active');
   processedEditThumbBlob = await resizeImage(img, 600, 0.75);
+  processedEditMiniBlob = await resizeImage(img, 120, 0.75);
   setStepState('edit-thumbnail', 'success');
 
   setStepState('edit-blur', 'active');
@@ -1123,11 +1130,12 @@ if (editForm) {
 
     try {
       // If we have a replacement photo, run the R2 replace action first!
-      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditBlurBlob) {
+      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditMiniBlob && processedEditBlurBlob) {
         submitText.innerText = 'replacing R2 asset file...';
         const fileFormData = new FormData();
         fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
         fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
+        fileFormData.append('mini', processedEditMiniBlob, 'mini.webp');
         fileFormData.append('blur', processedEditBlurBlob, 'blur.webp');
         fileFormData.append('aspectRatio', computedEditAspectRatio);
 
@@ -1201,7 +1209,7 @@ if (form) {
     e.preventDefault();
     
     if (currentMode === 'photo') {
-      if (!processedPhotoBlob || !processedThumbBlob || !processedBlurBlob) {
+      if (!processedPhotoBlob || !processedThumbBlob || !processedMiniBlob || !processedBlurBlob) {
         showToast('processing file...', 'error');
         return;
       }
@@ -1227,6 +1235,7 @@ if (form) {
     if (currentMode === 'photo') {
       formData.append('photo', processedPhotoBlob);
       formData.append('thumb', processedThumbBlob);
+      formData.append('mini', processedMiniBlob);
       formData.append('blur', processedBlurBlob);
       formData.append('category', document.getElementById('category').value);
       formData.append('heroSlide', document.getElementById('hero-slide').checked);
