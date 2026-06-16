@@ -44,7 +44,7 @@ function matchRoute(method, pathname) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') {
       return emptyCorsResponse(request, env);
     }
@@ -67,7 +67,7 @@ export default {
     }
 
     try {
-      return await route.handler(request, env, params);
+      return await route.handler(request, env, params, ctx);
     } catch (err) {
       return errorResponse(request, env, err.message || 'internal server error', 500);
     }

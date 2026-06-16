@@ -35,14 +35,34 @@ async function processPhotos() {
     for (const photo of photos) {
         const inputPath = path.join(inputDir, photo);
         const blurPath = path.join(blurDir, photo);
-
         try {
-            // Generate PRE-BLURRED background (800px wide + 20px blur)
-            // This relieves the browser from doing any CSS filter math
-            await sharp(inputPath)
-                .resize(800, null, { withoutEnlargement: true }) 
-                .blur(20)
-                .webp({ quality: 50 })
+            let img = sharp(inputPath);
+            const metadata = await img.metadata();
+            const originalWidth = metadata.width || 1920;
+            const scaledBlur = Math.round(50 * (originalWidth / 1920));
+
+            // 1. Blur first at native resolution so highlights bleed naturally
+            img = img.blur(scaledBlur);
+
+            // 2. Resize to 1200px for clean, banding-free gradients
+            img = img.resize(1200, null, { withoutEnlargement: true });
+
+            // 3. Enforce minimum average brightness of 70 so dark photos show details
+            const stats = await img.stats();
+            const avg = (stats.channels[0].mean + stats.channels[1].mean + stats.channels[2].mean) / 3;
+            if (avg < 70) {
+                const offset = 20;
+                const scale = (70 - offset) / avg;
+                img = img.linear(scale, offset);
+            }
+
+            // 4. Bake in the equivalent of CSS brightness(0.22) and saturate(0.65)
+            await img
+                .modulate({
+                    brightness: 0.22,
+                    saturation: 0.65
+                })
+                .webp({ quality: 90 })
                 .toFile(blurPath);
 
             count++;

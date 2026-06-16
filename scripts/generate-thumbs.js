@@ -4,11 +4,10 @@ const path = require('path');
 
 const inputDir = './photos';
 const thumbDir = './photos/thumbs';
-const miniDir = './photos/mini';
 const blurDir = './photos/blur';
 
 // Create directories if they don't exist
-[thumbDir, miniDir, blurDir].forEach(dir => {
+[thumbDir, blurDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
         console.log('Created directory:', dir);
@@ -28,7 +27,6 @@ async function processPhotos() {
     for (const photo of photos) {
         const inputPath = path.join(inputDir, photo);
         const thumbPath = path.join(thumbDir, photo);
-        const miniPath = path.join(miniDir, photo);
         const blurPath = path.join(blurDir, photo);
 
         try {
@@ -38,13 +36,7 @@ async function processPhotos() {
                 .webp({ quality: 70 })
                 .toFile(thumbPath);
 
-            // 2. Generate Mini Thumbnail (120px) for filmstrip
-            await sharp(inputPath)
-                .resize(120)
-                .webp({ quality: 75 })
-                .toFile(miniPath);
-
-            // 3. Generate PRE-BLURRED background (40px wide + heavy blur)
+            // 2. Generate PRE-BLURRED background (40px wide + heavy blur)
             // This relieves the browser from doing any CSS filter math
             await sharp(inputPath)
                 .resize(40) 
@@ -60,7 +52,7 @@ async function processPhotos() {
     }
 
     console.log('--- DONE ---');
-    console.log(`Successfully generated ${count} thumbnails, mini thumbnails, and blurred assets.`);
+    console.log(`Successfully generated ${count} thumbnails and blurred assets.`);
 }
 
 processPhotos();
