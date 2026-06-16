@@ -31,7 +31,7 @@ function isValidMediaKey(key) {
   return /^[a-zA-Z0-9\-_./]+$/.test(key);
 }
 
-export async function serveMedia(request, env, params) {
+export async function serveMedia(request, env, params, ctx) {
   const fileKey = decodeURIComponent(params.key);
 
   if (!isValidMediaKey(fileKey)) {
@@ -43,7 +43,7 @@ export async function serveMedia(request, env, params) {
 
   const rangeHeader = request.headers.get('Range');
 
-  // 1. Try to fetch from the Cloudflare CDN edge cache first (only for non-range requests)
+  // 1. Try Cloudflare CDN edge cache first (only for non-range requests)
   let cacheKey;
   let cache;
   if (!rangeHeader) {
@@ -57,17 +57,7 @@ export async function serveMedia(request, env, params) {
     }
   }
 
-  // 2. Head the object first to get total size (required for Content-Range calculation)
-  const objectHead = await env.MEDIA_BUCKET.head(fileKey);
-  if (!objectHead) {
-    return new Response('Media asset not found', {
-      status: 404,
-      headers: corsHeaders(request, env),
-    });
-  }
-  const totalSize = objectHead.size;
-
-  // 3. Parse Range header manually and build R2 range options
+  // 2. Parse Range header into R2-compatible range options
   let rangeOptions;
   let isRangeRequest = false;
   if (rangeHeader) {
@@ -81,13 +71,17 @@ export async function serveMedia(request, env, params) {
         rangeOptions = { suffix: parseInt(endStr, 10) };
       } else {
         const offset = startStr ? parseInt(startStr, 10) : 0;
-        const endByte = endStr ? parseInt(endStr, 10) : totalSize - 1;
-        rangeOptions = { offset, length: endByte - offset + 1 };
+        if (endStr) {
+          rangeOptions = { offset, length: parseInt(endStr, 10) - offset + 1 };
+        } else {
+          // open-ended range: bytes=500- (R2 returns offset to end)
+          rangeOptions = { offset };
+        }
       }
     }
   }
 
-  // 4. Fetch from R2 with the parsed range options
+  // 3. Single GET from R2 — object.size gives total size, no HEAD needed
   const object = await env.MEDIA_BUCKET.get(fileKey, rangeOptions ? { range: rangeOptions } : undefined);
 
   if (!object) {
@@ -97,6 +91,7 @@ export async function serveMedia(request, env, params) {
     });
   }
 
+  const totalSize = object.size;
   const headers = new Headers(corsHeaders(request, env));
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
@@ -112,8 +107,8 @@ export async function serveMedia(request, env, params) {
   let status = 200;
   if (isRangeRequest && object.range) {
     status = 206;
-    const offset = object.range.offset ?? rangeOptions?.offset ?? 0;
-    const length = object.range.length ?? rangeOptions?.length ?? totalSize;
+    const offset = object.range.offset ?? 0;
+    const length = object.range.length ?? totalSize;
     headers.set('Content-Range', `bytes ${offset}-${offset + length - 1}/${totalSize}`);
     headers.set('Content-Length', length.toString());
   } else {
@@ -122,20 +117,26 @@ export async function serveMedia(request, env, params) {
 
   const response = new Response(object.body, { status, headers });
 
-  // 3. Cache the served response in background for future requests (only for full 200 OK responses)
-  if (!rangeHeader && request.method === 'GET' && object.size > 0 && cache) {
+  // 4. Cache full responses at the edge in background (non-blocking)
+  if (!rangeHeader && request.method === 'GET' && totalSize > 0 && cache) {
     const putPromise = cache.put(cacheKey, response.clone());
-    if (env.waitUntil) {
-      env.waitUntil(putPromise);
-    } else {
-      await putPromise;
+    if (ctx && ctx.waitUntil) {
+      ctx.waitUntil(putPromise);
     }
+    // No ctx? Fire-and-forget — never block the response on a cache write
   }
 
   return response;
 }
 
-export async function listPhotos(request, env) {
+export async function listPhotos(request, env, params, ctx) {
+  // Edge cache: serve cached JSON if available
+  const cache = caches.default;
+  const cacheUrl = new URL(request.url).toString();
+  const cacheReq = new Request(cacheUrl, { method: 'GET' });
+  const cached = await cache.match(cacheReq);
+  if (cached) return cached;
+
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
   const { results } = await env.DB.prepare(
@@ -147,7 +148,7 @@ export async function listPhotos(request, env) {
   const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM photos').first();
   const items = results.map((row) => publicPhoto(request, row));
 
-  return jsonResponse(request, env, {
+  const body = JSON.stringify({
     items,
     pagination: {
       limit,
@@ -156,9 +157,30 @@ export async function listPhotos(request, env) {
       nextOffset: items.length === limit ? offset + limit : null,
     },
   });
+
+  const response = new Response(body, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, s-maxage=300, max-age=60',
+    },
+  });
+
+  if (ctx && ctx.waitUntil) {
+    ctx.waitUntil(cache.put(cacheReq, response.clone()));
+  }
+
+  return response;
 }
 
-export async function listVideos(request, env) {
+export async function listVideos(request, env, params, ctx) {
+  // Edge cache: serve cached JSON if available
+  const cache = caches.default;
+  const cacheUrl = new URL(request.url).toString();
+  const cacheReq = new Request(cacheUrl, { method: 'GET' });
+  const cached = await cache.match(cacheReq);
+  if (cached) return cached;
+
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
   const { results } = await env.DB.prepare(
@@ -170,7 +192,7 @@ export async function listVideos(request, env) {
   const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM videos').first();
   const items = results.map((row) => publicVideo(request, row));
 
-  return jsonResponse(request, env, {
+  const body = JSON.stringify({
     items,
     pagination: {
       limit,
@@ -179,6 +201,20 @@ export async function listVideos(request, env) {
       nextOffset: items.length === limit ? offset + limit : null,
     },
   });
+
+  const response = new Response(body, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, s-maxage=300, max-age=60',
+    },
+  });
+
+  if (ctx && ctx.waitUntil) {
+    ctx.waitUntil(cache.put(cacheReq, response.clone()));
+  }
+
+  return response;
 }
 
 export async function deletePhoto(request, env, params) {

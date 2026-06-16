@@ -15,8 +15,8 @@
   <title>vanpics — admin cms</title>
   
   <!-- favicon -->
-  <link rel="icon" type="image/svg+xml" href="icons/aperture.svg">
-  <link rel="apple-touch-icon" href="icons/aperture.svg">
+  <link rel="icon" type="image/svg+xml" href="icons/lock.svg">
+  <link rel="apple-touch-icon" href="icons/lock.svg">
   <!-- Fonts: Cormorant Garamond (Logo only), DM Mono (Everything else) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -207,25 +207,25 @@
         <form id="cms-form">
           <div class="form-grid">
             <div class="field-group">
-              <label for="title">photo title</label>
-              <input type="text" id="title" placeholder="e.g. harbinger" required>
+              <label for="title">title</label>
+              <input type="text" id="title" placeholder="harbinger" required>
             </div>
             
             <div class="field-group">
               <label for="date">capture date</label>
-              <input type="text" id="date" placeholder="e.g. mar 22, 2026">
+              <input type="text" id="date">
             </div>
             
             <div class="field-group">
               <label for="location">location</label>
-              <input type="text" id="location" placeholder="e.g. macrohon, southern leyte">
+              <input type="text" id="location">
             </div>
 
             <!-- Photo Mode Only: Category select -->
             <div class="field-group photo-only">
-              <label for="category">category segment</label>
+              <label for="category">category</label>
               <select id="category">
-                <option value="">photographs (default)</option>
+                <option value="">photographs</option>
                 <option value="figures">figures</option>
               </select>
             </div>
@@ -233,11 +233,11 @@
             <!-- Video Mode Only: Soundtrack name -->
             <div class="field-group video-only" style="display: none;">
               <label for="music">soundtrack / music info</label>
-              <input type="text" id="music" placeholder="e.g. dawn over tides - artist">
+              <input type="text" id="music">
             </div>
 
             <div class="field-group full-width">
-              <label for="desc">narrative</label>
+              <label for="desc">description</label>
               <textarea id="desc" rows="3" placeholder="describe the context or story..."></textarea>
             </div>
 
@@ -359,18 +359,18 @@
           <div class="edit-metadata-form" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; overflow-y: auto;">
             <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div class="field-group" style="grid-column: span 2;">
-                <label for="edit-title">asset title</label>
+                <label for="edit-title">title</label>
                 <input type="text" id="edit-title" required>
               </div>
               
               <div class="field-group">
                 <label for="edit-date">capture date</label>
-                <input type="text" id="edit-date" placeholder="e.g. mar 22, 2026">
+                <input type="text" id="edit-date">
               </div>
               
               <div class="field-group">
                 <label for="edit-location">location</label>
-                <input type="text" id="edit-location" placeholder="e.g. macrohon, southern leyte">
+                <input type="text" id="edit-location">
               </div>
 
               <!-- Edit Photo Aspect Ratio -->
@@ -381,9 +381,9 @@
 
               <!-- Edit Photo Mode Only: Category select -->
               <div class="field-group edit-photo-only">
-                <label for="edit-category">category segment</label>
+                <label for="edit-category">category</label>
                 <select id="edit-category">
-                  <option value="">photographs (default)</option>
+                  <option value="">photographs</option>
                   <option value="figures">figures</option>
                 </select>
               </div>
@@ -391,11 +391,11 @@
               <!-- Edit Video Mode Only: Soundtrack name -->
               <div class="field-group edit-video-only" style="grid-column: span 2;">
                 <label for="edit-music">soundtrack / music info</label>
-                <input type="text" id="edit-music" placeholder="e.g. dawn over tides - artist">
+                <input type="text" id="edit-music">
               </div>
 
               <div class="field-group full-width" style="grid-column: span 2;">
-                <label for="edit-desc">narrative</label>
+                <label for="edit-desc">description</label>
                 <textarea id="edit-desc" rows="3" placeholder="describe the context or story..." style="resize: none;"></textarea>
               </div>
 

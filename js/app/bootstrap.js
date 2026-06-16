@@ -274,11 +274,9 @@ function renderUI(photos, videos) {
   }
 
   if (!renderedFromCache) {
-    // ── First ever visit: preload key images then render ──
+    // ── First ever visit: fire image warm in parallel, render immediately ──
     if (newPhotos.length > 0) {
-      try {
-        await warmStartupImages(newPhotos);
-      } catch (e) { console.warn('Pre-caching assets failed:', e); }
+      warmStartupImages(newPhotos).catch(function() {});
     }
     renderUI(newPhotos, newVideos);
     if (state.carouselPhotos.length === 0) safeLift();

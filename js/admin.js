@@ -605,8 +605,8 @@ function switchMode(mode) {
     photoOnlyElements.forEach(el => el.style.display = '');
     videoOnlyElements.forEach(el => el.style.display = 'none');
     
-    document.getElementById('title').placeholder = 'e.g. harbinger';
-    document.getElementById('title').previousElementSibling.innerText = 'photo title';
+    document.getElementById('title').placeholder = 'harbinger';
+    document.getElementById('title').previousElementSibling.innerText = 'title';
   } else {
     tabVideoBtn.classList.add('active');
     tabPhotoBtn.classList.remove('active');
@@ -617,8 +617,8 @@ function switchMode(mode) {
     photoOnlyElements.forEach(el => el.style.display = 'none');
     videoOnlyElements.forEach(el => el.style.display = '');
     
-    document.getElementById('title').placeholder = 'e.g. cinematic shorelines';
-    document.getElementById('title').previousElementSibling.innerText = 'video title';
+    document.getElementById('title').placeholder = 'cinematic shorelines';
+    document.getElementById('title').previousElementSibling.innerText = 'title';
   }
 
   resetFileSelection();

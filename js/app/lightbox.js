@@ -12,6 +12,7 @@ let blurToken = 0;
 let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
+let swipeNeighborsCallback = null;
 let previouslyFocusedElement = null;
 
 // In-memory decoded image cache — prevents placeholder flash on revisited photos
@@ -84,21 +85,45 @@ export function setLightboxBlur(src) {
   }
   let token = ++blurToken;
 
-  let active = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerB : domRefs.blurLayerA;
-  let inactive = active.id === 'blur-layer-a' ? domRefs.blurLayerB : domRefs.blurLayerA;
+  // "incoming" = the layer we'll write the new image to (currently hidden, opacity:0)
+  // "outgoing" = the layer currently visible (opacity:1 via .active), stays visible during cross-fade
+  let outgoing = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerA : domRefs.blurLayerB;
+  let incoming = outgoing === domRefs.blurLayerA ? domRefs.blurLayerB : domRefs.blurLayerA;
 
-  let inner = active.querySelector('.lightbox-bg-blur-inner');
+  // If neither is active yet (e.g. first open), incoming is A
+  if (!domRefs.blurLayerA.classList.contains('active') && !domRefs.blurLayerB.classList.contains('active')) {
+    incoming = domRefs.blurLayerA;
+    outgoing = domRefs.blurLayerB;
+  }
+
+  let inner = incoming.querySelector('.lightbox-bg-blur-inner');
 
   function doSwap() {
-    if (token !== blurToken) return; // Stale request, ignore it
-    if (inner) inner.style.backgroundImage = 'url(' + blurPath + ')';
-    
-    // Force transition by letting the style update register and paint first
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
+    if (token !== blurToken) return; // Stale request, abort
+
+    // 1. Load image onto the hidden (incoming) layer while it's still at opacity:0
+    if (inner) {
+      inner.style.backgroundImage = 'url(' + blurPath + ')';
+    }
+
+    // 2. Double-rAF ensures the new backgroundImage is painted before we trigger the opacity transition
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
         if (token !== blurToken) return;
-        active.classList.add('active');
-        inactive.classList.remove('active');
+
+        // Fade IN the new layer — CSS transition handles opacity 0→1
+        incoming.classList.add('active');
+
+        // Fade OUT the old layer AFTER the incoming layer has had time to establish itself.
+        // This prevents any dark gap between the two layers during fast navigation.
+        // 650ms matches the CSS transition: opacity 0.65s
+        var capturedOutgoing = outgoing;
+        setTimeout(function () {
+          // Only remove if this token is still the active one, OR the outgoing layer is
+          // no longer the one being shown (it may have been re-promoted by a later swap).
+          capturedOutgoing.classList.remove('active');
+        }, 650);
+
         blurFlip = !blurFlip;
       });
     });
@@ -982,7 +1007,7 @@ export function resetDescToggle() {
   if (btn) btn.textContent = 'read more';
 }
 
-export let loadSwipeNeighbors = function () {
+export function loadSwipeNeighbors() {
   if (state.currentLightboxIsMotion) return;
   let currentSet = getCurrentLightboxItems();
   let len = currentSet.length;
@@ -1007,10 +1032,14 @@ export let loadSwipeNeighbors = function () {
       }
     }
   });
-};
+
+  if (typeof swipeNeighborsCallback === 'function') {
+    swipeNeighborsCallback();
+  }
+}
 
 export function setLoadSwipeNeighbors(fn) {
-  loadSwipeNeighbors = fn;
+  swipeNeighborsCallback = fn;
 }
 
 export function navigateLightbox(d) {

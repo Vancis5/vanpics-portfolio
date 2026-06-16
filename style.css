@@ -247,6 +247,7 @@ body::after {
 }
 
 @media (max-width: 639px) {
+
   #hero::before,
   #hero::after {
     width: 40px;
@@ -280,7 +281,8 @@ body::after {
   -webkit-user-drag: none;
 }
 
-.carousel-row:active, .carousel-row img:active {
+.carousel-row:active,
+.carousel-row img:active {
   cursor: grabbing !important;
 }
 
@@ -1001,16 +1003,14 @@ body::after {
   opacity: 1;
 }
 
-/* inner div carries the blur — never animates, so no per-frame repaint */
 .lightbox-bg-blur-inner {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(3px) brightness(0.22) saturate(0.65);
   transform: translate3d(0, 0, 0);
-  will-change: filter;
   backface-visibility: hidden;
+  filter: brightness(0.40) saturate(0.70) blur(5px);
 }
 
 #lightbox-content {
@@ -1535,7 +1535,9 @@ body::after {
   }
 
   .snap-slide img {
-    width: 100%; height: 100%; max-width: 100%;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
     max-height: 46dvh;
     object-fit: contain;
     border-radius: 3px;
@@ -2117,7 +2119,7 @@ html {
 }
 
 /* 2.4.11 Focus Not Obscured (Minimum) - Clear sticky elements (header/footer) */
-.photo-card, 
+.photo-card,
 #gallery-header [role="button"],
 .footer-instagram,
 #lightbox-close,
@@ -2136,5 +2138,3 @@ html {
   width: 24px !important;
   height: 24px !important;
 }
-
-
