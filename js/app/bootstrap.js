@@ -221,6 +221,36 @@ async function warmStartupImages(photos) {
   await Promise.all(getStartupImageUrls(photos).map(url => decodeImageUrl(url, 1800)));
 }
 
+function updateFooterStats(photos, videos) {
+  const photographs = photos.filter(p => p.category !== 'figures' && p.title);
+  const figures = photos.filter(p => p.category === 'figures' && p.title);
+  const motion = videos.filter(v => !!v.thumb || !!v.src);
+
+  // Earliest year from all photos with a real date
+  let since = '—';
+  const years = photos
+    .map(p => p.date ? new Date(p.date).getFullYear() : NaN)
+    .filter(y => !isNaN(y) && y > 1900);
+  if (years.length > 0) since = String(Math.min(...years));
+
+  function set(id, num) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const numEl = el.querySelector('.stat-num');
+    if (numEl) numEl.textContent = num > 0 ? String(num) : '—';
+  }
+
+  set('stat-photographs', photographs.length);
+  set('stat-figures', figures.length);
+  set('stat-motion', motion.length);
+
+  const sinceEl = document.getElementById('stat-since');
+  if (sinceEl) {
+    const numEl = sinceEl.querySelector('.stat-num');
+    if (numEl) numEl.textContent = since;
+  }
+}
+
 function renderUI(photos, videos) {
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
@@ -228,6 +258,7 @@ function renderUI(photos, videos) {
   buildCarousel();
   buildMasonry();
   initFilters();
+  updateFooterStats(photos, videos);
   setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 }
 
@@ -292,5 +323,6 @@ function renderUI(photos, videos) {
     updateMediaLibrary(newPhotos, newVideos);
     updateActivePhotos();
     applyCarouselPhotos(newPhotos);
+    updateFooterStats(newPhotos, newVideos);
   }
 })();

@@ -204,8 +204,12 @@ function commitFilmstripTransformScroll() {
   if (!fsTransformActive) return;
   clearScheduledFilmstripCommit();
   let value = clampFilmstripScroll(fsVisualScroll);
+  // Set transform to target value first, then flip to native scroll in the same frame
+  // — avoids the 1-frame blank gap (clunk) that the old ordering caused on mobile
+  let track = getFilmstripTrack();
+  track.style.transform = 'translate3d(' + (-value) + 'px, 0, 0)';
   filmstripEl.scrollLeft = value;
-  getFilmstripTrack().style.transform = '';
+  track.style.transform = '';
   fsTransformActive = false;
   fsVisualScroll = value;
 }
@@ -358,7 +362,7 @@ export function updateFilmstrip() {
         }
         startFsSync(fsTarget);
       } else {
-        // Cold start: play strict smooth cubic ease 
+        // Cold start: play strict smooth cubic ease
         stopFsSync({ commit: false });
         let startPos = getFilmstripScroll();
         let startTime = null;

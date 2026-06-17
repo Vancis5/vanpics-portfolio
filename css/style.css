@@ -135,16 +135,18 @@ body {
   overflow-x: clip;
 }
 
-/* grain texture overlay */
-body::after {
-  content: '';
-  position: fixed;
-  inset: -150px;
-  z-index: 9990;
-  pointer-events: none;
-  opacity: 0.045;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 256px 256px;
+/* grain texture overlay — disabled on mobile (SVG feTurbulence is a GPU repaint machine) */
+@media (hover: hover) {
+  body::after {
+    content: '';
+    position: fixed;
+    inset: -150px;
+    z-index: 9990;
+    pointer-events: none;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
 }
 
 
@@ -275,7 +277,7 @@ body::after {
   display: block;
   filter: brightness(0.78) saturate(0.85);
   transition: opacity 1.2s ease, filter 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: filter, transform;
+  /* No will-change here — too many images, each gets its own GPU layer which kills mobile RAM */
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-drag: none;
@@ -1058,6 +1060,14 @@ body::after {
   animation-direction: var(--blur-dir, normal);
 }
 
+/* Mobile: kill expensive blend-mode layers — base layer only */
+@media (hover: none) {
+  .lightbox-bg-blur-inner.twist-1,
+  .lightbox-bg-blur-inner.twist-2 {
+    display: none;
+  }
+}
+
 @keyframes liquid-base {
   0% {
     transform: rotate(0deg) scale(1.2) translate3d(0, 0, 0);
@@ -1823,8 +1833,10 @@ body::after {
 
 .filmstrip-thumb.active {
   opacity: 1;
-  transform: scaleY(1.12);
-  transition: opacity 0s, transform 0.1s ease-out;
+  /* scaleY removed — triggered layout recalcs on every nav. Use outline instead */
+  outline: 1.5px solid rgba(221, 216, 207, 0.55);
+  outline-offset: 1px;
+  transition: opacity 0s, outline 0.12s ease-out;
 }
 
 #lightbox.mode-motion #filmstrip .filmstrip-thumb {
@@ -2047,6 +2059,54 @@ body::after {
     font-size: 0.58rem;
   }
 }
+
+/* FOOTER STATS BAR */
+#footer-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: clamp(1.25rem, 3vw, 2rem);
+  padding-top: clamp(1rem, 2.5vw, 1.5rem);
+  border-top: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(0.52rem, 1.2vw, 0.6rem);
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+  color: rgba(221, 216, 207, 0.28);
+  transition: color 0.4s ease;
+}
+
+#site-footer:hover #footer-stats,
+#site-footer.is-visible #footer-stats {
+  color: rgba(221, 216, 207, 0.42);
+}
+
+.footer-stat {
+  white-space: nowrap;
+}
+
+.stat-num {
+  color: rgba(221, 216, 207, 0.55);
+  transition: color 0.4s ease;
+}
+
+#site-footer:hover .stat-num,
+#site-footer.is-visible .stat-num {
+  color: rgba(221, 216, 207, 0.78);
+}
+
+.footer-stat-dot {
+  color: rgba(221, 216, 207, 0.15);
+  user-select: none;
+}
+
+@media (max-width: 560px) {
+  #footer-stats {
+    gap: 0.4rem 0.6rem;
+  }
+}
+
 
 /* Selection UI Lock */
 #gallery-header,
