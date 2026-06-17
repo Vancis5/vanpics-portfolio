@@ -2,7 +2,7 @@ import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
 import { getCategorySlug, getPhotoLibrary, motionProjects } from './media-data.js';
 import { getMotionThumbnailMarkup } from './motion-markup.js';
-import { openLightbox } from './lightbox.js';
+import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 
@@ -201,6 +201,7 @@ let GALLERY_SCROLL_MEMORY_KEY = 'van_gallery_scroll_v2';
 let galleryScrollPositions = { all: null, figures: null, motion: null };
 let galleryPanelsBuilt = false;
 let galleryScrollSaveRaf = null;
+let galleryBlurPreloadTimer = null;
 
 try {
   let storedScrollPositions = sessionStorage.getItem(GALLERY_SCROLL_MEMORY_KEY);
@@ -351,6 +352,16 @@ function getGalleryPanel(category) {
 
 function getActiveGalleryPanel() {
   return getGalleryPanel(state.currentCategory);
+}
+
+function scheduleGalleryBlurPreload(centerIndex, delay) {
+  if (state.currentCategory === 'motion') return;
+  if (galleryBlurPreloadTimer) window.clearTimeout(galleryBlurPreloadTimer);
+
+  galleryBlurPreloadTimer = window.setTimeout(function () {
+    galleryBlurPreloadTimer = null;
+    preloadLightboxBlurNeighbors(centerIndex || 0, 6);
+  }, delay || 0);
 }
 
 function getMasonryColumnCount() {
@@ -629,6 +640,30 @@ export function buildMasonry(category) {
         openLightbox(idx, 0, cardCategory === 'motion');
       };
     })(i, category));
+
+    card.addEventListener('pointerenter', (function (idx, cardCategory) {
+      return function () {
+        if (cardCategory === 'motion') return;
+        if (state.currentCategory !== cardCategory) return;
+        scheduleGalleryBlurPreload(idx, 0);
+      };
+    })(i, category));
+
+    card.addEventListener('focus', (function (idx, cardCategory) {
+      return function () {
+        if (cardCategory === 'motion') return;
+        if (state.currentCategory !== cardCategory) return;
+        scheduleGalleryBlurPreload(idx, 0);
+      };
+    })(i, category));
+
+    card.addEventListener('touchstart', (function (idx, cardCategory) {
+      return function () {
+        if (cardCategory === 'motion') return;
+        if (state.currentCategory !== cardCategory) return;
+        scheduleGalleryBlurPreload(idx, 0);
+      };
+    })(i, category), { passive: true });
 
     card.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {

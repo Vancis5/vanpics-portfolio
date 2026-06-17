@@ -7,8 +7,10 @@ import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfRe
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 
-let blurFlip = false;
 let blurToken = 0;
+let activeBlurLayer = null;
+let activeBlurFade = null;
+let blurPreloadTimer = null;
 let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
 let photoPlaceholderToken = 0;
@@ -54,6 +56,44 @@ function _cacheImage(src) {
   return entry;
 }
 
+function getLightboxBlurPath(src) {
+  if (!src) return '';
+  if (src.includes('/blur/') || src.includes('photos/blur/')) return src;
+  return src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+}
+
+function easeBlurFade(t) {
+  return t * t * (3 - (2 * t));
+}
+
+export function preloadLightboxBlurNeighbors(centerIndex, range) {
+  if (state.currentLightboxIsMotion) return;
+
+  let currentSet = getCurrentLightboxItems();
+  let len = currentSet.length;
+  if (!len) return;
+
+  let preloadRange = Number.isFinite(range) ? range : 6;
+  for (let offset = -preloadRange; offset <= preloadRange; offset++) {
+    let p = currentSet[(centerIndex + offset + len) % len];
+    if (!p) continue;
+    let bSrc = p.blur || p.thumb || p.src;
+    if (bSrc) _cacheImage(getLightboxBlurPath(bSrc));
+  }
+}
+
+function scheduleLightboxBlurNeighborPreload(centerIndex, delay) {
+  if (blurPreloadTimer) {
+    clearTimeout(blurPreloadTimer);
+    blurPreloadTimer = null;
+  }
+  blurPreloadTimer = setTimeout(function () {
+    blurPreloadTimer = null;
+    if (state.currentLightboxIsMotion || state.cur !== centerIndex) return;
+    preloadLightboxBlurNeighbors(centerIndex, 6);
+  }, delay || 0);
+}
+
 export function setMobileScrollToSlideCallback(callback) {
   mobileScrollToSlideCallback = typeof callback === 'function' ? callback : null;
 }
@@ -78,53 +118,106 @@ function refreshLightboxInfoRefs() {
 export function setLightboxBlur(src) {
   if (!src) return;
 
-  // Resolve blur path: if it's already a blur URL or doesn't have 'photos/', use it directly!
-  let blurPath = src;
-  if (!src.includes('/blur/') && !src.includes('photos/blur/')) {
-    blurPath = src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
-  }
+  let blurPath = getLightboxBlurPath(src);
   let token = ++blurToken;
 
   // "incoming" = the layer we'll write the new image to (currently hidden, opacity:0)
   // "outgoing" = the layer currently visible (opacity:1 via .active), stays visible during cross-fade
-  let outgoing = domRefs.blurLayerA.classList.contains('active') ? domRefs.blurLayerA : domRefs.blurLayerB;
-  let incoming = outgoing === domRefs.blurLayerA ? domRefs.blurLayerB : domRefs.blurLayerA;
+  let layerA = domRefs.blurLayerA;
+  let layerB = domRefs.blurLayerB;
+  if (!layerA || !layerB) return;
 
-  // If neither is active yet (e.g. first open), incoming is A
-  if (!domRefs.blurLayerA.classList.contains('active') && !domRefs.blurLayerB.classList.contains('active')) {
-    incoming = domRefs.blurLayerA;
-    outgoing = domRefs.blurLayerB;
+  if (!activeBlurLayer || !activeBlurLayer.classList.contains('active')) {
+    activeBlurLayer = layerB.classList.contains('active') ? layerB : (layerA.classList.contains('active') ? layerA : null);
   }
+
+  let outgoing = activeBlurLayer;
+  let incoming = outgoing === layerA ? layerB : layerA;
 
   let inner = incoming.querySelector('.lightbox-bg-blur-inner');
 
   function doSwap() {
     if (token !== blurToken) return; // Stale request, abort
 
+    if (activeBlurFade) {
+      activeBlurFade.cancel();
+      activeBlurFade = null;
+    }
+
+    // The spare layer may still be fading from a previous fast navigation.
+    // Reset it while hidden so changing its background never jumps on screen.
+    incoming.style.transition = 'none';
+    incoming.style.opacity = '0';
+    incoming.classList.remove('active');
+    void incoming.offsetWidth;
+
     // 1. Load image onto the hidden (incoming) layer while it's still at opacity:0
     if (inner) {
       inner.style.backgroundImage = 'url(' + blurPath + ')';
     }
 
-    // 2. Double-rAF ensures the new backgroundImage is painted before we trigger the opacity transition
+    if (incoming.parentNode) incoming.parentNode.appendChild(incoming);
+
+    // Let the decoded CSS background get one hidden paint before the fade starts.
+    // Fresh R2 images can otherwise appear on their first visible paint mid-animation.
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (token !== blurToken) return;
 
-        // Fade IN the new layer — CSS transition handles opacity 0→1
         incoming.classList.add('active');
+        activeBlurLayer = incoming;
 
-        // Fade OUT the old layer AFTER the incoming layer has had time to establish itself.
-        // This prevents any dark gap between the two layers during fast navigation.
-        // 650ms matches the CSS transition: opacity 0.65s
-        var capturedOutgoing = outgoing;
-        setTimeout(function () {
-          // Only remove if this token is still the active one, OR the outgoing layer is
-          // no longer the one being shown (it may have been re-promoted by a later swap).
-          capturedOutgoing.classList.remove('active');
-        }, 650);
+        let fadeStart = performance.now();
+        let fadeDuration = 780;
+        let outgoingStartOpacity = outgoing && outgoing !== incoming
+          ? parseFloat(window.getComputedStyle(outgoing).opacity) || 1
+          : 0;
+        let fadeFrame = 0;
+        if (outgoing && outgoing !== incoming) outgoing.style.transition = 'none';
 
-        blurFlip = !blurFlip;
+        function finishFade() {
+          if (token !== blurToken || activeBlurLayer !== incoming) return;
+          if (fadeFrame) cancelAnimationFrame(fadeFrame);
+          activeBlurFade = null;
+          incoming.style.opacity = '';
+          incoming.style.transition = '';
+          if (outgoing && outgoing !== incoming) {
+            outgoing.style.opacity = '';
+            outgoing.style.transition = '';
+            outgoing.classList.remove('active');
+          }
+        }
+
+        function stepFade(now) {
+          if (token !== blurToken || activeBlurLayer !== incoming) return;
+          let progress = Math.min(1, (now - fadeStart) / fadeDuration);
+          let eased = easeBlurFade(progress);
+
+          incoming.style.opacity = String(eased);
+          if (outgoing && outgoing !== incoming) {
+            outgoing.style.opacity = String(outgoingStartOpacity * (1 - eased));
+          }
+
+          if (progress < 1) {
+            fadeFrame = requestAnimationFrame(stepFade);
+          } else {
+            finishFade();
+          }
+        }
+
+        activeBlurFade = {
+          cancel: function () {
+            if (fadeFrame) cancelAnimationFrame(fadeFrame);
+            incoming.style.transition = 'none';
+            incoming.style.opacity = window.getComputedStyle(incoming).opacity;
+            if (outgoing && outgoing !== incoming) {
+              outgoing.style.transition = 'none';
+              outgoing.style.opacity = window.getComputedStyle(outgoing).opacity;
+            }
+          }
+        };
+
+        fadeFrame = requestAnimationFrame(stepFade);
       });
     });
   }
@@ -582,6 +675,7 @@ export function openLightbox(i, direction, isMotion) {
   let p = getCurrentLightboxItems()[i];
 
   if (!p) return;
+  if (!isMotion) scheduleLightboxBlurNeighborPreload(i, lb && lb.classList.contains('open') ? 80 : 300);
   let img = domRefs.lightboxImg;
   let imgWrap = domRefs.lightboxImgWrap;
   let playerShell = domRefs.motionPlayerShell;
@@ -899,6 +993,19 @@ export function closeLightbox(eventOrIsKeyboard = false) {
 
   domRefs.blurLayerA.classList.remove('active');
   domRefs.blurLayerB.classList.remove('active');
+  activeBlurLayer = null;
+  if (activeBlurFade) {
+    activeBlurFade.cancel();
+    activeBlurFade = null;
+  }
+  if (blurPreloadTimer) {
+    clearTimeout(blurPreloadTimer);
+    blurPreloadTimer = null;
+  }
+  domRefs.blurLayerA.style.opacity = '';
+  domRefs.blurLayerA.style.transition = '';
+  domRefs.blurLayerB.style.opacity = '';
+  domRefs.blurLayerB.style.transition = '';
   // Reset hash to category on close
   if (window.location.hash && !state.isPopState) {
     let catSlug = getCategorySlug(state.currentCategory);
@@ -1024,11 +1131,7 @@ export function loadSwipeNeighbors() {
     if (p) {
       let bSrc = p.blur || p.thumb || p.src;
       if (bSrc) {
-        let blurPath = bSrc;
-        if (!bSrc.includes('/blur/') && !bSrc.includes('photos/blur/')) {
-          blurPath = bSrc.replace('photos/', 'photos/blur/').replace('thumbs/', '');
-        }
-        _cacheImage(blurPath);
+        _cacheImage(getLightboxBlurPath(bSrc));
       }
     }
   });
