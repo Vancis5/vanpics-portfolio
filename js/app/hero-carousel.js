@@ -66,6 +66,15 @@ let globalHasDragged = false;
 export function buildCarousel() {
   let rows = domRefs.heroRows;
 
+  CRUISE_SPEED = state.isMobile
+    ? CAROUSEL_CONFIG.cruiseSpeed.mobile
+    : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
+      ? CAROUSEL_CONFIG.cruiseSpeed.tablet
+      : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+
+  // Clear existing images before building/rebuilding to avoid duplicates
+  rows.forEach(function (r) { r.innerHTML = ''; });
+
   // show/hide row-3 based on device
   if (state.isMobile) {
     rows[3].style.display = 'flex';
@@ -163,7 +172,13 @@ export function buildCarousel() {
         let w = 0;
         for (let i = 0; i < group.length * copies && i < imgs.length; i++) w += (imgs[i].offsetWidth || 220) + 10;
         rowState[ri].setWidth = w > 0 ? w : group.length * copies * 230;
-        if (ROW_CONFIG[ri].dir === 1) rowState[ri].offset = -rowState[ri].setWidth;
+        rowState[ri].offset = ROW_CONFIG[ri].dir === 1 ? -rowState[ri].setWidth : 0;
+      });
+      rowState.forEach(function (st, idx) {
+        if (idx >= activeRowCount) {
+          st.offset = 0;
+          st.setWidth = 0;
+        }
       });
       activeRows.forEach(function (r) { r.style.opacity = '1'; }); // already visible, belt-and-suspenders
       carouselReadyCallback();

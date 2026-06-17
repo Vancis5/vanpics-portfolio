@@ -137,6 +137,7 @@ export function setLightboxBlur(src) {
     // Reset it while hidden so changing its background never jumps on screen.
     incoming.style.transition = 'none';
     incoming.style.opacity = '0';
+    incoming.style.setProperty('--blur-dir', Math.random() > 0.5 ? 'normal' : 'reverse');
     incoming.classList.remove('active');
     void incoming.offsetWidth;
 
