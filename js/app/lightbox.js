@@ -109,14 +109,222 @@ function refreshLightboxInfoRefs() {
   return info;
 }
 
+let gl = null;
+let glCanvas = null;
+let copyProgram = null;
+let kawaseProgram = null;
+let quadBuffer = null;
+let pingTex = null, pongTex = null, pingFB = null, pongFB = null, sourceTex = null;
+let glWidth = 0, glHeight = 0;
+
+function compileGLShader(type, src) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, src);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    let log = gl.getShaderInfoLog(shader);
+    gl.deleteShader(shader);
+    throw new Error('Shader compilation failed: ' + log);
+  }
+  return shader;
+}
+
+function createGLProgram(vert, frag) {
+  const program = gl.createProgram();
+  const vs = compileGLShader(gl.VERTEX_SHADER, vert);
+  const fs = compileGLShader(gl.FRAGMENT_SHADER, frag);
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    let log = gl.getProgramInfoLog(program);
+    gl.deleteProgram(program);
+    throw new Error('Program link failed: ' + log);
+  }
+  return program;
+}
+
+function initWebGLBlur() {
+  glCanvas = document.createElement('canvas');
+  gl = glCanvas.getContext('webgl', { alpha: false, depth: false, antialias: false, stencil: false, powerPreference: 'low-power' });
+  if (!gl) return;
+
+  const vertSrc = `
+    attribute vec2 aPosition;
+    attribute vec2 aTexCoord;
+    varying vec2 vUv;
+    void main() {
+      vUv = aTexCoord;
+      gl_Position = vec4(aPosition, 0.0, 1.0);
+    }
+  `;
+
+  const fragCopySrc = `
+    precision mediump float;
+    uniform sampler2D uTexture;
+    varying vec2 vUv;
+    void main() {
+      gl_FragColor = texture2D(uTexture, vUv);
+    }
+  `;
+
+  const fragKawaseSrc = `
+    precision mediump float;
+    uniform sampler2D uTexture;
+    uniform vec2 uTexelSize;
+    uniform float uOffset;
+    varying vec2 vUv;
+    void main() {
+      vec2 o = uOffset * uTexelSize;
+      vec4 sum = vec4(0.0);
+      sum += texture2D(uTexture, vUv + vec2( o.x,  o.y));
+      sum += texture2D(uTexture, vUv + vec2(-o.x,  o.y));
+      sum += texture2D(uTexture, vUv + vec2( o.x, -o.y));
+      sum += texture2D(uTexture, vUv + vec2(-o.x, -o.y));
+      gl_FragColor = sum * 0.25;
+    }
+  `;
+
+  copyProgram = createGLProgram(vertSrc, fragCopySrc);
+  kawaseProgram = createGLProgram(vertSrc, fragKawaseSrc);
+
+  const quadVerts = new Float32Array([
+    -1, -1,   0, 1,
+     1, -1,   1, 1,
+    -1,  1,   0, 0,
+    -1,  1,   0, 0,
+     1, -1,   1, 1,
+     1,  1,   1, 0,
+  ]);
+
+  quadBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, quadVerts, gl.STATIC_DRAW);
+}
+
+function createGLTexture(w, h) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  return tex;
+}
+
+function createGLFramebuffer(tex) {
+  const fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return fb;
+}
+
+function setupGLBuffers(w, h) {
+  if (glWidth === w && glHeight === h) return;
+  glWidth = w;
+  glHeight = h;
+  glCanvas.width = w;
+  glCanvas.height = h;
+
+  if (pingTex) gl.deleteTexture(pingTex);
+  if (pongTex) gl.deleteTexture(pongTex);
+  if (pingFB) gl.deleteFramebuffer(pingFB);
+  if (pongFB) gl.deleteFramebuffer(pongFB);
+
+  pingTex = createGLTexture(w, h);
+  pongTex = createGLTexture(w, h);
+  pingFB = createGLFramebuffer(pingTex);
+  pongFB = createGLFramebuffer(pongTex);
+}
+
+function drawGLPass(program, inputTexture, targetFB, uniformSetup) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, targetFB);
+  gl.viewport(0, 0, glWidth, glHeight);
+  gl.useProgram(program);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+  const stride = 4 * 4;
+  const posLoc = gl.getAttribLocation(program, 'aPosition');
+  const uvLoc = gl.getAttribLocation(program, 'aTexCoord');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, stride, 0);
+  gl.enableVertexAttribArray(uvLoc);
+  gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, stride, 2 * 4);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+  gl.uniform1i(gl.getUniformLocation(program, 'uTexture'), 0);
+
+  if (uniformSetup) uniformSetup(program);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function runKawaseBlurWebGL(img) {
+  if (!gl) initWebGLBlur();
+  if (!gl) throw new Error('WebGL not supported');
+
+  const w = 150;
+  const h = Math.round(w * (img.naturalHeight / img.naturalWidth)) || 150;
+  setupGLBuffers(w, h);
+
+  if (sourceTex) gl.deleteTexture(sourceTex);
+  sourceTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+  drawGLPass(copyProgram, sourceTex, pingFB);
+
+  let readTex = pingTex;
+  let readFB = pingFB;
+  let writeTex = pongTex;
+  let writeFB = pongFB;
+
+  const passCount = 5;
+  const baseOffset = 1.0;
+  for (let i = 0; i < passCount; i++) {
+    const offset = baseOffset + i;
+    drawGLPass(kawaseProgram, readTex, writeFB, (program) => {
+      gl.uniform2f(gl.getUniformLocation(program, 'uTexelSize'), 1 / w, 1 / h);
+      gl.uniform1f(gl.getUniformLocation(program, 'uOffset'), offset);
+    });
+    [readTex, writeTex] = [writeTex, readTex];
+    [readFB, writeFB] = [writeFB, readFB];
+  }
+
+  drawGLPass(copyProgram, readTex, null);
+
+  return glCanvas.toDataURL('image/jpeg', 0.85);
+}
+
+function applyKawaseBlurToImage(img) {
+  return new Promise(function (resolve) {
+    if (img && img.naturalWidth > 0) {
+      try {
+        let blurredDataUrl = runKawaseBlurWebGL(img);
+        resolve(blurredDataUrl);
+      } catch (err) {
+        console.error('WebGL Kawase blur failed, falling back to CSS blur only', err);
+        resolve(img.src);
+      }
+    } else {
+      resolve(img ? img.src : '');
+    }
+  });
+}
+
 export function setLightboxBlur(src) {
   if (!src) return;
 
   let blurPath = getLightboxBlurPath(src);
   let token = ++blurToken;
 
-  // "incoming" = the layer we'll write the new image to (currently hidden, opacity:0)
-  // "outgoing" = the layer currently visible (opacity:1 via .active), stays visible during cross-fade
   let layerA = domRefs.blurLayerA;
   let layerB = domRefs.blurLayerB;
   if (!layerA || !layerB) return;
@@ -130,31 +338,25 @@ export function setLightboxBlur(src) {
 
   let inners = incoming.querySelectorAll('.lightbox-bg-blur-inner');
 
-  function doSwap() {
-    if (token !== blurToken) return; // Stale request, abort
+  function doSwap(path) {
+    if (token !== blurToken) return;
 
-    // The spare layer may still be fading from a previous fast navigation.
-    // Reset it while hidden so changing its background never jumps on screen.
     incoming.style.transition = 'none';
     incoming.style.opacity = '0';
     incoming.style.setProperty('--blur-dir', Math.random() > 0.5 ? 'normal' : 'reverse');
     incoming.classList.remove('active');
     void incoming.offsetWidth;
 
-    // 1. Load image onto the hidden (incoming) layer while it's still at opacity:0
     inners.forEach(function (inner) {
-      inner.style.backgroundImage = 'url(' + blurPath + ')';
+      inner.style.backgroundImage = 'url(' + path + ')';
     });
 
     if (incoming.parentNode) incoming.parentNode.appendChild(incoming);
 
-    // Let the decoded CSS background get one hidden paint before the fade starts.
-    // Fresh R2 images can otherwise appear on their first visible paint mid-animation.
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (token !== blurToken) return;
 
-        // Restore CSS transitions (clear inline overrides to let stylesheet apply)
         incoming.style.transition = '';
         incoming.style.opacity = '';
         incoming.classList.add('active');
@@ -169,8 +371,18 @@ export function setLightboxBlur(src) {
     });
   }
 
-  _cacheImage(blurPath);
-  doSwap();
+  let entry = _cacheImage(blurPath);
+  if (entry && entry.decodePromise) {
+    entry.decodePromise.then(function () {
+      if (token !== blurToken) return;
+      applyKawaseBlurToImage(entry.img).then(function (blurredDataUrl) {
+        if (token !== blurToken) return;
+        doSwap(blurredDataUrl);
+      });
+    });
+  } else {
+    doSwap(blurPath);
+  }
 }
 
 function clearLightboxPhotoPlaceholder(expectedToken) {
