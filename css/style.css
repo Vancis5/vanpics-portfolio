@@ -1010,7 +1010,7 @@ body::after {
   background-position: center;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
-  filter: brightness(0.9) saturate(0.70) blur(5px);
+  filter: brightness(0.6) saturate(0.7) blur(2px);
 }
 
 #lightbox-content {

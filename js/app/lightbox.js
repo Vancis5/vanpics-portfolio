@@ -168,7 +168,7 @@ export function setLightboxBlur(src) {
         activeBlurLayer = incoming;
 
         let fadeStart = performance.now();
-        let fadeDuration = 780;
+        let fadeDuration = 400;
         let outgoingStartOpacity = outgoing && outgoing !== incoming
           ? parseFloat(window.getComputedStyle(outgoing).opacity) || 1
           : 0;
@@ -366,7 +366,7 @@ function runDescFlipTransition(options) {
       }, 450);
     });
   });
-}function rgbToHsl(r, g, b) {
+} function rgbToHsl(r, g, b) {
   r /= 255;
   g /= 255;
   b /= 255;
@@ -455,12 +455,12 @@ function updateDynamicTextColor(p) {
         const r = Math.round(rSum / count);
         const g = Math.round(gSum / count);
         const b = Math.round(bSum / count);
-        
+
         const hsl = rgbToHsl(r, g, b);
-        
+
         // Mute saturation to a beautiful elegant range (18% - 35%)
         const s = Math.min(Math.max(hsl.s * 0.75, 18), 35);
-        
+
         // Lightness kept high and highly readable (82% - 85%) to guarantee contrast
         const l = Math.min(Math.max(hsl.l, 82), 85);
 
@@ -1118,7 +1118,7 @@ export function loadSwipeNeighbors() {
   if (state.currentLightboxIsMotion) return;
   let currentSet = getCurrentLightboxItems();
   let len = currentSet.length;
-  
+
   // Preload & cache ±2 high-res neighbors (to save bandwidth)
   [-2, -1, 1, 2].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
