@@ -1833,10 +1833,8 @@ body {
 
 .filmstrip-thumb.active {
   opacity: 1;
-  /* scaleY removed — triggered layout recalcs on every nav. Use outline instead */
-  outline: 1.5px solid rgba(221, 216, 207, 0.55);
-  outline-offset: 1px;
-  transition: opacity 0s, outline 0.12s ease-out;
+  transform: scaleY(1.12);
+  transition: opacity 0s, transform 0.1s ease-out;
 }
 
 #lightbox.mode-motion #filmstrip .filmstrip-thumb {
