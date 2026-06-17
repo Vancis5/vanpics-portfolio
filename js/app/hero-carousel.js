@@ -166,12 +166,11 @@ export function buildCarousel() {
     // defer to next paint — Firefox offsetWidth is 0 if read before layout pass
     requestAnimationFrame(function () {
       activeRows.forEach(function (row, ri) {
-        let group = groups[ri].length > 0 ? groups[ri] : state.carouselPhotos;
-        let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
         let imgs = Array.from(row.querySelectorAll('img'));
+        let halfCount = Math.floor(imgs.length / 2);
         let w = 0;
-        for (let i = 0; i < group.length * copies && i < imgs.length; i++) w += (imgs[i].offsetWidth || 220) + 10;
-        rowState[ri].setWidth = w > 0 ? w : group.length * copies * 230;
+        for (let i = 0; i < halfCount; i++) w += (imgs[i].offsetWidth || 220) + 10;
+        rowState[ri].setWidth = w > 0 ? w : halfCount * 230;
         rowState[ri].offset = ROW_CONFIG[ri].dir === 1 ? -rowState[ri].setWidth : 0;
       });
       rowState.forEach(function (st, idx) {
@@ -313,3 +312,50 @@ function endDrag() {
 
 window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
+
+export function recalculateCarouselLayout() {
+  CRUISE_SPEED = state.isMobile
+    ? CAROUSEL_CONFIG.cruiseSpeed.mobile
+    : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
+      ? CAROUSEL_CONFIG.cruiseSpeed.tablet
+      : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+
+  let rows = domRefs.heroRows;
+  
+  if (state.isMobile) {
+    rows[3].style.display = 'flex';
+  } else {
+    rows[3].style.display = 'none';
+  }
+
+  let activeRows = state.isMobile ? rows : rows.slice(0, 3);
+  let activeRowCount = activeRows.length;
+
+  activeRows.forEach(function (row, ri) {
+    let imgs = Array.from(row.querySelectorAll('img'));
+    if (imgs.length === 0) return;
+
+    let halfCount = Math.floor(imgs.length / 2);
+    let w = 0;
+    for (let i = 0; i < halfCount; i++) w += (imgs[i].offsetWidth || 220) + 10;
+
+    let oldSetWidth = rowState[ri].setWidth;
+    let newSetWidth = w > 0 ? w : halfCount * 230;
+
+    rowState[ri].setWidth = newSetWidth;
+
+    if (newSetWidth > 0 && oldSetWidth > 0) {
+      let pct = rowState[ri].offset / oldSetWidth;
+      rowState[ri].offset = pct * newSetWidth;
+    } else {
+      if (ROW_CONFIG[ri].dir === 1) rowState[ri].offset = -newSetWidth;
+    }
+  });
+
+  rowState.forEach(function (st, idx) {
+    if (idx >= activeRowCount) {
+      st.offset = 0;
+      st.setWidth = 0;
+    }
+  });
+}

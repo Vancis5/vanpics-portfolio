@@ -128,7 +128,7 @@ export function setLightboxBlur(src) {
   let outgoing = activeBlurLayer;
   let incoming = outgoing === layerA ? layerB : layerA;
 
-  let inner = incoming.querySelector('.lightbox-bg-blur-inner');
+  let inners = incoming.querySelectorAll('.lightbox-bg-blur-inner');
 
   function doSwap() {
     if (token !== blurToken) return; // Stale request, abort
@@ -142,9 +142,9 @@ export function setLightboxBlur(src) {
     void incoming.offsetWidth;
 
     // 1. Load image onto the hidden (incoming) layer while it's still at opacity:0
-    if (inner) {
+    inners.forEach(function (inner) {
       inner.style.backgroundImage = 'url(' + blurPath + ')';
-    }
+    });
 
     if (incoming.parentNode) incoming.parentNode.appendChild(incoming);
 
@@ -1099,12 +1099,14 @@ function handleLightboxBlur() {
     // Physically freeze all active CSS animations on the blur layers
     [domRefs.blurLayerA, domRefs.blurLayerB].forEach(function (layer) {
       if (!layer) return;
-      let inner = layer.querySelector('.lightbox-bg-blur-inner');
-      if (inner && typeof inner.getAnimations === 'function') {
-        inner.getAnimations().forEach(function (anim) {
-          anim.pause();
-        });
-      }
+      let inners = layer.querySelectorAll('.lightbox-bg-blur-inner');
+      inners.forEach(function (inner) {
+        if (inner && typeof inner.getAnimations === 'function') {
+          inner.getAnimations().forEach(function (anim) {
+            anim.pause();
+          });
+        }
+      });
     });
     
     let video = domRefs.motionPlayerShell ? domRefs.motionPlayerShell.querySelector('video') : null;
@@ -1122,12 +1124,14 @@ function handleLightboxFocus() {
     // Resume all CSS animations from the exact frozen frame
     [domRefs.blurLayerA, domRefs.blurLayerB].forEach(function (layer) {
       if (!layer) return;
-      let inner = layer.querySelector('.lightbox-bg-blur-inner');
-      if (inner && typeof inner.getAnimations === 'function') {
-        inner.getAnimations().forEach(function (anim) {
-          anim.play();
-        });
-      }
+      let inners = layer.querySelectorAll('.lightbox-bg-blur-inner');
+      inners.forEach(function (inner) {
+        if (inner && typeof inner.getAnimations === 'function') {
+          inner.getAnimations().forEach(function (anim) {
+            anim.play();
+          });
+        }
+      });
     });
     
     let video = domRefs.motionPlayerShell ? domRefs.motionPlayerShell.querySelector('video') : null;
