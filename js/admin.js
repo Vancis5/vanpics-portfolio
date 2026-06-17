@@ -1249,7 +1249,7 @@ if (form) {
       showToast('server connection failed', 'error');
     } finally {
       submitBtn.disabled = false;
-      submitBtnText.innerText = 'catalog and upload';
+      submitBtnText.innerText = 'upload';
     }
   });
 }

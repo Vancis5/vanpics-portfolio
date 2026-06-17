@@ -341,18 +341,11 @@
 
     /* Unified Control Panel (Search & Filter Bar) */
     .control-panel {
-      background: var(--surface);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem 1.75rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
 
     .search-filter-group {
@@ -659,7 +652,7 @@
     .modal-wrapper {
       background: #0f0e0e;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 16px;
       width: 100%;
       max-width: 680px;
       max-height: 90vh;
@@ -679,8 +672,7 @@
     }
 
     .modal-header {
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid var(--border);
+      padding: 2rem 2rem 0.75rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -719,7 +711,7 @@
     }
 
     .modal-body {
-      padding: 1.5rem;
+      padding: 0 2rem 2rem 2rem;
       overflow-y: auto;
       /* Handle all modal scrolling with custom scrollbar */
       flex-grow: 1;
@@ -1210,9 +1202,8 @@
       .control-panel {
         flex-direction: column;
         align-items: stretch;
-        padding: 1rem;
+        padding: 0;
         gap: 0.75rem;
-        border-radius: 8px;
       }
 
       .search-filter-group {
@@ -1352,11 +1343,12 @@
       }
 
       .modal-header {
-        padding: 1rem 1.25rem !important;
+        padding: 1.5rem 1.25rem 0.5rem 1.25rem !important;
+        border-bottom: none !important;
       }
 
       .modal-body {
-        padding: 1.25rem !important;
+        padding: 0 1.25rem 1.25rem 1.25rem !important;
       }
 
       .drop-zone-grid {
