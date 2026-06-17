@@ -136,7 +136,7 @@ if (state.isMobile) {
         let info = domRefs.lightboxInfo;
         // Animate OLD text gracefully exiting and trigger the massive BG blur crossfade immediately
         let finalP = state.activePhotos[idx];
-        setLightboxBlur(finalP.blur || finalP.src);
+        setLightboxBlur(finalP.thumb || finalP.src);
 
         if (info) {
           info.style.transition = 'opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease';
@@ -262,7 +262,7 @@ if (state.isMobile) {
         let p = state.activePhotos[state.cur];
 
         // blur bg crossfade immediately
-        setLightboxBlur(p.blur || p.src);
+        setLightboxBlur(p.thumb || p.src);
 
         setLightboxContent(p);
         showFilmstripIfReady();
