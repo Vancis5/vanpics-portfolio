@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vanilla Kawase Blur</title>
+<style>
+  body { margin: 0; background: #111; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; color: #eee; gap: 12px; padding: 20px; }
+  canvas { border: 1px solid #444; max-width: 90vw; }
+  label { display: flex; gap: 8px; align-items: center; }
+  input[type="file"] { color: #eee; }
+</style>
+</head>
+<body>
+
+<label>Image: <input type="file" id="fileInput" accept="image/*"></label>
+<label>Passes: <input type="range" id="passes" min="0" max="8" value="5"><span id="passesVal">5</span></label>
+<label>Base offset: <input type="range" id="offset" min="0.5" max="4" step="0.5" value="1"><span id="offsetVal">1</span></label>
+
+<canvas id="canvas" width="800" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const gl = canvas.getContext('webgl');
+if (!gl) alert('WebGL not supported');
+
+// ---------- Shader sources ----------
+
+const vertSrc = `
+attribute vec2 aPosition;
+attribute vec2 aTexCoord;
+varying vec2 vUv;
+void main() {
+  vUv = aTexCoord;
+  gl_Position = vec4(aPosition, 0.0, 1.0);
+}
+`;
+
+// Plain passthrough, used for the very first upload-to-texture step
+const fragCopySrc = `
+precision mediump float;
+uniform sampler2D uTexture;
+varying vec2 vUv;
+void main() {
+  gl_FragColor = texture2D(uTexture, vUv);
+}
+`;
+
+// Kawase blur pass: 4 diagonal samples offset by uOffset texels
+const fragKawaseSrc = `
+precision mediump float;
+uniform sampler2D uTexture;
+uniform vec2 uTexelSize;
+uniform float uOffset;
+varying vec2 vUv;
+void main() {
+  vec2 o = uOffset * uTexelSize;
+  vec4 sum = vec4(0.0);
+  sum += texture2D(uTexture, vUv + vec2( o.x,  o.y));
+  sum += texture2D(uTexture, vUv + vec2(-o.x,  o.y));
+  sum += texture2D(uTexture, vUv + vec2( o.x, -o.y));
+  sum += texture2D(uTexture, vUv + vec2(-o.x, -o.y));
+  gl_FragColor = sum * 0.25;
+}
+`;
+
+// ---------- Shader / program helpers ----------
+
+function compileShader(type, src) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, src);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(shader));
+    throw new Error('Shader compile failed');
+  }
+  return shader;
+}
+
+function createProgram(vertSrc, fragSrc) {
+  const program = gl.createProgram();
+  gl.attachShader(program, compileShader(gl.VERTEX_SHADER, vertSrc));
+  gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fragSrc));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(program));
+    throw new Error('Program link failed');
+  }
+  return program;
+}
+
+const copyProgram = createProgram(vertSrc, fragCopySrc);
+const kawaseProgram = createProgram(vertSrc, fragKawaseSrc);
+
+// ---------- Fullscreen quad geometry ----------
+// Two triangles covering -1..1, with matching UVs 0..1 (flip Y since image data is top-down)
+
+const quadVerts = new Float32Array([
+  // x, y,    u, v
+  -1, -1,   0, 1,
+   1, -1,   1, 1,
+  -1,  1,   0, 0,
+  -1,  1,   0, 0,
+   1, -1,   1, 1,
+   1,  1,   1, 0,
+]);
+
+const quadBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, quadVerts, gl.STATIC_DRAW);
+
+function bindQuadAttributes(program) {
+  const stride = 4 * 4; // 4 floats per vertex, 4 bytes each
+  const posLoc = gl.getAttribLocation(program, 'aPosition');
+  const uvLoc = gl.getAttribLocation(program, 'aTexCoord');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, stride, 0);
+  gl.enableVertexAttribArray(uvLoc);
+  gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, stride, 2 * 4);
+}
+
+// ---------- Framebuffer / texture helpers ----------
+
+function createTexture(width, height) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  return tex;
+}
+
+function createFramebuffer(texture) {
+  const fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return fb;
+}
+
+let pingTex, pongTex, pingFB, pongFB, sourceTex;
+let width = canvas.width, height = canvas.height;
+
+function setupBuffers(w, h) {
+  width = w;
+  height = h;
+  canvas.width = w;
+  canvas.height = h;
+
+  pingTex = createTexture(w, h);
+  pongTex = createTexture(w, h);
+  pingFB = createFramebuffer(pingTex);
+  pongFB = createFramebuffer(pongTex);
+}
+
+// ---------- Drawing a single fullscreen pass ----------
+
+function drawPass(program, inputTexture, targetFB, uniformSetup) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, targetFB); // null = draw to screen
+  gl.viewport(0, 0, width, height);
+  gl.useProgram(program);
+  bindQuadAttributes(program);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+  gl.uniform1i(gl.getUniformLocation(program, 'uTexture'), 0);
+
+  if (uniformSetup) uniformSetup(program);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+// ---------- Main render: load source image, run N Kawase passes, show result ----------
+
+function render(passCount, baseOffset) {
+  // Step 1: copy the source image texture into "ping"
+  drawPass(copyProgram, sourceTex, pingFB);
+
+  let readTex = pingTex;
+  let readFB = pingFB;
+  let writeTex = pongTex;
+  let writeFB = pongFB;
+
+  // Step 2: run Kawase passes, ping-ponging between the two framebuffers
+  // Offset grows each pass -- this is the standard Kawase progression
+  for (let i = 0; i < passCount; i++) {
+    const offset = baseOffset + i; // e.g. 1, 2, 3, 4, 5 for baseOffset=1
+    drawPass(kawaseProgram, readTex, writeFB, (program) => {
+      gl.uniform2f(gl.getUniformLocation(program, 'uTexelSize'), 1 / width, 1 / height);
+      gl.uniform1f(gl.getUniformLocation(program, 'uOffset'), offset);
+    });
+    // swap for next iteration
+    [readTex, writeTex] = [writeTex, readTex];
+    [readFB, writeFB] = [writeFB, readFB];
+  }
+
+  // Step 3: draw final result to the actual screen (target FB = null)
+  drawPass(copyProgram, readTex, null);
+}
+
+// ---------- Image loading ----------
+
+function loadImage(url) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const w = Math.min(img.width, 1200);
+    const h = Math.round(w * (img.height / img.width));
+    setupBuffers(w, h);
+
+    sourceTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+    rerender();
+  };
+  img.src = url;
+}
+
+// ---------- UI wiring ----------
+
+const passesSlider = document.getElementById('passes');
+const offsetSlider = document.getElementById('offset');
+const passesVal = document.getElementById('passesVal');
+const offsetVal = document.getElementById('offsetVal');
+
+function rerender() {
+  if (!sourceTex) return;
+  render(parseInt(passesSlider.value), parseFloat(offsetSlider.value));
+}
+
+passesSlider.addEventListener('input', () => {
+  passesVal.textContent = passesSlider.value;
+  rerender();
+});
+offsetSlider.addEventListener('input', () => {
+  offsetVal.textContent = offsetSlider.value;
+  rerender();
+});
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) loadImage(URL.createObjectURL(file));
+});
+
+// Default placeholder image so it's not blank on load
+loadImage('https://picsum.photos/800/600');
+</script>
+</body>
+</html>

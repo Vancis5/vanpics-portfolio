@@ -998,23 +998,26 @@ body::after {
 
 .lightbox-bg-blur {
   position: fixed;
-  inset: calc(-1 * var(--liquid-edge-bleed));
+  width: 15vw;
+  height: 15vh;
+  left: 42.5vw;
+  top: 42.5vh;
   z-index: -1;
-  transform: scale(1.12) translate3d(0, 0, 0);
+  transform: scale(7.47) translate3d(0, 0, 0);
   opacity: 0;
   transition: opacity 2.2s cubic-bezier(0.15, 1, 0.4, 1);
   pointer-events: none;
-  filter: blur(65px) brightness(0.24) saturate(0.9);
+  filter: blur(10px) brightness(0.24) saturate(1.8);
   will-change: opacity, transform;
 }
 
-.lightbox-bg-blur::after {
+#lightbox::before {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: radial-gradient(circle at center, rgba(13, 12, 12, 0.15) 0%, rgba(13, 12, 12, 0.8) 100%);
   pointer-events: none;
-  z-index: 5;
+  z-index: 0;
 }
 
 .lightbox-bg-blur.active {
