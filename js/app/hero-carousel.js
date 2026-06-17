@@ -86,6 +86,7 @@ export function buildCarousel() {
   state.carouselPhotos.forEach(function (p, i) { groups[i % activeRowCount].push(p); });
 
   let eagerImgs = [];
+  let criticalImgs = [];
 
   activeRows.forEach(function (row, ri) {
     // Add event listeners for mouse/touch down
@@ -113,7 +114,7 @@ export function buildCarousel() {
     let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
 
     for (let c = 0; c < copies * 2; c++) {
-      group.forEach(function (p) {
+      group.forEach(function (p, pi) {
         let img = document.createElement('img');
         let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
@@ -124,6 +125,9 @@ export function buildCarousel() {
           img.addEventListener('load', function () { img.style.opacity = '1'; });
           img.addEventListener('error', function () { img.style.opacity = '1'; });
           eagerImgs.push(img);
+          if (pi === 0) {
+            criticalImgs.push(img);
+          }
         } else {
           img.loading = 'lazy';
         }
@@ -174,8 +178,10 @@ export function buildCarousel() {
     return;
   }
 
-  Promise.all(eagerImgs.map(function (img) {
-    return waitForDecodedImage(img, 1800);
+  const imgsToWaitFor = criticalImgs.length > 0 ? criticalImgs : eagerImgs;
+
+  Promise.all(imgsToWaitFor.map(function (img) {
+    return waitForDecodedImage(img, 1200);
   })).then(finishCarouselReady);
 }
 

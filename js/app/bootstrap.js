@@ -175,10 +175,9 @@ function applyCarouselPhotos(photos) {
 }
 
 function getStartupImageUrls(photos) {
-  return Array.from(new Set([
-    ...photos.slice(0, 8).map(p => p.thumb || p.src),
-    ...photos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src)
-  ].filter(Boolean)));
+  return Array.from(new Set(
+    photos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src).filter(Boolean)
+  ));
 }
 
 function decodeImageUrl(url, timeoutMs) {
@@ -238,7 +237,7 @@ function renderUI(photos, videos) {
     if (raw) {
       const { photos, videos } = JSON.parse(raw);
       if (Array.isArray(photos) && photos.length > 0) {
-        await warmStartupImages(photos);
+        warmStartupImages(photos).catch(function() {});
         renderUI(photos, videos || []);
         renderedFromCache = true;
         // Carousel readiness lifts the curtain after the first hero thumbnails decode.
