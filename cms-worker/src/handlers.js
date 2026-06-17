@@ -231,12 +231,12 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'photo not found', 404);
   }
 
-  const keysToDelete = [
+  const keysToDelete = [...new Set([
     mediaKey(photo.src),
     mediaKey(photo.thumb),
     mediaKey(photo.blur),
     photo.thumb ? mediaKey(photo.thumb).replace('thumbs/', 'mini/') : null
-  ].filter(Boolean);
+  ].filter(Boolean))];
   if (keysToDelete.length > 0) {
     await env.MEDIA_BUCKET.delete(keysToDelete);
   }
@@ -273,10 +273,9 @@ export async function uploadPhoto(request, env) {
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
   const miniFile = formData.get('mini');
-  const blurFile = formData.get('blur');
   const { data, errors } = validatePhotoFields(formData);
 
-  if (!isFileLike(photoFile, 'image/') || !isFileLike(thumbFile, 'image/') || !isFileLike(blurFile, 'image/')) {
+  if (!isFileLike(photoFile, 'image/') || !isFileLike(thumbFile, 'image/')) {
     errors.push('missing processed image assets');
   }
 
@@ -284,7 +283,6 @@ export async function uploadPhoto(request, env) {
   if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (miniFile?.size > MAX_IMAGE_SIZE) errors.push(`mini thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
-  if (blurFile?.size > MAX_IMAGE_SIZE) errors.push(`blur exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
@@ -292,7 +290,6 @@ export async function uploadPhoto(request, env) {
 
   const photoKey = makeMediaKey('photos', 'webp');
   const thumbKey = makeMediaKey('thumbs', 'webp');
-  const blurKey = makeMediaKey('blur', 'webp');
   const miniKey = thumbKey.replace('thumbs/', 'mini/');
 
   const puts = [
@@ -300,9 +297,6 @@ export async function uploadPhoto(request, env) {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
     env.MEDIA_BUCKET.put(thumbKey, await thumbFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
-    env.MEDIA_BUCKET.put(blurKey, await blurFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
   ];
@@ -323,7 +317,7 @@ export async function uploadPhoto(request, env) {
       data.title,
       photoKey,
       thumbKey,
-      blurKey,
+      thumbKey,
       data.aspectRatio,
       data.category,
       data.location,
@@ -625,11 +619,10 @@ export async function replacePhotoFile(request, env, params) {
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
   const miniFile = formData.get('mini');
-  const blurFile = formData.get('blur');
   const aspectRatio = parseFloat(formData.get('aspectRatio'));
 
   const errors = [];
-  if (!photoFile || !thumbFile || !blurFile) {
+  if (!photoFile || !thumbFile) {
     errors.push('missing processed image assets');
   }
   if (isNaN(aspectRatio)) {
@@ -642,7 +635,7 @@ export async function replacePhotoFile(request, env, params) {
 
   // 1. Get the existing keys from D1
   const photo = await env.DB.prepare(
-    'SELECT src, thumb, blur FROM photos WHERE id = ?'
+    'SELECT src, thumb FROM photos WHERE id = ?'
   ).bind(photoId).first();
 
   if (!photo) {
@@ -655,9 +648,6 @@ export async function replacePhotoFile(request, env, params) {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
     env.MEDIA_BUCKET.put(photo.thumb, await thumbFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
-    env.MEDIA_BUCKET.put(photo.blur, await blurFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
   ];
@@ -691,6 +681,4 @@ export async function replacePhotoFile(request, env, params) {
 
   return jsonResponse(request, env, { success: true });
 }
-
-
 

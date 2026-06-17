@@ -26,10 +26,7 @@ VANPICS — PORTFOLIO UTILITY COMMANDS
      (Scans your photos and adds / updates 'aspectRatio' in js/data/photos.js to kill CLS)
 
    - node scripts/generate-thumbs.js
-     (Generates thumbnails and blur placeholders for the gallery and lightbox)
-
-   - node scripts/generate-blur.js
-     (Standalone script to regenerate only the blurred background assets)
+     (Generates thumbnails for the gallery, filmstrip, and lightbox blur)
 
 
 3. BROWSER UTILS

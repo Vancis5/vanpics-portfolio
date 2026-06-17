@@ -18,8 +18,7 @@
     "sort": "node scripts/sort-photos.js",
     "add-ratios": "node scripts/add-ratios.js",
     "generate-photos": "node scripts/generate-photos.js",
-    "generate-thumbs": "node scripts/generate-thumbs.js",
-    "generate-blur": "node scripts/generate-blur.js"
+    "generate-thumbs": "node scripts/generate-thumbs.js"
   },
   "dependencies": {
     "lenis": "^1.3.23"

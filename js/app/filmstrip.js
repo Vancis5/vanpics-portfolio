@@ -60,6 +60,12 @@ export function buildFilmstrip() {
     img.src = thumbPath;
     img.alt = p.title;
     img.loading = 'lazy';
+    if (img.complete && img.naturalWidth > 0) {
+      requestAnimationFrame(function () { img.classList.add('media-loaded'); });
+    } else {
+      img.addEventListener('load', function () { img.classList.add('media-loaded'); }, { once: true });
+      img.addEventListener('error', function () { img.classList.add('media-loaded'); }, { once: true });
+    }
     thumb.appendChild(img);
     thumb.addEventListener('click', (function (idx) {
       return function () {
