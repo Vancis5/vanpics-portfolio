@@ -200,14 +200,29 @@ export function buildCarousel() {
   })).then(finishCarouselReady);
 }
 
-export function tick() {
+let lastTime = 0;
+
+export function tick(timestamp) {
   try {
-    if (!state.heroVisible || !state.pageVisible) { state.heroRafId = null; return; }
+    if (!state.heroVisible || !state.pageVisible) {
+      state.heroRafId = null;
+      lastTime = 0;
+      return;
+    }
+
+    if (!timestamp) timestamp = performance.now();
+    if (!lastTime) lastTime = timestamp;
+
+    let dt = timestamp - lastTime;
+    lastTime = timestamp;
+
+    if (dt > 100) dt = 16.67;
+    let frameScale = dt / 16.67;
     let rows = state.isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
 
     const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
-    let speed = isLifting ? getCurrentSpeed(easeFrame) : 0;
-    if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame++;
+    let speed = (isLifting ? getCurrentSpeed(easeFrame) : 0) * frameScale;
+    if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame += frameScale;
 
     let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22, -state.heroScrollY * 0.15];
 

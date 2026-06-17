@@ -1173,6 +1173,7 @@ body::after {
   max-height: 44svh;
   object-fit: contain;
   border-radius: 3px;
+  border: 2px solid rgba(242, 238, 231, 0.06);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform, opacity;
 }
