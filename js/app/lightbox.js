@@ -163,8 +163,17 @@ function initWebGLBlur() {
     precision mediump float;
     uniform sampler2D uTexture;
     varying vec2 vUv;
+
+    // Pseudo-random noise generator for spatial dithering
+    float random(vec2 coords) {
+      return fract(sin(dot(coords.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
     void main() {
-      gl_FragColor = texture2D(uTexture, vUv);
+      vec4 color = texture2D(uTexture, vUv);
+      // Introduce microscopic dither noise (approx 1.5 steps in 8-bit scale) to shatter color bands
+      float noise = (random(vUv) - 0.5) * (1.5 / 255.0);
+      gl_FragColor = vec4(color.rgb + noise, color.a);
     }
   `;
 
@@ -300,7 +309,8 @@ function runKawaseBlurWebGL(img) {
 
   drawGLPass(copyProgram, readTex, null);
 
-  return glCanvas.toDataURL('image/jpeg', 0.85);
+  // Export as lossless PNG to protect the dither pattern from compression artifacts
+  return glCanvas.toDataURL();
 }
 
 function applyKawaseBlurToImage(img) {
