@@ -851,6 +851,7 @@ export function closeLightbox(eventOrIsKeyboard = false) {
 
   let lb = domRefs.lightbox;
   if (!lb.classList.contains('open')) return;
+  lb.classList.remove('window-blurred');
 
   let header = domRefs.galleryHeader;
   let masonry = domRefs.masonry;
@@ -1090,3 +1091,60 @@ document.addEventListener('keydown', function (e) {
 
 // desktop: click bg to close
 if (!state.isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);
+
+function handleLightboxBlur() {
+  if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
+    domRefs.lightbox.classList.add('window-blurred');
+    
+    // Physically freeze all active CSS animations on the blur layers
+    [domRefs.blurLayerA, domRefs.blurLayerB].forEach(function (layer) {
+      if (!layer) return;
+      let inner = layer.querySelector('.lightbox-bg-blur-inner');
+      if (inner && typeof inner.getAnimations === 'function') {
+        inner.getAnimations().forEach(function (anim) {
+          anim.pause();
+        });
+      }
+    });
+    
+    let video = domRefs.motionPlayerShell ? domRefs.motionPlayerShell.querySelector('video') : null;
+    if (video && !video.paused) {
+      video.pause();
+      video.dataset.wasPlaying = 'true';
+    }
+  }
+}
+
+function handleLightboxFocus() {
+  if (domRefs.lightbox) {
+    domRefs.lightbox.classList.remove('window-blurred');
+    
+    // Resume all CSS animations from the exact frozen frame
+    [domRefs.blurLayerA, domRefs.blurLayerB].forEach(function (layer) {
+      if (!layer) return;
+      let inner = layer.querySelector('.lightbox-bg-blur-inner');
+      if (inner && typeof inner.getAnimations === 'function') {
+        inner.getAnimations().forEach(function (anim) {
+          anim.play();
+        });
+      }
+    });
+    
+    let video = domRefs.motionPlayerShell ? domRefs.motionPlayerShell.querySelector('video') : null;
+    if (video && video.dataset.wasPlaying === 'true') {
+      video.play().catch(function () {});
+      delete video.dataset.wasPlaying;
+    }
+  }
+}
+
+window.addEventListener('blur', handleLightboxBlur);
+window.addEventListener('focus', handleLightboxFocus);
+
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) {
+    handleLightboxBlur();
+  } else {
+    handleLightboxFocus();
+  }
+});

@@ -1011,6 +1011,14 @@ body::after {
   opacity: 1;
 }
 
+/* window out-of-focus states: fade out bg and stop animation */
+#lightbox.window-blurred .lightbox-bg-blur {
+  opacity: 0 !important;
+  transition: opacity 1.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+
+
 .lightbox-bg-blur-inner {
   position: absolute;
   inset: -30%;
