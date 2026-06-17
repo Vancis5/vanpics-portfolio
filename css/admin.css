@@ -96,7 +96,7 @@
     header {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 2rem 2rem 1.75rem 2rem;
+      padding: 2rem 2rem 0.5rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -334,7 +334,7 @@
     /* Workspace Dashboard Layout */
     main {
       max-width: 1400px;
-      margin: 1.5rem auto 4rem auto;
+      margin: 0.5rem auto 4rem auto;
       padding: 0 2rem;
     }
 
@@ -1187,7 +1187,7 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
-        padding: 1.25rem 1rem;
+        padding: 1.25rem 1rem 0.25rem 1rem;
       }
 
       .logo-area h1 {
@@ -1214,7 +1214,7 @@
 
       main {
         padding: 0 1rem;
-        margin: 1.25rem auto;
+        margin: 0.5rem auto;
       }
 
       .control-panel {

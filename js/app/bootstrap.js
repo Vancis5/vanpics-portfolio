@@ -70,6 +70,8 @@ window.addEventListener('resize', function () {
 
   clearTimeout(_masonryResizeTimer);
   _masonryResizeTimer = setTimeout(function () {
+    state.isMobile = window.matchMedia('(hover: none)').matches;
+    buildCarousel();
     buildMasonry();
   }, MASONRY_CONFIG.resizeDebounce);
 });

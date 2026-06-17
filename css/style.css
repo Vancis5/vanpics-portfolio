@@ -265,7 +265,7 @@ body::after {
 }
 
 .carousel-row img {
-  height: 22vh;
+  height: calc((100svh - 16px) / 3);
   min-height: 120px;
   width: auto;
   object-fit: cover;
@@ -289,7 +289,7 @@ body::after {
 /* mobile: 4 rows fill screen */
 @media (hover: none) and (max-width: 639px) {
   .carousel-row img {
-    height: 21vh;
+    height: calc((100svh - 18px) / 4);
     min-height: 110px;
   }
 
@@ -300,15 +300,15 @@ body::after {
 
 @media (min-width: 500px) {
   .carousel-row img {
-    height: 28vh;
+    height: calc((100svh - 16px) / 3);
     min-height: 160px;
   }
 }
 
 @media (min-width: 1024px) {
   .carousel-row img {
-    height: 255px;
-    min-height: 255px;
+    height: calc((100svh - 16px) / 3);
+    min-height: 200px;
   }
 }
 
@@ -412,7 +412,7 @@ body::after {
 /* GALLERY */
 #gallery-section {
   position: relative;
-  padding: 3.5rem 1.25rem 6rem;
+  padding: 1.5rem 1.25rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
@@ -421,13 +421,13 @@ body::after {
 
 @media (min-width: 640px) {
   #gallery-section {
-    padding: 4.5rem 1.75rem 7rem;
+    padding: 2rem 1.75rem 7rem;
   }
 }
 
 @media (min-width: 1024px) {
   #gallery-section {
-    padding: 5rem 2rem 8rem;
+    padding: 2.25rem 2rem 8rem;
   }
 }
 
@@ -1016,23 +1016,41 @@ body::after {
   inset: -30%;
   background-size: cover;
   background-position: center;
-  filter: blur(50px) brightness(0.22) saturate(0.75);
-  animation: slow-liquid-flow 45s linear infinite;
-  will-change: transform;
+  filter: blur(50px) brightness(0.22) saturate(0.85);
+  animation:
+    slow-liquid-flow 45s linear infinite,
+    blur-pulse 8s ease-in-out infinite;
+  animation-direction: var(--blur-dir, normal), normal;
+  will-change: transform, opacity;
 }
 
 @keyframes slow-liquid-flow {
   0% {
     transform: rotate(0deg) scale(1.3) translate3d(0, 0, 0);
   }
+
   33% {
     transform: rotate(120deg) scale(1.4) translate3d(-3%, 2%, 0);
   }
+
   66% {
     transform: rotate(240deg) scale(1.3) translate3d(2%, -3%, 0);
   }
+
   100% {
     transform: rotate(360deg) scale(1.3) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes blur-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -2070,18 +2088,18 @@ body.lightbox-open.gallery-header-stuck #gallery-header {
 
 /* Maintain the vertical gap to prevent page jump underneath */
 body.lightbox-open.gallery-header-stuck #gallery-section {
-  padding-top: calc(3.5rem + 3.1rem + var(--safe-top, 0px)) !important;
+  padding-top: calc(1.5rem + 3.1rem + var(--safe-top, 0px)) !important;
 }
 
 @media (min-width: 640px) {
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(4.5rem + 4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: calc(2rem + 4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(5rem + 4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: calc(2.25rem + 4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
