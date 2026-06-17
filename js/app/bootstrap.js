@@ -5,7 +5,7 @@ import { getInternalCategory, motionProjects, updateMediaLibrary } from './media
 import { slugify } from './utils.js';
 import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
 import { buildMasonry, initFilters, rebuildGallery } from './gallery.js';
-import { buildCarousel, setCarouselReadyCallback, tick } from './hero-carousel.js';
+import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick } from './hero-carousel.js';
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 
@@ -70,8 +70,13 @@ window.addEventListener('resize', function () {
 
   clearTimeout(_masonryResizeTimer);
   _masonryResizeTimer = setTimeout(function () {
+    const oldIsMobile = state.isMobile;
     state.isMobile = window.matchMedia('(hover: none)').matches;
-    buildCarousel();
+    if (state.isMobile !== oldIsMobile) {
+      buildCarousel();
+    } else {
+      recalculateCarouselLayout();
+    }
     buildMasonry();
   }, MASONRY_CONFIG.resizeDebounce);
 });
