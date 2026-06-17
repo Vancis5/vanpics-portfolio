@@ -601,8 +601,8 @@ export function buildMasonry(category) {
 
     imgEl.src = thumbPath;
     imgEl.alt = p.title || "video";
-    imgEl.loading = i < 8 ? 'eager' : 'lazy';
-    imgEl.decoding = i < 8 ? 'sync' : 'async';
+    imgEl.loading = i < 4 ? 'eager' : 'lazy';
+    imgEl.decoding = 'async';
 
     let r = parseFloat(p.aspectRatio || ratioCache[basePath] || 1);
     imgEl.style.aspectRatio = r;
