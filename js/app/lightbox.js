@@ -340,32 +340,29 @@ function updateDynamicTextColor(p) {
     return;
   }
 
-  const img = state.isMobile
-    ? (domRefs.lightboxImgWrap ? domRefs.lightboxImgWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') : null)
-    : domRefs.lightboxImg;
-
-  if (!img) {
+  const thumbSrc = p.thumb || p.src;
+  if (!thumbSrc) {
     resetDynamicTextColor();
     return;
   }
 
-
+  const cached = _cacheImage(thumbSrc);
+  if (!cached) {
+    resetDynamicTextColor();
+    return;
+  }
 
   function processColor() {
     // Verify that we are still displaying the same photo
-    if (state.isMobile) {
-      const parentSlide = img.closest('.snap-slide');
-      if (parentSlide && parseInt(parentSlide.dataset.idx) !== state.cur) return;
-    } else {
-      if (!img.src || (p && !img.src.includes(p.src))) return;
-    }
+    const currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
+    if (!currentSet || currentSet[state.cur] !== p) return;
 
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 10;
       canvas.height = 10;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 10, 10);
+      ctx.drawImage(cached.img, 0, 0, 10, 10);
       const imgData = ctx.getImageData(0, 0, 10, 10).data;
 
       let rSum = 0, gSum = 0, bSum = 0, count = 0;
@@ -410,20 +407,18 @@ function updateDynamicTextColor(p) {
     }
   }
 
-  if (img.complete && img.naturalWidth > 0) {
-    // If already complete, defer execution slightly so we never block active transitions
-    setTimeout(processColor, 350);
+  if (cached.decoded) {
+    processColor();
+  } else if (cached.decodePromise) {
+    cached.decodePromise.then(processColor);
   } else {
-    img.addEventListener('load', function onImgLoad() {
-      img.removeEventListener('load', onImgLoad);
-      // Wait for the slide transition to fully finish before decoding on the main thread
-      setTimeout(function () {
-        if (img.decode) {
-          img.decode().then(processColor).catch(processColor);
-        } else {
-          processColor();
-        }
-      }, 350);
+    cached.img.addEventListener('load', function onLoad() {
+      cached.img.removeEventListener('load', onLoad);
+      processColor();
+    });
+    cached.img.addEventListener('error', function onError() {
+      cached.img.removeEventListener('error', onError);
+      resetDynamicTextColor();
     });
   }
 }
