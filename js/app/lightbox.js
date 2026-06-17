@@ -58,8 +58,7 @@ function _cacheImage(src) {
 
 function getLightboxBlurPath(src) {
   if (!src) return '';
-  if (src.includes('/blur/') || src.includes('photos/blur/')) return src;
-  return src.replace('photos/', 'photos/blur/').replace('thumbs/', '');
+  return src;
 }
 
 function easeBlurFade(t) {
@@ -77,7 +76,7 @@ export function preloadLightboxBlurNeighbors(centerIndex, range) {
   for (let offset = -preloadRange; offset <= preloadRange; offset++) {
     let p = currentSet[(centerIndex + offset + len) % len];
     if (!p) continue;
-    let bSrc = p.blur || p.thumb || p.src;
+    let bSrc = p.thumb || p.src;
     if (bSrc) _cacheImage(getLightboxBlurPath(bSrc));
   }
 }
@@ -222,23 +221,8 @@ export function setLightboxBlur(src) {
     });
   }
 
-  // ── Cache hit: if the blur image is already decoded, swap instantly ──
-  const cached = _imgCache.get(blurPath);
-  if (cached && cached.decoded) {
-    doSwap();
-    return;
-  }
-
-  // ── Cache miss: wait for decoding before swapping to avoid white/empty flash ──
-  let img = new Image();
-  img.src = blurPath;
-
-  if (img.decode) {
-    img.decode().then(doSwap).catch(doSwap);
-  } else {
-    img.onload = doSwap;
-    img.onerror = doSwap;
-  }
+  _cacheImage(blurPath);
+  doSwap();
 }
 
 function clearLightboxPhotoPlaceholder(expectedToken) {
@@ -736,7 +720,7 @@ export function openLightbox(i, direction, isMotion) {
       playerShell.style.opacity = '0';
 
       // Start the new media immediately instead of waiting for decode.
-      let bSrc = isMotion ? p.thumb : (p.blur || p.thumb || p.src);
+      let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) {
@@ -861,7 +845,7 @@ export function openLightbox(i, direction, isMotion) {
         img.onerror = null;
       }
 
-      let bSrc = isMotion ? p.thumb : (p.blur || p.thumb || p.src);
+      let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) loadSwipeNeighbors();
@@ -1129,7 +1113,7 @@ export function loadSwipeNeighbors() {
   [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
     if (p) {
-      let bSrc = p.blur || p.thumb || p.src;
+      let bSrc = p.thumb || p.src;
       if (bSrc) {
         _cacheImage(getLightboxBlurPath(bSrc));
       }
