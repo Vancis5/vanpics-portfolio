@@ -36,7 +36,7 @@ async function main() {
       const srcKey = p.src;
       const baseFilename = srcKey.replace(/^photos\//, '');
       const thumbKey = `thumbs/${baseFilename}`;
-      const blurKey = `blur/${baseFilename}`;
+      const blurKey = thumbKey;
 
       const title = escapeSql(p.title);
       const src = escapeSql(srcKey);

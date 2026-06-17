@@ -57,7 +57,6 @@ const searchInput = document.getElementById('dashboard-search');
 let processedEditPhotoBlob = null;
 let processedEditThumbBlob = null;
 let processedEditMiniBlob = null;
-let processedEditBlurBlob = null;
 let computedEditAspectRatio = null;
 
 // Restore cached search and filter parameters on load
@@ -149,7 +148,7 @@ let computedAspectRatio = 1.0;
 let processedPhotoBlob = null;
 let processedThumbBlob = null;
 let processedMiniBlob = null;
-let processedBlurBlob = null;
+
 
 let processedVideoBlob = null;
 let processedPosterBlob = null;
@@ -664,7 +663,7 @@ setupDropzone(dropZonePoster, fileInputPoster, 'poster', previewContainerPoster,
 
 function checkFormState() {
   if (currentMode === 'photo') {
-    const ok = selectedFile && processedPhotoBlob && processedThumbBlob && processedMiniBlob && processedBlurBlob;
+    const ok = selectedFile && processedPhotoBlob && processedThumbBlob && processedMiniBlob;
     submitBtn.disabled = !ok;
   } else {
     const ok = selectedVideoFile && selectedPosterFile && processedVideoBlob && processedPosterBlob;
@@ -680,7 +679,6 @@ function resetFileSelection() {
   processedPhotoBlob = null;
   processedThumbBlob = null;
   processedMiniBlob = null;
-  processedBlurBlob = null;
   processedVideoBlob = null;
   processedPosterBlob = null;
 
@@ -717,7 +715,7 @@ function resetSpecificFile(type, input, previewContainer, previewEl) {
     processedPhotoBlob = null;
     processedThumbBlob = null;
     processedMiniBlob = null;
-    processedBlurBlob = null;
+
   }
   checkFormState();
   if (pipelineStatus) pipelineStatus.style.display = 'none';
@@ -840,7 +838,6 @@ async function processImagePipeline(imgSrc) {
     <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
     <div class="pipeline-step" id="step-compress">compressing raw photo (2500px, webp)...</div>
     <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail...</div>
-    <div class="pipeline-step" id="step-blur">rendering 40px pre-blurred background...</div>
   `;
   
   const img = new Image();
@@ -861,10 +858,6 @@ async function processImagePipeline(imgSrc) {
   processedThumbBlob = await resizeImage(img, 600, 0.75);
   processedMiniBlob = await resizeImage(img, 120, 0.75);
   setStepState('thumbnail', 'success');
-
-  setStepState('blur', 'active');
-  processedBlurBlob = await resizeImage(img, 40, 0.4, true);
-  setStepState('blur', 'success');
   
   checkFormState();
   showToast('photo processed successfully', 'success');
@@ -965,7 +958,6 @@ function openEditModal(type, id) {
   processedEditPhotoBlob = null;
   processedEditThumbBlob = null;
   processedEditMiniBlob = null;
-  processedEditBlurBlob = null;
   computedEditAspectRatio = null;
   
   const editFileStatus = document.getElementById('edit-photo-file-status');
@@ -1039,7 +1031,6 @@ async function processEditImagePipeline(imgSrc) {
     <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio...</div>
     <div class="pipeline-step" id="step-edit-compress">compressing raw photo (2500px, webp)...</div>
     <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail...</div>
-    <div class="pipeline-step" id="step-edit-blur">rendering 40px pre-blurred background...</div>
   `;
   
   const img = new Image();
@@ -1062,10 +1053,6 @@ async function processEditImagePipeline(imgSrc) {
   processedEditThumbBlob = await resizeImage(img, 600, 0.75);
   processedEditMiniBlob = await resizeImage(img, 120, 0.75);
   setStepState('edit-thumbnail', 'success');
-
-  setStepState('edit-blur', 'active');
-  processedEditBlurBlob = await resizeImage(img, 40, 0.4, true);
-  setStepState('edit-blur', 'success');
   
   showToast('replacement photo processed successfully', 'success');
 }
@@ -1130,13 +1117,12 @@ if (editForm) {
 
     try {
       // If we have a replacement photo, run the R2 replace action first!
-      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditMiniBlob && processedEditBlurBlob) {
+      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditMiniBlob) {
         submitText.innerText = 'replacing R2 asset file...';
         const fileFormData = new FormData();
         fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
         fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
         fileFormData.append('mini', processedEditMiniBlob, 'mini.webp');
-        fileFormData.append('blur', processedEditBlurBlob, 'blur.webp');
         fileFormData.append('aspectRatio', computedEditAspectRatio);
 
         const fileRes = await replacePhotoItem(id, fileFormData, token);
@@ -1209,7 +1195,7 @@ if (form) {
     e.preventDefault();
     
     if (currentMode === 'photo') {
-      if (!processedPhotoBlob || !processedThumbBlob || !processedMiniBlob || !processedBlurBlob) {
+      if (!processedPhotoBlob || !processedThumbBlob || !processedMiniBlob) {
         showToast('processing file...', 'error');
         return;
       }
@@ -1236,7 +1222,6 @@ if (form) {
       formData.append('photo', processedPhotoBlob);
       formData.append('thumb', processedThumbBlob);
       formData.append('mini', processedMiniBlob);
-      formData.append('blur', processedBlurBlob);
       formData.append('category', document.getElementById('category').value);
       formData.append('heroSlide', document.getElementById('hero-slide').checked);
     } else {

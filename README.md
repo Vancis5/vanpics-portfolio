@@ -10,7 +10,7 @@ my photography & motion portfolio. minimal, typographic, smooth.
 - custom lightbox w/ thumbnail hand-off and filmstrip nav
 - pre-calculated aspect ratios so nothing jumps around on load
 - swipe gestures on mobile
-- pre-generated blur backgrounds for the lightbox
+- thumb-powered glass blur backgrounds for the lightbox
 
 ## stack
 
@@ -55,7 +55,6 @@ a few node utilities to keep things fast:
 | `npm run sort` | sorts `public/data/photos.js` chronologically |
 | `node scripts/add-ratios.js` | scans photos, writes aspect ratios to `public/data/photos.js` |
 | `node scripts/generate-thumbs.js` | generates gallery thumbnails |
-| `node scripts/generate-blur.js` | generates blurred background assets for lightbox |
 
 ## license
 

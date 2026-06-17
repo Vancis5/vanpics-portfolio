@@ -9,7 +9,6 @@ import { updateFilmstrip } from './filmstrip.js';
 
 let blurToken = 0;
 let activeBlurLayer = null;
-let activeBlurFade = null;
 let blurPreloadTimer = null;
 let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
@@ -59,10 +58,6 @@ function _cacheImage(src) {
 function getLightboxBlurPath(src) {
   if (!src) return '';
   return src;
-}
-
-function easeBlurFade(t) {
-  return t * t * (3 - (2 * t));
 }
 
 export function preloadLightboxBlurNeighbors(centerIndex, range) {
@@ -138,11 +133,6 @@ export function setLightboxBlur(src) {
   function doSwap() {
     if (token !== blurToken) return; // Stale request, abort
 
-    if (activeBlurFade) {
-      activeBlurFade.cancel();
-      activeBlurFade = null;
-    }
-
     // The spare layer may still be fading from a previous fast navigation.
     // Reset it while hidden so changing its background never jumps on screen.
     incoming.style.transition = 'none';
@@ -163,60 +153,17 @@ export function setLightboxBlur(src) {
       requestAnimationFrame(function () {
         if (token !== blurToken) return;
 
+        // Restore CSS transitions (clear inline overrides to let stylesheet apply)
+        incoming.style.transition = '';
+        incoming.style.opacity = '';
         incoming.classList.add('active');
         activeBlurLayer = incoming;
 
-        let fadeStart = performance.now();
-        let fadeDuration = 400;
-        let outgoingStartOpacity = outgoing && outgoing !== incoming
-          ? parseFloat(window.getComputedStyle(outgoing).opacity) || 1
-          : 0;
-        let fadeFrame = 0;
-        if (outgoing && outgoing !== incoming) outgoing.style.transition = 'none';
-
-        function finishFade() {
-          if (token !== blurToken || activeBlurLayer !== incoming) return;
-          if (fadeFrame) cancelAnimationFrame(fadeFrame);
-          activeBlurFade = null;
-          incoming.style.opacity = '';
-          incoming.style.transition = '';
-          if (outgoing && outgoing !== incoming) {
-            outgoing.style.opacity = '';
-            outgoing.style.transition = '';
-            outgoing.classList.remove('active');
-          }
+        if (outgoing && outgoing !== incoming) {
+          outgoing.style.transition = '';
+          outgoing.style.opacity = '';
+          outgoing.classList.remove('active');
         }
-
-        function stepFade(now) {
-          if (token !== blurToken || activeBlurLayer !== incoming) return;
-          let progress = Math.min(1, (now - fadeStart) / fadeDuration);
-          let eased = easeBlurFade(progress);
-
-          incoming.style.opacity = String(eased);
-          if (outgoing && outgoing !== incoming) {
-            outgoing.style.opacity = String(outgoingStartOpacity * (1 - eased));
-          }
-
-          if (progress < 1) {
-            fadeFrame = requestAnimationFrame(stepFade);
-          } else {
-            finishFade();
-          }
-        }
-
-        activeBlurFade = {
-          cancel: function () {
-            if (fadeFrame) cancelAnimationFrame(fadeFrame);
-            incoming.style.transition = 'none';
-            incoming.style.opacity = window.getComputedStyle(incoming).opacity;
-            if (outgoing && outgoing !== incoming) {
-              outgoing.style.transition = 'none';
-              outgoing.style.opacity = window.getComputedStyle(outgoing).opacity;
-            }
-          }
-        };
-
-        fadeFrame = requestAnimationFrame(stepFade);
       });
     });
   }
@@ -978,10 +925,6 @@ export function closeLightbox(eventOrIsKeyboard = false) {
   domRefs.blurLayerA.classList.remove('active');
   domRefs.blurLayerB.classList.remove('active');
   activeBlurLayer = null;
-  if (activeBlurFade) {
-    activeBlurFade.cancel();
-    activeBlurFade = null;
-  }
   if (blurPreloadTimer) {
     clearTimeout(blurPreloadTimer);
     blurPreloadTimer = null;

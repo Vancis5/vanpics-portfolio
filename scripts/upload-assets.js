@@ -47,7 +47,6 @@ async function main() {
 
   const photosDir = path.resolve('photos');
   const thumbsDir = path.resolve('photos/thumbs');
-  const blurDir = path.resolve('photos/blur');
 
   const uploadQueue = [];
 
@@ -73,17 +72,6 @@ async function main() {
         } else {
           uploadQueue.push({ localPath: fullPath, r2Key: `thumbs/${file}` });
         }
-      }
-    }
-  }
-
-  // 3. Queue blurs
-  if (fs.existsSync(blurDir)) {
-    const files = fs.readdirSync(blurDir);
-    for (const file of files) {
-      const fullPath = path.join(blurDir, file);
-      if (fs.statSync(fullPath).isFile() && file.endsWith('.webp')) {
-        uploadQueue.push({ localPath: fullPath, r2Key: `blur/${file}` });
       }
     }
   }

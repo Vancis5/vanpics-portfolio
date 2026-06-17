@@ -196,6 +196,19 @@ function saveRatioCache() {
   try { localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCache)); } catch (e) { }
 }
 
+function revealImageOnLoad(img) {
+  if (!img) return;
+  function reveal() {
+    img.classList.add('media-loaded');
+  }
+  if (img.complete && img.naturalWidth > 0) {
+    requestAnimationFrame(reveal);
+  } else {
+    img.addEventListener('load', reveal, { once: true });
+    img.addEventListener('error', reveal, { once: true });
+  }
+}
+
 let GALLERY_CATEGORIES = ['all', 'figures', 'motion'];
 let GALLERY_SCROLL_MEMORY_KEY = 'van_gallery_scroll_v2';
 let galleryScrollPositions = { all: null, figures: null, motion: null };
@@ -603,6 +616,7 @@ export function buildMasonry(category) {
     imgEl.alt = p.title || "video";
     imgEl.loading = i < 4 ? 'eager' : 'lazy';
     imgEl.decoding = 'async';
+    revealImageOnLoad(imgEl);
 
     let r = parseFloat(p.aspectRatio || ratioCache[basePath] || 1);
     imgEl.style.aspectRatio = r;
