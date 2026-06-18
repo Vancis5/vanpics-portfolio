@@ -664,7 +664,7 @@ body::after {
 
 .photo-card {
   break-inside: avoid;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
   position: relative;
   overflow: hidden;
   border-radius: 3px;
@@ -674,18 +674,6 @@ body::after {
   display: inline-block;
   width: 100%;
   vertical-align: top;
-}
-
-@media (min-width: 1024px) {
-  .photo-card {
-    margin-bottom: 0.75rem;
-  }
-}
-
-@media (max-width: 639px) {
-  .photo-card {
-    margin-bottom: 0.25rem;
-  }
 }
 
 .photo-card img {
