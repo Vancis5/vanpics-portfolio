@@ -77,7 +77,11 @@ export function initSmoothScroll(options = {}) {
         window.lenis.raf(time);
       }
     }
-    if (window.fsLenis) window.fsLenis.raf(time);
+    // Only tick fsLenis when filmstrip is visible — saves full RAF work when hidden
+    const fsWrap = document.getElementById('filmstrip-wrap');
+    if (window.fsLenis && fsWrap && fsWrap.classList.contains('visible')) {
+      window.fsLenis.raf(time);
+    }
     requestAnimationFrame(lenisRaf);
   }
   requestAnimationFrame(lenisRaf);
