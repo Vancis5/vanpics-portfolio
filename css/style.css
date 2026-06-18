@@ -977,6 +977,15 @@ body::after {
   background: #0d0c0c;
 }
 
+#lightbox::before {
+  content: '';
+  position: fixed;
+  inset: calc(-1 * var(--liquid-edge-bleed));
+  z-index: -3;
+  background: #0d0c0c;
+  pointer-events: none;
+}
+
 .lightbox-bg-blur {
   position: fixed;
   width: 15vw;
@@ -990,15 +999,6 @@ body::after {
   pointer-events: none;
   filter: blur(10px) brightness(0.24) saturate(1.8);
   will-change: opacity, transform;
-}
-
-#lightbox::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(13, 12, 12, 0.15) 0%, rgba(13, 12, 12, 0.8) 100%);
-  pointer-events: none;
-  z-index: 0;
 }
 
 .lightbox-bg-blur.active {
@@ -1039,18 +1039,7 @@ body::after {
   animation-direction: var(--blur-dir, normal);
 }
 
-/* Mobile: kill expensive blend-mode layers — base layer only */
-@media (hover: none) {
 
-  .lightbox-bg-blur-inner.twist-1,
-  .lightbox-bg-blur-inner.twist-2 {
-    display: none;
-  }
-
-  .lightbox-bg-blur {
-    filter: blur(10px) brightness(0.55) saturate(1.8);
-  }
-}
 @keyframes liquid-base {
   0% {
     transform: rotate(0deg) scale(1.2) translate3d(0, 0, 0);
