@@ -36,12 +36,10 @@ async function main() {
       const srcKey = p.src;
       const baseFilename = srcKey.replace(/^photos\//, '');
       const thumbKey = `thumbs/${baseFilename}`;
-      const blurKey = thumbKey;
 
       const title = escapeSql(p.title);
       const src = escapeSql(srcKey);
       const thumb = escapeSql(thumbKey);
-      const blur = escapeSql(blurKey);
       const aspectRatio = p.aspectRatio || 1.0;
       const category = escapeSql(p.category || '');
       const location = escapeSql(p.location || null);
@@ -49,8 +47,8 @@ async function main() {
       const desc = escapeSql(p.desc || null);
       const heroSlide = p.heroSlide ? 1 : 0;
 
-      sql += `INSERT INTO photos (title, src, thumb, blur, aspect_ratio, category, location, date, desc, hero_slide)\n`;
-      sql += `VALUES (${title}, ${src}, ${thumb}, ${blur}, ${aspectRatio}, ${category}, ${location}, ${date}, ${desc}, ${heroSlide});\n`;
+      sql += `INSERT INTO photos (title, src, thumb, aspect_ratio, category, location, date, desc, hero_slide)\n`;
+      sql += `VALUES (${title}, ${src}, ${thumb}, ${aspectRatio}, ${category}, ${location}, ${date}, ${desc}, ${heroSlide});\n`;
     }
 
     sql += `\n-- Seed Videos\n`;
