@@ -169,8 +169,15 @@ export function setLightboxBlur(src) {
     });
   }
 
-  _cacheImage(blurPath);
-  doSwap();
+  let entry = _cacheImage(blurPath);
+  if (entry && entry.decodePromise) {
+    entry.decodePromise.then(function () {
+      if (token !== blurToken) return;
+      doSwap();
+    });
+  } else {
+    doSwap();
+  }
 }
 
 function clearLightboxPhotoPlaceholder(expectedToken) {

@@ -973,6 +973,7 @@ body {
   -ms-overflow-style: none;
   --text-muted: rgba(221, 216, 207, 0.78);
   --text-faint: rgba(221, 216, 207, 0.40);
+  --lightbox-bg-brightness: 0.3;
 }
 
 #lightbox::-webkit-scrollbar {
@@ -1002,7 +1003,7 @@ body {
   opacity: 0;
   transition: opacity 2.2s cubic-bezier(0.15, 1, 0.4, 1);
   pointer-events: none;
-  filter: blur(10px) brightness(0.24) saturate(1.8);
+  filter: blur(10px) brightness(var(--lightbox-bg-brightness)) saturate(1.8);
   will-change: opacity, transform;
 }
 
@@ -1061,8 +1062,8 @@ body {
     display: none;
   }
 
-  .lightbox-bg-blur {
-    filter: blur(10px) brightness(0.55) saturate(1.8);
+  #lightbox {
+    --lightbox-bg-brightness: 0.43;
   }
 }
 
