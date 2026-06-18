@@ -17,9 +17,32 @@ import {
   ALLOWED_CATEGORIES,
 } from './validation.js';
 
-// 10 MB for images, 100 MB for videos
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+// 30 MB for images, 100 MB for videos
+const MAX_IMAGE_SIZE = 30 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+
+async function clearApiCache(request) {
+  let purgedCount = 0;
+  try {
+    const cache = caches.default;
+    const origin = new URL(request.url).origin;
+    const urls = [
+      `${origin}/api/photos`,
+      `${origin}/api/photos?limit=50`,
+      `${origin}/api/photos?limit=100`,
+      `${origin}/api/videos`,
+      `${origin}/api/videos?limit=50`,
+      `${origin}/api/videos?limit=100`
+    ];
+    for (const url of urls) {
+      const deleted = await cache.delete(new Request(url));
+      if (deleted) purgedCount++;
+    }
+  } catch (err) {
+    console.error('Failed to clear cache:', err);
+  }
+  return purgedCount;
+}
 
 // Reject keys that could traverse R2 bucket structure
 function isValidMediaKey(key) {
@@ -242,6 +265,7 @@ export async function deletePhoto(request, env, params) {
   }
 
   await env.DB.prepare('DELETE FROM photos WHERE id = ?').bind(photoId).run();
+  await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
 
@@ -265,6 +289,7 @@ export async function deleteVideo(request, env, params) {
   }
 
   await env.DB.prepare('DELETE FROM videos WHERE id = ?').bind(videoId).run();
+  await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
 
@@ -326,6 +351,8 @@ export async function uploadPhoto(request, env) {
       data.heroSlide
     )
     .run();
+
+  await clearApiCache(request);
 
   return jsonResponse(request, env, {
     success: true,
@@ -396,6 +423,8 @@ export async function uploadVideo(request, env) {
     )
     .run();
 
+  await clearApiCache(request);
+
   return jsonResponse(request, env, {
     success: true,
     video: publicVideo(request, {
@@ -449,6 +478,7 @@ export async function updatePhoto(request, env, params) {
     return errorResponse(request, env, 'photo not found', 404);
   }
 
+  await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
 
@@ -484,26 +514,12 @@ export async function updateVideo(request, env, params) {
     return errorResponse(request, env, 'video not found', 404);
   }
 
+  await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
 
 export async function purgeCache(request, env) {
-  const cache = caches.default;
-  const origin = new URL(request.url).origin;
-  
-  const urls = [
-    `${origin}/api/photos`,
-    `${origin}/api/photos?limit=100`,
-    `${origin}/api/videos`,
-    `${origin}/api/videos?limit=100`
-  ];
-  
-  let purgedCount = 0;
-  for (const url of urls) {
-    const deleted = await cache.delete(new Request(url));
-    if (deleted) purgedCount++;
-  }
-  
+  const purgedCount = await clearApiCache(request);
   return jsonResponse(request, env, { success: true, purgedCount });
 }
 
@@ -590,17 +606,7 @@ export async function sortDatabase(request, env) {
   }
 
   // Purge the cache immediately after sorting so order propagates instantly!
-  const cache = caches.default;
-  const origin = new URL(request.url).origin;
-  const urls = [
-    `${origin}/api/photos`,
-    `${origin}/api/photos?limit=100`,
-    `${origin}/api/videos`,
-    `${origin}/api/videos?limit=100`
-  ];
-  for (const url of urls) {
-    await cache.delete(new Request(url));
-  }
+  await clearApiCache(request);
 
   return jsonResponse(request, env, { 
     success: true, 
@@ -667,17 +673,7 @@ export async function replacePhotoFile(request, env, params) {
   ).bind(aspectRatio, photoId).run();
 
   // 4. Purge the CDN cache for all API feeds instantly!
-  const cache = caches.default;
-  const origin = new URL(request.url).origin;
-  const urls = [
-    `${origin}/api/photos`,
-    `${origin}/api/photos?limit=100`,
-    `${origin}/api/videos`,
-    `${origin}/api/videos?limit=100`
-  ];
-  for (const url of urls) {
-    await cache.delete(new Request(url));
-  }
+  await clearApiCache(request);
 
   return jsonResponse(request, env, { success: true });
 }
