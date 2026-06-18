@@ -25,7 +25,7 @@ test.describe('Vanpics Portfolio CMS Admin Portal Tests', () => {
   test('Page loads successfully with branding and styling', async ({ page }) => {
     // Assert heading title
     await expect(page.locator('header h1')).toHaveText('vanpics');
-    await expect(page.locator('header p')).toHaveText('media archives cms');
+    await expect(page.locator('header p')).toHaveText('darkroom');
     
     // Assert the cataloging card is visible
     await expect(page.locator('.modal-title').first()).toContainText('catalog new media');
