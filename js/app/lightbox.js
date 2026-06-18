@@ -396,8 +396,8 @@ function updateDynamicTextColor(p) {
         const lbEl = domRefs.lightbox;
         if (lbEl) {
           lbEl.style.setProperty('--dynamic-text-color', `hsl(${hsl.h}, ${s}%, ${l}%)`);
-          lbEl.style.setProperty('--dynamic-text-muted', `hsla(${hsl.h}, ${s}%, ${l}%, 0.48)`);
-          lbEl.style.setProperty('--dynamic-text-faint', `hsla(${hsl.h}, ${s}%, ${l}%, 0.22)`);
+          lbEl.style.setProperty('--dynamic-text-muted', `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`);
+          lbEl.style.setProperty('--dynamic-text-faint', `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`);
         }
       } else {
         resetDynamicTextColor();
