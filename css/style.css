@@ -2218,3 +2218,51 @@ html {
   width: 24px !important;
   height: 24px !important;
 }
+
+
+/* FOOTER STATS BAR */
+#footer-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: clamp(1.25rem, 3vw, 2rem);
+  padding-top: clamp(1rem, 2.5vw, 1.5rem);
+  border-top: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(0.52rem, 1.2vw, 0.6rem);
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+  color: rgba(221, 216, 207, 0.28);
+  transition: color 0.4s ease;
+}
+
+#site-footer:hover #footer-stats,
+#site-footer.is-visible #footer-stats {
+  color: rgba(221, 216, 207, 0.42);
+}
+
+.footer-stat {
+  white-space: nowrap;
+}
+
+.stat-num {
+  color: rgba(221, 216, 207, 0.55);
+  transition: color 0.4s ease;
+}
+
+#site-footer:hover .stat-num,
+#site-footer.is-visible .stat-num {
+  color: rgba(221, 216, 207, 0.78);
+}
+
+.footer-stat-dot {
+  color: rgba(221, 216, 207, 0.15);
+  user-select: none;
+}
+
+@media (max-width: 560px) {
+  #footer-stats {
+    gap: 0.4rem 0.6rem;
+  }
+}
