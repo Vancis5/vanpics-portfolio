@@ -16,7 +16,7 @@ export const APP_CONFIG = {
     touchHideDelay: 2000,
     liftZoneLeaveDelay: 600,
     dragHideDelay: 1500,
-    scrollDuration: 400,
+    scrollDuration: 550,
     syncMaxDeltaMs: 33,
     syncDefaultDeltaMs: 16,
     syncSpring: 14

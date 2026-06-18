@@ -353,7 +353,40 @@ export function updateFilmstrip() {
     let thumbL = active.offsetLeft;
     let thumbW = active.offsetWidth;
     fsTarget = thumbL - wrapW / 2 + thumbW / 2;
-    if (!state.isMobile || state.isManuallyNavigating) {
+    if (!state.isMobile) {
+      if (state.fsRaf || fsSyncRaf) {
+        // already animating — chase new target in lerp mode
+        if (state.fsRaf) {
+          cancelAnimationFrame(state.fsRaf);
+          state.fsRaf = null;
+        }
+        startFsSync(fsTarget);
+      } else {
+        // cold start — silky cubic-bezier(0.25, 1, 0.5, 1) ease-out
+        if (window.fsLenis) window.fsLenis.stop();
+        let startPos = filmstripEl.scrollLeft;
+        let startTime = null;
+        let duration = FILMSTRIP_CONFIG.scrollDuration;
+
+        function pcStep(time) {
+          if (!startTime) startTime = time;
+          let elapsed = time - startTime;
+          if (elapsed >= duration) {
+            filmstripEl.scrollLeft = clampFilmstripScroll(fsTarget);
+            if (window.fsLenis) window.fsLenis.start();
+            state.fsRaf = null;
+            return;
+          }
+          let t = elapsed / duration;
+          // cubic-bezier(0.25, 1, 0.5, 1) — fast-out, slow settle
+          let ease = 1 - Math.pow(1 - t, 3) * (1 + 1.5 * t);
+          ease = Math.max(0, Math.min(1, ease));
+          filmstripEl.scrollLeft = clampFilmstripScroll(startPos + (fsTarget - startPos) * ease);
+          state.fsRaf = requestAnimationFrame(pcStep);
+        }
+        state.fsRaf = requestAnimationFrame(pcStep);
+      }
+    } else if (state.isManuallyNavigating) {
       if (state.fsRaf || fsSyncRaf) {
         // If already animating, drop into lerp mode for smooth continuous chasing
         if (state.fsRaf) {
