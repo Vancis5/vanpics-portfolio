@@ -1085,8 +1085,9 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     closeLightbox(true);
   }
-  if (e.key === 'ArrowRight') navigateLightbox(1);
-  if (e.key === 'ArrowLeft') navigateLightbox(-1);
+  let key = e.key.toLowerCase();
+  if (e.key === 'ArrowRight' || key === 'd' || key === 's') navigateLightbox(1);
+  if (e.key === 'ArrowLeft' || key === 'a' || key === 'w') navigateLightbox(-1);
 });
 
 // desktop: click bg to close
