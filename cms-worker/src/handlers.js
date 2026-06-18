@@ -163,7 +163,7 @@ export async function listPhotos(request, env, params, ctx) {
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
   const { results } = await env.DB.prepare(
-    `SELECT id, title, src, thumb, blur, aspect_ratio, category, location, date, desc, hero_slide, created_at
+    `SELECT id, title, src, thumb, aspect_ratio, category, location, date, desc, hero_slide, created_at
      FROM photos
      ORDER BY created_at DESC, id DESC
      LIMIT ? OFFSET ?`
@@ -246,7 +246,7 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'invalid photo id', 400);
   }
 
-  const photo = await env.DB.prepare('SELECT src, thumb, blur FROM photos WHERE id = ?')
+  const photo = await env.DB.prepare('SELECT src, thumb FROM photos WHERE id = ?')
     .bind(photoId)
     .first();
 
@@ -256,9 +256,7 @@ export async function deletePhoto(request, env, params) {
 
   const keysToDelete = [...new Set([
     mediaKey(photo.src),
-    mediaKey(photo.thumb),
-    mediaKey(photo.blur),
-    photo.thumb ? mediaKey(photo.thumb).replace('thumbs/', 'mini/') : null
+    mediaKey(photo.thumb)
   ].filter(Boolean))];
   if (keysToDelete.length > 0) {
     await env.MEDIA_BUCKET.delete(keysToDelete);
@@ -297,7 +295,6 @@ export async function uploadPhoto(request, env) {
   const formData = await request.formData();
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
-  const miniFile = formData.get('mini');
   const { data, errors } = validatePhotoFields(formData);
 
   if (!isFileLike(photoFile, 'image/') || !isFileLike(thumbFile, 'image/')) {
@@ -307,7 +304,6 @@ export async function uploadPhoto(request, env) {
   // Enforce file size limits
   if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
-  if (miniFile?.size > MAX_IMAGE_SIZE) errors.push(`mini thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
@@ -315,7 +311,6 @@ export async function uploadPhoto(request, env) {
 
   const photoKey = makeMediaKey('photos', 'webp');
   const thumbKey = makeMediaKey('thumbs', 'webp');
-  const miniKey = thumbKey.replace('thumbs/', 'mini/');
 
   const puts = [
     env.MEDIA_BUCKET.put(photoKey, await photoFile.arrayBuffer(), {
@@ -326,22 +321,15 @@ export async function uploadPhoto(request, env) {
     }),
   ];
 
-  if (miniFile && isFileLike(miniFile, 'image/')) {
-    puts.push(env.MEDIA_BUCKET.put(miniKey, await miniFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }));
-  }
-
   await Promise.all(puts);
 
   const result = await env.DB.prepare(
-    `INSERT INTO photos (title, src, thumb, blur, aspect_ratio, category, location, date, desc, hero_slide)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO photos (title, src, thumb, aspect_ratio, category, location, date, desc, hero_slide)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       data.title,
       photoKey,
-      thumbKey,
       thumbKey,
       data.aspectRatio,
       data.category,
@@ -361,7 +349,6 @@ export async function uploadPhoto(request, env) {
       title: data.title,
       src: photoKey,
       thumb: thumbKey,
-      blur: blurKey,
       aspect_ratio: data.aspectRatio,
       category: data.category,
       location: data.location,
@@ -624,7 +611,6 @@ export async function replacePhotoFile(request, env, params) {
   const formData = await request.formData();
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
-  const miniFile = formData.get('mini');
   const aspectRatio = parseFloat(formData.get('aspectRatio'));
 
   const errors = [];
@@ -658,13 +644,6 @@ export async function replacePhotoFile(request, env, params) {
     }),
   ];
 
-  if (miniFile && isFileLike(miniFile, 'image/')) {
-    const miniKey = photo.thumb.replace('thumbs/', 'mini/');
-    puts.push(env.MEDIA_BUCKET.put(miniKey, await miniFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }));
-  }
-
   await Promise.all(puts);
 
   // 3. Update the aspect_ratio in D1
@@ -677,4 +656,5 @@ export async function replacePhotoFile(request, env, params) {
 
   return jsonResponse(request, env, { success: true });
 }
+
 
