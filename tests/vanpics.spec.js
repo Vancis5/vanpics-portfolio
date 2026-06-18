@@ -14,6 +14,67 @@ test.beforeEach(async ({ page }) => {
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
+
+  // Mock API calls to ensure stable, hermetic test environment independent of production data
+  await page.route('**/api/photos*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [
+          {
+            id: 1,
+            title: 'collateral',
+            src: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23222"%3E%3Crect width="300" height="200"/%3E%3C/svg%3E',
+            thumb: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="150" height="100" fill="%23222"%3E%3Crect width="150" height="100"/%3E%3C/svg%3E',
+            aspect_ratio: 1.5,
+            category: 'landscape',
+            location: 'tokyo, japan',
+            date: '2025-12-28',
+            desc: 'collateral desc',
+            hero_slide: true,
+            created_at: '2025-12-28T00:00:00Z'
+          },
+          {
+            id: 2,
+            title: 'depths',
+            src: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23222"%3E%3Crect width="300" height="200"/%3E%3C/svg%3E',
+            thumb: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="150" height="100" fill="%23222"%3E%3Crect width="150" height="100"/%3E%3C/svg%3E',
+            aspect_ratio: 1.5,
+            category: 'landscape',
+            location: 'kyoto, japan',
+            date: '2025-12-27',
+            desc: 'depths desc',
+            hero_slide: true,
+            created_at: '2025-12-27T00:00:00Z'
+          }
+        ]
+      })
+    });
+  });
+
+  await page.route('**/api/videos*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [
+          {
+            id: 10,
+            title: 'motion video',
+            src: 'https://example.com/video.mp4',
+            poster: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23222"%3E%3Crect width="300" height="200"/%3E%3C/svg%3E',
+            aspect_ratio: 1.777,
+            location: 'osaka, japan',
+            date: '2025-12-30',
+            desc: 'motion desc',
+            music: 'ambient track',
+            created_at: '2025-12-30T00:00:00Z'
+          }
+        ]
+      })
+    });
+  });
 });
 
 test.afterEach(async ({ page }) => {
