@@ -973,7 +973,7 @@ body {
   -ms-overflow-style: none;
   --text-muted: rgba(221, 216, 207, 0.78);
   --text-faint: rgba(221, 216, 207, 0.40);
-  --lightbox-bg-brightness: 0.3;
+  --lightbox-bg-brightness: 0.24;
 }
 
 #lightbox::-webkit-scrollbar {
@@ -1052,19 +1052,6 @@ body {
   mix-blend-mode: overlay;
   animation: liquid-twist-2 24s ease-in-out infinite alternate-reverse;
   animation-direction: var(--blur-dir, normal);
-}
-
-/* Mobile: kill expensive blend-mode layers — base layer only */
-@media (hover: none) {
-
-  .lightbox-bg-blur-inner.twist-1,
-  .lightbox-bg-blur-inner.twist-2 {
-    display: none;
-  }
-
-  #lightbox {
-    --lightbox-bg-brightness: 0.43;
-  }
 }
 
 @keyframes liquid-base {
