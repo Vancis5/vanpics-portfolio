@@ -1161,12 +1161,7 @@
 
     /* Pipeline Status */
     .pipeline-status {
-      display: none;
-      margin-top: 1.5rem;
-      background: rgba(17, 16, 16, 0.6);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.2rem;
+      display: block;
     }
 
     .pipeline-step {

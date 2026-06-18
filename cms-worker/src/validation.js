@@ -44,7 +44,7 @@ export function validatePhotoFields(formData) {
 
   return {
     data: {
-      title: cleanText(formData.get('title') || 'Untitled', 'title', errors, { required: true }),
+      title: cleanText(formData.get('title'), 'title', errors, { required: false }),
       date: cleanText(formData.get('date'), 'date', errors),
       location: cleanText(formData.get('location'), 'location', errors),
       category,
@@ -61,7 +61,7 @@ export function validateVideoFields(formData) {
 
   return {
     data: {
-      title: cleanText(formData.get('title') || 'Untitled', 'title', errors, { required: true }),
+      title: cleanText(formData.get('title'), 'title', errors, { required: false }),
       date: cleanText(formData.get('date'), 'date', errors),
       location: cleanText(formData.get('location'), 'location', errors),
       desc: cleanText(formData.get('desc'), 'desc', errors),

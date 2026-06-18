@@ -145,12 +145,14 @@
         <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; height: 82vh;">
         <form id="cms-form" class="edit-cms-form">
           <!-- LEFT SIDE: Upload Options & Dropzones -->
-          <div class="edit-media-sidebar" style="background: rgba(10, 9, 9, 0.4); padding: 1.25rem 1rem 1.25rem 1.85rem; display: flex; flex-direction: column; gap: 1rem; height: 100%; box-sizing: border-box; overflow: hidden; min-height: 0;">
-            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-height: 0;">
-              <span style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.12em; width: 100%; text-align: left;">upload options</span>
+          <div class="edit-media-sidebar" style="background: rgba(10, 9, 9, 0.4); padding: 1.25rem 1rem 1.25rem 1.85rem; display: flex; flex-direction: column; gap: 0; height: 100%; box-sizing: border-box; overflow: hidden; min-height: 0;">
+
+            <!-- Upload options label + tabs + dropzone: takes all remaining space -->
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-height: 0; padding-bottom: 1rem;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.12em; flex-shrink: 0;">upload options</span>
               
               <!-- Segmented Tab switcher for Photo vs Video Upload Mode -->
-              <div class="tabs-container" style="margin-bottom: 0.5rem; flex-shrink: 0;">
+              <div class="tabs-container" style="margin-bottom: 0.25rem; flex-shrink: 0;">
                 <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo">
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
                   photo
@@ -179,7 +181,7 @@
                 </div>
 
                 <!-- Video Mode Dual Dropzone Grid -->
-                <div class="drop-zone-grid" id="drop-zone-video-grid" style="display: none; flex: 1; grid-template-columns: 1fr 1fr; gap: 0.85rem; min-height: 0;">
+                <div class="drop-zone-grid" id="drop-zone-video-grid" style="display: none; flex: 1; grid-template-columns: 1fr 1fr; gap: 0.6rem; min-height: 0;">
                   <!-- Video File Drop Zone -->
                   <div class="drop-zone" id="drop-zone-video" style="height: 100%; display: flex; flex-direction: column; justify-content: center; min-height: 0;">
                     <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -213,9 +215,9 @@
               </div>
             </div>
             
-            <!-- Client Side pipeline status -->
+            <!-- Pipeline log: fixed at bottom, always visible -->
             <div style="width: 100%; display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0;">
-              <span style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.12em; width: 100%; text-align: left;">pipeline log</span>
+              <span style="font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.12em;">pipeline log</span>
               <div class="pipeline-status" id="pipeline-status" style="width: 100%; font-size: 0.65rem; height: 100px; overflow-y: auto; background: rgba(0, 0, 0, 0.5); padding: 0.75rem; border-radius: var(--radius); border: 1px solid var(--border); box-sizing: border-box;">
                 <div style="color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.62rem; text-align: center; padding-top: 1.25rem;">awaiting file upload...</div>
               </div>
@@ -392,7 +394,7 @@
             <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; flex: 1; overflow-y: auto; align-content: start;">
               <div class="field-group" style="grid-column: span 2;">
                 <label for="edit-title">title</label>
-                <input type="text" id="edit-title" required>
+                <input type="text" id="edit-title" placeholder="untitled">
               </div>
               
               <div class="field-group">

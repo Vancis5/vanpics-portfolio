@@ -22,7 +22,11 @@ export function updateMediaLibrary(newPhotos, newVideos) {
     photoLibrary.push(...sortedPhotos);
   }
   if (Array.isArray(newVideos) && newVideos.length > 0) {
-    const filteredVideos = newVideos.filter(v => !!v.thumb || !!v.src);
+    const filteredVideos = newVideos.filter(v => {
+      const t = (v.title || '').toLowerCase().trim();
+      if (!t || t === 'untitled') return false;
+      return !!v.thumb || !!v.src;
+    });
     const sortedVideos = [...filteredVideos].sort((a, b) => parseDate(b) - parseDate(a));
     motionProjects.length = 0;
     motionProjects.push(...sortedVideos);
@@ -44,7 +48,8 @@ export function getInternalCategory(slug) {
 export function getPhotoLibrary(category) {
   if (category === 'motion') return [];
   return photoLibrary.filter(function (photo) {
-    if (!photo.title) return false;
+    const t = (photo.title || '').toLowerCase().trim();
+    if (!t || t === 'untitled') return false;
     if (category === 'figures') return photo.category === 'figures';
     return photo.category !== 'figures';
   });

@@ -837,7 +837,6 @@ function handleFileSelect(file, type, previewContainer, previewEl) {
 
 async function processVideoPipeline(videoFile) {
   if (!pipelineStatus) return;
-  pipelineStatus.style.display = 'block';
   pipelineStatus.innerHTML = `
     <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
     <div class="pipeline-step" id="step-video-check">verifying video format...</div>
@@ -870,7 +869,6 @@ async function processVideoPipeline(videoFile) {
 
 async function processPosterPipeline(imgSrc) {
   if (!pipelineStatus) return;
-  pipelineStatus.style.display = 'block';
   
   if (!document.getElementById('step-poster-compress')) {
     const posterStep = document.createElement('div');
@@ -896,7 +894,6 @@ async function processPosterPipeline(imgSrc) {
 
 async function processImagePipeline(imgSrc) {
   if (!pipelineStatus) return;
-  pipelineStatus.style.display = 'block';
   pipelineStatus.innerHTML = `
     <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
     <div class="pipeline-step" id="step-compress">compressing raw photo (2500px, webp)...</div>

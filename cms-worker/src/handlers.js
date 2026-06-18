@@ -437,7 +437,7 @@ export async function updatePhoto(request, env, params) {
   const json = await request.json();
   const errors = [];
   
-  const title = cleanText(json.title || 'Untitled', 'title', errors, { required: true });
+  const title = cleanText(json.title, 'title', errors, { required: false });
   const category = cleanText(json.category, 'category', errors);
   const location = cleanText(json.location, 'location', errors);
   const date = cleanText(json.date, 'date', errors);
@@ -478,7 +478,7 @@ export async function updateVideo(request, env, params) {
   const json = await request.json();
   const errors = [];
 
-  const title = cleanText(json.title || 'Untitled', 'title', errors, { required: true });
+  const title = cleanText(json.title, 'title', errors, { required: false });
   const location = cleanText(json.location, 'location', errors);
   const date = cleanText(json.date, 'date', errors);
   const desc = cleanText(json.desc, 'desc', errors);
