@@ -160,6 +160,54 @@ function showToast(text, type = 'success') {
   }, 4000);
 }
 
+function clearEditPreview() {
+  const imgPreview = document.getElementById('edit-media-preview-img');
+  if (imgPreview) {
+    imgPreview.src = '';
+    imgPreview.classList.remove('loaded');
+    imgPreview.style.display = 'none';
+    const container = imgPreview.closest('.edit-preview-container');
+    if (container) {
+      container.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+    }
+  }
+  const placeholder = document.getElementById('edit-media-preview-placeholder');
+  if (placeholder) {
+    placeholder.style.display = 'none';
+  }
+}
+
+// Set up edit preview listeners for fade-in and dominant color extraction
+const editPreviewImg = document.getElementById('edit-media-preview-img');
+if (editPreviewImg) {
+  editPreviewImg.crossOrigin = 'anonymous';
+  editPreviewImg.addEventListener('load', () => {
+    // Only process if src is present and not empty
+    if (!editPreviewImg.getAttribute('src')) {
+      return;
+    }
+    
+    // Add loaded class to trigger CSS opacity fade-in
+    editPreviewImg.classList.add('loaded');
+    
+    // Attempt dynamic dominant color extraction from image pixels
+    const container = editPreviewImg.closest('.edit-preview-container');
+    if (container) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(editPreviewImg, 0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        container.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 0.25)`;
+      } catch (err) {
+        container.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+      }
+    }
+  });
+}
+
 // Modal & Scroll State management
 const confirmModal = document.getElementById('confirm-modal-overlay');
 const cancelDeleteBtn = document.getElementById('btn-cancel-delete');
@@ -257,6 +305,7 @@ if (closeEditModalBtn) {
     editModal.classList.remove('open');
     currentlyEditingItem = null;
     editForm.reset();
+    clearEditPreview();
     updateBodyScrollState();
   });
 }
@@ -703,7 +752,9 @@ function resetFileSelection() {
   if (previewContainerPoster) previewContainerPoster.style.display = 'none';
 
   if (submitBtn) submitBtn.disabled = true;
-  if (pipelineStatus) pipelineStatus.style.display = 'none';
+  if (pipelineStatus) {
+    pipelineStatus.innerHTML = '<div style="color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.62rem; text-align: center; padding-top: 1.5rem;">awaiting file upload...</div>';
+  }
 
   if (fileInputPhoto) fileInputPhoto.value = '';
   if (fileInputVideo) fileInputVideo.value = '';
@@ -728,7 +779,9 @@ function resetSpecificFile(type, input, previewContainer, previewEl) {
     processedThumbBlob = null;
   }
   checkFormState();
-  if (pipelineStatus) pipelineStatus.style.display = 'none';
+  if (pipelineStatus) {
+    pipelineStatus.innerHTML = '<div style="color: var(--text-muted); font-family: \'DM Mono\', monospace; font-size: 0.62rem; text-align: center; padding-top: 1.5rem;">awaiting file upload...</div>';
+  }
 }
 
 function handleFileSelect(file, type, previewContainer, previewEl) {
@@ -966,6 +1019,9 @@ function openEditModal(type, id) {
 
   currentlyEditingItem = item;
   
+  // Clear old preview first to prevent visual flashing of the previous asset
+  clearEditPreview();
+
   // Reset replacement photo states
   processedEditPhotoBlob = null;
   processedEditThumbBlob = null;
@@ -1011,7 +1067,7 @@ function openEditModal(type, id) {
 
   if (type === 'photo') {
     if (imgPreview) {
-      imgPreview.src = item.src;
+      imgPreview.src = item.thumb || item.src;
       imgPreview.style.display = '';
     }
     if (placeholderPreview) placeholderPreview.style.display = 'none';
@@ -1032,6 +1088,7 @@ function openEditModal(type, id) {
 
   editModal.classList.add('open');
   updateBodyScrollState();
+  updateEditNavArrows();
 }
 
 async function processEditImagePipeline(imgSrc) {
@@ -1090,6 +1147,7 @@ const editCancelBtn = document.getElementById('edit-cancel-btn');
 if (editCancelBtn) {
   editCancelBtn.addEventListener('click', () => {
     editModal.classList.remove('open');
+    clearEditPreview();
     updateBodyScrollState();
   });
 }
@@ -1157,6 +1215,7 @@ if (editForm) {
         showToast('asset updated successfully', 'success');
         editModal.classList.remove('open');
         currentlyEditingItem = null;
+        clearEditPreview();
         updateBodyScrollState();
         loadArchives();
       } else {
@@ -1261,5 +1320,93 @@ if (form) {
     }
   });
 }
+
+// Navigation for Edit Modal
+function updateEditNavArrows() {
+  const cards = Array.from(document.querySelectorAll('#items-container .asset-card'));
+  const prevBtn = document.getElementById('btn-edit-prev');
+  const nextBtn = document.getElementById('btn-edit-next');
+  if (!currentlyEditingItem || cards.length <= 1) {
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+    return;
+  }
+  
+  if (prevBtn) prevBtn.style.display = 'flex';
+  if (nextBtn) nextBtn.style.display = 'flex';
+
+  const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
+
+  if (prevBtn) {
+    if (currentIndex <= 0) {
+      prevBtn.disabled = true;
+      prevBtn.style.opacity = '0.2';
+      prevBtn.style.cursor = 'not-allowed';
+    } else {
+      prevBtn.disabled = false;
+      prevBtn.style.opacity = '1';
+      prevBtn.style.cursor = 'pointer';
+    }
+  }
+
+  if (nextBtn) {
+    if (currentIndex >= cards.length - 1 || currentIndex === -1) {
+      nextBtn.disabled = true;
+      nextBtn.style.opacity = '0.2';
+      nextBtn.style.cursor = 'not-allowed';
+    } else {
+      nextBtn.disabled = false;
+      nextBtn.style.opacity = '1';
+      nextBtn.style.cursor = 'pointer';
+    }
+  }
+}
+
+const prevEditBtn = document.getElementById('btn-edit-prev');
+const nextEditBtn = document.getElementById('btn-edit-next');
+
+if (prevEditBtn) {
+  prevEditBtn.addEventListener('click', () => {
+    const cards = Array.from(document.querySelectorAll('#items-container .asset-card'));
+    if (!currentlyEditingItem) return;
+    const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
+    if (currentIndex > 0) {
+      const prevCard = cards[currentIndex - 1];
+      openEditModal(prevCard.dataset.type, prevCard.dataset.id);
+    }
+  });
+}
+
+if (nextEditBtn) {
+  nextEditBtn.addEventListener('click', () => {
+    const cards = Array.from(document.querySelectorAll('#items-container .asset-card'));
+    if (!currentlyEditingItem) return;
+    const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
+    if (currentIndex < cards.length - 1 && currentIndex !== -1) {
+      const nextCard = cards[currentIndex + 1];
+      openEditModal(nextCard.dataset.type, nextCard.dataset.id);
+    }
+  });
+}
+
+// Global window event listener for arrow keys navigation
+window.addEventListener('keydown', (e) => {
+  if (!editModal || !editModal.classList.contains('open')) return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) {
+    return;
+  }
+  
+  if (e.key === 'ArrowLeft') {
+    const prevBtn = document.getElementById('btn-edit-prev');
+    if (prevBtn && !prevBtn.disabled) {
+      prevBtn.click();
+    }
+  } else if (e.key === 'ArrowRight') {
+    const nextBtn = document.getElementById('btn-edit-next');
+    if (nextBtn && !nextBtn.disabled) {
+      nextBtn.click();
+    }
+  }
+});
 
 loadArchives();

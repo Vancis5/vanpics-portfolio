@@ -100,6 +100,10 @@ export function renderArchivesList(itemsContainer, list, activeFilter, searchQue
         } else {
           groupKey = item.type === 'video' ? 'videos' : (item.category || 'photographs');
         }
+      } else if (groupVal === 'carousel') {
+        const isHero = item.hero_slide === 1 || item.hero_slide === 'true' || item.hero_slide === true ||
+                       item.heroSlide === 1 || item.heroSlide === 'true' || item.heroSlide === true;
+        groupKey = isHero ? 'in carousel' : 'not in carousel';
       }
       if (!groups[groupKey]) groups[groupKey] = [];
       groups[groupKey].push(item);
