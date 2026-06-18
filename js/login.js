@@ -51,8 +51,6 @@ if (savedToken) {
 
         // Loading state
         loginBtnSubmit.disabled = true;
-        loginBtnText.style.display = 'none';
-        loginBtnSpinner.style.display = 'block';
         loginErrorMsg.innerText = '';
 
         try {
@@ -88,10 +86,14 @@ if (savedToken) {
           loginErrorMsg.innerText = 'server connection failed';
         } finally {
           loginBtnSubmit.disabled = false;
-          loginBtnText.style.display = 'block';
-          loginBtnSpinner.style.display = 'none';
         }
       });
     }
   });
 }
+
+// Dynamic interactive background spotlight (runs immediately)
+document.addEventListener('mousemove', (e) => {
+  document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+  document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+});
