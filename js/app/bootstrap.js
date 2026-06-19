@@ -290,8 +290,8 @@ function renderUI(photos, videos) {
 
   try {
     const [photosRes, videosRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/photos?limit=100`),
-      fetch(`${API_BASE_URL}/api/videos?limit=100`)
+      fetch(`${API_BASE_URL}/api/photos?limit=500`),
+      fetch(`${API_BASE_URL}/api/videos?limit=500`)
     ]);
 
     if (photosRes.ok && videosRes.ok) {

@@ -2,8 +2,8 @@ import { API_BASE_URL } from './utils.js';
 
 export async function fetchArchives() {
   const [photosRes, videosRes] = await Promise.all([
-    fetch(`${API_BASE_URL}/api/photos?limit=50&_t=${Date.now()}`),
-    fetch(`${API_BASE_URL}/api/videos?limit=50&_t=${Date.now()}`)
+    fetch(`${API_BASE_URL}/api/photos?limit=500&_t=${Date.now()}`),
+    fetch(`${API_BASE_URL}/api/videos?limit=500&_t=${Date.now()}`)
   ]);
 
   if (!photosRes.ok || !videosRes.ok) throw new Error('API server down');
