@@ -311,19 +311,33 @@
 
   </template>
   <footer id="site-footer">
+    <div id="footer-glow-ball"></div>
+    <div class="footer-bg-blur">
+      <div class="footer-bg-blur-inner base"></div>
+      <div class="footer-bg-blur-inner twist-1"></div>
+      <div class="footer-bg-blur-inner twist-2"></div>
+    </div>
     <div class="footer-columns">
       <section class="footer-brand" aria-labelledby="footer-title">
         <div class="footer-brand-inner">
           <h2 id="footer-title">vanpics</h2>
           <p>i take photos and this is my gallery</p>
-          <a class="footer-instagram" href="https://www.instagram.com/vancis5/" target="_blank"
-            rel="noopener noreferrer" aria-label="vanpics on instagram">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="18" height="18" rx="5" />
-              <circle cx="12" cy="12" r="4" />
-              <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
-            </svg>
-          </a>
+          <div class="footer-links">
+            <a class="footer-email" href="mailto:lorzanofrancisevan@gmail.com" target="_blank" rel="noopener noreferrer" aria-label="email vanpics">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <rect width="20" height="16" x="2" y="4" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </a>
+            <a class="footer-instagram" href="https://www.instagram.com/vancis5/" target="_blank"
+              rel="noopener noreferrer" aria-label="vanpics on instagram">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+              </svg>
+            </a>
+          </div>
         </div>
       </section>
 

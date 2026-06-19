@@ -263,6 +263,7 @@ function renderUI(photos, videos) {
   buildMasonry();
   initFilters();
   updateFooterStats(photos, videos);
+
   setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 }
 
