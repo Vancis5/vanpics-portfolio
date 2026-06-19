@@ -1477,3 +1477,36 @@ if (controlPanel) {
   }, { threshold: 0 });
   obs.observe(sentinel);
 }
+
+// Scroll logic for collapsing the "add media" FAB on mobile
+const addMediaBtn = document.getElementById('btn-open-upload-modal');
+if (addMediaBtn) {
+  let lastScrollY = window.scrollY;
+  let accumulatedScroll = 0;
+  
+  window.addEventListener('scroll', () => {
+    if (window.innerWidth <= 768) {
+      const currentScrollY = window.scrollY;
+      const diff = currentScrollY - lastScrollY;
+      
+      // Reset accumulator if scrolling direction changes
+      if ((diff > 0 && accumulatedScroll < 0) || (diff < 0 && accumulatedScroll > 0)) {
+        accumulatedScroll = 0;
+      }
+      accumulatedScroll += diff;
+      
+      if (currentScrollY <= 50) {
+        addMediaBtn.classList.remove('collapsed');
+        accumulatedScroll = 0;
+      } else if (accumulatedScroll > 30) {
+        addMediaBtn.classList.add('collapsed');
+        accumulatedScroll = 0;
+      } else if (accumulatedScroll < -30) {
+        addMediaBtn.classList.remove('collapsed');
+        accumulatedScroll = 0;
+      }
+      
+      lastScrollY = currentScrollY;
+    }
+  }, { passive: true });
+}

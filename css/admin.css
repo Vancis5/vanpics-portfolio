@@ -1420,10 +1420,11 @@
     /* ─── Responsive Grid ─── */
     @media (max-width: 768px) {
       header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1.25rem 1rem 0.25rem 1rem;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 1rem 1rem 0.65rem 1rem !important;
+        gap: 0.5rem !important;
       }
 
       .logo-area h1 {
@@ -1435,8 +1436,16 @@
       }
 
       .auth-container {
-        width: 100%;
-        align-items: stretch;
+        flex-direction: row !important;
+        align-items: center !important;
+        width: auto !important;
+        gap: 0.4rem !important;
+      }
+
+      .auth-container .btn-utilities,
+      .auth-container .btn-logout {
+        padding: 0.45rem 0.75rem !important;
+        font-size: 0.68rem !important;
       }
 
       .auth-input-wrapper {
@@ -1449,14 +1458,15 @@
       }
 
       main {
-        padding: 0 1rem;
-        margin: 0.5rem auto;
+        padding: 0 1rem 6.5rem 1rem !important;
+        margin: 0 auto !important;
       }
 
       .control-panel {
         flex-direction: column;
         align-items: stretch;
-        padding: 1rem 0;
+        padding: 0.75rem 0 0 0 !important;
+        margin-bottom: 0.75rem !important;
         gap: 0.75rem;
       }
 
@@ -1515,10 +1525,58 @@
       }
 
       .btn-create-trigger {
-        width: 100%;
-        justify-content: center;
-        height: 36px;
-        font-size: 0.68rem;
+        position: fixed !important;
+        bottom: 1.25rem !important;
+        right: 1.25rem !important;
+        left: auto !important;
+        width: 140px !important; /* Fixed width when expanded allows smooth transitions */
+        height: 56px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.65rem !important;
+        z-index: 999 !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(197, 190, 179, 0.15) !important;
+        border-radius: 16px !important;
+        font-size: 0.72rem !important;
+        font-family: 'DM Mono', monospace !important;
+        transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+      }
+
+      .btn-create-trigger svg {
+        flex-shrink: 0 !important;
+      }
+
+      .btn-create-trigger span {
+        transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    opacity 0.2s ease, 
+                    margin 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        max-width: 80px !important;
+        opacity: 1 !important;
+        display: inline-block !important;
+      }
+
+      /* Collapsed FAB state: just the icon in a curved square */
+      .btn-create-trigger.collapsed {
+        width: 56px !important;
+        min-width: 56px !important;
+        height: 56px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        border-radius: 16px !important;
+      }
+
+      .btn-create-trigger.collapsed span {
+        max-width: 0 !important;
+        opacity: 0 !important;
+        margin: 0 !important;
+        pointer-events: none !important;
       }
 
       /* Redesigned Mobile Modals: Clean, non-cramped, and fully scrollable */
@@ -2030,4 +2088,15 @@
       body.keyboard-raised .login-viewport-wrapper {
         height: 55vh;
       }
+    }
+
+    /* Gallery Metadata Fade Out Truncation */
+    .meta-text {
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: clip !important;
+      flex: 1 !important;
+      min-width: 0 !important;
+      mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 82%, rgba(0, 0, 0, 0) 98%) !important;
+      -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 82%, rgba(0, 0, 0, 0) 98%) !important;
     }

@@ -23,14 +23,14 @@ export function renderSingleCardHtml(p) {
           <span class="badge ${typeClass}">${typeLabel}</span>
         </div>
         
-        <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.3rem;">
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
+        <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.3rem; overflow: hidden; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 0.45rem; overflow: hidden; width: 100%;">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-            <span>${escapeHtml(p.location || 'unknown location')}</span>
+            <span class="meta-text" title="${escapeHtml(p.location || 'unknown location')}">${escapeHtml(p.location || 'unknown location')}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
+          <div style="display: flex; align-items: center; gap: 0.45rem; overflow: hidden; width: 100%;">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span>${escapeHtml(p.date || 'undated')}</span>
+            <span class="meta-text" title="${escapeHtml(p.date || 'undated')}">${escapeHtml(p.date || 'undated')}</span>
           </div>
         </div>
       </div>
