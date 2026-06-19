@@ -18,6 +18,41 @@ if (savedToken) {
     const loginEyeShow = document.getElementById('login-eye-show');
     const loginEyeHide = document.getElementById('login-eye-hide');
     const toast = document.getElementById('toast');
+    const rememberWrapper = document.querySelector('.remember-checkbox-wrapper');
+
+    // Handle delayed layout transition on initial autofocus, and instant transition on subsequent focus/blur
+    if (loginSecretInput) {
+      let isInitialLoad = true;
+
+      const raiseKeyboard = () => {
+        if (isInitialLoad) {
+          setTimeout(() => {
+            document.body.classList.add('keyboard-raised');
+            isInitialLoad = false;
+          }, 800); // delay to let the page load centered first
+        } else {
+          document.body.classList.add('keyboard-raised');
+        }
+      };
+
+      const lowerKeyboard = () => {
+        setTimeout(() => {
+          if (document.activeElement && document.activeElement.closest('.login-card')) {
+            return;
+          }
+          document.body.classList.remove('keyboard-raised');
+          isInitialLoad = false;
+        }, 100);
+      };
+
+      loginSecretInput.addEventListener('focus', raiseKeyboard);
+      loginSecretInput.addEventListener('blur', lowerKeyboard);
+
+      // Trigger immediately on load if autofocus has already focused it
+      if (document.activeElement === loginSecretInput) {
+        raiseKeyboard();
+      }
+    }
 
     function showToast(text, type = 'success') {
       if (!toast) return;
@@ -28,9 +63,9 @@ if (savedToken) {
       }, 4000);
     }
 
-    // Toggle password visibility
+    // Toggle password visibility (restores focus to keep keyboard open)
     if (loginTogglePasswordBtn) {
-      loginTogglePasswordBtn.addEventListener('click', () => {
+      loginTogglePasswordBtn.addEventListener('click', (e) => {
         if (loginSecretInput.type === 'password') {
           loginSecretInput.type = 'text';
           loginEyeShow.style.display = 'none';
@@ -40,6 +75,14 @@ if (savedToken) {
           loginEyeShow.style.display = 'block';
           loginEyeHide.style.display = 'none';
         }
+        loginSecretInput.focus();
+      });
+    }
+
+    // Keep password input focused when clicking the remember checkbox
+    if (rememberWrapper) {
+      rememberWrapper.addEventListener('click', () => {
+        loginSecretInput.focus();
       });
     }
 
