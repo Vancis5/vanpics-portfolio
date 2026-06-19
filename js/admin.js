@@ -929,11 +929,32 @@ function setStepState(step, state) {
   }
 }
 
+function updateClearButtonVisibility() {
+  const btn = document.getElementById('btn-clear-filters');
+  if (!btn) return;
+
+  const isDefaultSearch = searchQuery === '';
+  const isDefaultType = activeFilter === 'all';
+  
+  const sortEl = document.getElementById('filter-sort');
+  const isDefaultSort = !sortEl || sortEl.value === 'date-desc';
+  
+  const groupEl = document.getElementById('filter-group');
+  const isDefaultGroup = !groupEl || groupEl.value === 'none';
+
+  if (isDefaultSearch && isDefaultType && isDefaultSort && isDefaultGroup) {
+    btn.classList.remove('visible');
+  } else {
+    btn.classList.add('visible');
+  }
+}
+
 // Trigger render helper
 function renderArchives() {
   const sortVal = document.getElementById('filter-sort')?.value || 'date-desc';
   const groupVal = document.getElementById('filter-group')?.value || 'none';
   renderArchivesList(itemsContainer, globalArchivesList, activeFilter, searchQuery, sortVal, groupVal);
+  updateClearButtonVisibility();
 }
 
 // Unified load archives fetching both D1 and R2 listings in parallel
@@ -992,6 +1013,30 @@ if (filterGroupDrop) {
     localStorage.setItem('vanpics_cms_filter_group', e.target.value);
     renderArchives();
     e.target.blur();
+  });
+}
+
+const btnClearFilters = document.getElementById('btn-clear-filters');
+if (btnClearFilters) {
+  btnClearFilters.addEventListener('click', () => {
+    searchQuery = '';
+    if (searchInput) searchInput.value = '';
+    localStorage.setItem('vanpics_cms_search', '');
+
+    activeFilter = 'all';
+    const filterTypeEl = document.getElementById('filter-type');
+    if (filterTypeEl) filterTypeEl.value = 'all';
+    localStorage.setItem('vanpics_cms_filter_type', 'all');
+
+    const filterSortEl = document.getElementById('filter-sort');
+    if (filterSortEl) filterSortEl.value = 'date-desc';
+    localStorage.setItem('vanpics_cms_filter_sort', 'date-desc');
+
+    const filterGroupEl = document.getElementById('filter-group');
+    if (filterGroupEl) filterGroupEl.value = 'none';
+    localStorage.setItem('vanpics_cms_filter_group', 'none');
+
+    renderArchives();
   });
 }
 
