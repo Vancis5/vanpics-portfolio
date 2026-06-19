@@ -12,11 +12,11 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>vanpics — admin cms</title>
+  <title>vanpics: darkroom</title>
   
   <!-- favicon -->
-  <link rel="icon" type="image/svg+xml" href="icons/lock.svg">
-  <link rel="apple-touch-icon" href="icons/lock.svg">
+  <link rel="icon" type="image/svg+xml" href="icons/aperture-red.svg">
+  <link rel="apple-touch-icon" href="icons/aperture-red.svg">
   <!-- Fonts: Cormorant Garamond (Logo only), DM Mono (Everything else) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,6 +113,12 @@
             </select>
             <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
           </div>
+
+          <!-- Clear Filters -->
+          <button id="btn-clear-filters" class="btn-clear-filters" title="Reset all filters">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.45rem; opacity: 0.7;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            clear
+          </button>
         </div>
       </div>
       

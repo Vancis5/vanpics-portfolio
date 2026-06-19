@@ -634,24 +634,38 @@ export async function replacePhotoFile(request, env, params) {
     return errorResponse(request, env, 'photo record not found', 404);
   }
 
-  // 2. Put / overwrite the files in R2 using the existing keys
+  // 2. Generate new keys to bust CDN and browser cache
+  const newPhotoKey = makeMediaKey('photos', 'webp');
+  const newThumbKey = makeMediaKey('thumbs', 'webp');
+
+  // 3. Put the new files in R2 using the new keys
   const puts = [
-    env.MEDIA_BUCKET.put(photo.src, await photoFile.arrayBuffer(), {
+    env.MEDIA_BUCKET.put(newPhotoKey, await photoFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
-    env.MEDIA_BUCKET.put(photo.thumb, await thumbFile.arrayBuffer(), {
+    env.MEDIA_BUCKET.put(newThumbKey, await thumbFile.arrayBuffer(), {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
     }),
   ];
 
   await Promise.all(puts);
 
-  // 3. Update the aspect_ratio in D1
+  // 4. Update the aspect_ratio, src, and thumb in D1
   await env.DB.prepare(
-    'UPDATE photos SET aspect_ratio = ? WHERE id = ?'
-  ).bind(aspectRatio, photoId).run();
+    'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ? WHERE id = ?'
+  ).bind(aspectRatio, newPhotoKey, newThumbKey, photoId).run();
 
-  // 4. Purge the CDN cache for all API feeds instantly!
+  // 5. Delete the old files from R2 to clean up
+  const keysToDelete = [photo.src, photo.thumb].filter(Boolean);
+  if (keysToDelete.length > 0) {
+    try {
+      await env.MEDIA_BUCKET.delete(keysToDelete);
+    } catch (err) {
+      console.error('Failed to delete old R2 keys:', err);
+    }
+  }
+
+  // 6. Purge the CDN cache for all API feeds instantly!
   await clearApiCache(request);
 
   return jsonResponse(request, env, { success: true });
