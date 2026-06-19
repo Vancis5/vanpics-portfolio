@@ -46,7 +46,7 @@
       font-family: 'DM Mono', monospace;
       font-size: 0.82rem;
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow-x: clip;
       position: relative;
     }
 
@@ -453,6 +453,17 @@
       align-items: center;
       gap: 1.5rem;
       margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1.25rem 0;
+      background: var(--bg);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s ease;
+    }
+
+    .control-panel.stuck {
+      border-bottom-color: var(--border);
     }
 
     .search-filter-group {
@@ -1392,7 +1403,7 @@
       .control-panel {
         flex-direction: column;
         align-items: stretch;
-        padding: 0;
+        padding: 1rem 0;
         gap: 0.75rem;
       }
 

@@ -666,7 +666,7 @@ function switchMode(mode) {
     photoOnlyElements.forEach(el => el.style.display = '');
     videoOnlyElements.forEach(el => el.style.display = 'none');
     
-    document.getElementById('title').placeholder = 'harbinger';
+    document.getElementById('title').placeholder = 'untitled';
     document.getElementById('title').previousElementSibling.innerText = 'title';
   } else {
     tabVideoBtn.classList.add('active');
@@ -678,7 +678,7 @@ function switchMode(mode) {
     photoOnlyElements.forEach(el => el.style.display = 'none');
     videoOnlyElements.forEach(el => el.style.display = '');
     
-    document.getElementById('title').placeholder = 'cinematic shorelines';
+    document.getElementById('title').placeholder = 'untitled';
     document.getElementById('title').previousElementSibling.innerText = 'title';
   }
 
@@ -1301,10 +1301,16 @@ if (form) {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast('archived successfully', 'success');
+        const titleVal = document.getElementById('title').value.trim();
+        if (!titleVal) {
+          showToast('saved as draft', 'success');
+        } else {
+          showToast('archived successfully', 'success');
+        }
         form.reset();
         resetFileSelection();
         uploadModal.classList.remove('open');
+        updateBodyScrollState();
         loadArchives();
       } else {
         showToast(data.error || 'upload failed', 'error');
@@ -1407,3 +1413,22 @@ window.addEventListener('keydown', (e) => {
 });
 
 loadArchives();
+
+// Sticky control panel: toggle .stuck class for bottom border when scrolled
+const controlPanel = document.querySelector('.control-panel');
+if (controlPanel) {
+  const sentinel = document.createElement('div');
+  sentinel.style.height = '1px';
+  sentinel.style.width = '1px';
+  sentinel.style.position = 'absolute';
+  sentinel.style.top = '0';
+  sentinel.style.left = '0';
+  sentinel.style.pointerEvents = 'none';
+  controlPanel.parentElement.style.position = 'relative';
+  controlPanel.before(sentinel);
+
+  const obs = new IntersectionObserver(([entry]) => {
+    controlPanel.classList.toggle('stuck', !entry.isIntersecting);
+  }, { threshold: 0 });
+  obs.observe(sentinel);
+}

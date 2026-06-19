@@ -61,7 +61,7 @@ export function buildFilmstrip() {
     img.alt = p.title;
     img.loading = 'lazy';
     if (img.complete && img.naturalWidth > 0) {
-      requestAnimationFrame(function () { img.classList.add('media-loaded'); });
+      img.classList.add('media-loaded');
     } else {
       img.addEventListener('load', function () { img.classList.add('media-loaded'); }, { once: true });
       img.addEventListener('error', function () { img.classList.add('media-loaded'); }, { once: true });
