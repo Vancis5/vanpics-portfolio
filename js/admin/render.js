@@ -73,6 +73,8 @@ export function renderArchivesList(itemsContainer, list, activeFilter, searchQue
       return parseDate(b) - parseDate(a);
     } else if (sortVal === 'date-asc') {
       return parseDate(a) - parseDate(b);
+    } else if (sortVal === 'last-modified') {
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
     } else if (sortVal === 'name-asc') {
       return (a.title || '').localeCompare(b.title || '');
     } else if (sortVal === 'name-desc') {
