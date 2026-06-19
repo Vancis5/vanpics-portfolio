@@ -931,7 +931,7 @@ function setStepState(step, state) {
 
 function updateClearButtonVisibility() {
   const btn = document.getElementById('btn-clear-filters');
-  if (!btn) return;
+  const btnMobile = document.getElementById('btn-clear-filters-mobile');
 
   const isDefaultSearch = searchQuery === '';
   const isDefaultType = activeFilter === 'all';
@@ -942,10 +942,15 @@ function updateClearButtonVisibility() {
   const groupEl = document.getElementById('filter-group');
   const isDefaultGroup = !groupEl || groupEl.value === 'none';
 
-  if (isDefaultSearch && isDefaultType && isDefaultSort && isDefaultGroup) {
-    btn.classList.remove('visible');
-  } else {
-    btn.classList.add('visible');
+  const shouldBeVisible = !(isDefaultSearch && isDefaultType && isDefaultSort && isDefaultGroup);
+
+  if (btn) {
+    if (shouldBeVisible) btn.classList.add('visible');
+    else btn.classList.remove('visible');
+  }
+  if (btnMobile) {
+    if (shouldBeVisible) btnMobile.classList.add('visible');
+    else btnMobile.classList.remove('visible');
   }
 }
 
@@ -1016,28 +1021,35 @@ if (filterGroupDrop) {
   });
 }
 
+function handleClearFilters() {
+  searchQuery = '';
+  if (searchInput) searchInput.value = '';
+  localStorage.setItem('vanpics_cms_search', '');
+
+  activeFilter = 'all';
+  const filterTypeEl = document.getElementById('filter-type');
+  if (filterTypeEl) filterTypeEl.value = 'all';
+  localStorage.setItem('vanpics_cms_filter_type', 'all');
+
+  const filterSortEl = document.getElementById('filter-sort');
+  if (filterSortEl) filterSortEl.value = 'date-desc';
+  localStorage.setItem('vanpics_cms_filter_sort', 'date-desc');
+
+  const filterGroupEl = document.getElementById('filter-group');
+  if (filterGroupEl) filterGroupEl.value = 'none';
+  localStorage.setItem('vanpics_cms_filter_group', 'none');
+
+  renderArchives();
+}
+
 const btnClearFilters = document.getElementById('btn-clear-filters');
 if (btnClearFilters) {
-  btnClearFilters.addEventListener('click', () => {
-    searchQuery = '';
-    if (searchInput) searchInput.value = '';
-    localStorage.setItem('vanpics_cms_search', '');
+  btnClearFilters.addEventListener('click', handleClearFilters);
+}
 
-    activeFilter = 'all';
-    const filterTypeEl = document.getElementById('filter-type');
-    if (filterTypeEl) filterTypeEl.value = 'all';
-    localStorage.setItem('vanpics_cms_filter_type', 'all');
-
-    const filterSortEl = document.getElementById('filter-sort');
-    if (filterSortEl) filterSortEl.value = 'date-desc';
-    localStorage.setItem('vanpics_cms_filter_sort', 'date-desc');
-
-    const filterGroupEl = document.getElementById('filter-group');
-    if (filterGroupEl) filterGroupEl.value = 'none';
-    localStorage.setItem('vanpics_cms_filter_group', 'none');
-
-    renderArchives();
-  });
+const btnClearFiltersMobile = document.getElementById('btn-clear-filters-mobile');
+if (btnClearFiltersMobile) {
+  btnClearFiltersMobile.addEventListener('click', handleClearFilters);
 }
 
 // Delegate grid clicks for opening the edit modal
