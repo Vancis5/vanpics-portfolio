@@ -494,6 +494,7 @@
     .search-wrapper input {
       width: 100%;
       padding-left: 2.2rem;
+      padding-right: 2.4rem !important;
       height: 38px;
       background: rgba(20, 19, 19, 0.85);
       border-color: rgba(244, 238, 225, 0.07);
@@ -577,42 +578,45 @@
 
     .btn-clear-filters {
       display: none;
-      height: 38px;
-      padding: 0 1.25rem;
-      background: rgba(22, 21, 21, 0.4);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text-muted);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
-      text-transform: lowercase;
+      position: absolute !important;
+      right: 0.65rem !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      height: 26px !important;
+      width: 26px !important;
+      padding: 0 !important;
+      background: rgba(22, 21, 21, 0.6) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 50% !important;
+      color: var(--text-muted) !important;
       cursor: pointer;
       align-items: center;
       justify-content: center;
       transition: var(--transition);
       outline: none;
+      z-index: 10;
     }
 
     .btn-clear-filters.visible {
-      display: inline-flex;
-      animation: fadeInClear 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      display: inline-flex !important;
+      animation: fadeInClear 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes fadeInClear {
       from {
         opacity: 0;
-        transform: scale(0.96);
+        transform: translateY(-50%) scale(0.85);
       }
       to {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(-50%) scale(1);
       }
     }
 
     .btn-clear-filters:hover {
-      background: rgba(217, 104, 104, 0.08);
-      border-color: rgba(217, 104, 104, 0.3);
-      color: var(--danger);
+      background: rgba(217, 104, 104, 0.15) !important;
+      border-color: rgba(217, 104, 104, 0.4) !important;
+      color: var(--danger) !important;
     }
 
     /* Google Drive Grid View */
@@ -1511,13 +1515,6 @@
         min-width: 0 !important;
         padding: 0.55rem 1.6rem 0.55rem 0.55rem !important;
         font-size: 0.65rem !important;
-      }
-
-      .btn-clear-filters {
-        grid-column: span 3;
-        width: 100% !important;
-        font-size: 0.65rem !important;
-        height: 34px !important;
       }
 
       .select-arrow {
