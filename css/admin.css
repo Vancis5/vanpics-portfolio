@@ -29,6 +29,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    ::selection {
+      background-color: rgba(244, 238, 225, 0.25);
+      color: var(--text);
+    }
+
+
     button,
     a,
     .btn,
