@@ -578,45 +578,46 @@
 
     .btn-clear-filters {
       display: none;
-      position: absolute !important;
-      right: 0.65rem !important;
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-      height: 26px !important;
-      width: 26px !important;
-      padding: 0 !important;
-      background: rgba(22, 21, 21, 0.6) !important;
-      border: 1px solid var(--border) !important;
-      border-radius: 50% !important;
-      color: var(--text-muted) !important;
+      height: 38px;
+      padding: 0 1.25rem;
+      background: rgba(22, 21, 21, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: lowercase;
       cursor: pointer;
       align-items: center;
       justify-content: center;
       transition: var(--transition);
       outline: none;
-      z-index: 10;
     }
 
     .btn-clear-filters.visible {
-      display: inline-flex !important;
-      animation: fadeInClear 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      display: inline-flex;
+      animation: fadeInClearDesktop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    @keyframes fadeInClear {
+    @keyframes fadeInClearDesktop {
       from {
         opacity: 0;
-        transform: translateY(-50%) scale(0.85);
+        transform: scale(0.96);
       }
       to {
         opacity: 1;
-        transform: translateY(-50%) scale(1);
+        transform: scale(1);
       }
     }
 
     .btn-clear-filters:hover {
-      background: rgba(217, 104, 104, 0.15) !important;
-      border-color: rgba(217, 104, 104, 0.4) !important;
-      color: var(--danger) !important;
+      background: rgba(217, 104, 104, 0.08);
+      border-color: rgba(217, 104, 104, 0.3);
+      color: var(--danger);
+    }
+
+    .btn-clear-filters-mobile {
+      display: none !important;
     }
 
     /* Google Drive Grid View */
@@ -1519,6 +1520,53 @@
 
       .select-arrow {
         right: 0.5rem !important;
+      }
+
+      .btn-clear-filters {
+        display: none !important;
+      }
+
+      .btn-clear-filters-mobile {
+        display: none;
+        position: absolute !important;
+        right: 0.65rem !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        height: 26px !important;
+        width: 26px !important;
+        padding: 0 !important;
+        background: rgba(22, 21, 21, 0.6) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 50% !important;
+        color: var(--text-muted) !important;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+        outline: none;
+        z-index: 10;
+      }
+
+      .btn-clear-filters-mobile.visible {
+        display: inline-flex !important;
+        animation: fadeInClearMobile 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes fadeInClearMobile {
+        from {
+          opacity: 0;
+          transform: translateY(-50%) scale(0.85);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(-50%) scale(1);
+        }
+      }
+
+      .btn-clear-filters-mobile:hover {
+        background: rgba(217, 104, 104, 0.15) !important;
+        border-color: rgba(217, 104, 104, 0.4) !important;
+        color: var(--danger) !important;
       }
 
       .btn-create-trigger {
