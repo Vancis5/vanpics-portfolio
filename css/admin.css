@@ -1543,9 +1543,11 @@
         font-family: 'DM Mono', monospace !important;
         transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
                     border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    gap 0.35s cubic-bezier(0.16, 1, 0.3, 1),
                     box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
         overflow: hidden !important;
         white-space: nowrap !important;
+        will-change: width, border-radius !important;
       }
 
       .btn-create-trigger svg {
@@ -1553,12 +1555,15 @@
       }
 
       .btn-create-trigger span {
-        transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-                    opacity 0.2s ease, 
-                    margin 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    opacity 0.2s ease !important;
         max-width: 80px !important;
         opacity: 1 !important;
+        transform: scale(1) !important;
+        transform-origin: left center !important;
         display: inline-block !important;
+        will-change: max-width, transform, opacity !important;
       }
 
       /* Collapsed FAB state: just the icon in a curved square */
@@ -1575,7 +1580,7 @@
       .btn-create-trigger.collapsed span {
         max-width: 0 !important;
         opacity: 0 !important;
-        margin: 0 !important;
+        transform: scale(0.8) !important;
         pointer-events: none !important;
       }
 
