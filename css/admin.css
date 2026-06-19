@@ -41,7 +41,6 @@
 
     body {
       background-color: var(--bg);
-      background-image: radial-gradient(circle at 50% 50%, #151414 0%, #080808 100%);
       color: var(--text);
       font-family: 'DM Mono', monospace;
       font-size: 0.82rem;
