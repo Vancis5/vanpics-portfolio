@@ -312,6 +312,16 @@
       letter-spacing: normal;
     }
 
+    input::placeholder,
+    textarea::placeholder,
+    #edit-media-preview-placeholder {
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+
     /* Hide number input spinners */
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
