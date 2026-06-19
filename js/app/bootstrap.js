@@ -176,14 +176,19 @@ function processVideos(raw) {
   }));
 }
 
+function isUntitled(p) {
+  const t = (p.title || '').toLowerCase().trim();
+  return !t || t === 'untitled';
+}
+
 function applyCarouselPhotos(photos) {
-  state.carouselPhotos = photos.filter(p => p.heroSlide === true && p.title !== '');
-  if (state.carouselPhotos.length === 0) state.carouselPhotos = photos.filter(p => p.title !== '');
+  state.carouselPhotos = photos.filter(p => p.heroSlide === true && !isUntitled(p));
+  if (state.carouselPhotos.length === 0) state.carouselPhotos = photos.filter(p => !isUntitled(p));
 }
 
 function getStartupImageUrls(photos) {
   return Array.from(new Set(
-    photos.filter(p => p.heroSlide === true && p.title !== '').slice(0, 6).map(p => p.thumb || p.src).filter(Boolean)
+    photos.filter(p => p.heroSlide === true && !isUntitled(p)).slice(0, 6).map(p => p.thumb || p.src).filter(Boolean)
   ));
 }
 
@@ -222,9 +227,9 @@ async function warmStartupImages(photos) {
 }
 
 function updateFooterStats(photos, videos) {
-  const photographs = photos.filter(p => p.category !== 'figures' && p.title);
-  const figures = photos.filter(p => p.category === 'figures' && p.title);
-  const motion = videos ? videos.filter(v => !!v.thumb || !!v.src) : [];
+  const photographs = photos.filter(p => p.category !== 'figures' && !isUntitled(p));
+  const figures = photos.filter(p => p.category === 'figures' && !isUntitled(p));
+  const motion = videos ? videos.filter(v => (!!v.thumb || !!v.src) && !isUntitled(v)) : [];
 
   let since = '—';
   const years = photos
@@ -317,11 +322,41 @@ function renderUI(photos, videos) {
     renderUI(newPhotos, newVideos);
     if (state.carouselPhotos.length === 0) safeLift();
   } else if (newPhotos.length > 0) {
-    // ── Already rendered from cache: silently update data store with fresh data ──
-    // UI stays stable; fresh data powers lightbox, nav, etc. going forward.
+    // ── Already rendered from cache: check if the fresh data has actually changed ──
+    let dataChanged = true;
+    try {
+      const raw = localStorage.getItem(MEDIA_CACHE_KEY);
+      if (raw) {
+        const cached = JSON.parse(raw);
+        const cachedPhotos = processPhotos(cached.photos || []);
+        const cachedVideos = processVideos(cached.videos || []);
+
+        const photoSig = p => `${p.id}-${p.title || ''}-${p.src || ''}-${p.category || ''}-${p.heroSlide}`;
+        const videoSig = v => `${v.id}-${v.title || ''}-${v.src || ''}`;
+
+        const photosSame = newPhotos.length === cachedPhotos.length &&
+                           newPhotos.every((p, idx) => photoSig(p) === photoSig(cachedPhotos[idx]));
+        const videosSame = newVideos.length === cachedVideos.length &&
+                           newVideos.every((v, idx) => videoSig(v) === videoSig(cachedVideos[idx]));
+
+        if (photosSame && videosSame) {
+          dataChanged = false;
+        }
+      }
+    } catch (e) {
+      dataChanged = true;
+    }
+
+    // Update data store
     updateMediaLibrary(newPhotos, newVideos);
     updateActivePhotos();
     applyCarouselPhotos(newPhotos);
     updateFooterStats(newPhotos, newVideos);
+
+    // If data actually changed (e.g. user set a photo as draft in CMS), rebuild UI
+    if (dataChanged) {
+      buildCarousel();
+      buildMasonry();
+    }
   }
 })();
