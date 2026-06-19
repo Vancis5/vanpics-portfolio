@@ -41,5 +41,6 @@ export const domRefs = {
   filmstripWrap: document.getElementById('filmstrip-wrap'),
   filmstrip: document.getElementById('filmstrip'),
   filmstripLiftZone: document.getElementById('filmstrip-lift-zone'),
-  siteFooter: document.getElementById('site-footer')
+  siteFooter: document.getElementById('site-footer'),
+  footerGlowBall: document.getElementById('footer-glow-ball')
 };

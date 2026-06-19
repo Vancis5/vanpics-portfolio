@@ -9,7 +9,7 @@ let footerObserver = new IntersectionObserver(function (entries) {
       }
     }
   });
-}, { threshold: 0.85 });
+}, { threshold: 0.1 });
 
 let siteFooter = document.getElementById('site-footer');
 if (siteFooter) footerObserver.observe(siteFooter);
