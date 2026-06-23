@@ -60,6 +60,13 @@ function getLightboxBlurPath(src) {
   return src;
 }
 
+function getCachedImageDecode(src) {
+  let cached = _cacheImage(src);
+  if (!cached) return Promise.resolve(null);
+  if (cached.decoded) return Promise.resolve(cached);
+  return cached.decodePromise || Promise.resolve(cached);
+}
+
 export function preloadLightboxBlurNeighbors(centerIndex, range) {
   if (state.currentLightboxIsMotion) return;
 
@@ -169,8 +176,10 @@ export function setLightboxBlur(src) {
     });
   }
 
-  _cacheImage(blurPath);
-  doSwap();
+  getCachedImageDecode(blurPath).then(function () {
+    if (token !== blurToken) return;
+    doSwap();
+  });
 }
 
 function clearLightboxPhotoPlaceholder(expectedToken) {
