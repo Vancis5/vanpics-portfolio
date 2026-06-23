@@ -11,6 +11,23 @@ let filmstripEl = domRefs.filmstrip;
 let filmstripTrack = null;
 let filmstripBuilt = false;
 let FILMSTRIP_CONFIG = APP_CONFIG.filmstrip;
+
+function galleryAlreadyHasThumb(thumbPath) {
+  if (!thumbPath) return false;
+  let absolutePath = '';
+  try {
+    absolutePath = new URL(thumbPath, window.location.href).href;
+  } catch (e) { }
+
+  let existingImages = document.querySelectorAll('.photo-card img');
+  for (let i = 0; i < existingImages.length; i++) {
+    let existing = existingImages[i];
+    if (existing.getAttribute('src') !== thumbPath && (!absolutePath || existing.src !== absolutePath)) continue;
+    if (existing.classList.contains('media-loaded') || (existing.complete && existing.naturalWidth > 0)) return true;
+  }
+  return false;
+}
+
 window.addEventListener('category-change', function () {
   filmstripBuilt = false;
   if (typeof filmstripEl !== 'undefined' && filmstripEl) {
@@ -59,8 +76,10 @@ export function buildFilmstrip() {
     let thumbPath = state.currentLightboxIsMotion ? p.thumb : (p.thumb || p.src.replace('photos/', 'photos/thumbs/'));
     img.src = thumbPath;
     img.alt = p.title;
-    img.loading = 'lazy';
-    if (img.complete && img.naturalWidth > 0) {
+    img.loading = 'eager';
+    img.decoding = 'async';
+    img.fetchPriority = Math.abs(i - state.cur) <= 8 ? 'high' : 'auto';
+    if (galleryAlreadyHasThumb(thumbPath) || (img.complete && img.naturalWidth > 0)) {
       img.classList.add('media-loaded');
     } else {
       img.addEventListener('load', function () { img.classList.add('media-loaded'); }, { once: true });
