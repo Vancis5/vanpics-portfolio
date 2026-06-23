@@ -136,6 +136,14 @@ export function setLightboxBlur(src) {
   let incoming = outgoing === layerA ? layerB : layerA;
 
   let inners = incoming.querySelectorAll('.lightbox-bg-blur-inner');
+  let cached = _cacheImage(blurPath);
+
+  function fadeToBlackFallback() {
+    if (!outgoing || outgoing === incoming) return;
+    outgoing.style.transition = '';
+    outgoing.style.opacity = '';
+    outgoing.classList.remove('active');
+  }
 
   function doSwap() {
     if (token !== blurToken) return; // Stale request, abort
@@ -146,7 +154,6 @@ export function setLightboxBlur(src) {
     incoming.style.opacity = '0';
     incoming.style.setProperty('--blur-dir', Math.random() > 0.5 ? 'normal' : 'reverse');
     incoming.classList.remove('active');
-    void incoming.offsetWidth;
 
     // 1. Load image onto the hidden (incoming) layer while it's still at opacity:0
     inners.forEach(function (inner) {
@@ -163,7 +170,7 @@ export function setLightboxBlur(src) {
 
         // Restore CSS transitions (clear inline overrides to let stylesheet apply)
         incoming.style.transition = '';
-        incoming.style.opacity = '';
+        incoming.style.opacity = '1';
         incoming.classList.add('active');
         activeBlurLayer = incoming;
 
@@ -176,7 +183,18 @@ export function setLightboxBlur(src) {
     });
   }
 
-  getCachedImageDecode(blurPath).then(function () {
+  if (cached && cached.decoded) {
+    doSwap();
+    return;
+  }
+
+  // Start movement immediately. If the next thumbnail is not decoded yet,
+  // fade the old blur away to the lightbox's black base, then fade in the
+  // new blur when it is actually ready to paint.
+  fadeToBlackFallback();
+
+  let decodePromise = cached && cached.decodePromise ? cached.decodePromise : getCachedImageDecode(blurPath);
+  decodePromise.then(function () {
     if (token !== blurToken) return;
     doSwap();
   });
@@ -234,9 +252,17 @@ export function prepareLightboxPhoto(p) {
   }
 
   // ── Cache miss: show placeholder while loading ──
+  let previewSrc = p.thumb || '';
   wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading', 'photo-placeholder-visible');
-  img.dataset.loadingPhoto = 'true';
+  wrap.classList.add('photo-loading');
+  if (previewSrc) {
+    img.removeAttribute('data-loading-photo');
+    img.src = previewSrc;
+    img.style.opacity = '1';
+  } else {
+    wrap.classList.add('photo-placeholder-visible');
+    img.dataset.loadingPhoto = 'true';
+  }
 
   // Load and decode the image entirely off-DOM in the background cache.
   // This prevents the DOM injection from stalling the CSS entrance animations.
@@ -434,10 +460,18 @@ function updateDynamicTextColor(p) {
 }
 
 // updates text + blur bg only — image src is set separately to avoid double-load
-export function setLightboxContent(p) {
+export function setLightboxContent(p, options) {
   if (!p) return;
+  options = options || {};
   refreshLightboxInfoRefs();
-  updateDynamicTextColor(p);
+  if (options.deferDynamicTextColor) {
+    resetDynamicTextColor();
+    scheduleAfterMotionFrame(function () {
+      updateDynamicTextColor(p);
+    }, 180);
+  } else {
+    updateDynamicTextColor(p);
+  }
 
   let safeTitle = p.title || '';
   let safeDesc = p.desc || '';
@@ -595,6 +629,12 @@ export function animateInfo(dir) {
 // increments each navigation so stale callbacks from aborted navigations are ignored
 let navGen = 0;
 
+function scheduleAfterMotionFrame(callback, delay) {
+  requestAnimationFrame(function () {
+    setTimeout(callback, delay || 0);
+  });
+}
+
 function getCurrentLightboxItems() {
   return state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 }
@@ -671,30 +711,39 @@ export function openLightbox(i, direction, isMotion) {
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
 
-      // Start the new media immediately instead of waiting for decode.
       let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
-      setLightboxBlur(bSrc);
-      setLightboxContent(p);
       if (!isMotion) {
         prepareLightboxPhoto(p);
-        loadSwipeNeighbors();
+        void imgWrap.offsetWidth;
+        imgWrap.style.transition = 'opacity 0.32s ease, transform 0.46s cubic-bezier(0.16,1,0.3,1)';
+        imgWrap.style.opacity = '1';
+        imgWrap.style.transform = 'translateX(0) scale(1)';
+        img.style.transition = 'opacity 0.32s ease';
+        img.style.opacity = '1';
+        scheduleAfterMotionFrame(function () {
+          if (gen !== navGen) return;
+          setLightboxBlur(bSrc);
+          setLightboxContent(p, { deferDynamicTextColor: true });
+          animateInfo(dir);
+        }, 140);
+        scheduleAfterMotionFrame(function () {
+          if (gen === navGen) loadSwipeNeighbors();
+        }, 280);
+        return;
       }
 
       requestAnimationFrame(function () {
         if (gen !== navGen) return;
-        animateInfo(dir);
-        void img.offsetWidth; // force reflow
 
         if (isMotion) {
+          setLightboxBlur(bSrc);
+          setLightboxContent(p, { deferDynamicTextColor: true });
           renderVideoInLightbox(p);
           playerShell.style.transition = 'opacity 0.35s ease';
           playerShell.style.opacity = '1';
-        } else {
-          imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1)';
-          imgWrap.style.opacity = '1';
-          imgWrap.style.transform = 'translateX(0) scale(1)';
-          img.style.transition = 'opacity 0.24s ease';
-          img.style.opacity = '1';
+          scheduleAfterMotionFrame(function () {
+            if (gen === navGen) animateInfo(dir);
+          }, 0);
         }
       });
     }
@@ -702,7 +751,7 @@ export function openLightbox(i, direction, isMotion) {
     if (isMotion) {
       doEnter();
     } else {
-      setTimeout(doEnter, 70);
+      doEnter();
     }
 
   } else {
