@@ -57,6 +57,9 @@ function _cacheImage(src) {
 
 function getLightboxBlurPath(src) {
   if (!src) return '';
+  if (src.includes('photos/') && !src.includes('photos/thumbs/')) {
+    return src.replace('photos/', 'photos/thumbs/');
+  }
   return src;
 }
 
@@ -190,12 +193,18 @@ export function setLightboxBlur(src) {
 
   // Start movement immediately. If the next thumbnail is not decoded yet,
   // fade the old blur away to the lightbox's black base, then fade in the
-  // new blur when it is actually ready to paint.
-  fadeToBlackFallback();
+  // new blur when it is actually ready to paint. Defer this by 50ms so that
+  // cached or fast-loading images bypass the fade-to-black state.
+  let timer = setTimeout(function () {
+    if (token === blurToken) {
+      fadeToBlackFallback();
+    }
+  }, 50);
 
   let decodePromise = cached && cached.decodePromise ? cached.decodePromise : getCachedImageDecode(blurPath);
   decodePromise.then(function () {
     if (token !== blurToken) return;
+    clearTimeout(timer);
     doSwap();
   });
 }
@@ -252,7 +261,7 @@ export function prepareLightboxPhoto(p) {
   }
 
   // ── Cache miss: show placeholder while loading ──
-  let previewSrc = p.thumb || '';
+  let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
   wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
   wrap.classList.add('photo-loading');
   if (previewSrc) {
