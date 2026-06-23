@@ -82,8 +82,19 @@ export function buildFilmstrip() {
     if (galleryAlreadyHasThumb(thumbPath) || (img.complete && img.naturalWidth > 0)) {
       img.classList.add('media-loaded');
     } else {
-      img.addEventListener('load', function () { img.classList.add('media-loaded'); }, { once: true });
-      img.addEventListener('error', function () { img.classList.add('media-loaded'); }, { once: true });
+      let loaded = false;
+      let timer = setTimeout(function () {
+        if (!loaded) {
+          img.classList.add('fade-in-on-load');
+        }
+      }, 50);
+      function onReveal() {
+        loaded = true;
+        clearTimeout(timer);
+        img.classList.add('media-loaded');
+      }
+      img.addEventListener('load', onReveal, { once: true });
+      img.addEventListener('error', onReveal, { once: true });
     }
     thumb.appendChild(img);
     thumb.addEventListener('click', (function (idx) {

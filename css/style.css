@@ -1814,6 +1814,9 @@ body::after {
   display: block;
   opacity: 0;
   pointer-events: none;
+}
+
+.filmstrip-thumb img.fade-in-on-load {
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
