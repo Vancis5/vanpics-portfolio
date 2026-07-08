@@ -1115,39 +1115,32 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
 
+      // Update content & blur immediately so all layout changes (desc show/hide,
+      // meta items, etc.) are fully settled before the animation RAF fires.
+      // This prevents desc-related layout shifts mid-slide-in.
       let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
+      setLightboxBlur(bSrc);
+      setLightboxContent(p);
       if (!isMotion) {
         prepareLightboxPhoto(p);
-        void imgWrap.offsetWidth;
-        imgWrap.style.transition = 'opacity 0.32s ease, transform 0.46s cubic-bezier(0.16,1,0.3,1)';
-        imgWrap.style.opacity = '1';
-        imgWrap.style.transform = 'translateX(0) scale(1)';
-        img.style.transition = 'opacity 0.32s ease';
-        img.style.opacity = '1';
-        scheduleAfterMotionFrame(function () {
-          if (gen !== navGen) return;
-          setLightboxBlur(bSrc);
-          setLightboxContent(p, { deferDynamicTextColor: true });
-          animateInfo(dir);
-        }, 140);
-        scheduleAfterMotionFrame(function () {
-          if (gen === navGen) loadSwipeNeighbors();
-        }, 280);
-        return;
+        loadSwipeNeighbors();
       }
 
       requestAnimationFrame(function () {
         if (gen !== navGen) return;
+        animateInfo(dir);
+        void img.offsetWidth; // force reflow
 
         if (isMotion) {
-          setLightboxBlur(bSrc);
-          setLightboxContent(p, { deferDynamicTextColor: true });
           renderVideoInLightbox(p);
           playerShell.style.transition = 'opacity 0.35s ease';
           playerShell.style.opacity = '1';
-          scheduleAfterMotionFrame(function () {
-            if (gen === navGen) animateInfo(dir);
-          }, 0);
+        } else {
+          imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1)';
+          imgWrap.style.opacity = '1';
+          imgWrap.style.transform = 'translateX(0) scale(1)';
+          img.style.transition = 'opacity 0.24s ease';
+          img.style.opacity = '1';
         }
       });
     }
@@ -1155,7 +1148,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (isMotion) {
       doEnter();
     } else {
-      doEnter();
+      setTimeout(doEnter, 70);
     }
 
   } else {
