@@ -277,31 +277,69 @@ body::after {
   cursor: grab;
 }
 
-.carousel-row img {
+.carousel-item {
+  display: block;
   height: calc((100svh - 16px) / 3);
   min-height: 120px;
-  width: auto;
-  object-fit: cover;
+  aspect-ratio: var(--carousel-photo-ratio);
   border-radius: 3px;
   flex-shrink: 0;
   cursor: grab;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.carousel-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
+    rgba(242, 238, 231, 0.035);
+  border: 1px solid rgba(242, 238, 231, 0.08);
+  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.carousel-item.photo-loaded::before {
+  opacity: 0;
+  transform: scale(0.985);
+}
+
+.carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
+  opacity: 0;
   filter: brightness(0.78) saturate(0.85);
   transition: opacity 1.2s ease, filter 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: filter, transform;
-  -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-drag: none;
+  position: relative;
+  z-index: 2;
+}
+
+.carousel-item.photo-loaded img {
+  opacity: 1;
 }
 
 .carousel-row:active,
-.carousel-row img:active {
+.carousel-item:active,
+.carousel-item img:active {
   cursor: grabbing !important;
 }
 
 /* mobile: 4 rows fill screen */
 @media (hover: none) and (max-width: 639px) {
-  .carousel-row img {
+  .carousel-item {
     height: calc((100svh - 18px) / 4);
     min-height: 110px;
   }
@@ -312,21 +350,21 @@ body::after {
 }
 
 @media (min-width: 500px) {
-  .carousel-row img {
+  .carousel-item {
     height: calc((100svh - 16px) / 3);
     min-height: 160px;
   }
 }
 
 @media (min-width: 1024px) {
-  .carousel-row img {
+  .carousel-item {
     height: calc((100svh - 16px) / 3);
     min-height: 200px;
   }
 }
 
 @media (hover: hover) {
-  .carousel-row img:hover {
+  .carousel-item img:hover {
     filter: brightness(1) saturate(1);
     transform: scale(1.03);
   }
@@ -677,6 +715,29 @@ body::after {
   display: inline-block;
   width: 100%;
   vertical-align: top;
+  aspect-ratio: var(--photo-aspect-ratio);
+}
+
+.photo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
+    rgba(242, 238, 231, 0.035);
+  border: 1px solid rgba(242, 238, 231, 0.08);
+  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.photo-card.photo-loaded::before {
+  opacity: 0;
+  transform: scale(0.985);
 }
 
 .photo-card img {
@@ -688,6 +749,8 @@ body::after {
     transform 1.4s cubic-bezier(0.16, 1, 0.3, 1),
     filter 1.4s cubic-bezier(0.16, 1, 0.3, 1);
   filter: brightness(0.82) saturate(0.88);
+  position: relative;
+  z-index: 2;
 }
 
 .photo-card img.media-loaded {
@@ -725,6 +788,7 @@ body::after {
   flex-direction: column;
   justify-content: flex-end;
   padding: 1rem;
+  z-index: 3;
 }
 
 .photo-card-title {
