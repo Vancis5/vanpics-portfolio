@@ -102,26 +102,45 @@ export function setMobileScrollToSlideCallback(callback) {
 }
 
 function refreshLightboxInfoRefs() {
-  let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
+  let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') as HTMLElement : null;
   if (!info) return null;
 
   domRefs.lightboxInfo = info;
-  domRefs.lightboxTitle = info.querySelector('#lightbox-title');
-  domRefs.lightboxDescToggle = info.querySelector('#lightbox-desc-toggle');
-  domRefs.lightboxDesc = info.querySelector('#lightbox-desc');
-  domRefs.metaLocation = info.querySelector('#meta-location');
-  domRefs.metaLocationText = info.querySelector('#meta-location-text');
-  domRefs.metaDate = info.querySelector('#meta-date');
-  domRefs.metaDateText = info.querySelector('#meta-date-text');
-  domRefs.metaMusic = info.querySelector('#meta-music');
-  domRefs.metaMusicText = info.querySelector('#meta-music-text');
+  domRefs.lightboxTitle = info.querySelector('#lightbox-title') as HTMLElement;
+  domRefs.lightboxDescToggle = info.querySelector('#lightbox-desc-toggle') as HTMLElement;
+  domRefs.lightboxDesc = info.querySelector('#lightbox-desc') as HTMLElement;
+  domRefs.metaLocation = info.querySelector('#meta-location') as HTMLElement;
+  domRefs.metaLocationText = info.querySelector('#meta-location-text') as HTMLElement;
+  domRefs.metaDate = info.querySelector('#meta-date') as HTMLElement;
+  domRefs.metaDateText = info.querySelector('#meta-date-text') as HTMLElement;
+  domRefs.metaMusic = info.querySelector('#meta-music') as HTMLElement;
+  domRefs.metaMusicText = info.querySelector('#meta-music-text') as HTMLElement;
   return info;
 }
 
 let blurRenderer = null;
 
 class WebGLBlurRenderer {
-  constructor(canvas) {
+  canvas: any;
+  gl: any;
+  width: number;
+  height: number;
+  startTime: number;
+  animating: boolean;
+  mixFactor: number;
+  transitionSpeed: number;
+  animationId: any;
+  dirPrev: number;
+  dirCurr: number;
+  textures: { prev: any; current: any; };
+  progLiquid: any;
+  progDown: any;
+  progUp: any;
+  fbos: any;
+  dummyTexture: any;
+  quadBuffer: any;
+
+  constructor(canvas: any) {
     this.canvas = canvas;
     this.gl = canvas.getContext('webgl', {
       alpha: false,
@@ -585,7 +604,7 @@ export function setLightboxBlur(src) {
   });
 }
 
-function clearLightboxPhotoPlaceholder(expectedToken) {
+function clearLightboxPhotoPlaceholder(expectedToken?: number) {
   if (expectedToken && expectedToken !== photoPlaceholderToken) return;
   if (!expectedToken) photoPlaceholderToken++;
   let wrap = domRefs.lightboxImgWrap;
@@ -602,7 +621,7 @@ function clearLightboxPhotoPlaceholder(expectedToken) {
   }, 260);
 }
 
-function showLightboxPhotoError(expectedToken) {
+function showLightboxPhotoError(expectedToken?: number) {
   if (expectedToken !== photoPlaceholderToken) return;
   let wrap = domRefs.lightboxImgWrap;
   let img = domRefs.lightboxImg;
@@ -621,7 +640,7 @@ export function prepareLightboxPhoto(p) {
   let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
-  wrap.style.setProperty('--lightbox-photo-ratio', ratio);
+  wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
   img.alt = p.title || '';
   img.removeAttribute('title');
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
@@ -845,7 +864,7 @@ function updateDynamicTextColor(p) {
 }
 
 // updates text + blur bg only — image src is set separately to avoid double-load
-export function setLightboxContent(p, options) {
+export function setLightboxContent(p, options?: any) {
   if (!p) return;
   options = options || {};
   refreshLightboxInfoRefs();
@@ -981,7 +1000,7 @@ export function animateInfo(dir) {
   let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
   if (hasContent) {
     // create exit ghost — absolutely positioned so it doesn't shift layout
-    let ghost = info.cloneNode(true);
+    let ghost = info.cloneNode(true) as HTMLElement;
     ghost.style.position = 'absolute';
     ghost.style.top = info.offsetTop + 'px';
     ghost.style.left = info.offsetLeft + 'px';
@@ -998,7 +1017,7 @@ export function animateInfo(dir) {
   // clone-replace for enter — clean slate, no animation-cancel issues
   let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
   let fromY = dir === 0 ? 16 : 0;
-  let clone = info.cloneNode(true);
+  let clone = info.cloneNode(true) as HTMLElement;
   clone.style.setProperty('--lb-from-x', fromX + 'px');
   clone.style.setProperty('--lb-from-y', fromY + 'px');
   clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
@@ -1024,7 +1043,7 @@ function getCurrentLightboxItems() {
   return state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 }
 
-export function openLightbox(i, direction, isMotion) {
+export function openLightbox(i: number, direction?: number, isMotion?: boolean) {
   let lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !state.isPopState) {
     state.pushNextState = true;
@@ -1283,7 +1302,7 @@ export function startUnifiedMotionPlayer(id) {
   if (video) video.play().catch(function () { });
 }
 
-export function closeLightbox(eventOrIsKeyboard = false) {
+export function closeLightbox(eventOrIsKeyboard: any = false) {
   let isKeyboard = false;
   if (typeof eventOrIsKeyboard === 'boolean') {
     isKeyboard = eventOrIsKeyboard;
@@ -1351,10 +1370,10 @@ export function closeLightbox(eventOrIsKeyboard = false) {
 
     // Restart Lenis and sync state once transition has a head start
     setTimeout(function () {
-      if (window.lenis) {
-        window.lenis.start();
-        window.lenis.animatedScroll = window.lenis.targetScroll = window.scrollY;
-        window.lenis.emit(); // Force sync of all UI driven by scroll hub
+      if ((window as any).lenis) {
+        (window as any).lenis.start();
+        (window as any).lenis.animatedScroll = (window as any).lenis.targetScroll = window.scrollY;
+        (window as any).lenis.emit(); // Force sync of all UI driven by scroll hub
       }
     }, 400);
   });
@@ -1519,7 +1538,7 @@ export function navigateLightbox(d) {
 }
 
 document.addEventListener('keydown', function (e) {
-  let target = e.target;
+  let target = e.target as HTMLElement;
   let isTyping = target && (
     target.matches && target.matches('input, textarea, select, [contenteditable="true"]')
   );
@@ -1533,7 +1552,7 @@ document.addEventListener('keydown', function (e) {
 });
 
 // desktop: click bg to close
-if (!state.isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);
+if (!state.isMobile && domRefs.lightboxBg) domRefs.lightboxBg.addEventListener('click', closeLightbox);
 
 function handleLightboxBlur() {
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {

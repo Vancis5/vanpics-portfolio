@@ -7,13 +7,13 @@ if (savedToken) {
   window.location.replace('admin.html');
 } else {
   document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    const loginSecretInput = document.getElementById('login-secret-token');
-    const loginRememberCheckbox = document.getElementById('login-remember-token');
-    const loginErrorMsg = document.getElementById('login-error-msg');
-    const loginBtnSubmit = document.getElementById('btn-login-submit');
-    const loginBtnText = document.getElementById('login-btn-text');
-    const loginBtnSpinner = document.getElementById('login-btn-spinner');
+    const loginForm = document.getElementById('login-form') as HTMLFormElement;
+    const loginSecretInput = document.getElementById('login-secret-token') as HTMLInputElement;
+    const loginRememberCheckbox = document.getElementById('login-remember-token') as HTMLInputElement;
+    const loginErrorMsg = document.getElementById('login-error-msg') as HTMLElement;
+    const loginBtnSubmit = document.getElementById('btn-login-submit') as HTMLButtonElement;
+    const loginBtnText = document.getElementById('login-btn-text') as HTMLElement;
+    const loginBtnSpinner = document.getElementById('login-btn-spinner') as HTMLElement;
     const loginTogglePasswordBtn = document.getElementById('login-toggle-password-btn');
     const loginEyeShow = document.getElementById('login-eye-show');
     const loginEyeHide = document.getElementById('login-eye-hide');

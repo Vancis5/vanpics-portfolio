@@ -17,7 +17,7 @@ function parseDate(item) {
 
 export function updateMediaLibrary(newPhotos, newVideos) {
   if (Array.isArray(newPhotos) && newPhotos.length > 0) {
-    const sortedPhotos = [...newPhotos].sort((a, b) => parseDate(b) - parseDate(a));
+    const sortedPhotos = [...newPhotos].sort((a, b) => parseDate(b).getTime() - parseDate(a).getTime());
     photoLibrary.length = 0;
     photoLibrary.push(...sortedPhotos);
   }
@@ -27,7 +27,7 @@ export function updateMediaLibrary(newPhotos, newVideos) {
       if (!t || t === 'untitled') return false;
       return !!v.thumb || !!v.src;
     });
-    const sortedVideos = [...filteredVideos].sort((a, b) => parseDate(b) - parseDate(a));
+    const sortedVideos = [...filteredVideos].sort((a, b) => parseDate(b).getTime() - parseDate(a).getTime());
     motionProjects.length = 0;
     motionProjects.push(...sortedVideos);
   }

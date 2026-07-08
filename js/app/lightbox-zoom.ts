@@ -7,7 +7,7 @@ let isDraggingZoom = false;
 let lastDragX = 0;
 let lastDragY = 0;
 
-export function updateZoomTransform(img) {
+export function updateZoomTransform(img: any) {
   let mWrap = domRefs.lightboxImgWrap;
   let lb = domRefs.lightbox;
   if (lb) lb.classList.toggle('zoom-active', state.lbZoomLevel > 1);
@@ -30,7 +30,7 @@ export function updateZoomTransform(img) {
       mWrap.style.overflowX = 'auto'; // restore gallery swipe
       mWrap.style.overflowY = 'hidden';
       mWrap.scrollLeft = state.cur * mWrap.offsetWidth; // explicitly bind scroll back unconditionally
-      let slides = mWrap.querySelectorAll('.snap-slide');
+      let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
       for (let i = 0; i < slides.length; i++) slides[i].style.opacity = '1';
     }
   } else {
@@ -73,7 +73,7 @@ export function updateZoomTransform(img) {
 
     let dark = domRefs.lightboxZoomDarken;
     // base darkness leaps to 30%, climbing dynamically to 90%
-    if (dark) dark.style.opacity = Math.min(0.95, 0.3 + (state.lbZoomLevel - 1) * 0.5);
+    if (dark) dark.style.opacity = String(Math.min(0.95, 0.3 + (state.lbZoomLevel - 1) * 0.5));
     hideFilmstripIfReady();
 
     if (state.isMobile && mWrap.style.overflowX !== 'visible') {
@@ -81,15 +81,15 @@ export function updateZoomTransform(img) {
       mWrap.style.transform = 'translateX(-' + (state.cur * mWrap.offsetWidth) + 'px)';
       mWrap.style.overflowX = 'visible'; // allow zoom popping over descriptions and screens!
       mWrap.style.overflowY = 'visible';
-      let slides = mWrap.querySelectorAll('.snap-slide');
+      let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
       for (let i = 0; i < slides.length; i++) {
-        if (parseInt(slides[i].dataset.idx) !== state.cur) slides[i].style.opacity = '0';
+        if (parseInt(slides[i].dataset.idx || '0') !== state.cur) slides[i].style.opacity = '0';
       }
     } else if (state.isMobile) {
       // already visible, ensure neighbors are hidden while panning to prevent peeking
-      let slides = mWrap.querySelectorAll('.snap-slide');
+      let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
       for (let i = 0; i < slides.length; i++) {
-        if (parseInt(slides[i].dataset.idx) !== state.cur) slides[i].style.opacity = '0';
+        if (parseInt(slides[i].dataset.idx || '0') !== state.cur) slides[i].style.opacity = '0';
       }
     }
   }
@@ -101,14 +101,14 @@ export function resetZoom() {
   for (let i = 0; i < imgs.length; i++) updateZoomTransform(imgs[i]);
 }
 
-export function toggleImageZoom(e) {
+export function toggleImageZoom(e: any) {
   if (state.isMobile) return; // Mobile tap logic is strictly handled in lbEl click listener
-  let img = e.target;
+  let img = e.target as HTMLImageElement;
   if (!img.classList.contains('zoomable')) return;
   e.stopPropagation();
   if (state.lbZoomLevel > 1) { resetZoom(); }
 }
-domRefs.lightboxImg.addEventListener('click', toggleImageZoom);
+if (domRefs.lightboxImg) domRefs.lightboxImg.addEventListener('click', toggleImageZoom);
 
 // Desktop mouse panning
 let mWrap = domRefs.lightboxImgWrap;

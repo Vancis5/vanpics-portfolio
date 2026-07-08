@@ -2,7 +2,7 @@ import Lenis from 'lenis';
 import { APP_CONFIG } from './app/config.js';
 import { state } from './app/state.js';
 
-export function initSmoothScroll(options = {}) {
+export function initSmoothScroll(options: any = {}) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const smoothScrollConfig = APP_CONFIG.smoothScroll;
@@ -13,18 +13,19 @@ export function initSmoothScroll(options = {}) {
     infinite: false,
     autoResize: false
   });
-  window.lenis = lenis;
+  (window as any).lenis = lenis;
 
   function syncLenisToReality() {
-    if (!window.lenis || window._scrollbarDragging) return;
+    const win = window as any;
+    if (!win.lenis || win._scrollbarDragging) return;
     const pos = document.documentElement.scrollTop || 0;
-    const delta = Math.abs(window.lenis.animatedScroll - pos);
+    const delta = Math.abs(win.lenis.animatedScroll - pos);
     if (delta > smoothScrollConfig.desyncThreshold) {
-      window.lenis.animatedScroll = pos;
-      window.lenis.targetScroll = pos;
-      window.lenis.velocity = 0;
-      window.lenis.isScrolling = false;
-      if (window.lenis.animate) window.lenis.animate.stop();
+      win.lenis.animatedScroll = pos;
+      win.lenis.targetScroll = pos;
+      win.lenis.velocity = 0;
+      win.lenis.isScrolling = false;
+      if (win.lenis.animate) win.lenis.animate.stop();
     }
   }
 
@@ -36,7 +37,7 @@ export function initSmoothScroll(options = {}) {
 
   const filmstripEl = document.getElementById('filmstrip');
   if (filmstripEl) {
-    window.fsLenis = new Lenis({
+    (window as any).fsLenis = new Lenis({
       wrapper: filmstripEl,
       content: filmstripEl,
       orientation: 'horizontal',
@@ -46,11 +47,11 @@ export function initSmoothScroll(options = {}) {
       autoResize: false
     });
 
-    let fsResizeTimer;
+    let fsResizeTimer: any;
     new ResizeObserver(function () {
       clearTimeout(fsResizeTimer);
       fsResizeTimer = setTimeout(function () {
-        if (window.fsLenis) window.fsLenis.resize();
+        if ((window as any).fsLenis) (window as any).fsLenis.resize();
       }, smoothScrollConfig.resizeDebounce);
     }).observe(filmstripEl);
   }
@@ -58,7 +59,7 @@ export function initSmoothScroll(options = {}) {
   const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
   const updateCustomScrollbar = options.updateCustomScrollbar || function () {};
 
-  function updateScrollDrivenUi(scroll) {
+  function updateScrollDrivenUi(scroll?: number) {
     const scrollPos = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
     state.heroScrollY = scrollPos;
     updateStickyHeaderSurface();
@@ -69,29 +70,31 @@ export function initSmoothScroll(options = {}) {
     updateScrollDrivenUi();
   }, { passive: true });
 
-  function lenisRaf(time) {
-    if (window.lenis) {
-      if (window._scrollbarDragging) {
-        window.lenis.time = time;
+  function lenisRaf(time: number) {
+    const win = window as any;
+    if (win.lenis) {
+      if (win._scrollbarDragging) {
+        win.lenis.time = time;
       } else {
-        window.lenis.raf(time);
+        win.lenis.raf(time);
       }
     }
     // Only tick fsLenis when filmstrip is visible — saves full RAF work when hidden
     const fsWrap = document.getElementById('filmstrip-wrap');
-    if (window.fsLenis && fsWrap && fsWrap.classList.contains('visible')) {
-      window.fsLenis.raf(time);
+    if (win.fsLenis && fsWrap && fsWrap.classList.contains('visible')) {
+      win.fsLenis.raf(time);
     }
     requestAnimationFrame(lenisRaf);
   }
   requestAnimationFrame(lenisRaf);
 
-  lenis.on('scroll', function (event) {
+  lenis.on('scroll', function (event: any) {
     updateScrollDrivenUi(event.scroll);
   });
 
   window.addEventListener('lightbox-open', function () {
-    if (window.lenis) window.lenis.stop();
+    const win = window as any;
+    if (win.lenis) win.lenis.stop();
   });
 
   const lenisStyle = document.createElement('style');
