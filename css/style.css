@@ -998,100 +998,26 @@ body::after {
   pointer-events: none;
 }
 
-.lightbox-bg-blur {
+#lightbox-blur-canvas {
   position: fixed;
-  width: 15vw;
-  height: 15vh;
-  left: 42.5vw;
-  top: 42.5vh;
+  inset: calc(-1 * var(--liquid-edge-bleed));
+  width: calc(100vw + 2 * var(--liquid-edge-bleed));
+  height: calc(100vh + 2 * var(--liquid-edge-bleed));
   z-index: -1;
-  transform: scale(7.47) translate3d(0, 0, 0);
   opacity: 0;
   transition: opacity 2.2s cubic-bezier(0.15, 1, 0.4, 1);
   pointer-events: none;
-  filter: blur(10px) brightness(0.24) saturate(1.8);
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
-.lightbox-bg-blur.active {
+#lightbox-blur-canvas.active {
   opacity: 1;
 }
 
-/* window out-of-focus states: fade out bg and stop animation */
-#lightbox.window-blurred .lightbox-bg-blur {
+/* window out-of-focus states: fade out bg */
+#lightbox.window-blurred #lightbox-blur-canvas {
   opacity: 0 !important;
   transition: opacity 1.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
-}
-
-.lightbox-bg-blur-inner {
-  position: absolute;
-  inset: -60%;
-  background-size: cover;
-  background-position: center;
-  will-change: transform;
-}
-
-.lightbox-bg-blur-inner.base {
-  opacity: 1;
-  animation: liquid-base 45s linear infinite;
-  animation-direction: var(--blur-dir, normal);
-}
-
-.lightbox-bg-blur-inner.twist-1 {
-  opacity: 0.45;
-  mix-blend-mode: screen;
-  animation: liquid-twist-1 32s ease-in-out infinite alternate;
-  animation-direction: var(--blur-dir, normal);
-}
-
-.lightbox-bg-blur-inner.twist-2 {
-  opacity: 0.35;
-  mix-blend-mode: overlay;
-  animation: liquid-twist-2 24s ease-in-out infinite alternate-reverse;
-  animation-direction: var(--blur-dir, normal);
-}
-
-
-@keyframes liquid-base {
-  0% {
-    transform: rotate(0deg) scale(1.2) translate3d(0, 0, 0);
-  }
-
-  50% {
-    transform: rotate(180deg) scale(1.35) translate3d(-3%, 2%, 0);
-  }
-
-  100% {
-    transform: rotate(360deg) scale(1.2) translate3d(0, 0, 0);
-  }
-}
-
-@keyframes liquid-twist-1 {
-  0% {
-    transform: rotate(360deg) scale(1.4) translate3d(2%, -3%, 0);
-  }
-
-  50% {
-    transform: rotate(180deg) scale(1.15) translate3d(-4%, 4%, 0);
-  }
-
-  100% {
-    transform: rotate(0deg) scale(1.4) translate3d(2%, -3%, 0);
-  }
-}
-
-@keyframes liquid-twist-2 {
-  0% {
-    transform: scale(1.1) translate3d(-5%, -5%, 0) rotate(45deg);
-  }
-
-  50% {
-    transform: scale(1.5) translate3d(4%, 4%, 0) rotate(135deg);
-  }
-
-  100% {
-    transform: scale(1.1) translate3d(-5%, -5%, 0) rotate(45deg);
-  }
 }
 
 #lightbox-content {
@@ -2181,9 +2107,7 @@ button {
   inset: calc(-1 * var(--liquid-edge-bleed)) !important;
 }
 
-.lightbox-bg-blur {
-  inset: calc(-1 * var(--liquid-edge-bleed)) !important;
-}
+
 
 
 
