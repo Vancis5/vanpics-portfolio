@@ -31,8 +31,8 @@ setTimeout(safeLift, LOADER_CONFIG.hardFallbackDelay);
 setCarouselReadyCallback(function () { setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay); });
 
 function scrollToGallery() {
-  if (window.lenis) {
-    window.lenis.scrollTo('#gallery-section');
+  if ((window as any).lenis) {
+    (window as any).lenis.scrollTo('#gallery-section');
   } else {
     domRefs.gallerySection.scrollIntoView({ behavior: 'smooth' });
   }
@@ -43,13 +43,15 @@ function bindStaticUiHandlers() {
   if (domRefs.lightboxClose) domRefs.lightboxClose.addEventListener('click', closeLightbox);
 
   document.addEventListener('click', function (e) {
-    const descButton = e.target.closest('#lightbox-desc-toggle');
+    const target = e.target as HTMLElement;
+    if (!target) return;
+    const descButton = target.closest('#lightbox-desc-toggle');
     if (descButton) {
       toggleLightboxDesc();
       return;
     }
 
-    const startButton = e.target.closest('.motion-start-button[data-player-id]');
+    const startButton = target.closest('.motion-start-button[data-player-id]') as HTMLElement;
     if (!startButton) return;
     startUnifiedMotionPlayer(startButton.dataset.playerId);
   });
@@ -192,8 +194,8 @@ function getStartupImageUrls(photos) {
   ));
 }
 
-function decodeImageUrl(url, timeoutMs) {
-  return new Promise(resolve => {
+function decodeImageUrl(url, timeoutMs?: number) {
+  return new Promise<void>(resolve => {
     if (!url) {
       resolve();
       return;

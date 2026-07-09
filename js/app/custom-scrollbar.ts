@@ -50,8 +50,8 @@ export let updateCustomScrollbar = function () {};
     track.classList.add('dragging');
     document.body.classList.add('is-dragging-scrollbar');
     // Kill any ongoing smooth animation
-    if (window.lenis) window.lenis.scrollTo(window.scrollY, { immediate: true });
-    window._scrollbarDragging = true;
+    if ((window as any).lenis) (window as any).lenis.scrollTo(window.scrollY, { immediate: true });
+    (window as any)._scrollbarDragging = true;
 
     let winH = window.innerHeight;
     let docH = document.documentElement.scrollHeight;
@@ -100,13 +100,13 @@ export let updateCustomScrollbar = function () {};
       // We CANNOT use scrollTo() because it calls setScroll() internally
       // which uses window.scrollTo() — and the browser blocks that API
       // while lenis CSS is active.
-      if (window.lenis) {
+      if ((window as any).lenis) {
         let pos = document.documentElement.scrollTop;
-        window.lenis.animatedScroll = pos;
-        window.lenis.targetScroll = pos;
-        window.lenis.velocity = 0;
-        window.lenis.isScrolling = false;
-        if (window.lenis.animate) window.lenis.animate.stop();
+        (window as any).lenis.animatedScroll = pos;
+        (window as any).lenis.targetScroll = pos;
+        (window as any).lenis.velocity = 0;
+        (window as any).lenis.isScrolling = false;
+        if ((window as any).lenis.animate) (window as any).lenis.animate.stop();
       }
 
       // Unblock lenis AFTER state is set

@@ -1,7 +1,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 
-let filmstripVisibilityHandlers = {};
+let filmstripVisibilityHandlers: any = {};
 let startLoopsCallback = null;
 
 export function setFilmstripVisibilityHandlers(handlers) {
@@ -62,8 +62,8 @@ if (glowBall && domRefs.hero) {
       const scrollFade = Math.max(0, 1 - (window.scrollY / 350));
       const targetOp = (mouseInHero && state.heroVisible && state.pageVisible) ? scrollFade : 0;
 
-      if (glowBall.style.opacity != targetOp) {
-        glowBall.style.opacity = targetOp;
+      if (glowBall.style.opacity !== String(targetOp)) {
+        glowBall.style.opacity = String(targetOp);
       }
 
       // Stop loop only if target is 0 AND transition is essentially done

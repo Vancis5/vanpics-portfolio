@@ -18,16 +18,16 @@ let lastTapT = 0;
 lbEl.addEventListener('click', function (e) {
   if (!state.isMobile) return;
   if (swipeHappened) { swipeHappened = false; return; }
-  if (e.target.closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info')) return;
+  if ((e.target as HTMLElement).closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info')) return;
 
   let now = Date.now();
-  if (e.target.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
+  let img = e.target as HTMLImageElement;
+  if (img && img.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
     // Double tap zoom
     if (state.lbZoomLevel > 1) {
       resetZoom();
     } else {
       state.lbZoomLevel = 2.5;
-      let img = e.target;
       let rect = img.getBoundingClientRect();
       state.lbZoomPanX = -(e.clientX - (rect.left + rect.width / 2)) * (state.lbZoomLevel - 1);
       state.lbZoomPanY = -(e.clientY - (rect.top + rect.height / 2)) * (state.lbZoomLevel - 1);
@@ -74,12 +74,12 @@ if (state.isMobile) {
       state.activePhotos.forEach(function (p, i) {
         let slide = document.createElement('div');
         slide.className = 'snap-slide';
-        slide.dataset.idx = i;
+        slide.dataset.idx = String(i);
 
         let inner = document.createElement('div');
         inner.className = 'snap-slide-inner photo-loading';
         let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
-        inner.style.setProperty('--lightbox-photo-ratio', ratio);
+        inner.style.setProperty('--lightbox-photo-ratio', String(ratio));
 
         let img = document.createElement('img');
         img.crossOrigin = 'anonymous';
@@ -120,7 +120,7 @@ if (state.isMobile) {
       });
     }
 
-    function scrollToSlide(idx, smooth, dir) {
+    function scrollToSlide(idx: any, smooth: any, dir?: any) {
       if (state.currentLightboxIsMotion) return;
       let w = imgWrap.offsetWidth;
       if (!w) return;
@@ -234,7 +234,7 @@ if (state.isMobile) {
     // ── Eager-load nearby slides ──
     function updateLoading() {
       if (state.currentLightboxIsMotion) return;
-      let imgs = imgWrap.querySelectorAll('.snap-slide img');
+      let imgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLImageElement>;
       for (let i = 0; i < imgs.length; i++) {
         let shouldEager = (Math.abs(i - state.cur) <= 2);
         imgs[i].loading = shouldEager ? 'eager' : 'lazy';
@@ -247,7 +247,7 @@ if (state.isMobile) {
     }
 
     // ── Scroll settle — detect new active slide ──
-    function onSnapSettle(targetIdx) {
+    function onSnapSettle(targetIdx?: number) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (isUserTouching && typeof targetIdx === 'undefined') return;
       state.isManuallyNavigating = false; // Reset navigation flag on settle
@@ -402,7 +402,7 @@ if (state.isMobile) {
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
       // stricter check to prevent interaction fight between filmstrip and dismiss gesture
-      if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
 
       if (e.touches.length === 1) {
         wasPinchingOrZooming = false;
@@ -433,7 +433,7 @@ if (state.isMobile) {
 
         if (state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
-          let slides = mWrap.querySelectorAll('.snap-slide');
+          let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
           for (let i = 0; i < slides.length; i++) {
             if (parseInt(slides[i].dataset.idx) !== state.cur) {
               slides[i].style.transition = 'none';
@@ -461,7 +461,7 @@ if (state.isMobile) {
     }, { passive: false });
 
     lbEl.addEventListener('touchmove', function (e) {
-      if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
       if (isPinching && e.touches.length === 2) {
         e.preventDefault();
         let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -519,7 +519,7 @@ if (state.isMobile) {
         let tilt = Math.max(-10, (dy / 400) * -10); // reduced from -25
         content.style.transformOrigin = 'bottom left';
         content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
-        content.style.opacity = Math.max(0.15, 1 - dy / 400);
+        content.style.opacity = String(Math.max(0.15, 1 - dy / 400));
 
         let info = domRefs.lightboxInfo;
         if (info) {
@@ -527,13 +527,13 @@ if (state.isMobile) {
           let txtOpac = Math.max(0, 1 - dy / 180);
           info.style.transition = 'none';
           info.style.filter = 'blur(' + blurVal + 'px)';
-          info.style.opacity = txtOpac;
+          info.style.opacity = String(txtOpac);
         }
       }
     }, { passive: false });
 
     lbEl.addEventListener('touchend', function (e) {
-      if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
       if (e.touches.length < 2) {
         if (isPinching && e.touches.length === 1 && state.lbZoomLevel > 1) {
           dStartX = e.touches[0].clientX;
@@ -543,7 +543,7 @@ if (state.isMobile) {
 
         if (state.lbZoomLevel <= 1 && state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
-          let slides = mWrap.querySelectorAll('.snap-slide');
+          let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
           for (let i = 0; i < slides.length; i++) {
             slides[i].style.transition = '';
             slides[i].style.opacity = '1';
@@ -605,7 +605,7 @@ if (state.isMobile) {
     lbEl.addEventListener('touchend', function (e) {
       if (!lbEl.classList.contains('open') || !state.currentLightboxIsMotion) return;
       if (isPinching || dLocked || e.changedTouches.length !== 1 || state.lbZoomLevel > 1) return;
-      if (e.target.closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, button')) return;
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, button')) return;
 
       let dx = e.changedTouches[0].clientX - dStartX;
       let dy = e.changedTouches[0].clientY - dStartY;

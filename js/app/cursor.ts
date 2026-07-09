@@ -98,14 +98,16 @@ if (isMouseDevice) {
   document.documentElement.addEventListener('mouseenter', showCursor);
   document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
   // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
-  let interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-row img, .footer-instagram, .footer-email';
+  let interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .footer-instagram, .footer-email';
   document.addEventListener('mouseover', function (e) {
-    if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram, .footer-email')) {
+    const target = e.target as HTMLElement;
+    if (target && (target.matches(interactiveSelector) || target.closest('.photo-card, #scroll-hint, .footer-instagram, .footer-email'))) {
       ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';
     }
   });
   document.addEventListener('mouseout', function (e) {
-    if (e.target.matches(interactiveSelector) || e.target.closest('.photo-card, #scroll-hint, .footer-instagram, .footer-email')) {
+    const target = e.target as HTMLElement;
+    if (target && (target.matches(interactiveSelector) || target.closest('.photo-card, #scroll-hint, .footer-instagram, .footer-email'))) {
       ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
     }
   });

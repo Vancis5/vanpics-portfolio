@@ -31,7 +31,7 @@ function getCurrentSpeed(frame) {
 }
 
 function waitForDecodedImage(img, timeoutMs) {
-  return new Promise(resolve => {
+  return new Promise<void>(resolve => {
     let settled = false;
     const done = function () {
       if (settled) return;
@@ -124,23 +124,44 @@ export function buildCarousel() {
 
     for (let c = 0; c < copies * 2; c++) {
       group.forEach(function (p, pi) {
+        let wrapper = document.createElement('div');
+        wrapper.className = 'carousel-item';
+        let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+        wrapper.style.setProperty('--carousel-photo-ratio', String(ratio));
+
         let img = document.createElement('img');
         let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
+
+        function reveal() {
+          wrapper.classList.add('photo-loaded');
+        }
+
         if (c === 0) {
           img.loading = 'eager';
-          // start invisible — fade in on load so images don't cut in on cold load
-          img.style.opacity = '0';
-          img.addEventListener('load', function () { img.style.opacity = '1'; });
-          img.addEventListener('error', function () { img.style.opacity = '1'; });
+          img.addEventListener('load', reveal);
+          img.addEventListener('error', function () {
+            img.style.display = 'none';
+          });
           eagerImgs.push(img);
           if (pi === 0) {
             criticalImgs.push(img);
           }
         } else {
           img.loading = 'lazy';
+          img.addEventListener('load', reveal);
+          img.addEventListener('error', function () {
+            img.style.display = 'none';
+          });
         }
-        img.addEventListener('click', function (e) {
+
+        if (img.complete && img.naturalWidth > 0) {
+          reveal();
+        } else if (img.complete) {
+          img.style.display = 'none';
+        }
+
+        wrapper.addEventListener('click', function (e) {
           if (globalHasDragged) return;
           let targetCat = (p.category === 'figures') ? 'figures' : 'all';
           if (state.currentCategory === targetCat) {
@@ -155,7 +176,9 @@ export function buildCarousel() {
             });
           }
         });
-        row.appendChild(img);
+
+        wrapper.appendChild(img);
+        row.appendChild(wrapper);
       });
     }
   });
@@ -166,10 +189,12 @@ export function buildCarousel() {
     // defer to next paint — Firefox offsetWidth is 0 if read before layout pass
     requestAnimationFrame(function () {
       activeRows.forEach(function (row, ri) {
-        let imgs = Array.from(row.querySelectorAll('img'));
-        let halfCount = Math.floor(imgs.length / 2);
+        let items = Array.from(row.querySelectorAll('.carousel-item')) as HTMLElement[];
+        let halfCount = Math.floor(items.length / 2);
         let w = 0;
-        for (let i = 0; i < halfCount; i++) w += (imgs[i].offsetWidth || 220) + 10;
+        for (let i = 0; i < halfCount; i++) {
+          w += (items[i].offsetWidth || 220) + 8;
+        }
         rowState[ri].setWidth = w > 0 ? w : halfCount * 230;
         rowState[ri].offset = ROW_CONFIG[ri].dir === 1 ? -rowState[ri].setWidth : 0;
       });
