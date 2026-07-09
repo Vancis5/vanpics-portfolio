@@ -153,6 +153,8 @@ class WebGLBlurRenderer {
       console.warn('WebGL context creation failed');
       return;
     }
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
     this.width = 256;
     this.height = 256;
@@ -254,11 +256,7 @@ class WebGLBlurRenderer {
         vec4 col_prev = sampleLiquid(u_texture_prev, v_texCoord, u_dir_prev);
         vec4 col_curr = sampleLiquid(u_texture, v_texCoord, u_dir_curr);
         vec3 blended = mix(col_prev.rgb, col_curr.rgb, u_mix);
-
-        // Saturation (1.8) & Brightness (0.24) adjustments
-        float luma = dot(blended, vec3(0.299, 0.587, 0.114));
-        vec3 sat = mix(vec3(luma), blended, 1.8);
-        gl_FragColor = vec4(sat * 0.24, 1.0);
+        gl_FragColor = vec4(blended, 1.0);
       }
     `;
 
