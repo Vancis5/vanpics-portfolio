@@ -120,6 +120,23 @@ function refreshLightboxInfoRefs() {
 
 let blurRenderer = null;
 
+function solveCubicBezier(x1: number, y1: number, x2: number, y2: number) {
+  return function(x: number): number {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      let currentX = 3.0 * (1.0 - t) * (1.0 - t) * t * x1 + 3.0 * (1.0 - t) * t * t * x2 + t * t * t;
+      let derivative = 3.0 * (1.0 - t) * (1.0 - t) * x1 + 6.0 * (1.0 - t) * t * (x2 - x1) + 3.0 * t * t * (1.0 - x2);
+      if (Math.abs(derivative) < 1e-5) break;
+      t -= (currentX - x) / derivative;
+    }
+    return 3.0 * (1.0 - t) * (1.0 - t) * t * y1 + 3.0 * (1.0 - t) * t * t * y2 + t * t * t;
+  };
+}
+
+const easeOutExpoLike = solveCubicBezier(0.15, 1.0, 0.4, 1.0);
+
 class WebGLBlurRenderer {
   canvas: any;
   gl: any;
@@ -164,7 +181,7 @@ class WebGLBlurRenderer {
     this.startTime = performance.now();
     this.animating = false;
     this.mixFactor = 1.0;
-    this.transitionSpeed = 0.035;
+    this.transitionSpeed = 0.012;
     this.animationId = null;
 
     this.dirPrev = 1.0;
@@ -476,6 +493,9 @@ class WebGLBlurRenderer {
       this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
     }
 
+    // Cubic-bezier(0.15, 1, 0.4, 1) transition easing
+    let easedMix = easeOutExpoLike(this.mixFactor);
+
     let positionLocation = gl.getAttribLocation(this.progLiquid, 'a_position');
     gl.enableVertexAttribArray(positionLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
@@ -494,7 +514,7 @@ class WebGLBlurRenderer {
     gl.bindTexture(gl.TEXTURE_2D, this.textures.current || this.dummyTexture);
     gl.uniform1i(gl.getUniformLocation(this.progLiquid, 'u_texture'), 1);
 
-    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_mix'), this.mixFactor);
+    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_mix'), easedMix);
     gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_time'), elapsedSeconds);
     gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_dir_prev'), this.dirPrev);
     gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_dir_curr'), this.dirCurr);
