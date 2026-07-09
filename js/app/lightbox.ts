@@ -380,7 +380,9 @@ class WebGLBlurRenderer {
       this.createFramebuffer(256, 256), // fbos[0]: liquid pass
       this.createFramebuffer(128, 128), // fbos[1]: down 1
       this.createFramebuffer(64, 64),   // fbos[2]: down 2
-      this.createFramebuffer(128, 128)  // fbos[3]: up 1
+      this.createFramebuffer(32, 32),   // fbos[3]: down 3
+      this.createFramebuffer(64, 64),   // fbos[4]: up 1
+      this.createFramebuffer(128, 128)  // fbos[5]: up 2
     ];
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
   }
@@ -499,24 +501,22 @@ class WebGLBlurRenderer {
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // PASS 2: Downsample 1
-    this.runBlurPass(this.progDown, this.fbos[0].texture, this.fbos[1], 1.0);
+    // PASS 2-4: Downsampling (Dual Kawase style)
+    this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, this.fbos[1], 1.0);
+    this.runBlurPass(this.progDown, this.fbos[1].texture, 128, 128, this.fbos[2], 1.0);
+    this.runBlurPass(this.progDown, this.fbos[2].texture, 64, 64, this.fbos[3], 1.0);
 
-    // PASS 3: Downsample 2
-    this.runBlurPass(this.progDown, this.fbos[1].texture, this.fbos[2], 1.0);
-
-    // PASS 4: Upsample 1
-    this.runBlurPass(this.progUp, this.fbos[2].texture, this.fbos[3], 2.0);
-
-    // PASS 5: Upsample 2 (to screen)
-    this.runBlurPass(this.progUp, this.fbos[3].texture, null, 2.0);
+    // PASS 5-7: Upsampling (Dual Kawase style)
+    this.runBlurPass(this.progUp, this.fbos[3].texture, 32, 32, this.fbos[4], 1.2);
+    this.runBlurPass(this.progUp, this.fbos[4].texture, 64, 64, this.fbos[5], 1.0);
+    this.runBlurPass(this.progUp, this.fbos[5].texture, 128, 128, null, 1.0);
 
     if (this.animating) {
       this.animationId = requestAnimationFrame(() => this.render());
     }
   }
 
-  runBlurPass(program, inputTexture, outputFbo, offset) {
+  runBlurPass(program, inputTexture, sourceWidth: number, sourceHeight: number, outputFbo, offset) {
     let gl = this.gl;
     gl.useProgram(program);
 
@@ -532,17 +532,7 @@ class WebGLBlurRenderer {
     gl.bindTexture(gl.TEXTURE_2D, inputTexture);
     gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
 
-    let inputWidth = 256;
-    let inputHeight = 256;
-    if (program === this.progDown) {
-      if (outputFbo.w === 128) { inputWidth = 256; inputHeight = 256; }
-      else if (outputFbo.w === 64) { inputWidth = 128; inputHeight = 128; }
-    } else {
-      if (!outputFbo) { inputWidth = 128; inputHeight = 128; }
-      else if (outputFbo.w === 128) { inputWidth = 64; inputHeight = 64; }
-    }
-
-    gl.uniform2f(gl.getUniformLocation(program, 'u_halfPixel'), 1.0 / (2.0 * inputWidth), 1.0 / (2.0 * inputHeight));
+    gl.uniform2f(gl.getUniformLocation(program, 'u_halfPixel'), 1.0 / (2.0 * sourceWidth), 1.0 / (2.0 * sourceHeight));
     gl.uniform1f(gl.getUniformLocation(program, 'u_offset'), offset);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);

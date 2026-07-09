@@ -1075,7 +1075,7 @@ body::after {
   pointer-events: none;
   will-change: opacity;
   background: #0d0c0c;
-  filter: saturate(1) brightness(0.2);
+  filter: saturate(1.5) brightness(0.15);
 }
 
 #lightbox-blur-canvas.active {
@@ -1713,14 +1713,17 @@ body::after {
   .snap-slide img {
     max-height: 72dvh;
   }
+
   .snap-slide-inner {
     max-height: 72dvh;
     width: min(100%, calc(72dvh * var(--lightbox-photo-ratio)));
   }
+
   #lightbox:not(.mode-motion) #lightbox-img-wrap {
     margin-bottom: calc(72dvh - var(--app-height) + 3.25rem + var(--safe-top));
     padding-bottom: calc(28dvh - 3.25rem - var(--safe-top));
   }
+
   #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
     height: 72dvh;
   }
