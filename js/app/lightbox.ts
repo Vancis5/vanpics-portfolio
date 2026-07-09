@@ -160,7 +160,7 @@ class WebGLBlurRenderer {
   constructor(canvas: any) {
     this.canvas = canvas;
     this.gl = canvas.getContext('webgl', {
-      alpha: false,
+      alpha: true,
       depth: false,
       stencil: false,
       antialias: false,
@@ -196,6 +196,13 @@ class WebGLBlurRenderer {
     this.initBuffers();
     this.initFramebuffers();
     this.initDummyTextures();
+
+    // Render an initial black frame immediately to populate the WebGL
+    // backbuffer and prevent a white/grey compositor flash on startup/refresh.
+    this.textures.prev = this.dummyTexture;
+    this.textures.current = this.dummyTexture;
+    this.mixFactor = 1.0;
+    this.render();
   }
 
   initShaders() {
@@ -578,6 +585,17 @@ export function setLightboxBlur(src) {
   function fadeToBlackFallback() {
     if (blurRenderer) {
       blurRenderer.fadeToBlack();
+      requestAnimationFrame(function () {
+        if (token !== blurToken) return;
+        requestAnimationFrame(function () {
+          if (token !== blurToken) return;
+          if (domRefs.blurCanvas) {
+            domRefs.blurCanvas.classList.add('ready');
+            void domRefs.blurCanvas.offsetHeight;
+            domRefs.blurCanvas.classList.add('active');
+          }
+        });
+      });
     }
   }
 
@@ -586,10 +604,17 @@ export function setLightboxBlur(src) {
 
     if (blurRenderer && cached && cached.img) {
       blurRenderer.setImage(cached.img);
-    }
-    
-    if (domRefs.blurCanvas) {
-      domRefs.blurCanvas.classList.add('active');
+      requestAnimationFrame(function () {
+        if (token !== blurToken) return;
+        requestAnimationFrame(function () {
+          if (token !== blurToken) return;
+          if (domRefs.blurCanvas) {
+            domRefs.blurCanvas.classList.add('ready');
+            void domRefs.blurCanvas.offsetHeight;
+            domRefs.blurCanvas.classList.add('active');
+          }
+        });
+      });
     }
   }
 
@@ -1384,6 +1409,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
   if (domRefs.blurCanvas) {
     domRefs.blurCanvas.classList.remove('active');
+    domRefs.blurCanvas.classList.remove('ready');
   }
   if (blurRenderer) {
     blurRenderer.stopAnimation();

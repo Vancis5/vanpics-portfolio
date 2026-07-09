@@ -22,7 +22,7 @@
 
 
 :root {
-  --bg: #111010;
+  --bg: #0d0c0c;
   --text: #ddd8cf;
   --text-muted: rgba(221, 216, 207, 0.48);
   --text-faint: rgba(221, 216, 207, 0.22);
@@ -504,7 +504,7 @@ body::after {
   padding-left: calc(50vw - 50%);
   padding-right: calc(50vw - 50%);
 
-  background: rgba(17, 16, 16, 0.82);
+  background: rgba(13, 12, 12, 0.85);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   padding-top: calc(1.5rem + var(--safe-top, 0px));
@@ -1037,6 +1037,7 @@ body::after {
   -ms-overflow-style: none;
   --text-muted: rgba(221, 216, 207, 0.78);
   --text-faint: rgba(221, 216, 207, 0.40);
+  background: #0d0c0c;
 }
 
 #lightbox::-webkit-scrollbar {
@@ -1065,6 +1066,8 @@ body::after {
 }
 
 #lightbox-blur-canvas {
+  display: none;
+  /* Hidden by default to prevent compositor/loading flashes */
   position: fixed;
   inset: calc(-1 * var(--liquid-edge-bleed));
   width: calc(100vw + 2 * var(--liquid-edge-bleed));
@@ -1075,7 +1078,11 @@ body::after {
   pointer-events: none;
   will-change: opacity;
   background: #0d0c0c;
-  filter: saturate(1.5) brightness(0.15);
+  filter: saturate(1.5) brightness(0.2);
+}
+
+#lightbox-blur-canvas.ready {
+  display: block;
 }
 
 #lightbox-blur-canvas.active {
