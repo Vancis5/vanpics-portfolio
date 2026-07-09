@@ -20,13 +20,14 @@ pnpm-debug.log*
 
 # local workspace and notes
 *.code-workspace
-context.md
+*.md
+**/*.md
 diff.txt
 
 # raw media and archives
 photos
 photos-raw/
-*.zip
+*.
 
 # local one off tools
 Antigravity_Conversation_Fix.exe

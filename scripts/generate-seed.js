@@ -37,9 +37,24 @@ async function main() {
       const baseFilename = srcKey.replace(/^photos\//, '');
       const thumbKey = `thumbs/${baseFilename}`;
 
+      // Match raw image file in photos-raw/
+      const baseNameWithoutExt = path.parse(baseFilename).name;
+      const rawDir = path.resolve('photos-raw');
+      let rawKey = null;
+      if (fs.existsSync(rawDir)) {
+        const rawFiles = fs.readdirSync(rawDir);
+        const match = rawFiles.find(f => {
+          return path.parse(f).name === baseNameWithoutExt && /\.(webp|jpg|jpeg|png)$/i.test(f);
+        });
+        if (match) {
+          rawKey = `photos-raw/${match}`;
+        }
+      }
+
       const title = escapeSql(p.title);
       const src = escapeSql(srcKey);
       const thumb = escapeSql(thumbKey);
+      const rawSrc = escapeSql(rawKey);
       const aspectRatio = p.aspectRatio || 1.0;
       const category = escapeSql(p.category || '');
       const location = escapeSql(p.location || null);
@@ -47,8 +62,8 @@ async function main() {
       const desc = escapeSql(p.desc || null);
       const heroSlide = p.heroSlide ? 1 : 0;
 
-      sql += `INSERT INTO photos (title, src, thumb, aspect_ratio, category, location, date, desc, hero_slide)\n`;
-      sql += `VALUES (${title}, ${src}, ${thumb}, ${aspectRatio}, ${category}, ${location}, ${date}, ${desc}, ${heroSlide});\n`;
+      sql += `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)\n`;
+      sql += `VALUES (${title}, ${src}, ${thumb}, ${rawSrc}, ${aspectRatio}, ${category}, ${location}, ${date}, ${desc}, ${heroSlide});\n`;
     }
 
     sql += `\n-- Seed Videos\n`;

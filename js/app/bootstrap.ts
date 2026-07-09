@@ -166,7 +166,8 @@ function processPhotos(raw) {
   return raw.map(p => ({
     ...p,
     aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : parseFloat(p.aspect_ratio || 1.0),
-    heroSlide: p.hero_slide === 1 || p.hero_slide === true
+    heroSlide: p.hero_slide === 1 || p.hero_slide === true,
+    rawSrc: p.raw_src || null
   }));
 }
 

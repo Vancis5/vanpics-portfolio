@@ -4,21 +4,48 @@ import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 
 // Continuous Zoom Physics Framework
 let isDraggingZoom = false;
-let lastDragX = 0;
-let lastDragY = 0;
+let lastDragX: number | null = null;
+let lastDragY: number | null = null;
+let lastTapTime = 0;
+let zoomTransitionTimeout: any = null;
+let isSpacePressed = false;
+let dragDistance = 0;
+let startX = 0;
+let startY = 0;
 
-export function updateZoomTransform(img: any) {
+export function updateZoomTransform(img: any, smooth = true) {
   let mWrap = domRefs.lightboxImgWrap;
   let lb = domRefs.lightbox;
   if (lb) lb.classList.toggle('zoom-active', state.lbZoomLevel > 1);
+  
+  // Clear any pending transition timeout
+  if (zoomTransitionTimeout) {
+    clearTimeout(zoomTransitionTimeout);
+    zoomTransitionTimeout = null;
+  }
+  
   if (state.lbZoomLevel <= 1) {
     state.lbZoomLevel = 1;
     state.lbZoomPanX = 0;
     state.lbZoomPanY = 0;
     if (lb) lb.classList.remove('zoom-active');
+    
+    // Restore optimized webp if it was swapped to raw
+    const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
+    if (currentItem && img.src === currentItem.rawSrc) {
+      img.src = currentItem.src;
+    }
+
+    // Apply smooth transition when resetting
+    if (smooth) {
+      img.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      zoomTransitionTimeout = setTimeout(() => {
+        img.style.transition = '';
+      }, 300);
+    }
     img.style.transform = '';
     // reset cursor
-    img.style.cursor = '';
+    img.style.removeProperty('cursor');
     img.style.position = '';
     img.style.zIndex = '';
     img.classList.remove('zoomed');
@@ -35,41 +62,55 @@ export function updateZoomTransform(img: any) {
     }
   } else {
     if (lb) lb.classList.add('zoom-active');
+
+    // Load full-resolution photo in the background when zooming in
+    const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
+    if (currentItem && currentItem.rawSrc && img.src !== currentItem.rawSrc && !img.dataset.loadingRaw) {
+      img.dataset.loadingRaw = 'true';
+      let wrap = domRefs.lightboxImgWrap;
+      if (wrap) wrap.classList.add('raw-loading');
+
+      const rawLoader = new Image();
+      rawLoader.src = currentItem.rawSrc;
+      rawLoader.onload = () => {
+        img.removeAttribute('data-loading-raw');
+        if (wrap) wrap.classList.remove('raw-loading');
+        
+        // Verify we are still on the same photo and still zoomed in
+        if (state.lbZoomLevel > 1 && state.cur === state.activePhotos.indexOf(currentItem)) {
+          img.src = currentItem.rawSrc;
+        }
+      };
+      rawLoader.onerror = () => {
+        img.removeAttribute('data-loading-raw');
+        if (wrap) wrap.classList.remove('raw-loading');
+        console.warn('Failed to load raw image:', currentItem.rawSrc);
+      };
+    }
     img.style.position = 'relative';
     img.style.zIndex = '100'; // Make sure the image pops cleanly above bounds
 
-    // Mobile gets unconstrained panning, but auto-resets if dragged extremely far off-screen
-    let zw = img.offsetWidth * state.lbZoomLevel;
-    let zh = img.offsetHeight * state.lbZoomLevel;
-
-    if (state.isMobile) {
-      let limitX = (zw / 2) + (window.innerWidth / 2) - 80;
-      let limitY = (zh / 2) + (window.innerHeight / 2) - 80;
-      if (Math.abs(state.lbZoomPanX) > Math.max(0, limitX) || Math.abs(state.lbZoomPanY) > Math.max(0, limitY)) {
-        resetZoom();
-        return;
-      }
-    } else {
-      // Desktop stays clamped so it's impossible to lose the image with the mouse
-      let maxPanX = Math.max(0, (zw - window.innerWidth) / 2);
-      let maxPanY = Math.max(0, (zh - window.innerHeight) / 2);
-      state.lbZoomPanX = Math.max(-maxPanX, Math.min(maxPanX, state.lbZoomPanX));
-      state.lbZoomPanY = Math.max(-maxPanY, Math.min(maxPanY, state.lbZoomPanY));
-    }
+    // Panning is unconstrained during drag, but auto-resets on release if mostly off-screen
 
     img.style.transform = 'translate(' + state.lbZoomPanX + 'px, ' + state.lbZoomPanY + 'px) scale(' + state.lbZoomLevel + ')';
     let hint = document.getElementById('swipe-hint');
     if (hint) hint.classList.remove('visible');
 
-    if (!img.dataset.zoomAnimated) {
-      img.classList.add('zoomed');
-    } else {
+    // Apply smooth transition for zoom actions, instant for drag
+    if (smooth) {
       img.classList.remove('zoomed');
+      img.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+      zoomTransitionTimeout = setTimeout(() => {
+        img.classList.add('zoomed');
+        img.style.transition = '';
+      }, 250);
+    } else {
+      img.classList.add('zoomed');
     }
 
     // zoom cursor
-    if (!state.isMobile) img.style.cursor = 'grab';
-    if (isDraggingZoom) img.style.cursor = 'grabbing';
+    if (!state.isMobile) img.style.setProperty('cursor', isSpacePressed ? 'grab' : 'zoom-out', 'important');
+    if (isDraggingZoom) img.style.setProperty('cursor', 'grabbing', 'important');
 
     let dark = domRefs.lightboxZoomDarken;
     // base darkness leaps to 30%, climbing dynamically to 90%
@@ -102,26 +143,106 @@ export function resetZoom() {
 }
 
 export function toggleImageZoom(e: any) {
-  if (state.isMobile) return; // Mobile tap logic is strictly handled in lbEl click listener
   let img = e.target as HTMLImageElement;
   if (!img.classList.contains('zoomable')) return;
+  
+  // If we just dragged the image, don't toggle zoom!
+  if (dragDistance > 5) {
+    dragDistance = 0;
+    e.stopPropagation();
+    e.preventDefault();
+    return;
+  }
+  
   e.stopPropagation();
-  if (state.lbZoomLevel > 1) { resetZoom(); }
+  
+  if (state.isMobile) {
+    // Double-tap to zoom on mobile
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+      // Double tap detected
+      if (state.lbZoomLevel > 1) {
+        resetZoom();
+      } else {
+        // Zoom to tap position
+        const rect = img.getBoundingClientRect();
+        const tapX = e.clientX - rect.left;
+        const tapY = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        state.lbZoomLevel = 3; // 3x zoom on double-tap
+        state.lbZoomPanX = (centerX - tapX) * 2;
+        state.lbZoomPanY = (centerY - tapY) * 2;
+        updateZoomTransform(img, true);
+      }
+      lastTapTime = 0;
+    } else {
+      lastTapTime = now;
+    }
+    return;
+  }
+  
+  // Desktop: click to reset if zoomed, or zoom in if not
+  if (state.lbZoomLevel > 1) { 
+    resetZoom(); 
+  } else {
+    state.lbZoomLevel = 2.5;
+    updateZoomTransform(img, true);
+  }
 }
-if (domRefs.lightboxImg) domRefs.lightboxImg.addEventListener('click', toggleImageZoom);
+if (domRefs.lightboxImg) {
+  domRefs.lightboxImg.addEventListener('click', toggleImageZoom);
+  domRefs.lightboxImg.addEventListener('dragstart', (e) => e.preventDefault());
+}
 
-// Desktop mouse panning
+// Desktop mouse panning - only when left-click is held OR spacebar is pressed
 let mWrap = domRefs.lightboxImgWrap;
 mWrap.addEventListener('mousedown', function (e) {
   if (state.isMobile || state.lbZoomLevel <= 1) return;
+  if (e.button !== 0) return; // Only left-click
   isDraggingZoom = true;
   lastDragX = e.clientX;
   lastDragY = e.clientY;
+  startX = e.clientX;
+  startY = e.clientY;
+  dragDistance = 0;
   let img = domRefs.lightboxImg;
-  if (img) img.style.cursor = 'grabbing';
+  if (img) img.style.setProperty('cursor', 'grabbing', 'important');
 });
 window.addEventListener('mousemove', function (e) {
-  if (!isDraggingZoom) return;
+  // If left click is not held anymore, reset dragging zoom state
+  if (isDraggingZoom && (e.buttons & 1) === 0) {
+    isDraggingZoom = false;
+    lastDragX = null;
+    lastDragY = null;
+    let img = domRefs.lightboxImg;
+    if (img && state.lbZoomLevel > 1) {
+      img.style.setProperty('cursor', isSpacePressed ? 'grab' : 'zoom-out', 'important');
+      checkAutoZoomOut(img);
+    }
+  }
+
+  // Only pan if dragging (left-click held)
+  if (!isDraggingZoom) {
+    lastDragX = null;
+    lastDragY = null;
+    return;
+  }
+  if (state.lbZoomLevel <= 1) return;
+  
+  if (isDraggingZoom) {
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    dragDistance = Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  if (lastDragX === null || lastDragY === null) {
+    lastDragX = e.clientX;
+    lastDragY = e.clientY;
+    return;
+  }
+  
   let dx = e.clientX - lastDragX;
   let dy = e.clientY - lastDragY;
   state.lbZoomPanX += dx;
@@ -129,13 +250,52 @@ window.addEventListener('mousemove', function (e) {
   lastDragX = e.clientX;
   lastDragY = e.clientY;
   let img = domRefs.lightboxImg;
-  if (img) updateZoomTransform(img);
+  if (img) {
+    updateZoomTransform(img, false); // No transition during drag for responsiveness
+  }
 });
 window.addEventListener('mouseup', function () {
   if (isDraggingZoom) {
     isDraggingZoom = false;
+    lastDragX = null;
+    lastDragY = null;
     let img = domRefs.lightboxImg;
-    if (img && state.lbZoomLevel > 1) img.style.cursor = 'grab';
+    if (img && state.lbZoomLevel > 1) {
+      img.style.setProperty('cursor', isSpacePressed ? 'grab' : 'zoom-out', 'important');
+      checkAutoZoomOut(img);
+    }
+  }
+});
+
+// Spacebar panning support
+window.addEventListener('keydown', function (e) {
+  let target = e.target as HTMLElement;
+  let isTyping = target && (
+    target.matches && target.matches('input, textarea, select, [contenteditable="true"]')
+  );
+  if (isTyping) return;
+
+  if (e.code === 'Space' && state.lbZoomLevel > 1) {
+    e.preventDefault();
+    if (!isSpacePressed) {
+      isSpacePressed = true;
+      lastDragX = null;
+      lastDragY = null;
+      let img = domRefs.lightboxImg;
+      if (img) img.style.setProperty('cursor', 'grab', 'important');
+    }
+  }
+});
+window.addEventListener('keyup', function (e) {
+  if (e.code === 'Space') {
+    isSpacePressed = false;
+    lastDragX = null;
+    lastDragY = null;
+    let img = domRefs.lightboxImg;
+    if (img && state.lbZoomLevel > 1) {
+      img.style.setProperty('cursor', 'zoom-out', 'important');
+      checkAutoZoomOut(img);
+    }
   }
 });
 
@@ -150,21 +310,63 @@ domRefs.lightboxImgWrap.addEventListener('wheel', function (e) {
 
   e.preventDefault();
 
-  let scaleDelta = e.deltaY * -0.01;
-  let newScale = Math.min(Math.max(1, state.lbZoomLevel + scaleDelta), 6);
+  // Improved zoom curve: exponential for better control at different zoom levels
+  const delta = Math.abs(e.deltaY);
+  const direction = e.deltaY > 0 ? -1 : 1;
+  
+  // Use logarithmic scaling for more natural feel
+  let zoomFactor;
+  if (delta < 50) {
+    zoomFactor = 1.05; // Fine control
+  } else if (delta < 150) {
+    zoomFactor = 1.15; // Medium control
+  } else {
+    zoomFactor = 1.25; // Coarse control
+  }
+  
+  let newScale;
+  if (direction > 0) {
+    newScale = Math.min(6, state.lbZoomLevel * zoomFactor);
+  } else {
+    newScale = Math.max(1, state.lbZoomLevel / zoomFactor);
+  }
+  
   if (newScale === state.lbZoomLevel) return;
 
-  let ratio = newScale / state.lbZoomLevel;
-  let rect = img.getBoundingClientRect();
-
-  let cx = rect.left + rect.width / 2;
-  let cy = rect.top + rect.height / 2;
-  let mx = e.clientX - cx;
-  let my = e.clientY - cy;
-
-  state.lbZoomPanX -= mx * (ratio - 1);
-  state.lbZoomPanY -= my * (ratio - 1);
   state.lbZoomLevel = newScale;
 
-  updateZoomTransform(img);
+  updateZoomTransform(img, true);
 }, { passive: false });
+
+export function checkAutoZoomOut(img: HTMLImageElement) {
+  if (state.lbZoomLevel <= 1) return;
+  let mWrap = domRefs.lightboxImgWrap;
+  if (!mWrap) return;
+
+  const viewWidth = mWrap.offsetWidth;
+  const viewHeight = mWrap.offsetHeight;
+  const imgWidth = img.offsetWidth * state.lbZoomLevel;
+  const imgHeight = img.offsetHeight * state.lbZoomLevel;
+
+  const imgLeft = (viewWidth / 2) + state.lbZoomPanX - (imgWidth / 2);
+  const imgRight = (viewWidth / 2) + state.lbZoomPanX + (imgWidth / 2);
+  const imgTop = (viewHeight / 2) + state.lbZoomPanY - (imgHeight / 2);
+  const imgBottom = (viewHeight / 2) + state.lbZoomPanY + (imgHeight / 2);
+
+  const x1 = Math.max(0, imgLeft);
+  const y1 = Math.max(0, imgTop);
+  const x2 = Math.min(viewWidth, imgRight);
+  const y2 = Math.min(viewHeight, imgBottom);
+
+  const intersectWidth = Math.max(0, x2 - x1);
+  const intersectHeight = Math.max(0, y2 - y1);
+  const intersectArea = intersectWidth * intersectHeight;
+
+  const imgArea = imgWidth * imgHeight;
+  const viewArea = viewWidth * viewHeight;
+  const maxPossibleVisibleArea = Math.min(imgArea, viewArea);
+
+  if (intersectArea < 0.5 * maxPossibleVisibleArea) {
+    resetZoom();
+  }
+}
