@@ -388,17 +388,16 @@ export function updateFilmstrip() {
         }
         startFsSync(fsTarget);
       } else {
-        // Cold start: play strict smooth cubic ease 
+        // Cold start: play strict smooth ease-out
         stopFsSync({ commit: false });
+        // Stop lenis immediately so it doesn't fight the RAF animation from frame 0
+        if ((window as any).fsLenis) (window as any).fsLenis.stop();
         let startPos = getFilmstripScroll();
-        let startTime = null;
+        // Pre-seed startTime so frame 1 has a real elapsed value (no dead first frame)
+        let startTime = performance.now();
         let duration = FILMSTRIP_CONFIG.scrollDuration;
 
         function step(time) {
-          if (!startTime) {
-            startTime = time;
-            if ((window as any).fsLenis) (window as any).fsLenis.stop();
-          }
           let elapsed = time - startTime;
           if (elapsed >= duration) {
             setFilmstripScroll(fsTarget);
@@ -408,8 +407,9 @@ export function updateFilmstrip() {
             state.isManuallyNavigating = false;
             return;
           }
+          // easeOutCubic — no ease-in, starts moving immediately
           let t = Math.min(1, elapsed / duration);
-          let ease = 1 - Math.pow(1 - t, 4);
+          let ease = 1 - Math.pow(1 - t, 3);
           setFilmstripScroll(startPos + (fsTarget - startPos) * ease);
           state.fsRaf = requestAnimationFrame(step);
         }

@@ -1444,16 +1444,16 @@ body::after {
   }
 
   #lightbox-img-wrap {
-    flex: 0 1 auto;
-    width: auto;
-    max-width: 50vw;
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
   }
 
   #lightbox-img-wrap.photo-loading {
-    width: min(50vw, calc(72svh * var(--lightbox-photo-ratio)));
-    max-width: 50vw;
+    /* width is driven by aspect-ratio + max-height, flex:1 handles the rest */
+    width: auto;
+    max-width: 100%;
   }
 
   /* Ensure video container fills available row space on desktop */
@@ -1466,13 +1466,17 @@ body::after {
   #lightbox-img {
     width: auto;
     max-width: 100%;
-    max-height: 72svh;
+    /* nudge max-height up a bit so wider images can also grow taller */
+    max-height: 78svh;
   }
 
   #lightbox-info {
-    flex: 1;
-    min-width: 200px;
-    max-width: 340px;
+    /*
+     * Shrink the info panel as the photo gets wider, giving the image more room.
+     * clamp(min, ideal, max): at ratio=1 → ~340px; at 3:2 → ~227px; at 16:9 → ~191px
+     */
+    flex: 0 0 auto;
+    width: clamp(190px, calc(340px / var(--lightbox-photo-ratio, 1)), 340px);
     margin-top: 0;
     display: flex;
     flex-direction: column;
@@ -1482,7 +1486,7 @@ body::after {
 
 @media (min-width: 1024px) {
   #lightbox-content {
-    max-width: 1100px;
+    max-width: 1350px;
     margin: 0 auto;
     padding: calc(4.5rem + var(--safe-top)) 3rem calc(4.5rem + var(--safe-bottom));
     gap: 4rem;
@@ -1494,22 +1498,17 @@ body::after {
   }
 
   #lightbox-img-wrap {
-    max-width: min(56vw, 640px);
-  }
-
-  #lightbox-img-wrap.photo-loading {
-    width: min(56vw, 640px, calc(72svh * var(--lightbox-photo-ratio)));
-    max-width: min(56vw, 640px);
+    /* flex:1 from the parent block handles growth; no extra cap needed on large screens */
   }
 
   #lightbox-img {
     max-width: 100%;
-    max-height: 72svh;
+    max-height: 78svh;
   }
 
   #lightbox-info {
-    max-width: 380px;
-    min-width: 220px;
+    /* Widen the clamp ceiling a touch on larger screens */
+    width: clamp(200px, calc(380px / var(--lightbox-photo-ratio, 1)), 380px);
   }
 
   #lightbox-info-wrap {
@@ -1706,6 +1705,23 @@ body::after {
 
   #lightbox.zoom-active #lightbox-zoom-darken {
     z-index: 3;
+  }
+}
+
+@media (hover: none) and (orientation: landscape) {
+  .snap-slide img {
+    max-height: 72dvh;
+  }
+  .snap-slide-inner {
+    max-height: 72dvh;
+    width: min(100%, calc(72dvh * var(--lightbox-photo-ratio)));
+  }
+  #lightbox:not(.mode-motion) #lightbox-img-wrap {
+    margin-bottom: calc(72dvh - var(--app-height) + 3.25rem + var(--safe-top));
+    padding-bottom: calc(28dvh - 3.25rem - var(--safe-top));
+  }
+  #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
+    height: 72dvh;
   }
 }
 
