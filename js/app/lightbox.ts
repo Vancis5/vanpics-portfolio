@@ -2,7 +2,7 @@ import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { getCategorySlug, motionProjects } from './media-data.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
-import { slugify } from './utils.js';
+import { slugify, getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfReady, setFilmstripLiftZoneDisplay } from './core.js';
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
@@ -32,15 +32,23 @@ function _cacheImage(src) {
   };
   entry.decodePromise = new Promise(resolve => {
     function markDecoded() {
+      const cacheDimensions = () => {
+        if (img.naturalWidth && img.naturalHeight) {
+          saveRatioToCache(src, img.naturalWidth, img.naturalHeight);
+        }
+      };
       if (img.decode) {
         img.decode().then(function () {
           entry.decoded = true;
+          cacheDimensions();
           resolve(entry);
         }).catch(function () {
+          cacheDimensions();
           resolve(entry);
         });
       } else {
         entry.decoded = true;
+        cacheDimensions();
         resolve(entry);
       }
     }
@@ -670,7 +678,7 @@ export function prepareLightboxPhoto(p) {
   let wrap = domRefs.lightboxImgWrap;
   if (!img || !wrap || !p) return;
 
-  let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+  let ratio = getPhotoAspectRatio(p);
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
   wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
@@ -685,6 +693,10 @@ export function prepareLightboxPhoto(p) {
     img.removeAttribute('data-loading-photo');
     img.style.opacity = '0';
     img.src = p.src;
+    if (cached.img.naturalWidth && cached.img.naturalHeight) {
+      let r = cached.img.naturalWidth / cached.img.naturalHeight;
+      wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+    }
     setTimeout(() => {
       if (token !== photoPlaceholderToken) return;
       img.style.opacity = '1';
@@ -717,28 +729,35 @@ export function prepareLightboxPhoto(p) {
     cacheEntry.decodePromise.then(() => {
       if (token !== photoPlaceholderToken) return;
       
-      // Fade out the preview thumbnail first
-      img.style.opacity = '0';
-      
-      setTimeout(() => {
-        if (token !== photoPlaceholderToken) return;
-        img.src = p.src;
-        clearLightboxPhotoPlaceholder(token);
-        
-        // Fade in the sharp high-res image
-        setTimeout(() => {
-          if (token !== photoPlaceholderToken) return;
-          img.style.opacity = '1';
-        }, 20);
-      }, 150); // Give the thumbnail 150ms to fade out
+      if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
+        let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
+        wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+      }
+
+      // Swap immediately at full opacity to prevent double-fading/flickering
+      img.src = p.src;
+      clearLightboxPhotoPlaceholder(token);
+      img.style.opacity = '1';
     });
   } else {
     // Fallback just in case
     img.src = p.src;
     img.onload = function () {
       if (token !== photoPlaceholderToken) return;
-      clearLightboxPhotoPlaceholder(token);
-      img.style.opacity = '1';
+      const handleFallbackDecode = () => {
+        if (img.naturalWidth && img.naturalHeight) {
+          let r = img.naturalWidth / img.naturalHeight;
+          wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+        }
+        clearLightboxPhotoPlaceholder(token);
+        img.style.opacity = '1';
+      };
+      if (img.decode) {
+        img.decode().then(handleFallbackDecode).catch(handleFallbackDecode);
+      } else {
+        handleFallbackDecode();
+      }
     };
     img.onerror = function () {
       if (token !== photoPlaceholderToken) return;

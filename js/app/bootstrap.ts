@@ -165,7 +165,7 @@ window.addEventListener('popstate', function () {
 function processPhotos(raw) {
   return raw.map(p => ({
     ...p,
-    aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : parseFloat(p.aspect_ratio || 1.0),
+    aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : undefined),
     heroSlide: p.hero_slide === 1 || p.hero_slide === true,
     rawSrc: p.raw_src || null
   }));
@@ -175,7 +175,7 @@ function processVideos(raw) {
   return raw.map(v => ({
     ...v,
     thumb: v.poster || '',
-    aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : parseFloat(v.aspect_ratio || 1.777)
+    aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : (v.aspect_ratio ? parseFloat(v.aspect_ratio) : undefined)
   }));
 }
 

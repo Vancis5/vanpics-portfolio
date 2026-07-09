@@ -6,6 +6,7 @@ import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightbox
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
+import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -78,7 +79,7 @@ if (state.isMobile) {
 
         let inner = document.createElement('div');
         inner.className = 'snap-slide-inner photo-loading';
-        let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+        let ratio = getPhotoAspectRatio(p);
         inner.style.setProperty('--lightbox-photo-ratio', String(ratio));
 
         let img = document.createElement('img');
@@ -88,12 +89,24 @@ if (state.isMobile) {
         img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
         
         img.onload = function () {
-          if (inner.classList.contains('photo-loaded')) return;
-          inner.classList.add('photo-loaded');
-          inner.classList.remove('photo-placeholder-visible');
-          setTimeout(function () {
-            inner.classList.remove('photo-loading', 'photo-loaded');
-          }, 260);
+          const handleSwipeDecode = () => {
+            if (img.naturalWidth && img.naturalHeight) {
+              let r = img.naturalWidth / img.naturalHeight;
+              inner.style.setProperty('--lightbox-photo-ratio', String(r));
+              saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+            }
+            if (inner.classList.contains('photo-loaded')) return;
+            inner.classList.add('photo-loaded');
+            inner.classList.remove('photo-placeholder-visible');
+            setTimeout(function () {
+              inner.classList.remove('photo-loading', 'photo-loaded');
+            }, 260);
+          };
+          if (img.decode) {
+            img.decode().then(handleSwipeDecode).catch(handleSwipeDecode);
+          } else {
+            handleSwipeDecode();
+          }
         };
         img.onerror = function () {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
@@ -106,6 +119,9 @@ if (state.isMobile) {
         if (img.complete && img.naturalWidth > 0) {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
           inner.classList.add('photo-loaded');
+          let r = img.naturalWidth / img.naturalHeight;
+          inner.style.setProperty('--lightbox-photo-ratio', String(r));
+          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
         } else {
           requestAnimationFrame(function () {
             if (!inner.classList.contains('photo-loaded') && !inner.classList.contains('photo-error')) {
