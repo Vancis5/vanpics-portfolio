@@ -1251,6 +1251,10 @@ if (editForm) {
         fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
         fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
         fileFormData.append('aspectRatio', String(computedEditAspectRatio));
+        const replacementRawFile = editFileInput ? (editFileInput as HTMLInputElement).files?.[0] : null;
+        if (replacementRawFile) {
+          fileFormData.append('raw', replacementRawFile);
+        }
 
         const fileRes = await replacePhotoItem(id, fileFormData, token);
         if (handleUnauthorized(fileRes)) return;
@@ -1349,6 +1353,9 @@ if (form) {
     if (currentMode === 'photo') {
       formData.append('photo', processedPhotoBlob);
       formData.append('thumb', processedThumbBlob);
+      if (selectedFile) {
+        formData.append('raw', selectedFile);
+      }
       formData.append('category', getDocEl('category').value);
       formData.append('heroSlide', String(getDocEl('hero-slide').checked));
     } else {

@@ -683,8 +683,12 @@ export function prepareLightboxPhoto(p) {
   if (cached && cached.decoded) {
     wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded', 'photo-error');
     img.removeAttribute('data-loading-photo');
+    img.style.opacity = '0';
     img.src = p.src;
-    img.style.opacity = '1';
+    setTimeout(() => {
+      if (token !== photoPlaceholderToken) return;
+      img.style.opacity = '1';
+    }, 20);
     return;
   }
 
@@ -694,8 +698,12 @@ export function prepareLightboxPhoto(p) {
   wrap.classList.add('photo-loading');
   if (previewSrc) {
     img.removeAttribute('data-loading-photo');
+    img.style.opacity = '0';
     img.src = previewSrc;
-    img.style.opacity = '1';
+    setTimeout(() => {
+      if (token !== photoPlaceholderToken) return;
+      img.style.opacity = '1';
+    }, 20);
   } else {
     wrap.classList.add('photo-placeholder-visible');
     img.dataset.loadingPhoto = 'true';
@@ -708,12 +716,21 @@ export function prepareLightboxPhoto(p) {
   if (cacheEntry && cacheEntry.decodePromise) {
     cacheEntry.decodePromise.then(() => {
       if (token !== photoPlaceholderToken) return;
-      img.src = p.src;
-      // Allow browser to register the instant src before clearing placeholder
-      requestAnimationFrame(() => {
+      
+      // Fade out the preview thumbnail first
+      img.style.opacity = '0';
+      
+      setTimeout(() => {
         if (token !== photoPlaceholderToken) return;
+        img.src = p.src;
         clearLightboxPhotoPlaceholder(token);
-      });
+        
+        // Fade in the sharp high-res image
+        setTimeout(() => {
+          if (token !== photoPlaceholderToken) return;
+          img.style.opacity = '1';
+        }, 20);
+      }, 150); // Give the thumbnail 150ms to fade out
     });
   } else {
     // Fallback just in case
@@ -721,6 +738,7 @@ export function prepareLightboxPhoto(p) {
     img.onload = function () {
       if (token !== photoPlaceholderToken) return;
       clearLightboxPhotoPlaceholder(token);
+      img.style.opacity = '1';
     };
     img.onerror = function () {
       if (token !== photoPlaceholderToken) return;

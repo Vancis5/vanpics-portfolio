@@ -2,6 +2,8 @@ export interface Photo {
   id?: string | number;
   src: string;
   thumb?: string;
+  raw_src?: string;
+  rawSrc?: string;
   title: string;
   desc?: string;
   date?: string;

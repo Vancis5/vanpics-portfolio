@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS photos (
   title TEXT NOT NULL,
   src TEXT NOT NULL,
   thumb TEXT NOT NULL,
+  raw_src TEXT,
   aspect_ratio REAL NOT NULL,
   category TEXT DEFAULT '',
   location TEXT,

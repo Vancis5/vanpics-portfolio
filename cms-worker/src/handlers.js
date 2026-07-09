@@ -163,7 +163,7 @@ export async function listPhotos(request, env, params, ctx) {
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
   const { results } = await env.DB.prepare(
-    `SELECT id, title, src, thumb, aspect_ratio, category, location, date, desc, hero_slide, created_at
+    `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide, created_at
      FROM photos
      ORDER BY created_at DESC, id DESC
      LIMIT ? OFFSET ?`
@@ -246,7 +246,7 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'invalid photo id', 400);
   }
 
-  const photo = await env.DB.prepare('SELECT src, thumb FROM photos WHERE id = ?')
+  const photo = await env.DB.prepare('SELECT src, thumb, raw_src FROM photos WHERE id = ?')
     .bind(photoId)
     .first();
 
@@ -256,7 +256,8 @@ export async function deletePhoto(request, env, params) {
 
   const keysToDelete = [...new Set([
     mediaKey(photo.src),
-    mediaKey(photo.thumb)
+    mediaKey(photo.thumb),
+    mediaKey(photo.raw_src)
   ].filter(Boolean))];
   if (keysToDelete.length > 0) {
     await env.MEDIA_BUCKET.delete(keysToDelete);
@@ -295,6 +296,7 @@ export async function uploadPhoto(request, env) {
   const formData = await request.formData();
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
+  const rawFile = formData.get('raw');
   const { data, errors } = validatePhotoFields(formData);
 
   if (!isFileLike(photoFile, 'image/') || !isFileLike(thumbFile, 'image/')) {
@@ -304,6 +306,7 @@ export async function uploadPhoto(request, env) {
   // Enforce file size limits
   if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (rawFile?.size > MAX_IMAGE_SIZE) errors.push(`raw photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
@@ -311,6 +314,7 @@ export async function uploadPhoto(request, env) {
 
   const photoKey = makeMediaKey('photos', 'webp');
   const thumbKey = makeMediaKey('thumbs', 'webp');
+  let rawKey = null;
 
   const puts = [
     env.MEDIA_BUCKET.put(photoKey, await photoFile.arrayBuffer(), {
@@ -321,16 +325,27 @@ export async function uploadPhoto(request, env) {
     }),
   ];
 
+  if (rawFile && rawFile.size > 0) {
+    const rawExt = extensionForContentType(rawFile.type, 'jpg');
+    rawKey = makeMediaKey('photos-raw', rawExt);
+    puts.push(
+      env.MEDIA_BUCKET.put(rawKey, await rawFile.arrayBuffer(), {
+        httpMetadata: { contentType: rawFile.type || 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' },
+      })
+    );
+  }
+
   await Promise.all(puts);
 
   const result = await env.DB.prepare(
-    `INSERT INTO photos (title, src, thumb, aspect_ratio, category, location, date, desc, hero_slide)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       data.title,
       photoKey,
       thumbKey,
+      rawKey,
       data.aspectRatio,
       data.category,
       data.location,
@@ -349,6 +364,7 @@ export async function uploadPhoto(request, env) {
       title: data.title,
       src: photoKey,
       thumb: thumbKey,
+      raw_src: rawKey,
       aspect_ratio: data.aspectRatio,
       category: data.category,
       location: data.location,
@@ -611,6 +627,7 @@ export async function replacePhotoFile(request, env, params) {
   const formData = await request.formData();
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
+  const rawFile = formData.get('raw');
   const aspectRatio = parseFloat(formData.get('aspectRatio'));
 
   const errors = [];
@@ -627,7 +644,7 @@ export async function replacePhotoFile(request, env, params) {
 
   // 1. Get the existing keys from D1
   const photo = await env.DB.prepare(
-    'SELECT src, thumb FROM photos WHERE id = ?'
+    'SELECT src, thumb, raw_src FROM photos WHERE id = ?'
   ).bind(photoId).first();
 
   if (!photo) {
@@ -637,6 +654,7 @@ export async function replacePhotoFile(request, env, params) {
   // 2. Generate new keys to bust CDN and browser cache
   const newPhotoKey = makeMediaKey('photos', 'webp');
   const newThumbKey = makeMediaKey('thumbs', 'webp');
+  let newRawKey = null;
 
   // 3. Put the new files in R2 using the new keys
   const puts = [
@@ -648,15 +666,32 @@ export async function replacePhotoFile(request, env, params) {
     }),
   ];
 
+  if (rawFile && rawFile.size > 0) {
+    const rawExt = extensionForContentType(rawFile.type, 'jpg');
+    newRawKey = makeMediaKey('photos-raw', rawExt);
+    puts.push(
+      env.MEDIA_BUCKET.put(newRawKey, await rawFile.arrayBuffer(), {
+        httpMetadata: { contentType: rawFile.type || 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' },
+      })
+    );
+  }
+
   await Promise.all(puts);
 
-  // 4. Update the aspect_ratio, src, and thumb in D1
-  await env.DB.prepare(
-    'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ? WHERE id = ?'
-  ).bind(aspectRatio, newPhotoKey, newThumbKey, photoId).run();
+  // 4. Update the aspect_ratio, src, thumb, raw_src in D1
+  if (newRawKey) {
+    await env.DB.prepare(
+      'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = ? WHERE id = ?'
+    ).bind(aspectRatio, newPhotoKey, newThumbKey, newRawKey, photoId).run();
+  } else {
+    // If they replaced the image but did not upload a new raw one, clear the old raw_src reference
+    await env.DB.prepare(
+      'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = NULL WHERE id = ?'
+    ).bind(aspectRatio, newPhotoKey, newThumbKey, photoId).run();
+  }
 
   // 5. Delete the old files from R2 to clean up
-  const keysToDelete = [photo.src, photo.thumb].filter(Boolean);
+  const keysToDelete = [photo.src, photo.thumb, photo.raw_src].filter(Boolean);
   if (keysToDelete.length > 0) {
     try {
       await env.MEDIA_BUCKET.delete(keysToDelete);

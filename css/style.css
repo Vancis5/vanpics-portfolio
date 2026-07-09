@@ -1,3 +1,46 @@
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/dm-mono-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/dm-mono-400.woff2') format('woff2');
+}
+
 *,
 *::before,
 *::after {
@@ -201,11 +244,11 @@ body::after {
   }
 
   body .zoomable:hover {
-    cursor: zoom-in !important;
+    cursor: zoom-in;
   }
 
   body .zoomable.zoomed:hover {
-    cursor: zoom-out !important;
+    cursor: zoom-out;
   }
 
   /* hide custom cursor when the OS zoom cursor is active */
@@ -216,11 +259,11 @@ body::after {
 }
 
 .zoomable {
-  cursor: zoom-in !important;
+  cursor: zoom-in;
 }
 
 .zoomable.zoomed {
-  cursor: zoom-out !important;
+  cursor: zoom-out;
   z-index: 50;
   position: relative;
 }
@@ -1110,6 +1153,10 @@ body::after {
   box-sizing: border-box;
 }
 
+#lightbox.zoom-active #lightbox-content {
+  z-index: 20;
+}
+
 /* Mobile: tighter top padding so image gets full breathing room */
 @media (hover: none) and (max-width: 767px) {
   #lightbox-content {
@@ -1137,6 +1184,10 @@ body::after {
   position: relative;
   z-index: 2;
   /* Sits above darken layer */
+}
+
+#lightbox-img-wrap.raw-loading #lightbox-img {
+  cursor: wait !important;
 }
 
 #lightbox-img-wrap.photo-loading {
@@ -1215,7 +1266,7 @@ body::after {
   object-fit: contain;
   border-radius: 3px;
   border: 1.8px solid rgba(242, 238, 231, 0.06);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out;
   will-change: transform, opacity;
 }
 
