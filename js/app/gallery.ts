@@ -151,7 +151,7 @@ let cardObserver = new IntersectionObserver(function (entries) {
   scheduleGalleryRevealRepair(getActiveGalleryPanel(), 60);
 }, { rootMargin: '0px 0px -60px 0px' });
 
-export function revealCards(scope, options) {
+export function revealCards(scope: any, options?: any) {
   options = options || {};
   let root = scope || getActiveGalleryPanel() || document;
   root.querySelectorAll('.photo-card').forEach(function (card) {
@@ -198,14 +198,22 @@ function saveRatioCache() {
 
 function revealImageOnLoad(img) {
   if (!img) return;
+  let card = img.closest('.photo-card');
   function reveal() {
     img.classList.add('media-loaded');
+    if (card) {
+      card.classList.add('photo-loaded');
+    }
   }
   if (img.complete && img.naturalWidth > 0) {
     requestAnimationFrame(reveal);
+  } else if (img.complete) {
+    img.style.display = 'none';
   } else {
     img.addEventListener('load', reveal, { once: true });
-    img.addEventListener('error', reveal, { once: true });
+    img.addEventListener('error', function () {
+      img.style.display = 'none';
+    }, { once: true });
   }
 }
 
@@ -314,7 +322,7 @@ function getMaxPageScroll() {
 
 function restoreWindowScroll(scrollY) {
   let clampedScroll = Math.max(0, Math.min(scrollY, getMaxPageScroll()));
-  if (window.lenis) window.lenis.scrollTo(clampedScroll, { immediate: true });
+  if ((window as any).lenis) (window as any).lenis.scrollTo(clampedScroll, { immediate: true });
   else window.scrollTo({ top: clampedScroll, behavior: 'auto' });
   return clampedScroll;
 }
@@ -333,7 +341,7 @@ function getGalleryTargetScroll(category, options) {
 }
 
 function refreshGalleryScrollMetrics() {
-  if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
+  if ((window as any).lenis && typeof (window as any).lenis.resize === 'function') (window as any).lenis.resize();
   updateStickyHeaderSurface();
   updateCustomScrollbar();
 }
@@ -347,12 +355,12 @@ function getCategoryIndex(category) {
   return GALLERY_CATEGORIES.indexOf(normalizeGalleryCategory(category));
 }
 
-function getGalleryPanel(category) {
+function getGalleryPanel(category: string): HTMLElement | null {
   let masonry = domRefs.masonry;
   if (!masonry) return null;
 
   category = normalizeGalleryCategory(category);
-  let panel = masonry.querySelector('.masonry-panel[data-category="' + category + '"]');
+  let panel = masonry.querySelector('.masonry-panel[data-category="' + category + '"]') as HTMLElement;
   if (!panel) {
     panel = document.createElement('div');
     panel.className = 'masonry-panel';
@@ -409,7 +417,7 @@ function updateGalleryNav(category) {
   }
 }
 
-function setActiveGalleryPanel(category, options) {
+function setActiveGalleryPanel(category: string, options?: any) {
   options = options || {};
   category = normalizeGalleryCategory(category);
 
@@ -452,7 +460,7 @@ function setActiveGalleryPanel(category, options) {
   return activePanel;
 }
 
-export function rebuildGallery(newCategory, options) {
+export function rebuildGallery(newCategory: string, options?: any) {
   options = options || {};
   newCategory = normalizeGalleryCategory(newCategory);
 
@@ -504,9 +512,9 @@ export function rebuildGallery(newCategory, options) {
 }
 
 export function initFilters() {
-  let photoBtn = document.querySelector('#gallery-header .photographs-btn');
-  let figuresBtn = document.querySelector('#gallery-header .figures-btn');
-  let motionBtn = document.querySelector('#gallery-header .motion-btn');
+  let photoBtn = document.querySelector('#gallery-header .photographs-btn') as HTMLElement;
+  let figuresBtn = document.querySelector('#gallery-header .figures-btn') as HTMLElement;
+  let motionBtn = document.querySelector('#gallery-header .motion-btn') as HTMLElement;
 
   updateGalleryNav(state.currentCategory);
 
@@ -522,16 +530,16 @@ export function initFilters() {
       rebuildGallery(item.category, { animate: true });
     });
 
-    item.button.addEventListener('keydown', function (e) {
+    item.button.addEventListener('keydown', function (e: KeyboardEvent) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        item.button.click();
+        (item.button as HTMLElement).click();
       }
     });
   });
 }
 
-export function buildMasonry(category) {
+export function buildMasonry(category?: string) {
   let masonry = domRefs.masonry;
   if (!masonry) return;
 
@@ -619,13 +627,15 @@ export function buildMasonry(category) {
     revealImageOnLoad(imgEl);
 
     let r = parseFloat(p.aspectRatio || ratioCache[basePath] || 1);
-    imgEl.style.aspectRatio = r;
+    card.style.setProperty('--photo-aspect-ratio', String(r));
+    imgEl.style.aspectRatio = String(r);
 
     if (!p.aspectRatio && !ratioCache[basePath]) {
       imgEl.addEventListener('load', function () {
         if (imgEl.naturalWidth && imgEl.naturalHeight) {
           let ratio = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(4);
           ratioCache[basePath] = ratio;
+          card.style.setProperty('--photo-aspect-ratio', ratio);
           imgEl.style.aspectRatio = ratio;
           saveRatioCache();
         }

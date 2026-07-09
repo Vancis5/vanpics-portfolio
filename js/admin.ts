@@ -22,6 +22,10 @@ import {
 import { renderArchivesList } from './admin/render.js';
 import { resizeImage } from './admin/pipeline.js';
 
+function getDocEl(id: string): any {
+  return document.getElementById(id);
+}
+
 // Form mode state
 let currentMode = 'photo'; // 'photo' or 'video'
 
@@ -31,27 +35,27 @@ let searchQuery = localStorage.getItem('vanpics_cms_search') || '';
 let globalArchivesList = []; // Caches all items for instantaneous filtering
 
 // Modal elements
-const uploadModal = document.getElementById('upload-modal-overlay');
-const openUploadModalBtn = document.getElementById('btn-open-upload-modal');
-const closeUploadModalBtn = document.getElementById('btn-close-upload-modal');
+const uploadModal = getDocEl('upload-modal-overlay');
+const openUploadModalBtn = getDocEl('btn-open-upload-modal');
+const closeUploadModalBtn = getDocEl('btn-close-upload-modal');
 
-const editModal = document.getElementById('edit-modal-overlay');
-const closeEditModalBtn = document.getElementById('btn-close-edit-modal');
-const editForm = document.getElementById('edit-cms-form');
+const editModal = getDocEl('edit-modal-overlay');
+const closeEditModalBtn = getDocEl('btn-close-edit-modal');
+const editForm = getDocEl('edit-cms-form');
 let currentlyEditingItem = null;
 
 // Utilities Modal elements
-const utilitiesModal = document.getElementById('utilities-modal-overlay');
-const openUtilitiesModalBtn = document.getElementById('btn-open-utilities-modal');
-const closeUtilitiesModalBtn = document.getElementById('btn-close-utilities-modal');
-const runDbSortBtn = document.getElementById('btn-run-db-sort');
-const runDbSortText = document.getElementById('btn-run-db-sort-text');
-const purgeCdnCacheBtn = document.getElementById('btn-purge-cdn-cache');
-const purgeCdnCacheText = document.getElementById('btn-purge-cdn-cache-text');
-const utilityTerminal = document.getElementById('utility-terminal');
+const utilitiesModal = getDocEl('utilities-modal-overlay');
+const openUtilitiesModalBtn = getDocEl('btn-open-utilities-modal');
+const closeUtilitiesModalBtn = getDocEl('btn-close-utilities-modal');
+const runDbSortBtn = getDocEl('btn-run-db-sort');
+const runDbSortText = getDocEl('btn-run-db-sort-text');
+const purgeCdnCacheBtn = getDocEl('btn-purge-cdn-cache');
+const purgeCdnCacheText = getDocEl('btn-purge-cdn-cache-text');
+const utilityTerminal = getDocEl('utility-terminal');
 
 // Search and Filter Elements
-const searchInput = document.getElementById('dashboard-search');
+const searchInput = getDocEl('dashboard-search');
 
 // Replacement photo states
 let processedEditPhotoBlob = null;
@@ -62,43 +66,43 @@ let computedEditAspectRatio = null;
 if (searchInput) {
   searchInput.value = searchQuery;
 }
-const filterTypeEl = document.getElementById('filter-type');
+const filterTypeEl = getDocEl('filter-type');
 if (filterTypeEl) {
   filterTypeEl.value = activeFilter;
 }
-const filterSortEl = document.getElementById('filter-sort');
+const filterSortEl = getDocEl('filter-sort');
 if (filterSortEl) {
   filterSortEl.value = localStorage.getItem('vanpics_cms_filter_sort') || 'date-desc';
 }
-const filterGroupEl = document.getElementById('filter-group');
+const filterGroupEl = getDocEl('filter-group');
 if (filterGroupEl) {
   filterGroupEl.value = localStorage.getItem('vanpics_cms_filter_group') || 'none';
 }
 
 // Tab buttons
-const tabPhotoBtn = document.getElementById('tab-photo');
-const tabVideoBtn = document.getElementById('tab-video');
+const tabPhotoBtn = getDocEl('tab-photo');
+const tabVideoBtn = getDocEl('tab-video');
 
 // UI elements mapping - Photo Mode
-const dropZonePhoto = document.getElementById('drop-zone-photo');
-const fileInputPhoto = document.getElementById('file-input-photo');
-const previewContainerPhoto = document.getElementById('preview-container-photo');
-const imgPreviewPhoto = document.getElementById('image-preview-photo');
-const removeBtnPhoto = document.getElementById('remove-btn-photo');
+const dropZonePhoto = getDocEl('drop-zone-photo');
+const fileInputPhoto = getDocEl('file-input-photo');
+const previewContainerPhoto = getDocEl('preview-container-photo');
+const imgPreviewPhoto = getDocEl('image-preview-photo');
+const removeBtnPhoto = getDocEl('remove-btn-photo');
 
 // UI elements mapping - Video Mode
-const dropZoneVideoGrid = document.getElementById('drop-zone-video-grid');
-const dropZoneVideo = document.getElementById('drop-zone-video');
-const fileInputVideo = document.getElementById('file-input-video');
-const previewContainerVideo = document.getElementById('preview-container-video');
-const videoPreview = document.getElementById('video-preview');
-const removeBtnVideo = document.getElementById('remove-btn-video');
+const dropZoneVideoGrid = getDocEl('drop-zone-video-grid');
+const dropZoneVideo = getDocEl('drop-zone-video');
+const fileInputVideo = getDocEl('file-input-video');
+const previewContainerVideo = getDocEl('preview-container-video');
+const videoPreview = getDocEl('video-preview');
+const removeBtnVideo = getDocEl('remove-btn-video');
 
-const dropZonePoster = document.getElementById('drop-zone-poster');
-const fileInputPoster = document.getElementById('file-input-poster');
-const previewContainerPoster = document.getElementById('preview-container-poster');
-const imgPreviewPoster = document.getElementById('image-preview-poster');
-const removeBtnPoster = document.getElementById('remove-btn-poster');
+const dropZonePoster = getDocEl('drop-zone-poster');
+const fileInputPoster = getDocEl('file-input-poster');
+const previewContainerPoster = getDocEl('preview-container-poster');
+const imgPreviewPoster = getDocEl('image-preview-poster');
+const removeBtnPoster = getDocEl('remove-btn-poster');
 
 // Photo-only & Video-only field wrappers
 const photoOnlyElements = document.querySelectorAll('.photo-only');
@@ -118,23 +122,23 @@ window.previewContainer = previewContainer;
 window.imgPreview = imgPreview;
 window.removeBtn = removeBtn;
 
-const form = document.getElementById('cms-form');
-const submitBtn = document.getElementById('submit-btn');
-const submitBtnText = document.getElementById('submit-btn-text');
-const pipelineStatus = document.getElementById('pipeline-status');
-const itemsContainer = document.getElementById('items-container');
-const toast = document.getElementById('toast');
+const form = getDocEl('cms-form');
+const submitBtn = getDocEl('submit-btn');
+const submitBtnText = getDocEl('submit-btn-text');
+const pipelineStatus = getDocEl('pipeline-status');
+const itemsContainer = getDocEl('items-container');
+const toast = getDocEl('toast');
 
 // Auth verification elements
-const secretInput = document.getElementById('secret-token');
-const rememberCheckbox = document.getElementById('remember-token');
-const authStatus = document.getElementById('auth-status');
-const lockSecured = document.getElementById('lock-secured');
-const lockUnverified = document.getElementById('lock-unverified');
-const authSpinner = document.getElementById('auth-spinner');
-const togglePasswordBtn = document.getElementById('toggle-password-btn');
-const eyeShow = document.getElementById('eye-show');
-const eyeHide = document.getElementById('eye-hide');
+const secretInput = getDocEl('secret-token');
+const rememberCheckbox = getDocEl('remember-token');
+const authStatus = getDocEl('auth-status');
+const lockSecured = getDocEl('lock-secured');
+const lockUnverified = getDocEl('lock-unverified');
+const authSpinner = getDocEl('auth-spinner');
+const togglePasswordBtn = getDocEl('toggle-password-btn');
+const eyeShow = getDocEl('eye-show');
+const eyeHide = getDocEl('eye-hide');
 
 // File reference state
 let selectedFile = null; // Photo mode
@@ -161,7 +165,7 @@ function showToast(text, type = 'success') {
 }
 
 function clearEditPreview() {
-  const imgPreview = document.getElementById('edit-media-preview-img');
+  const imgPreview = getDocEl('edit-media-preview-img');
   if (imgPreview) {
     imgPreview.src = '';
     imgPreview.classList.remove('loaded');
@@ -171,14 +175,14 @@ function clearEditPreview() {
       container.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
     }
   }
-  const placeholder = document.getElementById('edit-media-preview-placeholder');
+  const placeholder = getDocEl('edit-media-preview-placeholder');
   if (placeholder) {
     placeholder.style.display = 'none';
   }
 }
 
 // Set up edit preview listeners for fade-in and dominant color extraction
-const editPreviewImg = document.getElementById('edit-media-preview-img');
+const editPreviewImg = getDocEl('edit-media-preview-img');
 if (editPreviewImg) {
   editPreviewImg.crossOrigin = 'anonymous';
   editPreviewImg.addEventListener('load', () => {
@@ -209,11 +213,11 @@ if (editPreviewImg) {
 }
 
 // Modal & Scroll State management
-const confirmModal = document.getElementById('confirm-modal-overlay');
-const cancelDeleteBtn = document.getElementById('btn-cancel-delete');
-const confirmDeleteBtn = document.getElementById('btn-confirm-delete');
-const editDeleteBtn = document.getElementById('edit-delete-btn');
-const confirmDeleteText = document.getElementById('confirm-delete-text');
+const confirmModal = getDocEl('confirm-modal-overlay');
+const cancelDeleteBtn = getDocEl('btn-cancel-delete');
+const confirmDeleteBtn = getDocEl('btn-confirm-delete');
+const editDeleteBtn = getDocEl('edit-delete-btn');
+const confirmDeleteText = getDocEl('confirm-delete-text');
 
 function preventDefaultScroll(e) {
   if (e.target && typeof e.target.closest === 'function') {
@@ -528,7 +532,7 @@ if (savedToken) {
 }
 
 // Logout Action
-const logoutBtn = document.getElementById('btn-logout');
+const logoutBtn = getDocEl('btn-logout');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('vanpics_admin_token');
@@ -663,11 +667,11 @@ function switchMode(mode) {
     dropZonePhoto.style.display = 'flex';
     dropZoneVideoGrid.style.display = 'none';
     
-    photoOnlyElements.forEach(el => el.style.display = '');
-    videoOnlyElements.forEach(el => el.style.display = 'none');
+    photoOnlyElements.forEach(el => (el as HTMLElement).style.display = '');
+    videoOnlyElements.forEach(el => (el as HTMLElement).style.display = 'none');
     
-    document.getElementById('title').placeholder = 'untitled';
-    document.getElementById('title').previousElementSibling.innerText = 'title';
+    getDocEl('title').placeholder = 'untitled';
+    getDocEl('title').previousElementSibling.innerText = 'title';
   } else {
     tabVideoBtn.classList.add('active');
     tabPhotoBtn.classList.remove('active');
@@ -675,11 +679,11 @@ function switchMode(mode) {
     dropZonePhoto.style.display = 'none';
     dropZoneVideoGrid.style.display = 'grid';
     
-    photoOnlyElements.forEach(el => el.style.display = 'none');
-    videoOnlyElements.forEach(el => el.style.display = '');
+    photoOnlyElements.forEach(el => (el as HTMLElement).style.display = 'none');
+    videoOnlyElements.forEach(el => (el as HTMLElement).style.display = '');
     
-    document.getElementById('title').placeholder = 'untitled';
-    document.getElementById('title').previousElementSibling.innerText = 'title';
+    getDocEl('title').placeholder = 'untitled';
+    getDocEl('title').previousElementSibling.innerText = 'title';
   }
 
   resetFileSelection();
@@ -854,7 +858,7 @@ async function processVideoPipeline(videoFile) {
   });
 
   computedAspectRatio = parseFloat((videoEl.videoWidth / videoEl.videoHeight).toFixed(4));
-  document.getElementById('step-dimensions').innerText = `aspect ratio: ${computedAspectRatio} (${videoEl.videoWidth}x${videoEl.videoHeight})`;
+  getDocEl('step-dimensions').innerText = `aspect ratio: ${computedAspectRatio} (${videoEl.videoWidth}x${videoEl.videoHeight})`;
   setStepState('dimensions', 'success');
 
   setStepState('video-check', 'active');
@@ -870,7 +874,7 @@ async function processVideoPipeline(videoFile) {
 async function processPosterPipeline(imgSrc) {
   if (!pipelineStatus) return;
   
-  if (!document.getElementById('step-poster-compress')) {
+  if (!getDocEl('step-poster-compress')) {
     const posterStep = document.createElement('div');
     posterStep.className = 'pipeline-step';
     posterStep.id = 'step-poster-compress';
@@ -907,7 +911,7 @@ async function processImagePipeline(imgSrc) {
   
   setStepState('dimensions', 'active');
   computedAspectRatio = parseFloat((img.width / img.height).toFixed(4));
-  document.getElementById('step-dimensions').innerText = `aspect ratio: ${computedAspectRatio} (${img.width}x${img.height})`;
+  getDocEl('step-dimensions').innerText = `aspect ratio: ${computedAspectRatio} (${img.width}x${img.height})`;
   setStepState('dimensions', 'success');
 
   setStepState('compress', 'active');
@@ -923,23 +927,23 @@ async function processImagePipeline(imgSrc) {
 }
 
 function setStepState(step, state) {
-  const el = document.getElementById(`step-${step}`);
+  const el = getDocEl(`step-${step}`);
   if (el) {
     el.className = `pipeline-step ${state}`;
   }
 }
 
 function updateClearButtonVisibility() {
-  const btn = document.getElementById('btn-clear-filters');
-  const btnMobile = document.getElementById('btn-clear-filters-mobile');
+  const btn = getDocEl('btn-clear-filters');
+  const btnMobile = getDocEl('btn-clear-filters-mobile');
 
   const isDefaultSearch = searchQuery === '';
   const isDefaultType = activeFilter === 'all';
   
-  const sortEl = document.getElementById('filter-sort');
+  const sortEl = getDocEl('filter-sort');
   const isDefaultSort = !sortEl || sortEl.value === 'date-desc';
   
-  const groupEl = document.getElementById('filter-group');
+  const groupEl = getDocEl('filter-group');
   const isDefaultGroup = !groupEl || groupEl.value === 'none';
 
   const shouldBeVisible = !(isDefaultSearch && isDefaultType && isDefaultSort && isDefaultGroup);
@@ -956,8 +960,8 @@ function updateClearButtonVisibility() {
 
 // Trigger render helper
 function renderArchives() {
-  const sortVal = document.getElementById('filter-sort')?.value || 'date-desc';
-  const groupVal = document.getElementById('filter-group')?.value || 'none';
+  const sortVal = getDocEl('filter-sort')?.value || 'date-desc';
+  const groupVal = getDocEl('filter-group')?.value || 'none';
   renderArchivesList(itemsContainer, globalArchivesList, activeFilter, searchQuery, sortVal, groupVal);
   updateClearButtonVisibility();
 }
@@ -974,7 +978,7 @@ async function loadArchives() {
     ];
 
     // Sort items by creation date
-    globalArchivesList.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    globalArchivesList.sort((a, b) => new Date((b as any).created_at || 0).getTime() - new Date((a as any).created_at || 0).getTime());
 
     renderArchives();
   } catch (err) {
@@ -987,37 +991,37 @@ async function loadArchives() {
 // Handles Search and Filter events instantly
 if (searchInput) {
   searchInput.addEventListener('input', (e) => {
-    searchQuery = e.target.value.trim();
+    searchQuery = (e.target as any).value.trim();
     localStorage.setItem('vanpics_cms_search', searchQuery);
     renderArchives();
   });
 }
 
-const filterTypeDrop = document.getElementById('filter-type');
+const filterTypeDrop = getDocEl('filter-type');
 if (filterTypeDrop) {
   filterTypeDrop.addEventListener('change', (e) => {
-    activeFilter = e.target.value;
+    activeFilter = (e.target as any).value;
     localStorage.setItem('vanpics_cms_filter_type', activeFilter);
     renderArchives();
-    e.target.blur();
+    (e.target as any).blur();
   });
 }
 
-const filterSortDrop = document.getElementById('filter-sort');
+const filterSortDrop = getDocEl('filter-sort');
 if (filterSortDrop) {
   filterSortDrop.addEventListener('change', (e) => {
-    localStorage.setItem('vanpics_cms_filter_sort', e.target.value);
+    localStorage.setItem('vanpics_cms_filter_sort', (e.target as any).value);
     renderArchives();
-    e.target.blur();
+    (e.target as any).blur();
   });
 }
 
-const filterGroupDrop = document.getElementById('filter-group');
+const filterGroupDrop = getDocEl('filter-group');
 if (filterGroupDrop) {
   filterGroupDrop.addEventListener('change', (e) => {
-    localStorage.setItem('vanpics_cms_filter_group', e.target.value);
+    localStorage.setItem('vanpics_cms_filter_group', (e.target as any).value);
     renderArchives();
-    e.target.blur();
+    (e.target as any).blur();
   });
 }
 
@@ -1027,27 +1031,27 @@ function handleClearFilters() {
   localStorage.setItem('vanpics_cms_search', '');
 
   activeFilter = 'all';
-  const filterTypeEl = document.getElementById('filter-type');
+  const filterTypeEl = getDocEl('filter-type');
   if (filterTypeEl) filterTypeEl.value = 'all';
   localStorage.setItem('vanpics_cms_filter_type', 'all');
 
-  const filterSortEl = document.getElementById('filter-sort');
+  const filterSortEl = getDocEl('filter-sort');
   if (filterSortEl) filterSortEl.value = 'date-desc';
   localStorage.setItem('vanpics_cms_filter_sort', 'date-desc');
 
-  const filterGroupEl = document.getElementById('filter-group');
+  const filterGroupEl = getDocEl('filter-group');
   if (filterGroupEl) filterGroupEl.value = 'none';
   localStorage.setItem('vanpics_cms_filter_group', 'none');
 
   renderArchives();
 }
 
-const btnClearFilters = document.getElementById('btn-clear-filters');
+const btnClearFilters = getDocEl('btn-clear-filters');
 if (btnClearFilters) {
   btnClearFilters.addEventListener('click', handleClearFilters);
 }
 
-const btnClearFiltersMobile = document.getElementById('btn-clear-filters-mobile');
+const btnClearFiltersMobile = getDocEl('btn-clear-filters-mobile');
 if (btnClearFiltersMobile) {
   btnClearFiltersMobile.addEventListener('click', handleClearFilters);
 }
@@ -1055,7 +1059,9 @@ if (btnClearFiltersMobile) {
 // Delegate grid clicks for opening the edit modal
 if (itemsContainer) {
   itemsContainer.addEventListener('click', (e) => {
-    const card = e.target.closest('.asset-card');
+    const target = e.target as HTMLElement;
+    if (!target) return;
+    const card = target.closest('.asset-card') as HTMLElement | null;
     if (card) {
       const id = card.dataset.id;
       const type = card.dataset.type;
@@ -1081,43 +1087,43 @@ function openEditModal(type, id) {
   processedEditThumbBlob = null;
   computedEditAspectRatio = null;
   
-  const editFileStatus = document.getElementById('edit-photo-file-status');
+  const editFileStatus = getDocEl('edit-photo-file-status');
   if (editFileStatus) editFileStatus.innerText = 'replace';
   
-  const editPipeline = document.getElementById('edit-pipeline-status');
+  const editPipeline = getDocEl('edit-pipeline-status');
   if (editPipeline) {
     editPipeline.style.display = 'none';
     editPipeline.innerHTML = '';
   }
   
-  const editFileInput = document.getElementById('edit-photo-file-input');
+  const editFileInput = getDocEl('edit-photo-file-input');
   if (editFileInput) editFileInput.value = '';
 
   // Populate fields
-  document.getElementById('edit-title').value = item.title || '';
-  document.getElementById('edit-date').value = item.date || '';
-  document.getElementById('edit-location').value = item.location || '';
-  document.getElementById('edit-desc').value = htmlToPlaintext(item.desc || '');
-  document.getElementById('edit-aspect-ratio').value = item.aspect_ratio || 1.0;
+  getDocEl('edit-title').value = item.title || '';
+  getDocEl('edit-date').value = item.date || '';
+  getDocEl('edit-location').value = item.location || '';
+  getDocEl('edit-desc').value = htmlToPlaintext(item.desc || '');
+  getDocEl('edit-aspect-ratio').value = item.aspect_ratio || 1.0;
 
   const editPhotoOnly = document.querySelectorAll('.edit-photo-only');
   const editVideoOnly = document.querySelectorAll('.edit-video-only');
 
   if (type === 'photo') {
-    editPhotoOnly.forEach(el => el.style.display = '');
-    editVideoOnly.forEach(el => el.style.display = 'none');
+    editPhotoOnly.forEach(el => (el as HTMLElement).style.display = '');
+    editVideoOnly.forEach(el => (el as HTMLElement).style.display = 'none');
     
-    document.getElementById('edit-category').value = item.category || '';
-    document.getElementById('edit-hero-slide').checked = item.hero_slide === 1 || item.hero_slide === 'true';
+    getDocEl('edit-category').value = item.category || '';
+    getDocEl('edit-hero-slide').checked = item.hero_slide === 1 || item.hero_slide === 'true';
   } else {
-    editPhotoOnly.forEach(el => el.style.display = 'none');
-    editVideoOnly.forEach(el => el.style.display = '');
+    editPhotoOnly.forEach(el => (el as HTMLElement).style.display = 'none');
+    editVideoOnly.forEach(el => (el as HTMLElement).style.display = '');
     
-    document.getElementById('edit-music').value = item.music || '';
+    getDocEl('edit-music').value = item.music || '';
   }
 
-  const imgPreview = document.getElementById('edit-media-preview-img');
-  const placeholderPreview = document.getElementById('edit-media-preview-placeholder');
+  const imgPreview = getDocEl('edit-media-preview-img');
+  const placeholderPreview = getDocEl('edit-media-preview-placeholder');
 
   if (type === 'photo') {
     if (imgPreview) {
@@ -1146,7 +1152,7 @@ function openEditModal(type, id) {
 }
 
 async function processEditImagePipeline(imgSrc) {
-  const pipeline = document.getElementById('edit-pipeline-status');
+  const pipeline = getDocEl('edit-pipeline-status');
   if (!pipeline) return;
   pipeline.style.display = 'block';
   pipeline.innerHTML = `
@@ -1162,9 +1168,9 @@ async function processEditImagePipeline(imgSrc) {
   
   setStepState('edit-dimensions', 'active');
   computedEditAspectRatio = parseFloat((img.width / img.height).toFixed(4));
-  document.getElementById('step-edit-dimensions').innerText = `aspect ratio: ${computedEditAspectRatio} (${img.width}x${img.height})`;
+  getDocEl('step-edit-dimensions').innerText = `aspect ratio: ${computedEditAspectRatio} (${img.width}x${img.height})`;
   
-  document.getElementById('edit-aspect-ratio').value = computedEditAspectRatio;
+  getDocEl('edit-aspect-ratio').value = computedEditAspectRatio;
   setStepState('edit-dimensions', 'success');
 
   setStepState('edit-compress', 'active');
@@ -1178,26 +1184,26 @@ async function processEditImagePipeline(imgSrc) {
   showToast('replacement photo processed successfully', 'success');
 }
 
-const editFileInput = document.getElementById('edit-photo-file-input');
-const editFileStatus = document.getElementById('edit-photo-file-status');
+const editFileInput = getDocEl('edit-photo-file-input');
+const editFileStatus = getDocEl('edit-photo-file-status');
 if (editFileInput) {
   editFileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
     if (editFileStatus) editFileStatus.innerText = `selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
     
     const reader = new FileReader();
     reader.onload = async (event) => {
-      const imgPreview = document.getElementById('edit-media-preview-img');
-      if (imgPreview) imgPreview.src = event.target.result;
+      const imgPreview = getDocEl('edit-media-preview-img');
+      if (imgPreview) imgPreview.src = (event.target as FileReader).result as string;
       await processEditImagePipeline(event.target.result);
     };
     reader.readAsDataURL(file);
   });
 }
 
-const editCancelBtn = document.getElementById('edit-cancel-btn');
+const editCancelBtn = getDocEl('edit-cancel-btn');
 if (editCancelBtn) {
   editCancelBtn.addEventListener('click', () => {
     editModal.classList.remove('open');
@@ -1212,7 +1218,7 @@ if (editForm) {
     e.preventDefault();
     if (!currentlyEditingItem) return;
 
-    const editSubmitBtn = document.getElementById('edit-submit-btn');
+    const editSubmitBtn = getDocEl('edit-submit-btn');
     const submitText = editSubmitBtn.querySelector('span');
     
     editSubmitBtn.disabled = true;
@@ -1222,19 +1228,19 @@ if (editForm) {
     const type = currentlyEditingItem.type;
     const token = secretInput.value.trim();
 
-    const payload = {
-      title: document.getElementById('edit-title').value,
-      date: document.getElementById('edit-date').value,
-      location: document.getElementById('edit-location').value,
-      desc: plaintextToHtml(document.getElementById('edit-desc').value),
-      aspectRatio: parseFloat(document.getElementById('edit-aspect-ratio').value),
+    const payload: any = {
+      title: getDocEl('edit-title').value,
+      date: getDocEl('edit-date').value,
+      location: getDocEl('edit-location').value,
+      desc: plaintextToHtml(getDocEl('edit-desc').value),
+      aspectRatio: parseFloat(getDocEl('edit-aspect-ratio').value),
     };
 
     if (type === 'photo') {
-      payload.category = document.getElementById('edit-category').value;
-      payload.heroSlide = document.getElementById('edit-hero-slide').checked;
+      payload.category = getDocEl('edit-category').value;
+      payload.heroSlide = getDocEl('edit-hero-slide').checked;
     } else {
-      payload.music = document.getElementById('edit-music').value;
+      payload.music = getDocEl('edit-music').value;
     }
 
     try {
@@ -1244,7 +1250,7 @@ if (editForm) {
         const fileFormData = new FormData();
         fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
         fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
-        fileFormData.append('aspectRatio', computedEditAspectRatio);
+        fileFormData.append('aspectRatio', String(computedEditAspectRatio));
 
         const fileRes = await replacePhotoItem(id, fileFormData, token);
         if (handleUnauthorized(fileRes)) return;
@@ -1334,21 +1340,21 @@ if (form) {
     const token = secretInput.value.trim();
     const formData = new FormData();
 
-    formData.append('title', document.getElementById('title').value);
-    formData.append('date', document.getElementById('date').value);
-    formData.append('location', document.getElementById('location').value);
-    formData.append('desc', plaintextToHtml(document.getElementById('desc').value));
-    formData.append('aspectRatio', computedAspectRatio);
+    formData.append('title', getDocEl('title').value);
+    formData.append('date', getDocEl('date').value);
+    formData.append('location', getDocEl('location').value);
+    formData.append('desc', plaintextToHtml(getDocEl('desc').value));
+    formData.append('aspectRatio', String(computedAspectRatio));
 
     if (currentMode === 'photo') {
       formData.append('photo', processedPhotoBlob);
       formData.append('thumb', processedThumbBlob);
-      formData.append('category', document.getElementById('category').value);
-      formData.append('heroSlide', document.getElementById('hero-slide').checked);
+      formData.append('category', getDocEl('category').value);
+      formData.append('heroSlide', String(getDocEl('hero-slide').checked));
     } else {
       formData.append('video', processedVideoBlob);
       formData.append('poster', processedPosterBlob);
-      formData.append('music', document.getElementById('music').value);
+      formData.append('music', getDocEl('music').value);
     }
 
     try {
@@ -1358,7 +1364,7 @@ if (form) {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        const titleVal = document.getElementById('title').value.trim();
+        const titleVal = getDocEl('title').value.trim();
         if (!titleVal) {
           showToast('saved as draft', 'success');
         } else {
@@ -1383,9 +1389,9 @@ if (form) {
 
 // Navigation for Edit Modal
 function updateEditNavArrows() {
-  const cards = Array.from(document.querySelectorAll('#items-container .asset-card'));
-  const prevBtn = document.getElementById('btn-edit-prev');
-  const nextBtn = document.getElementById('btn-edit-next');
+  const cards = Array.from(document.querySelectorAll('#items-container .asset-card')) as HTMLElement[];
+  const prevBtn = getDocEl('btn-edit-prev');
+  const nextBtn = getDocEl('btn-edit-next');
   if (!currentlyEditingItem || cards.length <= 1) {
     if (prevBtn) prevBtn.style.display = 'none';
     if (nextBtn) nextBtn.style.display = 'none';
@@ -1422,12 +1428,12 @@ function updateEditNavArrows() {
   }
 }
 
-const prevEditBtn = document.getElementById('btn-edit-prev');
-const nextEditBtn = document.getElementById('btn-edit-next');
+const prevEditBtn = getDocEl('btn-edit-prev');
+const nextEditBtn = getDocEl('btn-edit-next');
 
 if (prevEditBtn) {
   prevEditBtn.addEventListener('click', () => {
-    const cards = Array.from(document.querySelectorAll('#items-container .asset-card'));
+    const cards = Array.from(document.querySelectorAll('#items-container .asset-card')) as HTMLElement[];
     if (!currentlyEditingItem) return;
     const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
     if (currentIndex > 0) {
@@ -1439,7 +1445,7 @@ if (prevEditBtn) {
 
 if (nextEditBtn) {
   nextEditBtn.addEventListener('click', () => {
-    const cards = Array.from(document.querySelectorAll('#items-container .asset-card'));
+    const cards = Array.from(document.querySelectorAll('#items-container .asset-card')) as HTMLElement[];
     if (!currentlyEditingItem) return;
     const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
     if (currentIndex < cards.length - 1 && currentIndex !== -1) {
@@ -1452,17 +1458,18 @@ if (nextEditBtn) {
 // Global window event listener for arrow keys navigation
 window.addEventListener('keydown', (e) => {
   if (!editModal || !editModal.classList.contains('open')) return;
-  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) {
+  const target = e.target as HTMLElement;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
     return;
   }
   
   if (e.key === 'ArrowLeft') {
-    const prevBtn = document.getElementById('btn-edit-prev');
+    const prevBtn = getDocEl('btn-edit-prev');
     if (prevBtn && !prevBtn.disabled) {
       prevBtn.click();
     }
   } else if (e.key === 'ArrowRight') {
-    const nextBtn = document.getElementById('btn-edit-next');
+    const nextBtn = getDocEl('btn-edit-next');
     if (nextBtn && !nextBtn.disabled) {
       nextBtn.click();
     }
@@ -1491,7 +1498,7 @@ if (controlPanel) {
 }
 
 // Scroll logic for collapsing the "add media" FAB on mobile
-const addMediaBtn = document.getElementById('btn-open-upload-modal');
+const addMediaBtn = getDocEl('btn-open-upload-modal');
 if (addMediaBtn) {
   let lastScrollY = window.scrollY;
   let accumulatedScroll = 0;

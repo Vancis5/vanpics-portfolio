@@ -15,15 +15,15 @@ export function getMotionThumbnailMarkup(item) {
 }
 
 export function getVideoPlayerMarkup(item) {
-  const template = document.getElementById('motion-player-template');
+  const template = document.getElementById('motion-player-template') as HTMLTemplateElement;
   if (!template) return '';
 
   const playerId = 'motion-player-instance';
-  const fragment = template.content.cloneNode(true);
+  const fragment = template.content.cloneNode(true) as DocumentFragment;
   const shell = fragment.querySelector('.motion-player-prime');
   const video = fragment.querySelector('video');
   const posterSlot = fragment.querySelector('[data-motion-poster-slot]');
-  const startButton = fragment.querySelector('.motion-start-button');
+  const startButton = fragment.querySelector('.motion-start-button') as HTMLElement | null;
 
   if (shell) shell.id = playerId;
   if (video) video.src = item.src || '';

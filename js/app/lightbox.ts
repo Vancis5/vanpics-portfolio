@@ -8,7 +8,6 @@ import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 
 let blurToken = 0;
-let activeBlurLayer = null;
 let blurPreloadTimer = null;
 let mobileScrollToSlideCallback = null;
 let photoPlaceholderTimer = null;
@@ -57,7 +56,17 @@ function _cacheImage(src) {
 
 function getLightboxBlurPath(src) {
   if (!src) return '';
+  if (src.includes('photos/') && !src.includes('photos/thumbs/')) {
+    return src.replace('photos/', 'photos/thumbs/');
+  }
   return src;
+}
+
+function getCachedImageDecode(src) {
+  let cached = _cacheImage(src);
+  if (!cached) return Promise.resolve(null);
+  if (cached.decoded) return Promise.resolve(cached);
+  return cached.decodePromise || Promise.resolve(cached);
 }
 
 export function preloadLightboxBlurNeighbors(centerIndex, range) {
@@ -93,87 +102,542 @@ export function setMobileScrollToSlideCallback(callback) {
 }
 
 function refreshLightboxInfoRefs() {
-  let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
+  let info = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') as HTMLElement : null;
   if (!info) return null;
 
   domRefs.lightboxInfo = info;
-  domRefs.lightboxTitle = info.querySelector('#lightbox-title');
-  domRefs.lightboxDescToggle = info.querySelector('#lightbox-desc-toggle');
-  domRefs.lightboxDesc = info.querySelector('#lightbox-desc');
-  domRefs.metaLocation = info.querySelector('#meta-location');
-  domRefs.metaLocationText = info.querySelector('#meta-location-text');
-  domRefs.metaDate = info.querySelector('#meta-date');
-  domRefs.metaDateText = info.querySelector('#meta-date-text');
-  domRefs.metaMusic = info.querySelector('#meta-music');
-  domRefs.metaMusicText = info.querySelector('#meta-music-text');
+  domRefs.lightboxTitle = info.querySelector('#lightbox-title') as HTMLElement;
+  domRefs.lightboxDescToggle = info.querySelector('#lightbox-desc-toggle') as HTMLElement;
+  domRefs.lightboxDesc = info.querySelector('#lightbox-desc') as HTMLElement;
+  domRefs.metaLocation = info.querySelector('#meta-location') as HTMLElement;
+  domRefs.metaLocationText = info.querySelector('#meta-location-text') as HTMLElement;
+  domRefs.metaDate = info.querySelector('#meta-date') as HTMLElement;
+  domRefs.metaDateText = info.querySelector('#meta-date-text') as HTMLElement;
+  domRefs.metaMusic = info.querySelector('#meta-music') as HTMLElement;
+  domRefs.metaMusicText = info.querySelector('#meta-music-text') as HTMLElement;
   return info;
+}
+
+let blurRenderer = null;
+
+function solveCubicBezier(x1: number, y1: number, x2: number, y2: number) {
+  return function(x: number): number {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      let currentX = 3.0 * (1.0 - t) * (1.0 - t) * t * x1 + 3.0 * (1.0 - t) * t * t * x2 + t * t * t;
+      let derivative = 3.0 * (1.0 - t) * (1.0 - t) * x1 + 6.0 * (1.0 - t) * t * (x2 - x1) + 3.0 * t * t * (1.0 - x2);
+      if (Math.abs(derivative) < 1e-5) break;
+      t -= (currentX - x) / derivative;
+    }
+    return 3.0 * (1.0 - t) * (1.0 - t) * t * y1 + 3.0 * (1.0 - t) * t * t * y2 + t * t * t;
+  };
+}
+
+const easeOutExpoLike = solveCubicBezier(0.15, 1.0, 0.4, 1.0);
+
+class WebGLBlurRenderer {
+  canvas: any;
+  gl: any;
+  width: number;
+  height: number;
+  startTime: number;
+  animating: boolean;
+  mixFactor: number;
+  transitionSpeed: number;
+  animationId: any;
+  dirPrev: number;
+  dirCurr: number;
+  textures: { prev: any; current: any; };
+  progLiquid: any;
+  progDown: any;
+  progUp: any;
+  fbos: any;
+  dummyTexture: any;
+  quadBuffer: any;
+
+  constructor(canvas: any) {
+    this.canvas = canvas;
+    this.gl = canvas.getContext('webgl', {
+      alpha: true,
+      depth: false,
+      stencil: false,
+      antialias: false,
+      premultipliedAlpha: false
+    });
+    if (!this.gl) {
+      console.warn('WebGL context creation failed');
+      return;
+    }
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+    this.width = 256;
+    this.height = 256;
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
+
+    this.startTime = performance.now();
+    this.animating = false;
+    this.mixFactor = 1.0;
+    this.transitionSpeed = 0.012;
+    this.animationId = null;
+
+    this.dirPrev = 1.0;
+    this.dirCurr = 1.0;
+
+    this.textures = {
+      prev: null,
+      current: null
+    };
+
+    this.initShaders();
+    this.initBuffers();
+    this.initFramebuffers();
+    this.initDummyTextures();
+
+    // Render an initial black frame immediately to populate the WebGL
+    // backbuffer and prevent a white/grey compositor flash on startup/refresh.
+    this.textures.prev = this.dummyTexture;
+    this.textures.current = this.dummyTexture;
+    this.mixFactor = 1.0;
+    this.render();
+  }
+
+  initShaders() {
+    const VS_SOURCE = `
+      attribute vec2 a_position;
+      varying vec2 v_texCoord;
+      void main() {
+        v_texCoord = a_position * 0.5 + 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+
+    const FS_LIQUID = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture_prev;
+      uniform sampler2D u_texture;
+      uniform float u_mix;
+      uniform float u_time;
+      uniform float u_dir_prev;
+      uniform float u_dir_curr;
+
+      vec2 transformUV(vec2 uv, float angle, float scale, vec2 translation) {
+        vec2 p = uv - 0.5;
+        p -= translation;
+        float s = sin(angle);
+        float c = cos(angle);
+        p = vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+        p /= scale;
+        return p + 0.5;
+      }
+
+      vec3 blendScreen(vec3 base, vec3 blend) {
+        return 1.0 - (1.0 - base) * (1.0 - blend);
+      }
+
+      float blendOverlay(float base, float blend) {
+        return base < 0.5 ? (2.0 * base * blend) : (1.0 - 2.0 * (1.0 - base) * (1.0 - blend));
+      }
+      vec3 blendOverlay(vec3 base, vec3 blend) {
+        return vec3(blendOverlay(base.r, blend.r), blendOverlay(base.g, blend.g), blendOverlay(base.b, blend.b));
+      }
+
+      vec4 sampleLiquid(sampler2D tex, vec2 uv, float dir) {
+        // Base Layer (45s linear loop)
+        float k0 = fract(u_time / 45.0);
+        float angle0 = dir * k0 * 2.0 * 3.14159265;
+        float scale0 = mix(1.2, 1.35, 0.5 - 0.5 * cos(k0 * 2.0 * 3.14159265));
+        vec2 trans0 = mix(vec2(0.0, 0.0), vec2(-0.03, 0.02), 0.5 - 0.5 * cos(k0 * 2.0 * 3.14159265));
+        vec2 uv0 = transformUV(uv, angle0, scale0, trans0);
+        vec4 baseColor = texture2D(tex, clamp(uv0, 0.0, 1.0));
+
+        // Twist 1 Layer (32s ease-in-out alternate)
+        float k1 = 0.5 - 0.5 * cos(u_time * 2.0 * 3.14159265 / 64.0);
+        float angle1 = dir * (2.0 * 3.14159265) * (1.0 - k1);
+        float scale1 = mix(1.4, 1.15, 0.5 - 0.5 * cos(k1 * 2.0 * 3.14159265));
+        vec2 trans1 = mix(vec2(0.02, -0.03), vec2(-0.04, 0.04), 0.5 - 0.5 * cos(k1 * 2.0 * 3.14159265));
+        vec2 uv1 = transformUV(uv, angle1, scale1, trans1);
+        vec4 twist1Color = texture2D(tex, clamp(uv1, 0.0, 1.0));
+        vec3 col = mix(baseColor.rgb, blendScreen(baseColor.rgb, twist1Color.rgb), 0.45);
+
+        // Twist 2 Layer (24s ease-in-out alternate-reverse)
+        float k2 = 0.5 + 0.5 * cos(u_time * 2.0 * 3.14159265 / 48.0);
+        float angle2 = dir * (3.14159265 / 4.0 + (0.5 - 0.5 * cos(k2 * 2.0 * 3.14159265)) * (3.14159265 * 0.5));
+        float scale2 = mix(1.1, 1.5, 0.5 - 0.5 * cos(k2 * 2.0 * 3.14159265));
+        vec2 trans2 = mix(vec2(-0.05, -0.05), vec2(0.04, 0.04), 0.5 - 0.5 * cos(k2 * 2.0 * 3.14159265));
+        vec2 uv2 = transformUV(uv, angle2, scale2, trans2);
+        vec4 twist2Color = texture2D(tex, clamp(uv2, 0.0, 1.0));
+        col = mix(col, blendOverlay(col, twist2Color.rgb), 0.35);
+
+        return vec4(col, 1.0);
+      }
+
+      void main() {
+        vec4 col_prev = sampleLiquid(u_texture_prev, v_texCoord, u_dir_prev);
+        vec4 col_curr = sampleLiquid(u_texture, v_texCoord, u_dir_curr);
+        vec3 blended = mix(col_prev.rgb, col_curr.rgb, u_mix);
+        gl_FragColor = vec4(blended, 1.0);
+      }
+    `;
+
+    const FS_DOWN = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      uniform vec2 u_halfPixel;
+      uniform float u_offset;
+
+      void main() {
+        vec2 uv = v_texCoord;
+        vec2 d = u_halfPixel * u_offset;
+
+        vec4 sum = texture2D(u_texture, uv) * 4.0;
+        sum += texture2D(u_texture, uv - d);
+        sum += texture2D(u_texture, uv + d);
+        sum += texture2D(u_texture, uv + vec2(d.x, -d.y));
+        sum += texture2D(u_texture, uv + vec2(-d.x, d.y));
+
+        gl_FragColor = sum / 8.0;
+      }
+    `;
+
+    const FS_UP = `
+      precision mediump float;
+      varying vec2 v_texCoord;
+      uniform sampler2D u_texture;
+      uniform vec2 u_halfPixel;
+      uniform float u_offset;
+
+      void main() {
+        vec2 uv = v_texCoord;
+        vec2 d = u_halfPixel * u_offset;
+
+        vec4 sum = vec4(0.0);
+        sum += texture2D(u_texture, uv + vec2(-d.x * 2.0, 0.0)) * 2.0;
+        sum += texture2D(u_texture, uv + vec2(0.0, -d.y * 2.0)) * 2.0;
+        sum += texture2D(u_texture, uv + vec2(d.x * 2.0, 0.0)) * 2.0;
+        sum += texture2D(u_texture, uv + vec2(0.0, d.y * 2.0)) * 2.0;
+
+        sum += texture2D(u_texture, uv + d * vec2(-1.0, -1.0));
+        sum += texture2D(u_texture, uv + d * vec2(1.0, -1.0));
+        sum += texture2D(u_texture, uv + d * vec2(1.0, 1.0));
+        sum += texture2D(u_texture, uv + d * vec2(-1.0, 1.0));
+
+        gl_FragColor = sum / 12.0;
+      }
+    `;
+
+    this.progLiquid = this.createProgram(VS_SOURCE, FS_LIQUID);
+    this.progDown = this.createProgram(VS_SOURCE, FS_DOWN);
+    this.progUp = this.createProgram(VS_SOURCE, FS_UP);
+  }
+
+  compileShader(source, type) {
+    let gl = this.gl;
+    let shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('Shader compile log:', gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+
+  createProgram(vsSource, fsSource) {
+    let gl = this.gl;
+    let vs = this.compileShader(vsSource, gl.VERTEX_SHADER);
+    let fs = this.compileShader(fsSource, gl.FRAGMENT_SHADER);
+    if (!vs || !fs) return null;
+
+    let program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+    return program;
+  }
+
+  initBuffers() {
+    let gl = this.gl;
+    this.quadBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+       1.0,  1.0
+    ]), gl.STATIC_DRAW);
+  }
+
+  createFramebuffer(w, h) {
+    let gl = this.gl;
+    let texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    let fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+    return { fbo, texture, w, h };
+  }
+
+  initFramebuffers() {
+    this.fbos = [
+      this.createFramebuffer(256, 256), // fbos[0]: liquid pass
+      this.createFramebuffer(128, 128), // fbos[1]: down 1
+      this.createFramebuffer(64, 64),   // fbos[2]: down 2
+      this.createFramebuffer(32, 32),   // fbos[3]: down 3
+      this.createFramebuffer(64, 64),   // fbos[4]: up 1
+      this.createFramebuffer(128, 128)  // fbos[5]: up 2
+    ];
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+  }
+
+  initDummyTextures() {
+    let gl = this.gl;
+    let dummy = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, dummy);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    this.dummyTexture = dummy;
+  }
+
+  createWebGLTexture(img) {
+    let gl = this.gl;
+    if (!gl) return null;
+    let texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    return texture;
+  }
+
+  setImage(img) {
+    let gl = this.gl;
+    if (!gl) return;
+
+    if (this.textures.current) {
+      if (this.textures.prev && this.textures.prev !== this.dummyTexture) {
+        gl.deleteTexture(this.textures.prev);
+      }
+      this.textures.prev = this.textures.current;
+      this.dirPrev = this.dirCurr;
+    } else {
+      this.textures.prev = this.dummyTexture;
+      this.dirPrev = 1.0;
+    }
+
+    this.textures.current = this.createWebGLTexture(img);
+    this.dirCurr = Math.random() > 0.5 ? 1.0 : -1.0;
+    this.mixFactor = 0.0;
+    this.startAnimation();
+  }
+
+  fadeToBlack() {
+    let gl = this.gl;
+    if (!gl) return;
+
+    if (this.textures.current) {
+      if (this.textures.prev && this.textures.prev !== this.dummyTexture) {
+        gl.deleteTexture(this.textures.prev);
+      }
+      this.textures.prev = this.textures.current;
+      this.dirPrev = this.dirCurr;
+    } else {
+      this.textures.prev = this.dummyTexture;
+      this.dirPrev = 1.0;
+    }
+
+    this.textures.current = this.dummyTexture;
+    this.dirCurr = 1.0;
+    this.mixFactor = 0.0;
+    this.startAnimation();
+  }
+
+  startAnimation() {
+    if (this.animating) return;
+    this.animating = true;
+    this.render();
+  }
+
+  stopAnimation() {
+    this.animating = false;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+  }
+
+  render() {
+    if (!this.gl) return;
+    let gl = this.gl;
+
+    let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
+    if (this.mixFactor < 1.0) {
+      this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
+    }
+
+    // Cubic-bezier(0.15, 1, 0.4, 1) transition easing
+    let easedMix = easeOutExpoLike(this.mixFactor);
+
+    let positionLocation = gl.getAttribLocation(this.progLiquid, 'a_position');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // PASS 1: Liquid simulation (FBO 0)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbos[0].fbo);
+    gl.viewport(0, 0, this.fbos[0].w, this.fbos[0].h);
+    gl.useProgram(this.progLiquid);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.prev || this.dummyTexture);
+    gl.uniform1i(gl.getUniformLocation(this.progLiquid, 'u_texture_prev'), 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.current || this.dummyTexture);
+    gl.uniform1i(gl.getUniformLocation(this.progLiquid, 'u_texture'), 1);
+
+    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_mix'), easedMix);
+    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_time'), elapsedSeconds);
+    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_dir_prev'), this.dirPrev);
+    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_dir_curr'), this.dirCurr);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    // PASS 2-4: Downsampling (Dual Kawase style)
+    this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, this.fbos[1], 1.0);
+    this.runBlurPass(this.progDown, this.fbos[1].texture, 128, 128, this.fbos[2], 1.0);
+    this.runBlurPass(this.progDown, this.fbos[2].texture, 64, 64, this.fbos[3], 1.0);
+
+    // PASS 5-7: Upsampling (Dual Kawase style)
+    this.runBlurPass(this.progUp, this.fbos[3].texture, 32, 32, this.fbos[4], 1.2);
+    this.runBlurPass(this.progUp, this.fbos[4].texture, 64, 64, this.fbos[5], 1.0);
+    this.runBlurPass(this.progUp, this.fbos[5].texture, 128, 128, null, 1.0);
+
+    if (this.animating) {
+      this.animationId = requestAnimationFrame(() => this.render());
+    }
+  }
+
+  runBlurPass(program, inputTexture, sourceWidth: number, sourceHeight: number, outputFbo, offset) {
+    let gl = this.gl;
+    gl.useProgram(program);
+
+    if (outputFbo) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, outputFbo.fbo);
+      gl.viewport(0, 0, outputFbo.w, outputFbo.h);
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, this.width, this.height);
+    }
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+    gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
+
+    gl.uniform2f(gl.getUniformLocation(program, 'u_halfPixel'), 1.0 / (2.0 * sourceWidth), 1.0 / (2.0 * sourceHeight));
+    gl.uniform1f(gl.getUniformLocation(program, 'u_offset'), offset);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+}
+
+function initBlurRenderer() {
+  if (blurRenderer) return;
+  let canvas = domRefs.blurCanvas;
+  if (!canvas) return;
+  blurRenderer = new WebGLBlurRenderer(canvas);
 }
 
 export function setLightboxBlur(src) {
   if (!src) return;
 
+  initBlurRenderer();
   let blurPath = getLightboxBlurPath(src);
   let token = ++blurToken;
 
-  // "incoming" = the layer we'll write the new image to (currently hidden, opacity:0)
-  // "outgoing" = the layer currently visible (opacity:1 via .active), stays visible during cross-fade
-  let layerA = domRefs.blurLayerA;
-  let layerB = domRefs.blurLayerB;
-  if (!layerA || !layerB) return;
+  let cached = _cacheImage(blurPath);
 
-  if (!activeBlurLayer || !activeBlurLayer.classList.contains('active')) {
-    activeBlurLayer = layerB.classList.contains('active') ? layerB : (layerA.classList.contains('active') ? layerA : null);
-  }
-
-  let outgoing = activeBlurLayer;
-  let incoming = outgoing === layerA ? layerB : layerA;
-
-  let inners = incoming.querySelectorAll('.lightbox-bg-blur-inner');
-
-  function doSwap() {
-    if (token !== blurToken) return; // Stale request, abort
-
-    // The spare layer may still be fading from a previous fast navigation.
-    // Reset it while hidden so changing its background never jumps on screen.
-    incoming.style.transition = 'none';
-    incoming.style.opacity = '0';
-    incoming.style.setProperty('--blur-dir', Math.random() > 0.5 ? 'normal' : 'reverse');
-    incoming.classList.remove('active');
-    void incoming.offsetWidth;
-
-    // 1. Load image onto the hidden (incoming) layer while it's still at opacity:0
-    inners.forEach(function (inner) {
-      inner.style.backgroundImage = 'url(' + blurPath + ')';
-    });
-
-    if (incoming.parentNode) incoming.parentNode.appendChild(incoming);
-
-    // Let the decoded CSS background get one hidden paint before the fade starts.
-    // Fresh R2 images can otherwise appear on their first visible paint mid-animation.
-    requestAnimationFrame(function () {
+  function fadeToBlackFallback() {
+    if (blurRenderer) {
+      blurRenderer.fadeToBlack();
       requestAnimationFrame(function () {
         if (token !== blurToken) return;
-
-        // Restore CSS transitions (clear inline overrides to let stylesheet apply)
-        incoming.style.transition = '';
-        incoming.style.opacity = '';
-        incoming.classList.add('active');
-        activeBlurLayer = incoming;
-
-        if (outgoing && outgoing !== incoming) {
-          outgoing.style.transition = '';
-          outgoing.style.opacity = '';
-          outgoing.classList.remove('active');
-        }
+        requestAnimationFrame(function () {
+          if (token !== blurToken) return;
+          if (domRefs.blurCanvas) {
+            domRefs.blurCanvas.classList.add('ready');
+            void domRefs.blurCanvas.offsetHeight;
+            domRefs.blurCanvas.classList.add('active');
+          }
+        });
       });
-    });
+    }
   }
 
-  _cacheImage(blurPath);
-  doSwap();
+  function doSwap() {
+    if (token !== blurToken) return;
+
+    if (blurRenderer && cached && cached.img) {
+      blurRenderer.setImage(cached.img);
+      requestAnimationFrame(function () {
+        if (token !== blurToken) return;
+        requestAnimationFrame(function () {
+          if (token !== blurToken) return;
+          if (domRefs.blurCanvas) {
+            domRefs.blurCanvas.classList.add('ready');
+            void domRefs.blurCanvas.offsetHeight;
+            domRefs.blurCanvas.classList.add('active');
+          }
+        });
+      });
+    }
+  }
+
+  if (cached && cached.decoded) {
+    doSwap();
+    return;
+  }
+
+  let timer = setTimeout(function () {
+    if (token === blurToken) {
+      fadeToBlackFallback();
+    }
+  }, 50);
+
+  let decodePromise = cached && cached.decodePromise ? cached.decodePromise : getCachedImageDecode(blurPath);
+  decodePromise.then(function () {
+    if (token !== blurToken) return;
+    clearTimeout(timer);
+    doSwap();
+  });
 }
 
-function clearLightboxPhotoPlaceholder(expectedToken) {
+function clearLightboxPhotoPlaceholder(expectedToken?: number) {
   if (expectedToken && expectedToken !== photoPlaceholderToken) return;
   if (!expectedToken) photoPlaceholderToken++;
   let wrap = domRefs.lightboxImgWrap;
@@ -190,7 +654,7 @@ function clearLightboxPhotoPlaceholder(expectedToken) {
   }, 260);
 }
 
-function showLightboxPhotoError(expectedToken) {
+function showLightboxPhotoError(expectedToken?: number) {
   if (expectedToken !== photoPlaceholderToken) return;
   let wrap = domRefs.lightboxImgWrap;
   let img = domRefs.lightboxImg;
@@ -209,7 +673,7 @@ export function prepareLightboxPhoto(p) {
   let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
-  wrap.style.setProperty('--lightbox-photo-ratio', ratio);
+  wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
   img.alt = p.title || '';
   img.removeAttribute('title');
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
@@ -225,9 +689,17 @@ export function prepareLightboxPhoto(p) {
   }
 
   // ── Cache miss: show placeholder while loading ──
+  let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
   wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading', 'photo-placeholder-visible');
-  img.dataset.loadingPhoto = 'true';
+  wrap.classList.add('photo-loading');
+  if (previewSrc) {
+    img.removeAttribute('data-loading-photo');
+    img.src = previewSrc;
+    img.style.opacity = '1';
+  } else {
+    wrap.classList.add('photo-placeholder-visible');
+    img.dataset.loadingPhoto = 'true';
+  }
 
   // Load and decode the image entirely off-DOM in the background cache.
   // This prevents the DOM injection from stalling the CSS entrance animations.
@@ -425,10 +897,18 @@ function updateDynamicTextColor(p) {
 }
 
 // updates text + blur bg only — image src is set separately to avoid double-load
-export function setLightboxContent(p) {
+export function setLightboxContent(p, options?: any) {
   if (!p) return;
+  options = options || {};
   refreshLightboxInfoRefs();
-  updateDynamicTextColor(p);
+  if (options.deferDynamicTextColor) {
+    resetDynamicTextColor();
+    scheduleAfterMotionFrame(function () {
+      updateDynamicTextColor(p);
+    }, 180);
+  } else {
+    updateDynamicTextColor(p);
+  }
 
   let safeTitle = p.title || '';
   let safeDesc = p.desc || '';
@@ -553,7 +1033,7 @@ export function animateInfo(dir) {
   let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
   if (hasContent) {
     // create exit ghost — absolutely positioned so it doesn't shift layout
-    let ghost = info.cloneNode(true);
+    let ghost = info.cloneNode(true) as HTMLElement;
     ghost.style.position = 'absolute';
     ghost.style.top = info.offsetTop + 'px';
     ghost.style.left = info.offsetLeft + 'px';
@@ -570,7 +1050,7 @@ export function animateInfo(dir) {
   // clone-replace for enter — clean slate, no animation-cancel issues
   let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
   let fromY = dir === 0 ? 16 : 0;
-  let clone = info.cloneNode(true);
+  let clone = info.cloneNode(true) as HTMLElement;
   clone.style.setProperty('--lb-from-x', fromX + 'px');
   clone.style.setProperty('--lb-from-y', fromY + 'px');
   clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
@@ -586,11 +1066,17 @@ export function animateInfo(dir) {
 // increments each navigation so stale callbacks from aborted navigations are ignored
 let navGen = 0;
 
+function scheduleAfterMotionFrame(callback, delay) {
+  requestAnimationFrame(function () {
+    setTimeout(callback, delay || 0);
+  });
+}
+
 function getCurrentLightboxItems() {
   return state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 }
 
-export function openLightbox(i, direction, isMotion) {
+export function openLightbox(i: number, direction?: number, isMotion?: boolean) {
   let lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !state.isPopState) {
     state.pushNextState = true;
@@ -662,7 +1148,9 @@ export function openLightbox(i, direction, isMotion) {
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
 
-      // Start the new media immediately instead of waiting for decode.
+      // Update content & blur immediately so all layout changes (desc show/hide,
+      // meta items, etc.) are fully settled before the animation RAF fires.
+      // This prevents desc-related layout shifts mid-slide-in.
       let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
       setLightboxBlur(bSrc);
       setLightboxContent(p);
@@ -840,7 +1328,7 @@ export function startUnifiedMotionPlayer(id) {
   if (video) video.play().catch(function () { });
 }
 
-export function closeLightbox(eventOrIsKeyboard = false) {
+export function closeLightbox(eventOrIsKeyboard: any = false) {
   let isKeyboard = false;
   if (typeof eventOrIsKeyboard === 'boolean') {
     isKeyboard = eventOrIsKeyboard;
@@ -908,10 +1396,10 @@ export function closeLightbox(eventOrIsKeyboard = false) {
 
     // Restart Lenis and sync state once transition has a head start
     setTimeout(function () {
-      if (window.lenis) {
-        window.lenis.start();
-        window.lenis.animatedScroll = window.lenis.targetScroll = window.scrollY;
-        window.lenis.emit(); // Force sync of all UI driven by scroll hub
+      if ((window as any).lenis) {
+        (window as any).lenis.start();
+        (window as any).lenis.animatedScroll = (window as any).lenis.targetScroll = window.scrollY;
+        (window as any).lenis.emit(); // Force sync of all UI driven by scroll hub
       }
     }, 400);
   });
@@ -919,17 +1407,17 @@ export function closeLightbox(eventOrIsKeyboard = false) {
   let playerShell = domRefs.motionPlayerShell;
   if (playerShell) playerShell.innerHTML = '';
 
-  domRefs.blurLayerA.classList.remove('active');
-  domRefs.blurLayerB.classList.remove('active');
-  activeBlurLayer = null;
+  if (domRefs.blurCanvas) {
+    domRefs.blurCanvas.classList.remove('active');
+    domRefs.blurCanvas.classList.remove('ready');
+  }
+  if (blurRenderer) {
+    blurRenderer.stopAnimation();
+  }
   if (blurPreloadTimer) {
     clearTimeout(blurPreloadTimer);
     blurPreloadTimer = null;
   }
-  domRefs.blurLayerA.style.opacity = '';
-  domRefs.blurLayerA.style.transition = '';
-  domRefs.blurLayerB.style.opacity = '';
-  domRefs.blurLayerB.style.transition = '';
   // Reset hash to category on close
   if (window.location.hash && !state.isPopState) {
     let catSlug = getCategorySlug(state.currentCategory);
@@ -1077,7 +1565,7 @@ export function navigateLightbox(d) {
 }
 
 document.addEventListener('keydown', function (e) {
-  let target = e.target;
+  let target = e.target as HTMLElement;
   let isTyping = target && (
     target.matches && target.matches('input, textarea, select, [contenteditable="true"]')
   );
@@ -1091,24 +1579,15 @@ document.addEventListener('keydown', function (e) {
 });
 
 // desktop: click bg to close
-if (!state.isMobile) domRefs.lightboxBg.addEventListener('click', closeLightbox);
+if (!state.isMobile && domRefs.lightboxBg) domRefs.lightboxBg.addEventListener('click', closeLightbox);
 
 function handleLightboxBlur() {
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
     domRefs.lightbox.classList.add('window-blurred');
     
-    // Physically freeze all active CSS animations on the blur layers
-    [domRefs.blurLayerA, domRefs.blurLayerB].forEach(function (layer) {
-      if (!layer) return;
-      let inners = layer.querySelectorAll('.lightbox-bg-blur-inner');
-      inners.forEach(function (inner) {
-        if (inner && typeof inner.getAnimations === 'function') {
-          inner.getAnimations().forEach(function (anim) {
-            anim.pause();
-          });
-        }
-      });
-    });
+    if (blurRenderer) {
+      blurRenderer.stopAnimation();
+    }
     
     let video = domRefs.motionPlayerShell ? domRefs.motionPlayerShell.querySelector('video') : null;
     if (video && !video.paused) {
@@ -1122,18 +1601,9 @@ function handleLightboxFocus() {
   if (domRefs.lightbox) {
     domRefs.lightbox.classList.remove('window-blurred');
     
-    // Resume all CSS animations from the exact frozen frame
-    [domRefs.blurLayerA, domRefs.blurLayerB].forEach(function (layer) {
-      if (!layer) return;
-      let inners = layer.querySelectorAll('.lightbox-bg-blur-inner');
-      inners.forEach(function (inner) {
-        if (inner && typeof inner.getAnimations === 'function') {
-          inner.getAnimations().forEach(function (anim) {
-            anim.play();
-          });
-        }
-      });
-    });
+    if (blurRenderer && domRefs.lightbox.classList.contains('open')) {
+      blurRenderer.startAnimation();
+    }
     
     let video = domRefs.motionPlayerShell ? domRefs.motionPlayerShell.querySelector('video') : null;
     if (video && video.dataset.wasPlaying === 'true') {

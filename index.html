@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background: #0d0c0c;">
 
 <head>
+  <style>
+    html, body { background: #0d0c0c !important; }
+  </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
@@ -41,7 +44,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/player.css">
   <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js"
-    integrity="sha384-KX08lNsWYubfaqhixUNDRCPT1gKYzflmBWz1vyfYku2IKsL1Tx9njUH6FcIEtWzk" crossorigin="anonymous"
+    integrity="sha384-Ax+vsEhWvtx1CQmPjhHZVoeZRWft1xkJj7pm1dmJEUau3xq0VMcxP5SUMxfZePJb" crossorigin="anonymous"
     onerror="import('/vendor/video-minimal-ui.js')"></script>
   <link rel="stylesheet" href="css/motion-section.css">
   <!-- video.js -->
@@ -94,16 +97,7 @@
 
   <div id="lightbox" role="dialog" aria-modal="true" aria-label="Media Lightbox">
     <div id="lightbox-bg"></div>
-    <div id="blur-layer-a" class="lightbox-bg-blur">
-      <div class="lightbox-bg-blur-inner base"></div>
-      <div class="lightbox-bg-blur-inner twist-1"></div>
-      <div class="lightbox-bg-blur-inner twist-2"></div>
-    </div>
-    <div id="blur-layer-b" class="lightbox-bg-blur">
-      <div class="lightbox-bg-blur-inner base"></div>
-      <div class="lightbox-bg-blur-inner twist-1"></div>
-      <div class="lightbox-bg-blur-inner twist-2"></div>
-    </div>
+    <canvas id="lightbox-blur-canvas"></canvas>
     <button id="lightbox-close">close</button>
     <div id="lightbox-content" data-lenis-prevent>
       <div id="lightbox-zoom-darken"></div>
@@ -357,7 +351,7 @@
     </div>
   </footer>
 
-  <script type="module" src="./js/app/main.js"></script>
+  <script type="module" src="./js/app/main.ts"></script>
 </body>
 
 </html>
