@@ -1,0 +1,387 @@
+﻿diff --git a/css/style.css b/css/style.css
+index a9935fc..c44ee44 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -145,6 +145,8 @@ body {
+   color: var(--text);
+   font-family: 'Cormorant Garamond', serif;
+   overflow-x: clip;
++  -webkit-font-smoothing: antialiased;
++  -moz-osx-font-smoothing: grayscale;
+ }
+ 
+ /* grain texture overlay */
+@@ -277,31 +279,69 @@ body::after {
+   cursor: grab;
+ }
+ 
+-.carousel-row img {
++.carousel-item {
++  display: block;
+   height: calc((100svh - 16px) / 3);
+   min-height: 120px;
+-  width: auto;
+-  object-fit: cover;
++  aspect-ratio: var(--carousel-photo-ratio);
+   border-radius: 3px;
+   flex-shrink: 0;
+   cursor: grab;
++  position: relative;
++  overflow: hidden;
++  -webkit-tap-highlight-color: transparent;
++}
++
++.carousel-item::before {
++  content: "";
++  position: absolute;
++  inset: 0;
++  border-radius: inherit;
++  background:
++    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
++    rgba(242, 238, 231, 0.035);
++  border: 1px solid rgba(242, 238, 231, 0.08);
++  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
++  opacity: 1;
++  transform: scale(1);
++  transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
++  pointer-events: none;
++  z-index: 1;
++}
++
++.carousel-item.photo-loaded::before {
++  opacity: 0;
++  transform: scale(0.985);
++}
++
++.carousel-item img {
++  width: 100%;
++  height: 100%;
++  object-fit: cover;
+   display: block;
++  opacity: 0;
+   filter: brightness(0.78) saturate(0.85);
+   transition: opacity 1.2s ease, filter 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+   will-change: filter, transform;
+-  -webkit-tap-highlight-color: transparent;
+   user-select: none;
+   -webkit-user-drag: none;
++  position: relative;
++  z-index: 2;
++}
++
++.carousel-item.photo-loaded img {
++  opacity: 1;
+ }
+ 
+ .carousel-row:active,
+-.carousel-row img:active {
++.carousel-item:active,
++.carousel-item img:active {
+   cursor: grabbing !important;
+ }
+ 
+ /* mobile: 4 rows fill screen */
+ @media (hover: none) and (max-width: 639px) {
+-  .carousel-row img {
++  .carousel-item {
+     height: calc((100svh - 18px) / 4);
+     min-height: 110px;
+   }
+@@ -312,21 +352,21 @@ body::after {
+ }
+ 
+ @media (min-width: 500px) {
+-  .carousel-row img {
++  .carousel-item {
+     height: calc((100svh - 16px) / 3);
+     min-height: 160px;
+   }
+ }
+ 
+ @media (min-width: 1024px) {
+-  .carousel-row img {
++  .carousel-item {
+     height: calc((100svh - 16px) / 3);
+     min-height: 200px;
+   }
+ }
+ 
+ @media (hover: hover) {
+-  .carousel-row img:hover {
++  .carousel-item img:hover {
+     filter: brightness(1) saturate(1);
+     transform: scale(1.03);
+   }
+@@ -677,6 +717,29 @@ body::after {
+   display: inline-block;
+   width: 100%;
+   vertical-align: top;
++  aspect-ratio: var(--photo-aspect-ratio);
++}
++
++.photo-card::before {
++  content: "";
++  position: absolute;
++  inset: 0;
++  border-radius: inherit;
++  background:
++    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
++    rgba(242, 238, 231, 0.035);
++  border: 1px solid rgba(242, 238, 231, 0.08);
++  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
++  opacity: 1;
++  transform: scale(1);
++  transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
++  pointer-events: none;
++  z-index: 1;
++}
++
++.photo-card.photo-loaded::before {
++  opacity: 0;
++  transform: scale(0.985);
+ }
+ 
+ .photo-card img {
+@@ -688,6 +751,8 @@ body::after {
+     transform 1.4s cubic-bezier(0.16, 1, 0.3, 1),
+     filter 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+   filter: brightness(0.82) saturate(0.88);
++  position: relative;
++  z-index: 2;
+ }
+ 
+ .photo-card img.media-loaded {
+@@ -725,6 +790,7 @@ body::after {
+   flex-direction: column;
+   justify-content: flex-end;
+   padding: 1rem;
++  z-index: 3;
+ }
+ 
+ .photo-card-title {
+@@ -998,102 +1064,30 @@ body::after {
+   pointer-events: none;
+ }
+ 
+-.lightbox-bg-blur {
++#lightbox-blur-canvas {
+   position: fixed;
+-  width: 15vw;
+-  height: 15vh;
+-  left: 42.5vw;
+-  top: 42.5vh;
++  inset: calc(-1 * var(--liquid-edge-bleed));
++  width: calc(100vw + 2 * var(--liquid-edge-bleed));
++  height: calc(100vh + 2 * var(--liquid-edge-bleed));
+   z-index: -1;
+-  transform: scale(7.47) translate3d(0, 0, 0);
+   opacity: 0;
+   transition: opacity 2.2s cubic-bezier(0.15, 1, 0.4, 1);
+   pointer-events: none;
+-  filter: blur(10px) brightness(0.24) saturate(1.8);
+-  will-change: opacity, transform;
++  will-change: opacity;
++  background: #0d0c0c;
++  filter: saturate(1) brightness(0.2);
+ }
+ 
+-.lightbox-bg-blur.active {
++#lightbox-blur-canvas.active {
+   opacity: 1;
+ }
+ 
+-/* window out-of-focus states: fade out bg and stop animation */
+-#lightbox.window-blurred .lightbox-bg-blur {
++/* window out-of-focus states: fade out bg */
++#lightbox.window-blurred #lightbox-blur-canvas {
+   opacity: 0 !important;
+   transition: opacity 1.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+ }
+ 
+-.lightbox-bg-blur-inner {
+-  position: absolute;
+-  inset: -60%;
+-  background-size: cover;
+-  background-position: center;
+-  will-change: transform;
+-}
+-
+-.lightbox-bg-blur-inner.base {
+-  opacity: 1;
+-  animation: liquid-base 45s linear infinite;
+-  animation-direction: var(--blur-dir, normal);
+-}
+-
+-.lightbox-bg-blur-inner.twist-1 {
+-  opacity: 0.45;
+-  mix-blend-mode: screen;
+-  animation: liquid-twist-1 32s ease-in-out infinite alternate;
+-  animation-direction: var(--blur-dir, normal);
+-}
+-
+-.lightbox-bg-blur-inner.twist-2 {
+-  opacity: 0.35;
+-  mix-blend-mode: overlay;
+-  animation: liquid-twist-2 24s ease-in-out infinite alternate-reverse;
+-  animation-direction: var(--blur-dir, normal);
+-}
+-
+-
+-@keyframes liquid-base {
+-  0% {
+-    transform: rotate(0deg) scale(1.2) translate3d(0, 0, 0);
+-  }
+-
+-  50% {
+-    transform: rotate(180deg) scale(1.35) translate3d(-3%, 2%, 0);
+-  }
+-
+-  100% {
+-    transform: rotate(360deg) scale(1.2) translate3d(0, 0, 0);
+-  }
+-}
+-
+-@keyframes liquid-twist-1 {
+-  0% {
+-    transform: rotate(360deg) scale(1.4) translate3d(2%, -3%, 0);
+-  }
+-
+-  50% {
+-    transform: rotate(180deg) scale(1.15) translate3d(-4%, 4%, 0);
+-  }
+-
+-  100% {
+-    transform: rotate(0deg) scale(1.4) translate3d(2%, -3%, 0);
+-  }
+-}
+-
+-@keyframes liquid-twist-2 {
+-  0% {
+-    transform: scale(1.1) translate3d(-5%, -5%, 0) rotate(45deg);
+-  }
+-
+-  50% {
+-    transform: scale(1.5) translate3d(4%, 4%, 0) rotate(135deg);
+-  }
+-
+-  100% {
+-    transform: scale(1.1) translate3d(-5%, -5%, 0) rotate(45deg);
+-  }
+-}
+-
+ #lightbox-content {
+   position: relative;
+   z-index: 2;
+@@ -1130,6 +1124,8 @@ body::after {
+ #lightbox-img-wrap {
+   --lightbox-photo-ratio: 1;
+   width: 100%;
++  height: 44svh;
++  align-items: center;
+   flex-shrink: 0;
+   display: flex;
+   justify-content: center;
+@@ -1139,18 +1135,21 @@ body::after {
+ }
+ 
+ #lightbox-img-wrap.photo-loading {
+-  width: min(100%, calc(44svh * var(--lightbox-photo-ratio)));
++  /* Fixed height baseline is now inherited */
++  width: 100%;
+   max-width: 100%;
+-  aspect-ratio: var(--lightbox-photo-ratio);
+-  align-self: center;
+   border-radius: 3px;
+ }
+ 
+ #lightbox-img-wrap.photo-loading::before {
+   content: "";
+-  position: absolute;
+-  inset: 0;
+-  border-radius: inherit;
++  /* Use aspect-ratio on the pseudo-el so the shimmer shape matches the photo
++     without affecting the wrapper's height (which is now fixed) */
++  aspect-ratio: var(--lightbox-photo-ratio);
++  max-height: 44svh;
++  max-width: 100%;
++  width: min(100%, calc(44svh * var(--lightbox-photo-ratio)));
++  border-radius: 3px;
+   background:
+     linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
+     rgba(242, 238, 231, 0.035);
+@@ -1172,10 +1171,9 @@ body::after {
+ }
+ 
+ #lightbox-img-wrap.photo-loading #lightbox-img {
+-  width: 100%;
+-  height: 100%;
++  /* With a fixed-height wrapper, let the base max-height constraint handle sizing */
+   max-width: 100%;
+-  max-height: 100%;
++  max-height: 44svh;
+   object-fit: contain;
+ }
+ 
+@@ -1455,11 +1453,23 @@ body::after {
+     max-width: 50vw;
+     display: flex;
+     align-items: center;
++    height: 72svh;
+   }
+ 
+   #lightbox-img-wrap.photo-loading {
+-    width: min(50vw, calc(72svh * var(--lightbox-photo-ratio)));
++    /* Fixed height is now inherited from base desktop rule */
++    width: auto;
++    max-width: 50vw;
++  }
++
++  #lightbox-img-wrap.photo-loading::before {
++    max-height: 72svh;
+     max-width: 50vw;
++    width: min(50vw, calc(72svh * var(--lightbox-photo-ratio)));
++  }
++
++  #lightbox-img-wrap.photo-loading #lightbox-img {
++    max-height: 72svh;
+   }
+ 
+   /* Ensure video container fills available row space on desktop */
+@@ -1504,10 +1514,15 @@ body::after {
+   }
+ 
+   #lightbox-img-wrap.photo-loading {
+-    width: min(56vw, 640px, calc(72svh * var(--lightbox-photo-ratio)));
++    /* Inherit fixed height from 768px rule; only adjust max-width here */
+     max-width: min(56vw, 640px);
+   }
+ 
++  #lightbox-img-wrap.photo-loading::before {
++    max-width: min(56vw, 640px);
++    width: min(56vw, 640px, calc(72svh * var(--lightbox-photo-ratio)));
++  }
++
+   #lightbox-img {
+     max-width: 100%;
+     max-height: 72svh;
+@@ -1814,6 +1829,9 @@ body::after {
+   display: block;
+   opacity: 0;
+   pointer-events: none;
++}
++
++.filmstrip-thumb img.fade-in-on-load {
+   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+ }
+ 
+@@ -2178,9 +2196,7 @@ button {
+   inset: calc(-1 * var(--liquid-edge-bleed)) !important;
+ }
+ 
+-.lightbox-bg-blur {
+-  inset: calc(-1 * var(--liquid-edge-bleed)) !important;
+-}
++
+ 
+ 
+ 
