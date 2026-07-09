@@ -846,8 +846,8 @@ function handleFileSelect(file, type, previewContainer, previewEl) {
 async function processVideoPipeline(videoFile) {
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
-    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
-    <div class="pipeline-step" id="step-video-check">verifying video format...</div>
+    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
+    <div class="pipeline-step" id="step-video-check">verifying video format</div>
   `;
 
   setStepState('dimensions', 'active');
@@ -882,7 +882,7 @@ async function processPosterPipeline(imgSrc) {
     const posterStep = document.createElement('div');
     posterStep.className = 'pipeline-step';
     posterStep.id = 'step-poster-compress';
-    posterStep.innerText = 'compressing poster image (1200px, webp)...';
+    posterStep.innerText = 'compressing poster image (1200px, webp)';
     pipelineStatus.appendChild(posterStep);
   }
 
@@ -903,10 +903,10 @@ async function processPosterPipeline(imgSrc) {
 async function processImagePipeline(imgSrc) {
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
-    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
-    <div class="pipeline-step" id="step-compress">compressing standard photo (2500px, webp)...</div>
-    <div class="pipeline-step" id="step-raw">compressing high-res raw photo (4000px, webp)...</div>
-    <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail...</div>
+    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
+    <div class="pipeline-step" id="step-compress">compressing standard photo (2500px, webp)</div>
+    <div class="pipeline-step" id="step-raw">compressing high-res raw photo (4000px, webp)</div>
+    <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail</div>
   `;
   
   const img = new Image();
@@ -1166,10 +1166,10 @@ async function processEditImagePipeline(imgSrc) {
   if (!pipeline) return;
   pipeline.style.display = 'block';
   pipeline.innerHTML = `
-    <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio...</div>
-    <div class="pipeline-step" id="step-edit-compress">compressing standard photo (2500px, webp)...</div>
-    <div class="pipeline-step" id="step-edit-raw">compressing high-res raw photo (4000px, webp)...</div>
-    <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail...</div>
+    <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio</div>
+    <div class="pipeline-step" id="step-edit-compress">compressing standard photo (2500px, webp)</div>
+    <div class="pipeline-step" id="step-edit-raw">compressing high-res raw photo (4000px, webp)</div>
+    <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail</div>
   `;
   
   const img = new Image();
