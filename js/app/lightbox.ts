@@ -639,8 +639,6 @@ export function prepareLightboxPhoto(p) {
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
   wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
-  // Also stamp on content so sibling #lightbox-info can read it via CSS custom property inheritance
-  if (domRefs.lightboxContent) domRefs.lightboxContent.style.setProperty('--lightbox-photo-ratio', String(ratio));
   img.alt = p.title || '';
   img.removeAttribute('title');
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
