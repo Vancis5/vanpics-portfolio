@@ -31,6 +31,7 @@ export function publicPhoto(request, row) {
     ...row,
     src: mediaUrl(request, row.src),
     thumb: mediaUrl(request, row.thumb),
+    raw_src: row.raw_src ? mediaUrl(request, row.raw_src) : null,
   };
 }
 

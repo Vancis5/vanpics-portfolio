@@ -3,7 +3,7 @@ import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { motionProjects } from './media-data.js';
 import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback } from './lightbox.js';
-import { resetZoom, toggleImageZoom, updateZoomTransform } from './lightbox-zoom.js';
+import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 
@@ -540,6 +540,14 @@ if (state.isMobile) {
           dStartY = e.touches[0].clientY;
         }
         isPinching = false;
+
+        if (state.lbZoomLevel > 1 && e.touches.length === 0) {
+          let mWrap = domRefs.lightboxImgWrap;
+          let img = mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLImageElement;
+          if (img) {
+            checkAutoZoomOut(img);
+          }
+        }
 
         if (state.lbZoomLevel <= 1 && state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
