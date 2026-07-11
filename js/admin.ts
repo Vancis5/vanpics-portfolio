@@ -60,6 +60,7 @@ const searchInput = getDocEl('dashboard-search');
 // Replacement photo states
 let processedEditPhotoBlob = null;
 let processedEditThumbBlob = null;
+let processedEditRawBlob = null;
 let computedEditAspectRatio = null;
 
 // Restore cached search and filter parameters on load
@@ -150,6 +151,7 @@ let computedAspectRatio = 1.0;
 // Processed blobs state
 let processedPhotoBlob = null;
 let processedThumbBlob = null;
+let processedRawBlob = null;
 
 
 let processedVideoBlob = null;
@@ -744,6 +746,7 @@ function resetFileSelection() {
 
   processedPhotoBlob = null;
   processedThumbBlob = null;
+  processedRawBlob = null;
   processedVideoBlob = null;
   processedPosterBlob = null;
 
@@ -781,6 +784,7 @@ function resetSpecificFile(type, input, previewContainer, previewEl) {
     selectedFile = null;
     processedPhotoBlob = null;
     processedThumbBlob = null;
+    processedRawBlob = null;
   }
   checkFormState();
   if (pipelineStatus) {
@@ -842,8 +846,8 @@ function handleFileSelect(file, type, previewContainer, previewEl) {
 async function processVideoPipeline(videoFile) {
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
-    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
-    <div class="pipeline-step" id="step-video-check">verifying video format...</div>
+    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
+    <div class="pipeline-step" id="step-video-check">verifying video format</div>
   `;
 
   setStepState('dimensions', 'active');
@@ -878,7 +882,7 @@ async function processPosterPipeline(imgSrc) {
     const posterStep = document.createElement('div');
     posterStep.className = 'pipeline-step';
     posterStep.id = 'step-poster-compress';
-    posterStep.innerText = 'compressing poster image (1200px, webp)...';
+    posterStep.innerText = 'compressing poster image (1200px, webp)';
     pipelineStatus.appendChild(posterStep);
   }
 
@@ -899,9 +903,10 @@ async function processPosterPipeline(imgSrc) {
 async function processImagePipeline(imgSrc) {
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
-    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio...</div>
-    <div class="pipeline-step" id="step-compress">compressing raw photo (2500px, webp)...</div>
-    <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail...</div>
+    <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
+    <div class="pipeline-step" id="step-compress">compressing standard photo (2500px, webp)</div>
+    <div class="pipeline-step" id="step-raw">compressing high-res raw photo (4000px, webp)</div>
+    <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail</div>
   `;
   
   const img = new Image();
@@ -917,6 +922,10 @@ async function processImagePipeline(imgSrc) {
   setStepState('compress', 'active');
   processedPhotoBlob = await resizeImage(img, 2500, 0.75);
   setStepState('compress', 'success');
+
+  setStepState('raw', 'active');
+  processedRawBlob = await resizeImage(img, 4000, 0.95);
+  setStepState('raw', 'success');
 
   setStepState('thumbnail', 'active');
   processedThumbBlob = await resizeImage(img, 600, 0.75);
@@ -1085,6 +1094,7 @@ function openEditModal(type, id) {
   // Reset replacement photo states
   processedEditPhotoBlob = null;
   processedEditThumbBlob = null;
+  processedEditRawBlob = null;
   computedEditAspectRatio = null;
   
   const editFileStatus = getDocEl('edit-photo-file-status');
@@ -1156,9 +1166,10 @@ async function processEditImagePipeline(imgSrc) {
   if (!pipeline) return;
   pipeline.style.display = 'block';
   pipeline.innerHTML = `
-    <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio...</div>
-    <div class="pipeline-step" id="step-edit-compress">compressing raw photo (2500px, webp)...</div>
-    <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail...</div>
+    <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio</div>
+    <div class="pipeline-step" id="step-edit-compress">compressing standard photo (2500px, webp)</div>
+    <div class="pipeline-step" id="step-edit-raw">compressing high-res raw photo (4000px, webp)</div>
+    <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail</div>
   `;
   
   const img = new Image();
@@ -1176,6 +1187,10 @@ async function processEditImagePipeline(imgSrc) {
   setStepState('edit-compress', 'active');
   processedEditPhotoBlob = await resizeImage(img, 2500, 0.75);
   setStepState('edit-compress', 'success');
+
+  setStepState('edit-raw', 'active');
+  processedEditRawBlob = await resizeImage(img, 4000, 0.95);
+  setStepState('edit-raw', 'success');
 
   setStepState('edit-thumbnail', 'active');
   processedEditThumbBlob = await resizeImage(img, 600, 0.75);
@@ -1245,15 +1260,14 @@ if (editForm) {
 
     try {
       // If we have a replacement photo, run the R2 replace action first!
-      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob) {
+      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditRawBlob) {
         submitText.innerText = 'replacing R2 asset file...';
         const fileFormData = new FormData();
         fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
         fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
         fileFormData.append('aspectRatio', String(computedEditAspectRatio));
-        const replacementRawFile = editFileInput ? (editFileInput as HTMLInputElement).files?.[0] : null;
-        if (replacementRawFile) {
-          fileFormData.append('raw', replacementRawFile);
+        if (processedEditRawBlob) {
+          fileFormData.append('raw', processedEditRawBlob, 'raw.webp');
         }
 
         const fileRes = await replacePhotoItem(id, fileFormData, token);
@@ -1353,8 +1367,8 @@ if (form) {
     if (currentMode === 'photo') {
       formData.append('photo', processedPhotoBlob);
       formData.append('thumb', processedThumbBlob);
-      if (selectedFile) {
-        formData.append('raw', selectedFile);
+      if (processedRawBlob) {
+        formData.append('raw', processedRawBlob, 'raw.webp');
       }
       formData.append('category', getDocEl('category').value);
       formData.append('heroSlide', String(getDocEl('hero-slide').checked));

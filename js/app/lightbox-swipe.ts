@@ -6,6 +6,7 @@ import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightbox
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
+import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -78,7 +79,7 @@ if (state.isMobile) {
 
         let inner = document.createElement('div');
         inner.className = 'snap-slide-inner photo-loading';
-        let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+        let ratio = getPhotoAspectRatio(p);
         inner.style.setProperty('--lightbox-photo-ratio', String(ratio));
 
         let img = document.createElement('img');
@@ -88,12 +89,24 @@ if (state.isMobile) {
         img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
         
         img.onload = function () {
-          if (inner.classList.contains('photo-loaded')) return;
-          inner.classList.add('photo-loaded');
-          inner.classList.remove('photo-placeholder-visible');
-          setTimeout(function () {
-            inner.classList.remove('photo-loading', 'photo-loaded');
-          }, 260);
+          const handleSwipeDecode = () => {
+            if (img.naturalWidth && img.naturalHeight) {
+              let r = img.naturalWidth / img.naturalHeight;
+              inner.style.setProperty('--lightbox-photo-ratio', String(r));
+              saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+            }
+            if (inner.classList.contains('photo-loaded')) return;
+            inner.classList.add('photo-loaded');
+            inner.classList.remove('photo-placeholder-visible');
+            setTimeout(function () {
+              inner.classList.remove('photo-loading', 'photo-loaded');
+            }, 260);
+          };
+          if (img.decode) {
+            img.decode().then(handleSwipeDecode).catch(handleSwipeDecode);
+          } else {
+            handleSwipeDecode();
+          }
         };
         img.onerror = function () {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
@@ -106,6 +119,9 @@ if (state.isMobile) {
         if (img.complete && img.naturalWidth > 0) {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
           inner.classList.add('photo-loaded');
+          let r = img.naturalWidth / img.naturalHeight;
+          inner.style.setProperty('--lightbox-photo-ratio', String(r));
+          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
         } else {
           requestAnimationFrame(function () {
             if (!inner.classList.contains('photo-loaded') && !inner.classList.contains('photo-error')) {
@@ -125,67 +141,77 @@ if (state.isMobile) {
       let w = imgWrap.offsetWidth;
       if (!w) return;
       if (smooth) {
-        window.isAutoRapidScrolling = true;
-        imgWrap.style.scrollSnapType = 'none'; // release OS clamp
-        let startPos = imgWrap.scrollLeft;
-        let targetPos = idx * w;
-        let startTime = performance.now();
-        let duration = 380; // mathematically sleek transition (faster than OS default)
-        let slideDir = dir || (targetPos > startPos ? 1 : -1);
+        let oldIdx = Math.round(imgWrap.scrollLeft / w);
+        if (idx === oldIdx) return;
 
+        window.isAutoRapidScrolling = true;
+        let slideDir = dir || (idx > oldIdx ? 1 : -1);
+        let exitX = slideDir > 0 ? '-6%' : '6%';
+        let enterX = slideDir > 0 ? '6%' : '-6%';
+
+        let currentInner = imgWrap.querySelector('.snap-slide[data-idx="' + oldIdx + '"] .snap-slide-inner') as HTMLElement;
         let info = domRefs.lightboxInfo;
-        // Animate OLD text gracefully exiting and trigger the massive BG blur crossfade immediately
         let finalP = state.activePhotos[idx];
         setLightboxBlur(finalP.thumb || finalP.src);
 
+        // Turn off scroll snapping immediately to prevent browser layout snaps during transition
+        imgWrap.style.scrollSnapType = 'none';
+
+        if (currentInner) {
+          currentInner.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+          currentInner.style.opacity = '0';
+          currentInner.style.transform = 'translateX(' + exitX + ') scale(0.98)';
+        }
         if (info) {
-          info.style.transition = 'opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease';
+          info.style.animation = 'none';
+          info.style.transition = 'none';
           info.style.opacity = '0';
-          info.style.filter = 'blur(10px)';
-          info.style.transform = 'translate3d(' + (-slideDir * 25) + 'px, 0, 0) scale(0.92)';
         }
 
-        function step(time) {
-          let elapsed = time - startTime;
-          if (elapsed >= duration) {
-            imgWrap.scrollTo({ left: targetPos, behavior: 'instant' });
-            imgWrap.style.scrollSnapType = ''; // restore OS clamp
+        setTimeout(function () {
+          imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
 
-            // Allow CSS transition to execute without asynchronous scroll intercepts killing inline physics
-            setTimeout(function () { window.isAutoRapidScrolling = false; }, 50);
+          state.cur = idx;
+          setLightboxContent(finalP);
+          showFilmstripIfReady();
+          if (typeof updateLoading === 'function') updateLoading();
+          if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
 
-            setLightboxContent(finalP);
-            showFilmstripIfReady();
-            if (typeof updateLoading === 'function') updateLoading();
+          // Animate the details text using the same CSS animation engine as desktop
+          animateInfo(slideDir);
 
-            let info = domRefs.lightboxInfo;
-            if (info) {
-              // Ensure any previous 'transition: none' styles are flushed from memory before snapping
-              info.style.transition = '';
-              void info.offsetWidth;
-
-              // Snap inline styles instantly to starting projection position for the new text
-              info.style.transition = 'none';
-              info.style.opacity = '0';
-              info.style.filter = 'blur(12px)';
-              info.style.transform = 'translate3d(' + (slideDir * 25) + 'px, 0, 0) scale(0.92)';
-
-              // Fire arrival execution flush to completely eliminate the double-frame stutter delay
-              void info.offsetWidth;
-
-              info.style.transition = 'opacity 0.18s ease, filter 0.18s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1)';
-              info.style.opacity = '1';
-              info.style.filter = '';
-              info.style.transform = '';
-            }
-            return;
+          let targetInner = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"] .snap-slide-inner') as HTMLElement;
+          if (targetInner) {
+            targetInner.style.transition = 'none';
+            targetInner.style.transform = 'translateX(' + enterX + ') scale(0.98)';
+            targetInner.style.opacity = '0';
+            void targetInner.offsetWidth;
           }
-          let t = elapsed / duration;
-          let ease = 1 - Math.pow(1 - t, 4); // ease-out quart
-          imgWrap.scrollTo({ left: startPos + (targetPos - startPos) * ease, behavior: 'instant' });
-          requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
+
+          requestAnimationFrame(function () {
+            if (targetInner) {
+              targetInner.style.transition = 'opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1)';
+              targetInner.style.opacity = '1';
+              targetInner.style.transform = '';
+            }
+          });
+
+          setTimeout(function () {
+            window.isAutoRapidScrolling = false;
+            // Restore scroll snapping once transition is complete
+            imgWrap.style.scrollSnapType = '';
+            if (currentInner) {
+              currentInner.style.transition = '';
+              currentInner.style.opacity = '';
+              currentInner.style.transform = '';
+            }
+            if (targetInner) {
+              targetInner.style.transition = '';
+              targetInner.style.opacity = '';
+              targetInner.style.transform = '';
+            }
+          }, 240);
+        }, 150);
       } else {
         imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
       }
