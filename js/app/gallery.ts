@@ -5,6 +5,7 @@ import { getMotionThumbnailMarkup } from './motion-markup.js';
 import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
+import { getPhotoAspectRatio, saveRatioToCache, isRatioCached } from './utils.js';
 
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 let galleryScrollDirection = 'down';
@@ -184,17 +185,7 @@ function settleGalleryTabSwitch(panel) {
 }
 
 // Masonry: scroll reveal handles fade-in.
-// Aspect ratios are cached in localStorage to prevent CLS on repeat visits.
-let RATIO_CACHE_KEY = 'van_ratios_v1';
-let ratioCache = {};
-try {
-  let stored = localStorage.getItem(RATIO_CACHE_KEY);
-  if (stored) ratioCache = JSON.parse(stored);
-} catch (e) { }
-
-function saveRatioCache() {
-  try { localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCache)); } catch (e) { }
-}
+// Aspect ratios are resolved using getPhotoAspectRatio and cached in utils.ts.
 
 function revealImageOnLoad(img) {
   if (!img) return;
@@ -626,18 +617,24 @@ export function buildMasonry(category?: string) {
     imgEl.decoding = 'async';
     revealImageOnLoad(imgEl);
 
-    let r = parseFloat(p.aspectRatio || ratioCache[basePath] || 1);
+    let r = getPhotoAspectRatio(p, isMotion);
     card.style.setProperty('--photo-aspect-ratio', String(r));
     imgEl.style.aspectRatio = String(r);
 
-    if (!p.aspectRatio && !ratioCache[basePath]) {
+    if ((p.aspectRatio === undefined || p.aspectRatio === null) && !isRatioCached(basePath)) {
       imgEl.addEventListener('load', function () {
-        if (imgEl.naturalWidth && imgEl.naturalHeight) {
-          let ratio = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(4);
-          ratioCache[basePath] = ratio;
-          card.style.setProperty('--photo-aspect-ratio', ratio);
-          imgEl.style.aspectRatio = ratio;
-          saveRatioCache();
+        const handleDecode = () => {
+          if (imgEl.naturalWidth && imgEl.naturalHeight) {
+            let ratio = imgEl.naturalWidth / imgEl.naturalHeight;
+            saveRatioToCache(basePath, imgEl.naturalWidth, imgEl.naturalHeight);
+            card.style.setProperty('--photo-aspect-ratio', String(ratio.toFixed(4)));
+            imgEl.style.aspectRatio = String(ratio.toFixed(4));
+          }
+        };
+        if (imgEl.decode) {
+          imgEl.decode().then(handleDecode).catch(handleDecode);
+        } else {
+          handleDecode();
         }
       });
     }

@@ -12,6 +12,7 @@ let isSpacePressed = false;
 let dragDistance = 0;
 let startX = 0;
 let startY = 0;
+let activeRawLoader: HTMLImageElement | null = null;
 
 export function updateZoomTransform(img: any, smooth = true) {
   let mWrap = domRefs.lightboxImgWrap;
@@ -22,6 +23,23 @@ export function updateZoomTransform(img: any, smooth = true) {
   if (zoomTransitionTimeout) {
     clearTimeout(zoomTransitionTimeout);
     zoomTransitionTimeout = null;
+  }
+
+  // Cancel active raw loader and downgrade to webp if zoomed back below 1.2x
+  if (state.lbZoomLevel < 1.2) {
+    if (activeRawLoader) {
+      activeRawLoader.onload = null;
+      activeRawLoader.onerror = null;
+      activeRawLoader = null;
+    }
+    img.removeAttribute('data-loading-raw');
+    let wrap = domRefs.lightboxImgWrap;
+    if (wrap) wrap.classList.remove('raw-loading');
+
+    const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
+    if (currentItem && img.src === currentItem.rawSrc) {
+      img.src = currentItem.src;
+    }
   }
   
   if (state.lbZoomLevel <= 1) {
@@ -63,25 +81,32 @@ export function updateZoomTransform(img: any, smooth = true) {
   } else {
     if (lb) lb.classList.add('zoom-active');
 
-    // Load full-resolution photo in the background when zooming in
+    // Load full-resolution photo in the background when zooming in >= 1.3x
     const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
-    if (currentItem && currentItem.rawSrc && img.src !== currentItem.rawSrc && !img.dataset.loadingRaw) {
+    if (state.lbZoomLevel >= 1.3 && currentItem && currentItem.rawSrc && img.src !== currentItem.rawSrc && !img.dataset.loadingRaw) {
       img.dataset.loadingRaw = 'true';
       let wrap = domRefs.lightboxImgWrap;
       if (wrap) wrap.classList.add('raw-loading');
 
+      if (activeRawLoader) {
+        activeRawLoader.onload = null;
+        activeRawLoader.onerror = null;
+      }
       const rawLoader = new Image();
+      activeRawLoader = rawLoader;
       rawLoader.src = currentItem.rawSrc;
       rawLoader.onload = () => {
+        activeRawLoader = null;
         img.removeAttribute('data-loading-raw');
         if (wrap) wrap.classList.remove('raw-loading');
         
-        // Verify we are still on the same photo and still zoomed in
-        if (state.lbZoomLevel > 1 && state.cur === state.activePhotos.indexOf(currentItem)) {
+        // Verify we are still on the same photo and still zoomed in >= 1.3x
+        if (state.lbZoomLevel >= 1.3 && state.cur === state.activePhotos.indexOf(currentItem)) {
           img.src = currentItem.rawSrc;
         }
       };
       rawLoader.onerror = () => {
+        activeRawLoader = null;
         img.removeAttribute('data-loading-raw');
         if (wrap) wrap.classList.remove('raw-loading');
         console.warn('Failed to load raw image:', currentItem.rawSrc);

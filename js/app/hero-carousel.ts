@@ -5,6 +5,7 @@ import { getInternalCategory } from './media-data.js';
 import { openLightbox } from './lightbox.js';
 import { rebuildGallery } from './gallery.js';
 import { startLoopsIfReady } from './core.js';
+import { getPhotoAspectRatio } from './utils.js';
 
 // CAROUSEL
 let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
@@ -126,7 +127,7 @@ export function buildCarousel() {
       group.forEach(function (p, pi) {
         let wrapper = document.createElement('div');
         wrapper.className = 'carousel-item';
-        let ratio = Number(p.aspectRatio) > 0 ? Number(p.aspectRatio) : 1;
+        let ratio = getPhotoAspectRatio(p);
         wrapper.style.setProperty('--carousel-photo-ratio', String(ratio));
 
         let img = document.createElement('img');
