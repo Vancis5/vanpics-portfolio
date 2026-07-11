@@ -1092,9 +1092,11 @@ export function animateInfo(dir) {
   clone.style.setProperty('--lb-from-y', fromY + 'px');
   clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
   clone.style.willChange = 'filter, opacity, transform';
-  // clear any lingering inline transition/filter from swipe scroll handler
+  // clear any lingering inline transition/filter/opacity/transform from swipe scroll handler
   clone.style.transition = '';
   clone.style.filter = '';
+  clone.style.opacity = '';
+  clone.style.transform = '';
   info.parentNode.replaceChild(clone, info);
   domRefs.lightboxInfo = clone;
   refreshLightboxInfoRefs();
