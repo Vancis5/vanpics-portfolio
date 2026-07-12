@@ -382,10 +382,10 @@ body::after {
   cursor: grabbing !important;
 }
 
-/* mobile: 4 rows fill screen */
+/* mobile: 3 rows fill screen */
 @media (hover: none) and (max-width: 639px) {
   .carousel-item {
-    height: calc((100svh - 18px) / 4);
+    height: calc((100svh - 12px) / 3);
     min-height: 110px;
   }
 
