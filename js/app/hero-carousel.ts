@@ -61,7 +61,15 @@ function waitForDecodedImage(img, timeoutMs) {
   });
 }
 
-let rowState = ROW_CONFIG.map(function (c) { return { dir: c.dir, offset: 0, setWidth: 0 }; });
+let rowState = ROW_CONFIG.map(function (c) {
+  return {
+    dir: c.dir,
+    offset: 0,
+    setWidth: 0,
+    velocity: 0,
+    hasMomentum: false
+  };
+});
 let easeFrame = 0;
 
 // Drag states
@@ -72,6 +80,7 @@ let dragStartY = 0;
 let dragStartOffset = 0;
 let dragWrapAdjust = 0; // cumulative setWidth corrections during a drag
 let globalHasDragged = false;
+let dragHistory: { x: number; time: number }[] = [];
 
 export function buildCarousel() {
   let rows = domRefs.heroRows;
@@ -110,6 +119,9 @@ export function buildCarousel() {
       dragStartOffset = rowState[ri].offset;
       dragWrapAdjust = 0;
       globalHasDragged = false;
+      dragHistory = [{ x: e.clientX, time: performance.now() }];
+      rowState[ri].velocity = 0;
+      rowState[ri].hasMomentum = false;
     });
 
     row.addEventListener('touchstart', function (e) {
@@ -121,6 +133,9 @@ export function buildCarousel() {
         dragStartOffset = rowState[ri].offset;
         dragWrapAdjust = 0;
         globalHasDragged = false;
+        dragHistory = [{ x: e.touches[0].clientX, time: performance.now() }];
+        rowState[ri].velocity = 0;
+        rowState[ri].hasMomentum = false;
       }
     }, { passive: true });
 
@@ -260,23 +275,42 @@ export function tick(timestamp) {
     let rows = domRefs.heroRows;
 
     const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
-    let speed = (isLifting ? getCurrentSpeed(easeFrame) : 0) * frameScale;
+    let targetSpeed = isLifting ? getCurrentSpeed(easeFrame) : 0;
     if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame += frameScale;
 
     let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22];
 
-    rowState.forEach(function (state, ri) {
+    let friction = state.isMobile
+      ? (CAROUSEL_CONFIG.friction?.mobile ?? 0.985)
+      : (CAROUSEL_CONFIG.friction?.desktop ?? 0.93);
+    let decayFactor = Math.pow(friction, frameScale);
+
+    rowState.forEach(function (rowSt, ri) {
       if (ri >= rows.length) return;
       if (isDragging && dragRowIndex === ri) {
-        rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
+        rows[ri].style.transform = 'translateX(' + (rowSt.offset + px[ri]) + 'px)';
         return;
       }
-      state.offset += speed * state.dir;
-      if (state.setWidth > 0) {
-        if (state.dir === -1 && state.offset < -state.setWidth) state.offset += state.setWidth;
-        if (state.dir === 1 && state.offset > 0) state.offset -= state.setWidth;
+
+      let targetVel = targetSpeed * rowSt.dir;
+
+      if (rowSt.hasMomentum) {
+        rowSt.velocity = targetVel + (rowSt.velocity - targetVel) * decayFactor;
+        if (Math.abs(rowSt.velocity - targetVel) < 0.05) {
+          rowSt.velocity = targetVel;
+          rowSt.hasMomentum = false;
+        }
+      } else {
+        rowSt.velocity = targetVel;
       }
-      rows[ri].style.transform = 'translateX(' + (state.offset + px[ri]) + 'px)';
+
+      rowSt.offset += rowSt.velocity * frameScale;
+
+      if (rowSt.setWidth > 0) {
+        while (rowSt.offset < -rowSt.setWidth) rowSt.offset += rowSt.setWidth;
+        while (rowSt.offset > 0) rowSt.offset -= rowSt.setWidth;
+      }
+      rows[ri].style.transform = 'translateX(' + (rowSt.offset + px[ri]) + 'px)';
     });
   } catch (error) {
     console.error('Error in hero carousel tick loop:', error);
@@ -303,6 +337,10 @@ window.addEventListener('mousemove', function (e) {
     while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
   }
   rowState[ri].offset = rawOffset;
+
+  let now = performance.now();
+  dragHistory.push({ x: e.clientX, time: now });
+  dragHistory = dragHistory.filter(item => now - item.time <= 100);
 });
 
 window.addEventListener('touchmove', function (e) {
@@ -329,9 +367,33 @@ window.addEventListener('touchmove', function (e) {
     while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
   }
   rowState[ri].offset = rawOffset;
+
+  let now = performance.now();
+  dragHistory.push({ x: clientX, time: now });
+  dragHistory = dragHistory.filter(item => now - item.time <= 100);
 }, { passive: false });
 
 function endDrag() {
+  if (isDragging && dragRowIndex !== -1) {
+    let ri = dragRowIndex;
+    if (globalHasDragged) {
+      let now = performance.now();
+      let recentHistory = dragHistory.filter(item => now - item.time <= 100);
+      let releaseVelocity = 0;
+      if (recentHistory.length >= 2) {
+        let first = recentHistory[0];
+        let last = recentHistory[recentHistory.length - 1];
+        let dt = last.time - first.time;
+        let dx = last.x - first.x;
+        if (dt > 10) {
+          // Convert from pixels/ms to pixels/frame (at 16.67ms per frame)
+          releaseVelocity = (dx / dt) * 16.67;
+        }
+      }
+      rowState[ri].velocity = releaseVelocity;
+      rowState[ri].hasMomentum = true;
+    }
+  }
   isDragging = false;
   dragRowIndex = -1;
 }
