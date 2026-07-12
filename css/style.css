@@ -1130,7 +1130,6 @@ body::after {
   pointer-events: none;
   will-change: opacity;
   background: #0d0c0c;
-  filter: saturate(1.5) brightness(0.2);
 }
 
 #lightbox-blur-canvas.ready {
