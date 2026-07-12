@@ -8,7 +8,14 @@ import { startLoopsIfReady } from './core.js';
 import { getPhotoAspectRatio } from './utils.js';
 
 // CAROUSEL
-let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }, { dir: 1 }];
+let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }];
+
+// Custom horizontal focus points (object-position) for mobile carousel images under the 0.75 ratio clamp.
+// Maps photo filename to an object-position value (e.g. '30% center', 'left center', etc.).
+const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
+  'fog-motorcycle.webp': '30% center',
+  // Add other cropped photos here as needed
+};
 let CAROUSEL_CONFIG = APP_CONFIG.carousel;
 // cruise speed scaled by device — mobile narrower so same px/frame looks faster
 let CRUISE_SPEED = state.isMobile
@@ -76,14 +83,7 @@ export function buildCarousel() {
   // Clear existing images before building/rebuilding to avoid duplicates
   rows.forEach(function (r) { r.innerHTML = ''; });
 
-  // show/hide row-3 based on device
-  if (state.isMobile) {
-    rows[3].style.display = 'flex';
-  } else {
-    rows[3].style.display = 'none';
-  }
-
-  let activeRows = state.isMobile ? rows : rows.slice(0, 3);
+  let activeRows = rows;
   let activeRowCount = activeRows.length;
 
   if (state.carouselPhotos.length === 0) { carouselReadyCallback(); startLoopsIfReady(); return; }
@@ -128,11 +128,21 @@ export function buildCarousel() {
         let wrapper = document.createElement('div');
         wrapper.className = 'carousel-item';
         let ratio = getPhotoAspectRatio(p);
+        if (state.isMobile) {
+          ratio = Math.min(ratio, 0.75);
+        }
         wrapper.style.setProperty('--carousel-photo-ratio', String(ratio));
 
         let img = document.createElement('img');
         let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
+
+        if (state.isMobile) {
+          const filename = p.src.split('/').pop() || '';
+          if (CAROUSEL_FOCUS_POINTS[filename]) {
+            img.style.objectPosition = CAROUSEL_FOCUS_POINTS[filename];
+          }
+        }
 
         function reveal() {
           wrapper.classList.add('photo-loaded');
@@ -243,13 +253,13 @@ export function tick(timestamp) {
 
     if (dt > 100) dt = 16.67;
     let frameScale = dt / 16.67;
-    let rows = state.isMobile ? domRefs.heroRows : domRefs.heroRows.slice(0, 3);
+    let rows = domRefs.heroRows;
 
     const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
     let speed = (isLifting ? getCurrentSpeed(easeFrame) : 0) * frameScale;
     if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame += frameScale;
 
-    let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22, -state.heroScrollY * 0.15];
+    let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22];
 
     rowState.forEach(function (state, ri) {
       if (ri >= rows.length) return;
@@ -348,13 +358,7 @@ export function recalculateCarouselLayout() {
 
   let rows = domRefs.heroRows;
   
-  if (state.isMobile) {
-    rows[3].style.display = 'flex';
-  } else {
-    rows[3].style.display = 'none';
-  }
-
-  let activeRows = state.isMobile ? rows : rows.slice(0, 3);
+  let activeRows = rows;
   let activeRowCount = activeRows.length;
 
   activeRows.forEach(function (row, ri) {
