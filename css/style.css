@@ -1589,9 +1589,7 @@ body::after {
   top: calc(1.25rem + var(--safe-top));
   right: calc(1.25rem + env(safe-area-inset-right, 0px));
   z-index: 1000;
-  background: rgba(17, 16, 16, 0.76);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: rgba(17, 16, 16, 0.94);
   border: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.12));
   border-radius: 4px;
   color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.60));
@@ -1606,6 +1604,13 @@ body::after {
   -webkit-tap-highlight-color: transparent;
   min-height: 40px;
   outline: none;
+}
+
+/* Enable blur only for iOS and Desktop */
+.enable-header-blur #lightbox-close {
+  background: rgba(17, 16, 16, 0.76);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 #lightbox-close:hover,
@@ -1653,7 +1658,7 @@ body::after {
     /* The transparent bottom area lets native scroll-snap own touches over the info zone. */
     position: relative;
     scrollbar-width: none;
-    overscroll-behavior-x: contain;
+    overscroll-behavior-x: none;
     justify-content: flex-start;
   }
 

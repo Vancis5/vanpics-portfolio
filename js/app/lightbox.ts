@@ -1080,20 +1080,23 @@ export function animateInfo(dir) {
     ghost.style.width = info.offsetWidth + 'px';
     ghost.style.pointerEvents = 'none';
     ghost.removeAttribute('onclick'); // prevent stale tap capture on mobile
-    ghost.style.animation = 'lbInfoOut 0.22s ease forwards';
+    let exitDuration = state.isMobile ? '0.35s' : '0.22s';
+    ghost.style.animation = `lbInfoOut ${exitDuration} ease forwards`;
     ghost.style.willChange = 'filter, opacity';
     ghost.style.zIndex = '1';
     info.parentNode.appendChild(ghost);
-    setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 250);
+    let removeDelay = state.isMobile ? 380 : 250;
+    setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, removeDelay);
   }
 
   // clone-replace for enter — clean slate, no animation-cancel issues
-  let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
-  let fromY = dir === 0 ? 16 : 0;
+  let fromX = (state.isMobile || dir === 0) ? 0 : (dir > 0 ? 24 : -24);
+  let fromY = (state.isMobile || dir === 0) ? 0 : (dir === 0 ? 16 : 0);
   let clone = info.cloneNode(true) as HTMLElement;
   clone.style.setProperty('--lb-from-x', fromX + 'px');
   clone.style.setProperty('--lb-from-y', fromY + 'px');
-  clone.style.animation = 'lbInfoIn 0.55s cubic-bezier(0.22,1,0.36,1) forwards';
+  let duration = state.isMobile ? '0.45s' : '0.55s';
+  clone.style.animation = `lbInfoIn ${duration} cubic-bezier(0.22,1,0.36,1) forwards`;
   clone.style.willChange = 'filter, opacity, transform';
   // clear any lingering inline transition/filter/opacity/transform from swipe scroll handler
   clone.style.transition = '';
@@ -1325,7 +1328,9 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
       requestAnimationFrame(function () {
         if (openGen !== navGen) return;
-        animateInfo(0);
+        if (!state.isMobile) {
+          animateInfo(0);
+        }
         void img.offsetWidth; // force reflow — Firefox transition fix
 
         if (isMotion) {
