@@ -4,6 +4,7 @@ import { state } from './app/state.js';
 
 export function initSmoothScroll(options: any = {}) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(hover: none)').matches) return;
 
   const smoothScrollConfig = APP_CONFIG.smoothScroll;
   const lenis = new Lenis({
