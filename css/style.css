@@ -386,6 +386,17 @@ body::after {
   transform: scale(0.985);
 }
 
+.carousel-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
+}
+
 .carousel-item img {
   width: 100%;
   height: 100%;
@@ -438,7 +449,11 @@ body::after {
 }
 
 @media (hover: hover) {
-  .carousel-item img:hover {
+  .carousel-item:hover::after {
+    border-color: rgba(221, 216, 207, 0.18);
+  }
+
+  .carousel-item:hover img {
     filter: brightness(1) saturate(1);
     transform: scale(1.03);
   }
@@ -818,6 +833,17 @@ body::after {
   z-index: 1;
 }
 
+.photo-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
+}
+
 .photo-card.photo-loaded::before {
   opacity: 0;
   transform: scale(0.985);
@@ -841,6 +867,10 @@ body::after {
 }
 
 @media (hover: hover) {
+  .photo-card:hover::after {
+    border-color: rgba(221, 216, 207, 0.18);
+  }
+
   .photo-card:hover img {
     transform: scale(1.03);
     filter: brightness(1) saturate(1);
@@ -1907,6 +1937,7 @@ body::after {
 }
 
 .filmstrip-thumb {
+  position: relative;
   flex-shrink: 0;
   width: 52px;
   height: 38px;
@@ -1919,6 +1950,17 @@ body::after {
   transition: opacity 0.2s ease, transform 0.2s ease;
   opacity: 0.32;
   -webkit-tap-highlight-color: transparent;
+}
+
+.filmstrip-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
 }
 
 .filmstrip-thumb img {
@@ -1963,6 +2005,18 @@ body::after {
 
   #filmstrip-wrap {
     padding: 1.5rem 0 calc(1.75rem + var(--safe-bottom));
+  }
+}
+
+@media (hover: hover) {
+  .filmstrip-thumb:hover {
+    opacity: 0.85;
+  }
+  .filmstrip-thumb.active:hover {
+    opacity: 1;
+  }
+  .filmstrip-thumb:hover::after {
+    border-color: rgba(221, 216, 207, 0.18);
   }
 }
 
