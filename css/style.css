@@ -165,22 +165,7 @@ body.lightbox-open #custom-scrollbar {
   display: none !important;
 }
 
-/* Focus effect on scroll drag */
-#hero,
-#masonry,
-#gallery-header p,
-#lightbox,
-footer {
-  transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
 
-body.is-dragging-scrollbar #hero,
-body.is-dragging-scrollbar #masonry,
-body.is-dragging-scrollbar #gallery-header p,
-body.is-dragging-scrollbar #lightbox,
-body.is-dragging-scrollbar footer {
-  filter: saturate(0.8) brightness(0.9);
-}
 
 #drag-vignette {
   position: fixed;
@@ -189,8 +174,11 @@ body.is-dragging-scrollbar footer {
   /* Above content, below scrollbar/cursor */
   pointer-events: none;
   background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.45) 150%);
+  backdrop-filter: saturate(0.8) brightness(0.9);
+  -webkit-backdrop-filter: saturate(0.8) brightness(0.9);
   opacity: 0;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), -webkit-backdrop-filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, backdrop-filter;
 }
 
 body.is-dragging-scrollbar #drag-vignette {
