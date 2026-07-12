@@ -487,6 +487,7 @@ class WebGLBlurRenderer {
 
   startAnimation() {
     if (this.animating) return;
+    if (this.mixFactor >= 1.0) return;
     this.animating = true;
     this.render();
   }
@@ -506,6 +507,8 @@ class WebGLBlurRenderer {
     let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
       this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
+    } else {
+      this.stopAnimation();
     }
 
     // Cubic-bezier(0.15, 1, 0.4, 1) transition easing

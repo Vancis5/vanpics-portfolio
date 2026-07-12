@@ -16,6 +16,7 @@ const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
   'fog-motorcycle.webp': '30% center',
   // Add other cropped photos here as needed
 };
+
 let CAROUSEL_CONFIG = APP_CONFIG.carousel;
 // cruise speed scaled by device — mobile narrower so same px/frame looks faster
 let CRUISE_SPEED = state.isMobile
@@ -25,10 +26,10 @@ let CRUISE_SPEED = state.isMobile
     : CAROUSEL_CONFIG.cruiseSpeed.desktop);
 let EASE_FRAMES = CAROUSEL_CONFIG.easeFrames;
 let START_SPEED_MULT = CAROUSEL_CONFIG.startSpeedMultiplier;
-let carouselReadyCallback = function () {};
+let carouselReadyCallback = function () { };
 
 export function setCarouselReadyCallback(callback) {
-  carouselReadyCallback = typeof callback === 'function' ? callback : function () {};
+  carouselReadyCallback = typeof callback === 'function' ? callback : function () { };
 }
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
@@ -290,7 +291,7 @@ window.addEventListener('mousemove', function (e) {
   if (Math.abs(dx) > 5) {
     globalHasDragged = true;
   }
-  
+
   let ri = dragRowIndex;
   let newOffset = dragStartOffset + dx;
   let setWidth = rowState[ri].setWidth;
@@ -312,18 +313,18 @@ window.addEventListener('touchmove', function (e) {
   if (!isDragging || dragRowIndex === -1 || !e.touches || e.touches.length === 0) return;
   let clientX = e.touches[0].clientX;
   let clientY = e.touches[0].clientY;
-  
+
   let dx = clientX - dragStartX;
   let dy = clientY - dragStartY;
-  
+
   if (Math.abs(dx) > Math.abs(dy)) {
     if (e.cancelable) e.preventDefault();
   }
-  
+
   if (Math.abs(dx) > 5) {
     globalHasDragged = true;
   }
-  
+
   let ri = dragRowIndex;
   let newOffset = dragStartOffset + dx;
   let setWidth = rowState[ri].setWidth;
@@ -357,7 +358,7 @@ export function recalculateCarouselLayout() {
       : CAROUSEL_CONFIG.cruiseSpeed.desktop);
 
   let rows = domRefs.heroRows;
-  
+
   let activeRows = rows;
   let activeRowCount = activeRows.length;
 

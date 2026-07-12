@@ -185,16 +185,38 @@ function rememberFilmstripDirectVelocity(value) {
   fsDirectSyncValue = value;
 }
 
-function getFilmstripTargetForPhotoProgress(progress) {
+let filmstripMetrics: { thumbW: number, gap: number, paddingLeft: number, elWidth: number } | null = null;
+
+function invalidateFilmstripMetrics() {
+  filmstripMetrics = null;
+}
+
+window.addEventListener('resize', invalidateFilmstripMetrics, { passive: true });
+window.addEventListener('orientationchange', invalidateFilmstripMetrics, { passive: true });
+window.addEventListener('lightbox-open', invalidateFilmstripMetrics, { passive: true });
+
+function getFilmstripMetrics() {
+  if (filmstripMetrics) return filmstripMetrics;
+
   let thumbs = filmstripEl.querySelectorAll('.filmstrip-thumb') as NodeListOf<HTMLElement>;
   if (thumbs.length < 1) return null;
 
   let track = getFilmstripTrack();
-  let thumbW = thumbs[0].offsetWidth;
+  let thumbW = thumbs[0].offsetWidth || 62;
   let gap = parseFloat(window.getComputedStyle(track).gap) || 5;
   let paddingLeft = parseFloat(track.style.paddingLeft) || 0;
-  let targetCenter = paddingLeft + progress * (thumbW + gap) + thumbW / 2;
-  return targetCenter - filmstripEl.offsetWidth / 2;
+  let elWidth = filmstripEl.offsetWidth || 300;
+
+  filmstripMetrics = { thumbW, gap, paddingLeft, elWidth };
+  return filmstripMetrics;
+}
+
+function getFilmstripTargetForPhotoProgress(progress) {
+  let metrics = getFilmstripMetrics();
+  if (!metrics) return null;
+
+  let targetCenter = metrics.paddingLeft + progress * (metrics.thumbW + metrics.gap) + metrics.thumbW / 2;
+  return targetCenter - metrics.elWidth / 2;
 }
 
 export function syncFilmstripToPhotoProgress(progress) {

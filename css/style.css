@@ -308,7 +308,7 @@ body::after {
 
   #hero::before,
   #hero::after {
-    width: 40px;
+    display: none;
   }
 }
 
@@ -547,9 +547,9 @@ body::after {
   padding-left: calc(50vw - 50%);
   padding-right: calc(50vw - 50%);
 
-  background: rgba(13, 12, 12, 0.85);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: rgba(13, 12, 12, 0.96);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   padding-top: calc(1.5rem + var(--safe-top, 0px));
   padding-bottom: 1.5rem;
   margin-bottom: 0rem;
@@ -562,14 +562,14 @@ body::after {
   animation: fadeup 0.8s ease 0.2s forwards;
 }
 
-/* Disable expensive backdrop-filter on mobile/touch devices for buttery smooth scrolling */
-@media (hover: none) {
-  #gallery-header {
-    background: rgba(13, 12, 12, 0.96);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+/* Enable beautiful 20px blur for iOS/iPhones and Desktop devices */
+.enable-header-blur #gallery-header {
+  background: rgba(13, 12, 12, 0.85);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
+
+
 
 @media (min-width: 640px) {
   #gallery-header {
@@ -1979,6 +1979,7 @@ body::after {
 
 /* FOOTER LIQUID BACKGROUND */
 .footer-bg-blur {
+  display: none; /* Hide when off-screen to optimize performance */
   position: absolute;
   width: 15%;
   height: 60%;
@@ -1997,6 +1998,11 @@ body::after {
   mask-image: radial-gradient(circle, black 25%, transparent 70%);
 }
 
+#site-footer.is-visible .footer-bg-blur,
+#site-footer:hover .footer-bg-blur {
+  display: block;
+}
+
 #site-footer:hover .footer-bg-blur {
   opacity: 0.55;
   filter: blur(10px) brightness(0.2) saturate(1.5);
@@ -2009,31 +2015,6 @@ body::after {
   background-position: center;
   will-change: transform;
   background-image: url('../footer-bg.webp');
-}
-
-/* Optimize footer blur background on mobile/touch devices */
-@media (hover: none) {
-  .footer-bg-blur {
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-    transform: none;
-    filter: none;
-    -webkit-mask-image: none;
-    mask-image: none;
-    opacity: 0.35;
-    background: radial-gradient(circle at 50% 50%, rgba(210, 140, 40, 0.08) 0%, rgba(180, 100, 20, 0.02) 40%, transparent 70%);
-  }
-
-  #site-footer:hover .footer-bg-blur {
-    filter: none;
-    opacity: 0.35;
-  }
-
-  .footer-bg-blur-inner {
-    display: none !important;
-  }
 }
 
 .footer-bg-blur-inner.base {
