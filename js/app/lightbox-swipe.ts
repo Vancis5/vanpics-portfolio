@@ -154,9 +154,6 @@ if (state.isMobile) {
         let finalP = state.activePhotos[idx];
         setLightboxBlur(finalP.thumb || finalP.src);
 
-        // Turn off scroll snapping immediately to prevent browser layout snaps during transition
-        imgWrap.style.scrollSnapType = 'none';
-
         if (currentInner) {
           currentInner.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
           currentInner.style.opacity = '0';
@@ -169,6 +166,9 @@ if (state.isMobile) {
         }
 
         setTimeout(function () {
+          // Turn off scroll snapping right before instant scroll to prevent browser layout snaps during transition
+          imgWrap.style.scrollSnapType = 'none';
+
           imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
 
           state.cur = idx;
@@ -176,9 +176,6 @@ if (state.isMobile) {
           showFilmstripIfReady();
           if (typeof updateLoading === 'function') updateLoading();
           if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
-
-          // Animate the details text using the same CSS animation engine as desktop
-          animateInfo(slideDir);
 
           let targetInner = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"] .snap-slide-inner') as HTMLElement;
           if (targetInner) {
@@ -189,6 +186,9 @@ if (state.isMobile) {
           }
 
           requestAnimationFrame(function () {
+            // Animate text after layout settles — matches desktop's rAF-wrapped pattern
+            animateInfo(slideDir);
+
             if (targetInner) {
               targetInner.style.transition = 'opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1)';
               targetInner.style.opacity = '1';
@@ -196,6 +196,8 @@ if (state.isMobile) {
             }
           });
 
+          // Guard must cover full lbInfoIn animation (0.55s) to prevent onSnapSettle
+          // from killing the animation mid-flight with inline style overrides
           setTimeout(function () {
             window.isAutoRapidScrolling = false;
             // Restore scroll snapping once transition is complete
@@ -210,7 +212,7 @@ if (state.isMobile) {
               targetInner.style.opacity = '';
               targetInner.style.transform = '';
             }
-          }, 240);
+          }, 600);
         }, 150);
       } else {
         imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
@@ -274,7 +276,7 @@ if (state.isMobile) {
 
     // ── Scroll settle — detect new active slide ──
     function onSnapSettle(targetIdx?: number) {
-      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
+      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1 || window.isAutoRapidScrolling) return;
       if (isUserTouching && typeof targetIdx === 'undefined') return;
       state.isManuallyNavigating = false; // Reset navigation flag on settle
       let w = imgWrap.offsetWidth;

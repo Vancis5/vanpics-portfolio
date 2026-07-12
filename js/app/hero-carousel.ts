@@ -70,6 +70,7 @@ let dragRowIndex = -1;
 let dragStartX = 0;
 let dragStartY = 0;
 let dragStartOffset = 0;
+let dragWrapAdjust = 0; // cumulative setWidth corrections during a drag
 let globalHasDragged = false;
 
 export function buildCarousel() {
@@ -107,6 +108,7 @@ export function buildCarousel() {
       dragStartX = e.clientX;
       dragStartY = e.clientY;
       dragStartOffset = rowState[ri].offset;
+      dragWrapAdjust = 0;
       globalHasDragged = false;
     });
 
@@ -117,6 +119,7 @@ export function buildCarousel() {
         dragStartX = e.touches[0].clientX;
         dragStartY = e.touches[0].clientY;
         dragStartOffset = rowState[ri].offset;
+        dragWrapAdjust = 0;
         globalHasDragged = false;
       }
     }, { passive: true });
@@ -293,20 +296,13 @@ window.addEventListener('mousemove', function (e) {
   }
 
   let ri = dragRowIndex;
-  let newOffset = dragStartOffset + dx;
   let setWidth = rowState[ri].setWidth;
+  let rawOffset = dragStartOffset + dragWrapAdjust + dx;
   if (setWidth > 0) {
-    if (newOffset < -setWidth) {
-      newOffset += setWidth;
-      dragStartX -= setWidth;
-      dragStartOffset += setWidth;
-    } else if (newOffset > 0) {
-      newOffset -= setWidth;
-      dragStartX += setWidth;
-      dragStartOffset -= setWidth;
-    }
+    while (rawOffset < -setWidth) { rawOffset += setWidth; dragWrapAdjust += setWidth; }
+    while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
   }
-  rowState[ri].offset = newOffset;
+  rowState[ri].offset = rawOffset;
 });
 
 window.addEventListener('touchmove', function (e) {
@@ -326,20 +322,13 @@ window.addEventListener('touchmove', function (e) {
   }
 
   let ri = dragRowIndex;
-  let newOffset = dragStartOffset + dx;
   let setWidth = rowState[ri].setWidth;
+  let rawOffset = dragStartOffset + dragWrapAdjust + dx;
   if (setWidth > 0) {
-    if (newOffset < -setWidth) {
-      newOffset += setWidth;
-      dragStartX -= setWidth;
-      dragStartOffset += setWidth;
-    } else if (newOffset > 0) {
-      newOffset -= setWidth;
-      dragStartX += setWidth;
-      dragStartOffset -= setWidth;
-    }
+    while (rawOffset < -setWidth) { rawOffset += setWidth; dragWrapAdjust += setWidth; }
+    while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
   }
-  rowState[ri].offset = newOffset;
+  rowState[ri].offset = rawOffset;
 }, { passive: false });
 
 function endDrag() {
