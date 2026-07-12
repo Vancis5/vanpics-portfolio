@@ -243,6 +243,36 @@ class WebGLBlurRenderer {
         return p + 0.5;
       }
 
+      vec2 twist(vec2 coord, vec2 offset, float radius, float angle) {
+        coord -= offset;
+        float dist = length(coord);
+        if (dist < radius) {
+          float ratioDist = (radius - dist) / radius;
+          float angleMod = ratioDist * ratioDist * angle;
+          float s = sin(angleMod);
+          float c = cos(angleMod);
+          coord = vec2(coord.x * c - coord.y * s, coord.x * s + coord.y * c);
+        }
+        coord += offset;
+        return coord;
+      }
+
+      vec2 applyTwists(vec2 uv, float dir) {
+        // Dynamic Vortex 1 (oscillates in location & intensity)
+        vec2 offset1 = vec2(0.35 + 0.15 * cos(u_time * 0.4), 0.45 + 0.15 * sin(u_time * 0.5));
+        float radius1 = 0.5;
+        float angle1 = dir * 2.5 * sin(u_time * 0.3);
+        uv = twist(uv, offset1, radius1, angle1);
+
+        // Dynamic Vortex 2 (sweeps a separate track)
+        vec2 offset2 = vec2(0.65 + 0.15 * sin(u_time * 0.45), 0.55 + 0.15 * cos(u_time * 0.35));
+        float radius2 = 0.45;
+        float angle2 = -dir * 2.0 * cos(u_time * 0.4);
+        uv = twist(uv, offset2, radius2, angle2);
+
+        return uv;
+      }
+
       vec3 blendScreen(vec3 base, vec3 blend) {
         return 1.0 - (1.0 - base) * (1.0 - blend);
       }
@@ -255,6 +285,9 @@ class WebGLBlurRenderer {
       }
 
       vec4 sampleLiquid(sampler2D tex, vec2 uv, float dir) {
+        // Warp coordinate space with dynamic swirl vortices first
+        uv = applyTwists(uv, dir);
+
         // Base Layer (45s linear loop)
         float k0 = fract(u_time / 45.0);
         float angle0 = dir * k0 * 2.0 * 3.14159265;
@@ -284,11 +317,21 @@ class WebGLBlurRenderer {
         return vec4(col, 1.0);
       }
 
+      vec3 adjustSaturation(vec3 color, float saturation) {
+        float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+        return mix(vec3(luma), color, saturation);
+      }
+
       void main() {
         vec4 col_prev = sampleLiquid(u_texture_prev, v_texCoord, u_dir_prev);
         vec4 col_curr = sampleLiquid(u_texture, v_texCoord, u_dir_curr);
         vec3 blended = mix(col_prev.rgb, col_curr.rgb, u_mix);
-        gl_FragColor = vec4(blended, 1.0);
+        
+        // Saturate (1.5) and darken (brightness 0.2) pre-blur in the shader
+        vec3 saturated = adjustSaturation(blended, 1.5);
+        vec3 finalColor = saturated * 0.2;
+        
+        gl_FragColor = vec4(finalColor, 1.0);
       }
     `;
 
@@ -487,7 +530,6 @@ class WebGLBlurRenderer {
 
   startAnimation() {
     if (this.animating) return;
-    if (this.mixFactor >= 1.0) return;
     this.animating = true;
     this.render();
   }
@@ -507,8 +549,6 @@ class WebGLBlurRenderer {
     let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
       this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
-    } else {
-      this.stopAnimation();
     }
 
     // Cubic-bezier(0.15, 1, 0.4, 1) transition easing
@@ -539,15 +579,19 @@ class WebGLBlurRenderer {
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // PASS 2-4: Downsampling (Dual Kawase style)
-    this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, this.fbos[1], 1.0);
-    this.runBlurPass(this.progDown, this.fbos[1].texture, 128, 128, this.fbos[2], 1.0);
-    this.runBlurPass(this.progDown, this.fbos[2].texture, 64, 64, this.fbos[3], 1.0);
+    if ((window as any).__killBlur) {
+      this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, null, 0.0);
+    } else {
+      // PASS 2-4: Downsampling (Dual Kawase style)
+      this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, this.fbos[1], 1.0);
+      this.runBlurPass(this.progDown, this.fbos[1].texture, 128, 128, this.fbos[2], 1.0);
+      this.runBlurPass(this.progDown, this.fbos[2].texture, 64, 64, this.fbos[3], 1.0);
 
-    // PASS 5-7: Upsampling (Dual Kawase style)
-    this.runBlurPass(this.progUp, this.fbos[3].texture, 32, 32, this.fbos[4], 1.2);
-    this.runBlurPass(this.progUp, this.fbos[4].texture, 64, 64, this.fbos[5], 1.0);
-    this.runBlurPass(this.progUp, this.fbos[5].texture, 128, 128, null, 1.0);
+      // PASS 5-7: Upsampling (Dual Kawase style)
+      this.runBlurPass(this.progUp, this.fbos[3].texture, 32, 32, this.fbos[4], 1.2);
+      this.runBlurPass(this.progUp, this.fbos[4].texture, 64, 64, this.fbos[5], 1.0);
+      this.runBlurPass(this.progUp, this.fbos[5].texture, 128, 128, null, 1.0);
+    }
 
     if (this.animating) {
       this.animationId = requestAnimationFrame(() => this.render());
