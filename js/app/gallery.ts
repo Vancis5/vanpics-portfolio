@@ -287,19 +287,28 @@ function handleGalleryScroll() {
 
 window.addEventListener('scroll', handleGalleryScroll, { passive: true });
 
+function getElementDocumentTop(el: HTMLElement): number {
+  let top = 0;
+  let curr: HTMLElement | null = el;
+  while (curr) {
+    top += curr.offsetTop;
+    curr = curr.offsetParent as HTMLElement | null;
+  }
+  return top;
+}
+
 function getGalleryAnchorScrollY() {
   let section = domRefs.gallerySection;
   if (!section) return 0;
-  return section.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+  return getElementDocumentTop(section);
 }
 
 function getGalleryStickyStartScrollY() {
   let section = domRefs.gallerySection;
-  let header = document.querySelector('#gallery-header');
+  let header = document.querySelector('#gallery-header') as HTMLElement;
   if (!section || !header) return getGalleryAnchorScrollY();
 
-  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let sectionTop = section.getBoundingClientRect().top + scrollY;
+  let sectionTop = getElementDocumentTop(section);
   let sectionStyles = window.getComputedStyle(section);
   let headerStyles = window.getComputedStyle(header);
   let sectionPaddingTop = parseFloat(sectionStyles.paddingTop) || 0;
@@ -331,7 +340,8 @@ function getGalleryTargetScroll(category, options) {
   let targetScrollY = Number.isFinite(saved) ? saved : getGalleryAnchorScrollY();
 
   if (options.lockToStickyStart) {
-    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY());
+    // Add a 2px buffer to ensure the sticky header is firmly stuck and doesn't shift due to subpixel routing/clamping.
+    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY() + 2);
   }
 
   return targetScrollY;
