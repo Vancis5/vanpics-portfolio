@@ -4,7 +4,24 @@ import { state } from './app/state.js';
 
 export function initSmoothScroll(options: any = {}) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (window.matchMedia('(hover: none)').matches) return;
+
+  const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
+  const updateCustomScrollbar = options.updateCustomScrollbar || function () {};
+
+  function updateScrollDrivenUi(scroll?: number) {
+    const scrollPos = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
+    state.heroScrollY = scrollPos;
+    updateStickyHeaderSurface();
+    updateCustomScrollbar();
+  }
+
+  if (window.matchMedia('(hover: none)').matches) {
+    window.addEventListener('scroll', function () {
+      updateScrollDrivenUi();
+    }, { passive: true });
+    updateScrollDrivenUi();
+    return;
+  }
 
   const smoothScrollConfig = APP_CONFIG.smoothScroll;
   const lenis = new Lenis({
@@ -55,16 +72,6 @@ export function initSmoothScroll(options: any = {}) {
         if ((window as any).fsLenis) (window as any).fsLenis.resize();
       }, smoothScrollConfig.resizeDebounce);
     }).observe(filmstripEl);
-  }
-
-  const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
-  const updateCustomScrollbar = options.updateCustomScrollbar || function () {};
-
-  function updateScrollDrivenUi(scroll?: number) {
-    const scrollPos = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
-    state.heroScrollY = scrollPos;
-    updateStickyHeaderSurface();
-    updateCustomScrollbar();
   }
 
   window.addEventListener('scroll', function () {
