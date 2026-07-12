@@ -10,8 +10,7 @@ export const domRefs = {
   heroRows: [
     document.getElementById('row-0'),
     document.getElementById('row-1'),
-    document.getElementById('row-2'),
-    document.getElementById('row-3')
+    document.getElementById('row-2')
   ],
   gallerySection: document.getElementById('gallery-section'),
   galleryHeader: document.getElementById('gallery-header'),
