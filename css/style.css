@@ -136,6 +136,31 @@ html::-webkit-scrollbar {
   cursor: grabbing;
 }
 
+.custom-scrollbar-year {
+  position: absolute;
+  right: 28px;
+  top: 0;
+  padding: 4px 8px;
+  background: #161515;
+  border: 1px solid rgba(221, 216, 207, 0.15);
+  color: var(--text, #ddd8cf);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(var(--scrollbar-year-y, 0px)) scale(0.9);
+  transition: opacity 0.25s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.custom-scrollbar-year.visible {
+  opacity: 1;
+  transform: translateY(var(--scrollbar-year-y, 0px)) scale(1);
+}
+
 body.lightbox-open #custom-scrollbar {
   display: none !important;
 }
@@ -180,6 +205,10 @@ body.is-dragging-scrollbar #drag-vignette {
 
   #custom-scrollbar.moving {
     opacity: 1;
+  }
+
+  .custom-scrollbar-year {
+    display: none !important;
   }
 }
 
