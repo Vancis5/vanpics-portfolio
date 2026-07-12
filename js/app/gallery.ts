@@ -9,7 +9,6 @@ import { getPhotoAspectRatio, saveRatioToCache, isRatioCached } from './utils.js
 
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 let galleryScrollDirection = 'down';
-let galleryScrollRevealRaf = null;
 let gallerySuppressScrollRevealUntil = 0;
 let galleryRevealRepairTimer = null;
 let galleryTabSwitchSettleTimer = null;
@@ -212,7 +211,6 @@ let GALLERY_CATEGORIES = ['all', 'figures', 'motion'];
 let GALLERY_SCROLL_MEMORY_KEY = 'van_gallery_scroll_v2';
 let galleryScrollPositions = { all: null, figures: null, motion: null };
 let galleryPanelsBuilt = false;
-let galleryScrollSaveRaf = null;
 let galleryBlurPreloadTimer = null;
 
 try {
@@ -251,26 +249,34 @@ function updateGalleryScrollDirection() {
   }
 }
 
+let galleryScrollRevealTimer: any = null;
 function queueGalleryScrollReveal() {
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) return;
   if (performance.now() < gallerySuppressScrollRevealUntil) return;
-  if (galleryScrollRevealRaf) return;
 
-  galleryScrollRevealRaf = requestAnimationFrame(function () {
-    galleryScrollRevealRaf = null;
+  if (galleryScrollRevealTimer) {
+    window.clearTimeout(galleryScrollRevealTimer);
+  }
+
+  galleryScrollRevealTimer = window.setTimeout(function () {
+    galleryScrollRevealTimer = null;
     armCardsBelowViewport(getActiveGalleryPanel());
     repairVisiblePendingCards(getActiveGalleryPanel());
-  });
+  }, 100);
 }
 
+let galleryScrollSaveTimer: any = null;
 function queueGalleryScrollMemory() {
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) return;
-  if (galleryScrollSaveRaf) return;
 
-  galleryScrollSaveRaf = requestAnimationFrame(function () {
-    galleryScrollSaveRaf = null;
+  if (galleryScrollSaveTimer) {
+    window.clearTimeout(galleryScrollSaveTimer);
+  }
+
+  galleryScrollSaveTimer = window.setTimeout(function () {
+    galleryScrollSaveTimer = null;
     rememberGalleryScroll(state.currentCategory);
-  });
+  }, 150);
 }
 
 function handleGalleryScroll() {

@@ -562,6 +562,15 @@ body::after {
   animation: fadeup 0.8s ease 0.2s forwards;
 }
 
+/* Disable expensive backdrop-filter on mobile/touch devices for buttery smooth scrolling */
+@media (hover: none) {
+  #gallery-header {
+    background: rgba(13, 12, 12, 0.96);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 @media (min-width: 640px) {
   #gallery-header {
     padding-top: calc(1.75rem + var(--safe-top, 0px));
@@ -2000,6 +2009,31 @@ body::after {
   background-position: center;
   will-change: transform;
   background-image: url('../footer-bg.webp');
+}
+
+/* Optimize footer blur background on mobile/touch devices */
+@media (hover: none) {
+  .footer-bg-blur {
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    transform: none;
+    filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    opacity: 0.35;
+    background: radial-gradient(circle at 50% 50%, rgba(210, 140, 40, 0.08) 0%, rgba(180, 100, 20, 0.02) 40%, transparent 70%);
+  }
+
+  #site-footer:hover .footer-bg-blur {
+    filter: none;
+    opacity: 0.35;
+  }
+
+  .footer-bg-blur-inner {
+    display: none !important;
+  }
 }
 
 .footer-bg-blur-inner.base {
