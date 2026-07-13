@@ -55,7 +55,7 @@ lbEl.addEventListener('click', function (e) {
 if (state.isMobile) {
   (function () {
     let slidesBuilt = false;
-    let snapTimer = null;
+    let snapTimer: any = null;
     function clearSlides() {
       let slides = imgWrap.querySelectorAll('.snap-slide');
       slides.forEach(function (slide) { slide.remove(); });
@@ -266,7 +266,7 @@ if (state.isMobile) {
       for (let i = 0; i < imgs.length; i++) {
         let shouldEager = (Math.abs(i - state.cur) <= 2);
         imgs[i].loading = shouldEager ? 'eager' : 'lazy';
-        if (shouldEager && imgs[i].decode && !imgs[i].dataset.decoded) {
+        if (shouldEager && typeof imgs[i].decode === 'function' && !imgs[i].dataset.decoded) {
           (function (img) {
             img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
           })(imgs[i]);
@@ -424,7 +424,7 @@ if (state.isMobile) {
     // ─── SWIPE DOWN TO DISMISS & PINCH TO ZOOM ───
     let dStartX = 0, dStartY = 0, dDY = 0;
     let dLocked = false, dChecked = false;
-    let dPts = [];
+    let dPts: Array<{ y: number; t: number }> = [];
     let isPinching = false, wasPinchingOrZooming = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
 
     lbEl.addEventListener('touchstart', function (e) {
@@ -463,7 +463,8 @@ if (state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
           let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
           for (let i = 0; i < slides.length; i++) {
-            if (parseInt(slides[i].dataset.idx) !== state.cur) {
+            const idxStr = slides[i].dataset.idx;
+            if (idxStr !== undefined && parseInt(idxStr) !== state.cur) {
               slides[i].style.transition = 'none';
               slides[i].style.opacity = '0';
             }

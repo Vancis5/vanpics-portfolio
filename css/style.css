@@ -51,12 +51,12 @@
 }
 
 ::selection {
-  background-color: rgba(221, 216, 207, 0.25);
+  background-color: rgba(var(--text-rgb), 0.25);
   color: var(--text);
 }
 
 #lightbox ::selection {
-  background-color: var(--dynamic-text-color, rgba(221, 216, 207, 0.25));
+  background-color: var(--dynamic-text-color, rgba(var(--text-rgb), 0.25));
   color: #0d0c0c;
 }
 
@@ -67,9 +67,11 @@
 :root {
   --bg: #0d0c0c;
   --text: #ddd8cf;
-  --text-muted: rgba(221, 216, 207, 0.48);
-  --text-faint: rgba(221, 216, 207, 0.22);
-  --border: rgba(221, 216, 207, 0.09);
+  --text-rgb: 221, 216, 207;
+  --text-ivory-rgb: 242, 238, 231;
+  --text-muted: rgba(var(--text-rgb), 0.48);
+  --text-faint: rgba(var(--text-rgb), 0.22);
+  --border: rgba(var(--text-rgb), 0.09);
   --font-mono: 'DM Mono', monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -116,7 +118,7 @@ html::-webkit-scrollbar {
   top: 0;
   right: 4px;
   width: 3px;
-  background: rgba(221, 216, 207, 0.25);
+  background: rgba(var(--text-rgb), 0.25);
   border-radius: 10px;
   cursor: grab;
   transition: background 0.3s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -124,12 +126,12 @@ html::-webkit-scrollbar {
 }
 
 #custom-scrollbar:hover #custom-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.5);
+  background: rgba(var(--text-rgb), 0.5);
   /* Pulse brighter on hover */
 }
 
 #custom-scrollbar.dragging #custom-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.85);
+  background: rgba(var(--text-rgb), 0.85);
   /* Bright when dragging */
   width: 8px;
   /* Thicker when dragging */
@@ -143,7 +145,7 @@ html::-webkit-scrollbar {
   top: 0;
   padding: 4px 8px;
   background: #161515;
-  border: 1px solid rgba(221, 216, 207, 0.15);
+  border: 1px solid rgba(var(--text-rgb), 0.15);
   color: var(--text, #ddd8cf);
   font-family: 'DM Mono', monospace;
   font-size: 11px;
@@ -233,7 +235,7 @@ body::after {
     position: fixed;
     width: 7px;
     height: 7px;
-    background: rgba(221, 216, 207, 0.9);
+    background: rgba(var(--text-rgb), 0.9);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9999;
@@ -248,7 +250,7 @@ body::after {
     position: fixed;
     width: 28px;
     height: 28px;
-    border: 1px solid rgba(221, 216, 207, 0.25);
+    border: 1px solid rgba(var(--text-rgb), 0.25);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9998;
@@ -357,9 +359,9 @@ body::after {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-    rgba(242, 238, 231, 0.035);
-  border: 1px solid rgba(242, 238, 231, 0.08);
+    linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+    rgba(var(--text-ivory-rgb), 0.035);
+  border: 1px solid rgba(var(--text-ivory-rgb), 0.08);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 1;
   transform: scale(1);
@@ -437,7 +439,7 @@ body::after {
 
 @media (hover: hover) {
   .carousel-item:hover::after {
-    border-color: rgba(221, 216, 207, 0.18);
+    border-color: rgba(var(--text-rgb), 0.18);
   }
 
   .carousel-item:hover img {
@@ -483,7 +485,7 @@ body::after {
   font-weight: 400;
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   margin-top: 0.25rem;
   text-transform: lowercase;
   text-shadow: var(--hero-text-shadow);
@@ -515,7 +517,7 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-size: 0.57rem;
   letter-spacing: 0.18em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   text-transform: lowercase;
   text-shadow: var(--hero-text-shadow);
 }
@@ -637,7 +639,7 @@ body::after {
 }
 
 #gallery-header .inactive {
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   cursor: pointer;
   transition: color 0.3s ease;
   /* Full-height Hitbox */
@@ -750,7 +752,7 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.25em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   text-transform: uppercase;
   margin: 4.5rem 0 0;
   padding-bottom: 2.1rem;
@@ -809,9 +811,9 @@ body::after {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-    rgba(242, 238, 231, 0.035);
-  border: 1px solid rgba(242, 238, 231, 0.08);
+    linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+    rgba(var(--text-ivory-rgb), 0.035);
+  border: 1px solid rgba(var(--text-ivory-rgb), 0.08);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 1;
   transform: scale(1);
@@ -855,7 +857,7 @@ body::after {
 
 @media (hover: hover) {
   .photo-card:hover::after {
-    border-color: rgba(221, 216, 207, 0.18);
+    border-color: rgba(var(--text-rgb), 0.18);
   }
 
   .photo-card:hover img {
@@ -925,7 +927,7 @@ body::after {
   font-size: clamp(1.1rem, 3vw, 1.8rem);
   font-style: italic;
   text-align: center;
-  color: rgba(221, 216, 207, 0.85);
+  color: rgba(var(--text-rgb), 0.85);
   transition: color 0.8s cubic-bezier(0.16, 1, 0.3, 1), text-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 1.1;
   padding: 0 1rem;
@@ -938,7 +940,7 @@ body::after {
   }
 
   .motion-card:hover .photo-card-title {
-    color: rgba(242, 238, 231, 1);
+    color: rgba(var(--text-ivory-rgb), 1);
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
   }
 }
@@ -1080,7 +1082,7 @@ body::after {
   background: rgba(17, 16, 16, 0.72);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(221, 216, 207, 0.12);
+  border: 1.5px solid rgba(var(--text-rgb), 0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1093,7 +1095,7 @@ body::after {
 
 #motion-player-shell .motion-start-button:hover {
   background: rgba(17, 16, 16, 0.88);
-  border-color: rgba(221, 216, 207, 0.3);
+  border-color: rgba(var(--text-rgb), 0.3);
 }
 
 #motion-player-shell .motion-start-button__icon {
@@ -1133,8 +1135,8 @@ body::after {
   overflow: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  --text-muted: rgba(221, 216, 207, 0.78);
-  --text-faint: rgba(221, 216, 207, 0.40);
+  --text-muted: rgba(var(--text-rgb), 0.78);
+  --text-faint: rgba(var(--text-rgb), 0.40);
   background: #0d0c0c;
 }
 
@@ -1258,9 +1260,9 @@ body::after {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-    rgba(242, 238, 231, 0.035);
-  border: 1.8px solid rgba(242, 238, 231, 0.06);
+    linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+    rgba(var(--text-ivory-rgb), 0.035);
+  border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 0;
   transform: scale(0.985);
@@ -1291,10 +1293,10 @@ body::after {
   z-index: 3;
   display: none;
   padding: 0.55rem 0.75rem;
-  border: 1px solid rgba(221, 216, 207, 0.18);
+  border: 1px solid rgba(var(--text-rgb), 0.18);
   border-radius: 3px;
   background: rgba(17, 16, 16, 0.78);
-  color: rgba(221, 216, 207, 0.82);
+  color: rgba(var(--text-rgb), 0.82);
   font-family: 'DM Mono', monospace;
   font-size: 0.62rem;
   letter-spacing: 0.12em;
@@ -1319,7 +1321,7 @@ body::after {
   max-height: 44svh;
   object-fit: contain;
   border-radius: 3px;
-  border: 1.8px solid rgba(242, 238, 231, 0.06);
+  border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out;
   will-change: transform, opacity;
 }
@@ -1451,8 +1453,8 @@ body::after {
     min-height: 1.35rem;
     background: none;
     border: 0;
-    border-bottom: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.40));
-    color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.78));
+    border-bottom: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.40));
+    color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.78));
     font-family: 'DM Mono', monospace;
     font-size: 0.5rem;
     letter-spacing: 0.08em;
@@ -1477,7 +1479,7 @@ body::after {
 
   #lightbox-desc-toggle:active {
     color: var(--text-muted);
-    border-color: rgba(221, 216, 207, 0.5);
+    border-color: rgba(var(--text-rgb), 0.5);
   }
 
   /* hide the toggle when there's no description to show */
@@ -1635,9 +1637,9 @@ body::after {
   right: calc(1.25rem + env(safe-area-inset-right, 0px));
   z-index: 1000;
   background: rgba(17, 16, 16, 0.94);
-  border: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.12));
+  border: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.12));
   border-radius: 4px;
-  color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.60));
+  color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.60));
   font-family: 'DM Mono', monospace;
   font-weight: 400;
   font-size: 0.57rem;
@@ -1661,7 +1663,7 @@ body::after {
 #lightbox-close:hover,
 #lightbox-close:active {
   color: var(--dynamic-text-color, var(--text));
-  border-color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.28));
+  border-color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.28));
 }
 
 /* kill focus rings on all lightbox interactive elements — Firefox mobile shows them on tap */
@@ -1741,7 +1743,7 @@ body::after {
     max-height: 46dvh;
     object-fit: contain;
     border-radius: 3px;
-    border: 1.8px solid rgba(242, 238, 231, 0.06);
+    border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease;
     will-change: transform, opacity;
     /* prevent images from exceeding their slide on notched phones */
@@ -1766,9 +1768,9 @@ body::after {
     inset: 0;
     border-radius: inherit;
     background:
-      linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-      rgba(242, 238, 231, 0.035);
-    border: 1.8px solid rgba(242, 238, 231, 0.06);
+      linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+      rgba(var(--text-ivory-rgb), 0.035);
+    border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
     box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
     opacity: 0;
     transform: scale(0.985);
@@ -2003,7 +2005,7 @@ body::after {
     opacity: 1;
   }
   .filmstrip-thumb:hover::after {
-    border-color: rgba(221, 216, 207, 0.18);
+    border-color: rgba(var(--text-rgb), 0.18);
   }
 }
 
@@ -2150,7 +2152,7 @@ body::after {
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: 0;
-  color: rgba(221, 216, 207, 0.76);
+  color: rgba(var(--text-rgb), 0.76);
   transform: translateY(-0.18rem);
   transition: color 0.4s ease;
 }
@@ -2170,7 +2172,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   white-space: nowrap;
 }
 
@@ -2187,7 +2189,7 @@ body::after {
   height: 1.22rem;
   align-items: center;
   justify-content: center;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   transition:
     color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
@@ -2219,7 +2221,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.65;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
 }
 
 .footer-copyright {
@@ -2228,12 +2230,12 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.50);
+  color: rgba(var(--text-rgb), 0.50);
 }
 
 #site-footer:hover .footer-brand h2,
 #site-footer.is-visible .footer-brand h2 {
-  color: rgba(221, 216, 207, 0.95);
+  color: rgba(var(--text-rgb), 0.95);
 }
 
 #site-footer:hover .footer-brand p,
@@ -2249,7 +2251,7 @@ body::after {
 
 #site-footer:hover .footer-copyright,
 #site-footer.is-visible .footer-copyright {
-  color: rgba(221, 216, 207, 0.35);
+  color: rgba(var(--text-rgb), 0.35);
 }
 
 #site-footer .footer-instagram:hover,
@@ -2504,7 +2506,7 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   font-size: clamp(0.52rem, 1.2vw, 0.6rem);
   letter-spacing: 0.18em;
   text-transform: lowercase;
-  color: rgba(221, 216, 207, 0.28);
+  color: rgba(var(--text-rgb), 0.28);
   transition: color 0.4s ease;
 }
 
@@ -2517,7 +2519,7 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
 
 #site-footer:hover #footer-stats,
 #site-footer.is-visible #footer-stats {
-  color: rgba(221, 216, 207, 0.42);
+  color: rgba(var(--text-rgb), 0.42);
 }
 
 .footer-stat {
@@ -2525,17 +2527,17 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
 }
 
 .stat-num {
-  color: rgba(221, 216, 207, 0.55);
+  color: rgba(var(--text-rgb), 0.55);
   transition: color 0.4s ease;
 }
 
 #site-footer:hover .stat-num,
 #site-footer.is-visible .stat-num {
-  color: rgba(221, 216, 207, 0.78);
+  color: rgba(var(--text-rgb), 0.78);
 }
 
 .footer-stat-dot {
-  color: rgba(221, 216, 207, 0.15);
+  color: rgba(var(--text-rgb), 0.15);
   user-select: none;
 }
 

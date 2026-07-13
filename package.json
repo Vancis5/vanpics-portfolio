@@ -20,7 +20,10 @@
     "sort": "node scripts/sort-photos.js",
     "add-ratios": "node scripts/add-ratios.js",
     "generate-photos": "node scripts/generate-photos.js",
-    "generate-thumbs": "node scripts/generate-thumbs.js"
+    "generate-thumbs": "node scripts/generate-thumbs.js",
+    "generate-seed": "node scripts/generate-seed.mjs",
+    "copy-assets": "node scripts/copy-assets.js",
+    "check-dims": "node scripts/check-dims.js"
   },
   "dependencies": {
     "lenis": "^1.3.23"

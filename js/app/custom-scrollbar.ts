@@ -11,8 +11,8 @@ export let updateCustomScrollbar = function () {};
   if (!track || !thumb) return;
 
   let isDragging = false;
-  let startY, startScroll;
-  let fadeTimer = null;
+  let startY: number, startScroll: number;
+  let fadeTimer: any = null;
   let SCROLLBAR_CONFIG = APP_CONFIG.scrollbar;
   let cachedYearOffsets: Array<{ absTop: number; year: string }> | null = null;
   let cachedDocH: number | null = null;
@@ -117,7 +117,8 @@ export let updateCustomScrollbar = function () {};
     track.classList.add('dragging');
     document.body.classList.add('is-dragging-scrollbar');
     // Kill any ongoing smooth animation
-    if ((window as any).lenis) (window as any).lenis.scrollTo(window.scrollY, { immediate: true });
+    const lenis = (window as any).lenis;
+    if (lenis) lenis.scrollTo(window.scrollY, { immediate: true });
     (window as any)._scrollbarDragging = true;
 
     // Invalidate caches on drag start to guarantee fresh measurements
@@ -184,13 +185,14 @@ export let updateCustomScrollbar = function () {};
       // We CANNOT use scrollTo() because it calls setScroll() internally
       // which uses window.scrollTo() — and the browser blocks that API
       // while lenis CSS is active.
-      if ((window as any).lenis) {
+      const lenis = (window as any).lenis;
+      if (lenis) {
         let pos = document.documentElement.scrollTop;
-        (window as any).lenis.animatedScroll = pos;
-        (window as any).lenis.targetScroll = pos;
-        (window as any).lenis.velocity = 0;
-        (window as any).lenis.isScrolling = false;
-        if ((window as any).lenis.animate) (window as any).lenis.animate.stop();
+        lenis.animatedScroll = pos;
+        lenis.targetScroll = pos;
+        lenis.velocity = 0;
+        lenis.isScrolling = false;
+        if (lenis.animate) lenis.animate.stop();
       }
 
       // Unblock lenis AFTER state is set

@@ -52,4 +52,36 @@ test.describe('Vanpics Portfolio CMS Admin Portal Tests', () => {
     const secretInput = page.locator('#secret-token');
     await expect(secretInput).toHaveValue('');
   });
+
+  test('Redirects to login.html if no admin token is stored', async ({ page }) => {
+    // We override the beforeEach local token storage by clearing storage
+    await page.context().clearCookies();
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
+    // Try to navigate to admin.html, should redirect to login.html
+    await page.goto('/admin.html');
+    await expect(page).toHaveURL(/\/login\.html/);
+  });
+
+  test('Shows error status if invalid token is entered', async ({ page }) => {
+    // Mock verify to return 401 for this test
+    await page.route('**/api/admin/verify', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, error: 'Unauthorized' })
+      });
+    });
+
+    const secretInput = page.locator('#secret-token');
+    await secretInput.fill('invalid-token');
+
+    // The status icon for failed (lockSecured with text-danger class) should become visible
+    const lockSecured = page.locator('#lock-secured');
+    await expect(lockSecured).toHaveClass(/text-danger/);
+  });
 });

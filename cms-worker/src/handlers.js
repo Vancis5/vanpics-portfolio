@@ -170,7 +170,7 @@ export async function listPhotos(request, env, params, ctx) {
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
   const { results } = await env.DB.prepare(
-    `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide, created_at
+    `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
      FROM photos
      ORDER BY created_at DESC, id DESC
      LIMIT ? OFFSET ?`
@@ -214,7 +214,7 @@ export async function listVideos(request, env, params, ctx) {
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
   const { results } = await env.DB.prepare(
-    `SELECT id, title, src, poster, aspect_ratio, location, date, desc, music, created_at
+    `SELECT id, title, src, poster, aspect_ratio, location, date, \`desc\`, music, created_at
      FROM videos
      ORDER BY created_at DESC, id DESC
      LIMIT ? OFFSET ?`
@@ -345,7 +345,7 @@ export async function uploadPhoto(request, env) {
   await Promise.all(puts);
 
   const result = await env.DB.prepare(
-    `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+    `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
@@ -418,7 +418,7 @@ export async function uploadVideo(request, env) {
   ]);
 
   const result = await env.DB.prepare(
-    `INSERT INTO videos (title, src, poster, aspect_ratio, location, date, desc, music)
+    `INSERT INTO videos (title, src, poster, aspect_ratio, location, date, \`desc\`, music)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
@@ -478,7 +478,7 @@ export async function updatePhoto(request, env, params) {
 
   const result = await env.DB.prepare(
     `UPDATE photos 
-     SET title = ?, category = ?, location = ?, date = ?, desc = ?, aspect_ratio = ?, hero_slide = ?
+     SET title = ?, category = ?, location = ?, date = ?, \`desc\` = ?, aspect_ratio = ?, hero_slide = ?
      WHERE id = ?`
   )
   .bind(title, category, location, date, desc, aspectRatio, heroSlide, photoId)
@@ -514,7 +514,7 @@ export async function updateVideo(request, env, params) {
 
   const result = await env.DB.prepare(
     `UPDATE videos 
-     SET title = ?, location = ?, date = ?, desc = ?, aspect_ratio = ?, music = ?
+     SET title = ?, location = ?, date = ?, \`desc\` = ?, aspect_ratio = ?, music = ?
      WHERE id = ?`
   )
   .bind(title, location, date, desc, aspectRatio, music, videoId)

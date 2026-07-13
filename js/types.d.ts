@@ -1,5 +1,16 @@
 import Lenis from 'lenis';
 
+export interface CustomLenis extends Lenis {
+  animatedScroll: number;
+  targetScroll: number;
+  velocity: number;
+  isScrolling: boolean;
+  animate?: {
+    stop: () => void;
+  };
+  time: number;
+}
+
 export interface Photo {
   id?: string | number;
   src: string;
@@ -39,8 +50,8 @@ export type MediaItem = (Photo & { type: 'photo' }) | (Video & { type: 'video' }
 
 declare global {
   interface Window {
-    lenis?: Lenis;
-    fsLenis?: Lenis;
+    lenis?: CustomLenis;
+    fsLenis?: CustomLenis;
     _scrollbarDragging?: boolean;
     deletePhoto?: (id: string | number, title?: string) => Promise<void>;
     dropZone?: HTMLElement;

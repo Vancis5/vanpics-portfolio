@@ -63,7 +63,7 @@ async function main() {
       const desc = escapeSql(p.desc || null);
       const heroSlide = p.heroSlide ? 1 : 0;
 
-      sql += `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)\n`;
+      sql += `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide)\n`;
       sql += `VALUES (${title}, ${src}, ${thumb}, ${rawSrc}, ${aspectRatio}, ${category}, ${location}, ${date}, ${desc}, ${heroSlide});\n`;
     }
 
@@ -81,7 +81,7 @@ async function main() {
       const desc = escapeSql(v.desc || null);
       const music = escapeSql(v.music || '');
 
-      sql += `INSERT INTO videos (title, src, poster, aspect_ratio, location, date, desc, music)\n`;
+      sql += `INSERT INTO videos (title, src, poster, aspect_ratio, location, date, \`desc\`, music)\n`;
       sql += `VALUES (${title}, ${src}, ${poster}, ${aspectRatio}, ${location}, ${date}, ${desc}, ${music});\n`;
     }
 

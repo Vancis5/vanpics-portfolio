@@ -7,7 +7,7 @@ export const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB
 // Local placeholder data URI (no external requests)
 export const PLACEHOLDER_SRC = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%23222"><rect width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="11" font-family="monospace">no img</text></svg>');
 
-export function escapeHtml(str) {
+export function escapeHtml(str: string | null | undefined): string {
   return (str || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -17,22 +17,22 @@ export function escapeHtml(str) {
     .replace(/`/g, '&#96;');
 }
 
-export function plaintextToHtml(text) {
+export function plaintextToHtml(text: string | null | undefined): string {
   if (!text) return '';
   
   // 1. Escape entire text first to prevent HTML/XSS injection
   let escaped = escapeHtml(text);
   
-  const links = [];
+  const links: string[] = [];
   // 2. Convert Markdown links [Text](URL) to placeholder tokens
-  let html = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, label, url) => {
+  let html = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match: string, label: string, url: string) => {
     const rawUrl = url.replace(/&amp;/g, '&');
     links.push(`<a href="${rawUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`);
     return `___LINK_PLACEHOLDER_${links.length - 1}___`;
   });
   
   // 3. Convert remaining raw URLs to placeholder tokens
-  html = html.replace(/(https?:\/\/[^\s&<]+(?:&amp;[^\s&<]+)*)/g, (match) => {
+  html = html.replace(/(https?:\/\/[^\s&<]+(?:&amp;[^\s&<]+)*)/g, (match: string) => {
     const rawUrl = match.replace(/&amp;/g, '&');
     links.push(`<a href="${rawUrl}" target="_blank" rel="noopener noreferrer">${rawUrl}</a>`);
     return `___LINK_PLACEHOLDER_${links.length - 1}___`;
@@ -49,19 +49,19 @@ export function plaintextToHtml(text) {
   return html.trim();
 }
 
-export function htmlToPlaintext(html) {
+export function htmlToPlaintext(html: string | null | undefined): string {
   if (!html) return '';
   
   let text = html;
   
   // 1. Convert <a href="URL" ...>Text</a> to [Text](URL)
-  text = text.replace(/&lt;a\s+(?:[^&gt;]*?\s+)?href=(['"])(.*?)\1[^&gt;]*?&gt;(.*?)&lt;\/a&gt;/gi, (match, quote, url, label) => {
+  text = text.replace(/&lt;a\s+(?:[^&gt;]*?\s+)?href=(['"])(.*?)\1[^&gt;]*?&gt;(.*?)&lt;\/a&gt;/gi, (match: string, quote: string, url: string, label: string) => {
     if (label.trim() === url.trim()) {
       return url;
     }
     return `[${label}](${url})`;
   });
-  text = text.replace(/<a\s+(?:[^>]*?\s+)?href=(['"])(.*?)\1[^>]*?>(.*?)<\/a>/gi, (match, quote, url, label) => {
+  text = text.replace(/<a\s+(?:[^>]*?\s+)?href=(['"])(.*?)\1[^>]*?>(.*?)<\/a>/gi, (match: string, quote: string, url: string, label: string) => {
     if (label.trim() === url.trim()) {
       return url;
     }
@@ -80,21 +80,21 @@ export function htmlToPlaintext(html) {
   return text.trim();
 }
 
-export function getYearFromDate(dateStr) {
+export function getYearFromDate(dateStr: string | null | undefined): string {
   if (!dateStr) return 'undated';
   const match = dateStr.match(/\b(19|20)\d{2}\b/);
   return match ? match[0] : 'undated';
 }
 
-export function isUntitled(item) {
+export function isUntitled(item: any): boolean {
   const title = (item.title || '').toLowerCase().trim();
   return !title || title === 'untitled';
 }
 
-export function parseDate(item) {
-  if (!item) return 0;
+export function parseDate(item: any): Date {
+  if (!item) return new Date(0);
   
-  const tryParse = (str) => {
+  const tryParse = (str: string | null | undefined) => {
     if (!str) return NaN;
     let cleaned = String(str).trim()
       .replace(/-/g, '/')
@@ -111,11 +111,11 @@ export function parseDate(item) {
   // Try item.date FIRST (actual date the photo was taken)
   if (item.date) {
     const val = tryParse(item.date);
-    if (!isNaN(val)) return val;
+    if (!isNaN(val)) return new Date(val);
     
     // Manual fallback for custom formats like "dec 29, 2025"
     const dateStr = String(item.date).trim().toLowerCase();
-    const months = {
+    const months: Record<string, number> = {
       jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
       jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
       january: 0, february: 1, march: 2, april: 3, june: 5,
@@ -127,21 +127,21 @@ export function parseDate(item) {
       const day = parseInt(matchMonthDayYear[2], 10);
       const year = parseInt(matchMonthDayYear[3], 10);
       const month = months[mStr] !== undefined ? months[mStr] : 0;
-      return new Date(year, month, day).getTime();
+      return new Date(year, month, day);
     }
     
     const matchYear = dateStr.match(/\b\d{4}\b/);
     if (matchYear) {
       const year = parseInt(matchYear[0], 10);
-      return new Date(year, 0, 1).getTime();
+      return new Date(year, 0, 1);
     }
   }
 
   // Fallback to created_at (database upload time)
   if (item.created_at) {
     const val = tryParse(item.created_at);
-    if (!isNaN(val)) return val;
+    if (!isNaN(val)) return new Date(val);
   }
   
-  return 0;
+  return new Date(0);
 }

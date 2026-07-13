@@ -9,7 +9,7 @@ if (isMouseDevice) {
   let mx = 0, my = 0, rx = 0, ry = 0;
   let cursorVisible = false;
   let isDraggingScrollbar = false;
-  let ringRafId = null;
+  let ringRafId: number | null = null;
 
   // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
   function hideCursor() {
@@ -46,7 +46,7 @@ if (isMouseDevice) {
     ringRafId = null;
   }
 
-  let cursorTimeout;
+  let cursorTimeout: any;
   function resetCursorTimeout() {
     showCursor();
     clearTimeout(cursorTimeout);
