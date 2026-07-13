@@ -8,31 +8,42 @@ export const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB
 export const PLACEHOLDER_SRC = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%23222"><rect width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="11" font-family="monospace">no img</text></svg>');
 
 export function escapeHtml(str) {
-  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/`/g, '&#96;');
 }
 
 export function plaintextToHtml(text) {
   if (!text) return '';
   
+  // 1. Escape entire text first to prevent HTML/XSS injection
+  let escaped = escapeHtml(text);
+  
   const links = [];
-  // 1. Convert Markdown links [Text](URL) to placeholder tokens
-  let html = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, label, url) => {
-    links.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+  // 2. Convert Markdown links [Text](URL) to placeholder tokens
+  let html = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, label, url) => {
+    const rawUrl = url.replace(/&amp;/g, '&');
+    links.push(`<a href="${rawUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`);
     return `___LINK_PLACEHOLDER_${links.length - 1}___`;
   });
   
-  // 2. Convert remaining raw URLs to placeholder tokens
-  html = html.replace(/(https?:\/\/[^\s<]+)/g, (match) => {
-    links.push(`<a href="${match}" target="_blank" rel="noopener noreferrer">${match}</a>`);
+  // 3. Convert remaining raw URLs to placeholder tokens
+  html = html.replace(/(https?:\/\/[^\s&<]+(?:&amp;[^\s&<]+)*)/g, (match) => {
+    const rawUrl = match.replace(/&amp;/g, '&');
+    links.push(`<a href="${rawUrl}" target="_blank" rel="noopener noreferrer">${rawUrl}</a>`);
     return `___LINK_PLACEHOLDER_${links.length - 1}___`;
   });
 
-  // 3. Restore all link tokens in order
+  // 4. Restore all link tokens in order
   for (let i = 0; i < links.length; i++) {
     html = html.replace(`___LINK_PLACEHOLDER_${i}___`, links[i]);
   }
 
-  // 4. Convert single newlines to <br>
+  // 5. Convert single newlines to <br>
   html = html.replace(/\r?\n/g, ' <br> ');
   
   return html.trim();

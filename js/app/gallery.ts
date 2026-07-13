@@ -576,6 +576,10 @@ export function buildMasonry(category?: string) {
   let panel = getGalleryPanel(category);
   if (!panel) return;
 
+  panel.querySelectorAll('.photo-card').forEach(function (card) {
+    cardObserver.unobserve(card);
+  });
+
   panel.innerHTML = '';
   let lastYear = null;
   let isMotion = category === 'motion';
@@ -694,64 +698,62 @@ export function buildMasonry(category?: string) {
 }
 
 // Delegated event listeners for gallery cards
-if (typeof window !== 'undefined') {
-  const masonry = domRefs.masonry;
-  if (masonry) {
-    masonry.addEventListener('click', function (e) {
-      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
-      if (!card) return;
-      const idx = parseInt(card.dataset.idx || '0', 10);
-      const cardCategory = card.dataset.category || 'all';
+const masonry = domRefs.masonry;
+if (masonry) {
+  masonry.addEventListener('click', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
 
-      if (state.currentCategory !== cardCategory) {
-        state.currentCategory = cardCategory;
-        updateActivePhotos();
-      }
-      openLightbox(idx, 0, cardCategory === 'motion');
-    });
+    if (state.currentCategory !== cardCategory) {
+      state.currentCategory = cardCategory;
+      updateActivePhotos();
+    }
+    openLightbox(idx, 0, cardCategory === 'motion');
+  });
 
-    masonry.addEventListener('pointerover', function (e) {
-      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
-      if (!card) return;
-      const idx = parseInt(card.dataset.idx || '0', 10);
-      const cardCategory = card.dataset.category || 'all';
+  masonry.addEventListener('pointerover', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
 
-      if (cardCategory === 'motion') return;
-      if (state.currentCategory !== cardCategory) return;
-      scheduleGalleryBlurPreload(idx, 0);
-    });
+    if (cardCategory === 'motion') return;
+    if (state.currentCategory !== cardCategory) return;
+    scheduleGalleryBlurPreload(idx, 0);
+  });
 
-    masonry.addEventListener('focusin', function (e) {
-      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
-      if (!card) return;
-      const idx = parseInt(card.dataset.idx || '0', 10);
-      const cardCategory = card.dataset.category || 'all';
+  masonry.addEventListener('focusin', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
 
-      if (cardCategory === 'motion') return;
-      if (state.currentCategory !== cardCategory) return;
-      scheduleGalleryBlurPreload(idx, 0);
-    });
+    if (cardCategory === 'motion') return;
+    if (state.currentCategory !== cardCategory) return;
+    scheduleGalleryBlurPreload(idx, 0);
+  });
 
-    masonry.addEventListener('touchstart', function (e) {
-      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
-      if (!card) return;
-      const idx = parseInt(card.dataset.idx || '0', 10);
-      const cardCategory = card.dataset.category || 'all';
+  masonry.addEventListener('touchstart', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
 
-      if (cardCategory === 'motion') return;
-      if (state.currentCategory !== cardCategory) return;
-      scheduleGalleryBlurPreload(idx, 0);
-    }, { passive: true });
+    if (cardCategory === 'motion') return;
+    if (state.currentCategory !== cardCategory) return;
+    scheduleGalleryBlurPreload(idx, 0);
+  }, { passive: true });
 
-    masonry.addEventListener('keydown', function (e) {
-      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
-      if (!card) return;
-      const keyEvt = e as KeyboardEvent;
-      if (keyEvt.key === 'Enter' || keyEvt.key === ' ') {
-        keyEvt.preventDefault();
-        card.click();
-      }
-    });
-  }
+  masonry.addEventListener('keydown', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const keyEvt = e as KeyboardEvent;
+    if (keyEvt.key === 'Enter' || keyEvt.key === ' ') {
+      keyEvt.preventDefault();
+      card.click();
+    }
+  });
 }
 

@@ -14,14 +14,16 @@ export function isOriginAllowed(origin, env) {
     const url = new URL(origin);
     const hostname = url.hostname;
     
-    if (
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname.startsWith('192.168.') ||
-      hostname.startsWith('10.') ||
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-    ) {
-      return true;
+    if (env.ENVIRONMENT !== 'production') {
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+      ) {
+        return true;
+      }
     }
   } catch (e) {}
 
@@ -160,13 +162,34 @@ export async function assertAdmin(request, env) {
   const parts = adminToken.split('.');
   if (parts.length === 3) {
     const payload = await verifyJWT(adminToken, env.ADMIN_SECRET);
-    if (payload && payload.exp && payload.exp > Date.now()) {
+    if (payload && payload.exp && payload.exp > Math.floor(Date.now() / 1000)) {
       return { ok: true, token: adminToken };
     }
     return { ok: false, status: 401, error: 'unauthorized: session expired or invalid' };
   }
 
   // 2. Otherwise, check if it's the raw master password (Timing-safe comparison using SHA-256)
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const now = Date.now();
+  const lockoutTime = 15 * 60 * 1000; // 15 minutes
+
+  if (env.DB) {
+    try {
+      const record = await env.DB.prepare(
+        'SELECT attempts, last_attempt FROM rate_limits WHERE ip = ?'
+      ).bind(ip).first();
+
+      if (record) {
+        if (record.attempts >= 5 && (now - record.last_attempt) < lockoutTime) {
+          const remainingSec = Math.ceil((lockoutTime - (now - record.last_attempt)) / 1000);
+          return { ok: false, status: 429, error: `too many login attempts. try again in ${remainingSec} seconds.` };
+        }
+      }
+    } catch (dbErr) {
+      console.error('Rate limit select error:', dbErr);
+    }
+  }
+
   const encoder = new TextEncoder();
   const [tokenHash, secretHash] = await Promise.all([
     crypto.subtle.digest('SHA-256', encoder.encode(adminToken)),
@@ -182,13 +205,35 @@ export async function assertAdmin(request, env) {
   }
 
   if (mismatch !== 0) {
+    if (env.DB) {
+      try {
+        await env.DB.prepare(
+          `INSERT INTO rate_limits (ip, attempts, last_attempt)
+           VALUES (?, 1, ?)
+           ON CONFLICT(ip) DO UPDATE SET
+             attempts = CASE WHEN (? - last_attempt) > ? THEN 1 ELSE attempts + 1 END,
+             last_attempt = ?`
+        ).bind(ip, now, now, lockoutTime, now).run();
+      } catch (dbErr) {
+        console.error('Rate limit increment error:', dbErr);
+      }
+    }
     return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
-  // Correct master password! Issue a secure signed JWT valid for 24 hours
+  // Success! Clear/reset attempts on successful login
+  if (env.DB) {
+    try {
+      await env.DB.prepare('DELETE FROM rate_limits WHERE ip = ?').bind(ip).run();
+    } catch (dbErr) {
+      console.error('Rate limit delete error:', dbErr);
+    }
+  }
+
+  // Correct master password! Issue a secure signed JWT valid for 24 hours (expiry in seconds)
   const payload = {
     sub: 'admin',
-    exp: Date.now() + 24 * 60 * 60 * 1000
+    exp: Math.floor(now / 1000) + 24 * 60 * 60
   };
   const jwt = await signJWT(payload, env.ADMIN_SECRET);
 

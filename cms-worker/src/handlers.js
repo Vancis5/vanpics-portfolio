@@ -30,9 +30,11 @@ async function clearApiCache(request) {
       `${origin}/api/photos`,
       `${origin}/api/photos?limit=50`,
       `${origin}/api/photos?limit=100`,
+      `${origin}/api/photos?limit=500`,
       `${origin}/api/videos`,
       `${origin}/api/videos?limit=50`,
-      `${origin}/api/videos?limit=100`
+      `${origin}/api/videos?limit=100`,
+      `${origin}/api/videos?limit=500`
     ];
     for (const url of urls) {
       const deleted = await cache.delete(new Request(url));
@@ -121,10 +123,15 @@ export async function serveMedia(request, env, params, ctx) {
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Accept-Ranges', 'bytes');
-  headers.set('Access-Control-Allow-Origin', '*');
 
   if (!headers.has('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
     headers.set('Content-Type', inferContentType(fileKey));
+  }
+
+  const contentType = headers.get('Content-Type') || '';
+  const isSafeType = contentType.startsWith('image/') || contentType.startsWith('video/') || contentType.startsWith('audio/');
+  if (!isSafeType) {
+    headers.set('Content-Disposition', 'attachment');
   }
 
   let status = 200;
@@ -183,8 +190,8 @@ export async function listPhotos(request, env, params, ctx) {
 
   const response = new Response(body, {
     headers: {
+      ...corsHeaders(request, env),
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'public, s-maxage=300, max-age=60',
     },
   });
@@ -227,8 +234,8 @@ export async function listVideos(request, env, params, ctx) {
 
   const response = new Response(body, {
     headers: {
+      ...corsHeaders(request, env),
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'public, s-maxage=300, max-age=60',
     },
   });
@@ -633,7 +640,19 @@ export async function replacePhotoFile(request, env, params) {
   const errors = [];
   if (!photoFile || !thumbFile) {
     errors.push('missing processed image assets');
+  } else {
+    if (!isFileLike(photoFile, 'image/')) {
+      errors.push('photo field must be a valid image file');
+    }
+    if (!isFileLike(thumbFile, 'image/')) {
+      errors.push('thumb field must be a valid image file');
+    }
   }
+
+  if (rawFile && !isFileLike(rawFile, 'image/')) {
+    errors.push('raw field must be a valid image file');
+  }
+
   if (isNaN(aspectRatio)) {
     errors.push('invalid aspect ratio');
   }

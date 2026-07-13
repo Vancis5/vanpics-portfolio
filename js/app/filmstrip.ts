@@ -12,20 +12,9 @@ let filmstripTrack = null;
 let filmstripBuilt = false;
 let FILMSTRIP_CONFIG = APP_CONFIG.filmstrip;
 
-function galleryAlreadyHasThumb(thumbPath) {
-  if (!thumbPath) return false;
-  let absolutePath = '';
-  try {
-    absolutePath = new URL(thumbPath, window.location.href).href;
-  } catch (e) { }
-
-  let existingImages = document.querySelectorAll('.photo-card img') as NodeListOf<HTMLImageElement>;
-  for (let i = 0; i < existingImages.length; i++) {
-    let existing = existingImages[i];
-    if (existing.getAttribute('src') !== thumbPath && (!absolutePath || existing.src !== absolutePath)) continue;
-    if (existing.classList.contains('media-loaded') || (existing.complete && existing.naturalWidth > 0)) return true;
-  }
-  return false;
+function galleryAlreadyHasThumb(thumbPath, loadedThumbs) {
+  if (!thumbPath || !loadedThumbs) return false;
+  return loadedThumbs.has(thumbPath);
 }
 
 window.addEventListener('category-change', function () {
@@ -53,6 +42,22 @@ export function buildFilmstrip() {
   if (filmstripBuilt) return;
   filmstripBuilt = true;
 
+  // Pre-compile a Set of loaded gallery thumbnails for O(1) checks
+  const loadedThumbs = new Set<string>();
+  try {
+    const existingImages = document.querySelectorAll('.photo-card img') as NodeListOf<HTMLImageElement>;
+    existingImages.forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && (img.classList.contains('media-loaded') || (img.complete && img.naturalWidth > 0))) {
+        loadedThumbs.add(src);
+        try {
+          const absolutePath = new URL(src, window.location.href).href;
+          loadedThumbs.add(absolutePath);
+        } catch (e) {}
+      }
+    });
+  } catch (err) {}
+
   let currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 
   // Photos: 52px thumb + gap, Motion: 78px thumb
@@ -79,7 +84,7 @@ export function buildFilmstrip() {
     img.loading = 'eager';
     img.decoding = 'async';
     img.fetchPriority = Math.abs(i - state.cur) <= 8 ? 'high' : 'auto';
-    if (galleryAlreadyHasThumb(thumbPath) || (img.complete && img.naturalWidth > 0)) {
+    if (galleryAlreadyHasThumb(thumbPath, loadedThumbs) || (img.complete && img.naturalWidth > 0)) {
       img.classList.add('media-loaded');
     } else {
       let loaded = false;

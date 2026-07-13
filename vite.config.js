@@ -12,7 +12,7 @@ export default {
     outDir: 'dist',
     emptyOutDir: true,
     copyPublicDir: true,
-    target: ['chrome100', 'safari15', 'firefox100', 'edge100'],
+    target: 'es2022',
     rollupOptions: {
       input: {
         main: path.resolve('index.html'),

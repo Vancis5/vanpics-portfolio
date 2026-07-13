@@ -1,13 +1,11 @@
 import { domRefs } from './dom.js';
 
 // Initialize observer
-if (typeof window !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initStickyHeaderObserver);
-  } else {
-    // Run next tick to make sure domRefs are fully initialized
-    setTimeout(initStickyHeaderObserver, 0);
-  }
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initStickyHeaderObserver);
+} else {
+  // Run next tick to make sure domRefs are fully initialized
+  setTimeout(initStickyHeaderObserver, 0);
 }
 
 function initStickyHeaderObserver() {

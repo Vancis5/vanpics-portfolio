@@ -79,6 +79,10 @@ export function initSmoothScroll(options: any = {}) {
   }, { passive: true });
 
   function lenisRaf(time: number) {
+    if (document.hidden) {
+      requestAnimationFrame(lenisRaf);
+      return;
+    }
     const win = window as any;
     if (win.lenis) {
       if (win._scrollbarDragging) {

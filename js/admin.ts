@@ -28,6 +28,7 @@ function getDocEl(id: string): any {
 
 // Form mode state
 let currentMode = 'photo'; // 'photo' or 'video'
+let currentAdminToken = localStorage.getItem('vanpics_admin_token') || sessionStorage.getItem('vanpics_admin_token') || '';
 
 // Dashboard navigation state
 let activeFilter = localStorage.getItem('vanpics_cms_filter_type') || 'all';
@@ -337,7 +338,7 @@ if (closeUtilitiesModalBtn) {
 
 if (runDbSortBtn) {
   runDbSortBtn.addEventListener('click', async () => {
-    const token = secretInput.value.trim();
+    const token = currentAdminToken;
     if (!token) {
       showToast('please verify your admin token first', 'error');
       return;
@@ -389,7 +390,7 @@ if (runDbSortBtn) {
 
 if (purgeCdnCacheBtn) {
   purgeCdnCacheBtn.addEventListener('click', async () => {
-    const token = secretInput.value.trim();
+    const token = currentAdminToken;
     if (!token) {
       showToast('please verify your admin token first', 'error');
       return;
@@ -547,6 +548,7 @@ let verifyTimeout = null;
 if (secretInput) {
   secretInput.addEventListener('input', () => {
     const token = secretInput.value.trim();
+    currentAdminToken = token;
     
     if (rememberCheckbox.checked) {
       localStorage.setItem('vanpics_admin_token', token);
@@ -569,7 +571,7 @@ if (secretInput) {
 
 if (rememberCheckbox) {
   rememberCheckbox.addEventListener('change', () => {
-    const token = secretInput.value.trim();
+    const token = currentAdminToken;
     if (rememberCheckbox.checked) {
       localStorage.setItem('vanpics_admin_token', token);
       sessionStorage.removeItem('vanpics_admin_token');
@@ -622,9 +624,7 @@ async function verifyToken(token) {
     if (res.ok) {
       const data = await res.json();
       if (data && data.token) {
-        if (secretInput) {
-          secretInput.value = data.token;
-        }
+        currentAdminToken = data.token;
         if (rememberCheckbox && rememberCheckbox.checked) {
           localStorage.setItem('vanpics_admin_token', data.token);
         } else {
@@ -1241,7 +1241,7 @@ if (editForm) {
 
     const id = currentlyEditingItem.id;
     const type = currentlyEditingItem.type;
-    const token = secretInput.value.trim();
+    const token = currentAdminToken;
 
     const payload: any = {
       title: getDocEl('edit-title').value,
@@ -1310,7 +1310,7 @@ if (editForm) {
 
 // Delete CRUD Action
 async function deleteItem(type, id, title) {
-  const token = secretInput.value.trim();
+  const token = currentAdminToken;
   try {
     const res = await deleteArchiveItem(type, id, token);
     
@@ -1355,7 +1355,7 @@ if (form) {
     submitBtn.disabled = true;
     submitBtnText.innerText = 'cataloging...';
     
-    const token = secretInput.value.trim();
+    const token = currentAdminToken;
     const formData = new FormData();
 
     formData.append('title', getDocEl('title').value);
