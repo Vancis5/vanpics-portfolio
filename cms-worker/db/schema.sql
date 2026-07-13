@@ -29,3 +29,10 @@ CREATE TABLE IF NOT EXISTS videos (
   music TEXT DEFAULT '',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  ip TEXT PRIMARY KEY,
+  attempts INTEGER DEFAULT 0,
+  last_attempt INTEGER
+);
+

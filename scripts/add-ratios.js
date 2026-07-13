@@ -27,7 +27,7 @@ async function addRatios() {
   const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
 
   // Extract array using markers
-  const startMarker = 'var photos = [';
+  const startMarker = 'export const photos = [';
   const endMarker = '];';
   
   const startIndex = content.indexOf(startMarker);
@@ -45,7 +45,7 @@ async function addRatios() {
   // Parse the array safely
   let photos;
   try {
-    photos = eval(`[${arrayContent}]`);
+    photos = new Function('return [' + arrayContent + ']')();
   } catch (e) {
     console.error('Error parsing photos array:', e.message);
     return;

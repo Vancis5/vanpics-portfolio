@@ -70,6 +70,7 @@
   --text-muted: rgba(221, 216, 207, 0.48);
   --text-faint: rgba(221, 216, 207, 0.22);
   --border: rgba(221, 216, 207, 0.09);
+  --font-mono: 'DM Mono', monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --browser-bottom: 0px;
@@ -106,7 +107,7 @@ html::-webkit-scrollbar {
   width: 32px;
   /* Large invisible hit zone at the edge */
   z-index: 10000;
-  pointer-events: all;
+  pointer-events: auto;
   transition: opacity 0.4s ease;
 }
 
@@ -222,10 +223,10 @@ body::after {
 
 @media (hover: hover) and (pointer: fine) {
 
-  html,
-  body,
-  body *:not(.zoomable) {
-    cursor: none !important;
+  html.custom-cursor-enabled,
+  html.custom-cursor-enabled body,
+  html.custom-cursor-enabled body *:not(.zoomable) {
+    cursor: none;
   }
 
   #cursor {
@@ -1143,7 +1144,7 @@ body::after {
 
 #lightbox.open {
   opacity: 1;
-  pointer-events: all;
+  pointer-events: auto;
 }
 
 #lightbox-bg {
@@ -1881,7 +1882,7 @@ body::after {
 #filmstrip-wrap.visible {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: all;
+  pointer-events: auto;
 }
 
 #filmstrip {
@@ -2022,7 +2023,7 @@ body::after {
     height: 80px;
     z-index: 9;
     /* just below filmstrip-wrap (z-index: 10) */
-    pointer-events: all;
+    pointer-events: auto;
     cursor: default;
   }
 }
@@ -2404,11 +2405,7 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   }
 }
 
-/* Prevent horizontal shift by locking the scrollbar gutter */
-html {
-  scrollbar-gutter: stable !important;
-  overflow-y: scroll !important;
-}
+
 
 
 

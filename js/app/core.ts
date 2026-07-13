@@ -74,8 +74,7 @@ if (glowBall && domRefs.hero) {
 
       glowX += (glowTargetX - glowX) * 0.08;
       glowY += (glowTargetY - glowY) * 0.08;
-      glowBall.style.left = glowX + 'px';
-      glowBall.style.top = glowY + 'px';
+      glowBall.style.transform = `translate(-50%, -50%) translate3d(${glowX}px, ${glowY}px, 0)`;
     } catch (error) {
       console.error('Error in glow animation loop:', error);
       state.glowRafId = null;

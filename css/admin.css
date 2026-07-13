@@ -840,7 +840,7 @@
 
     .modal-overlay.open {
       opacity: 1;
-      pointer-events: all;
+      pointer-events: auto;
     }
 
     .modal-wrapper {
@@ -1917,7 +1917,7 @@
       align-items: center;
       justify-content: center;
       opacity: 1;
-      pointer-events: all;
+      pointer-events: auto;
       transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
       padding: 1.5rem;
     }

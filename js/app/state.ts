@@ -53,14 +53,12 @@ state.carouselPhotos.slice(0, 6).forEach(function (photo) {
   img.src = photo.thumb || photo.src;
 });
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', function () {
-    state.lastInputType = 'keyboard';
-  }, { passive: true });
-  window.addEventListener('mousedown', function () {
-    state.lastInputType = 'pointer';
-  }, { passive: true });
-  window.addEventListener('touchstart', function () {
-    state.lastInputType = 'pointer';
-  }, { passive: true });
-}
+window.addEventListener('keydown', function () {
+  state.lastInputType = 'keyboard';
+}, { passive: true });
+window.addEventListener('mousedown', function () {
+  state.lastInputType = 'pointer';
+}, { passive: true });
+window.addEventListener('touchstart', function () {
+  state.lastInputType = 'pointer';
+}, { passive: true });

@@ -3,6 +3,7 @@ import { domRefs } from './dom.js';
 // CURSOR - mouse only
 let isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 if (isMouseDevice) {
+  document.documentElement.classList.add('custom-cursor-enabled');
   let cursor = domRefs.cursor;
   let ring = domRefs.cursorRing;
   let mx = 0, my = 0, rx = 0, ry = 0;

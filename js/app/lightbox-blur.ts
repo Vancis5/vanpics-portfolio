@@ -37,13 +37,24 @@ export class WebGLBlurRenderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.onContextLost();
+    }, false);
+    
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.onContextRestored();
+    }, false);
+
     this.gl = canvas.getContext('webgl', {
       alpha: true,
       depth: false,
       stencil: false,
       antialias: false,
       premultipliedAlpha: false
-    });
+    }) as WebGLRenderingContext;
+    
     if (!this.gl) {
       console.warn('WebGL context creation failed');
       return;
@@ -75,6 +86,45 @@ export class WebGLBlurRenderer {
     this.initFramebuffers();
     this.initDummyTextures();
 
+    this.textures.prev = this.dummyTexture;
+    this.textures.current = this.dummyTexture;
+    this.mixFactor = 1.0;
+    this.render();
+  }
+
+  onContextLost() {
+    console.warn('WebGL context lost');
+    this.stopAnimation();
+    this.progLiquid = null;
+    this.progDown = null;
+    this.progUp = null;
+    this.quadBuffer = null;
+    this.fbos = [];
+    this.textures.prev = null;
+    this.textures.current = null;
+    this.dummyTexture = null;
+  }
+
+  onContextRestored() {
+    console.info('WebGL context restored');
+    const gl = this.canvas.getContext('webgl', {
+      alpha: true,
+      depth: false,
+      stencil: false,
+      antialias: false,
+      premultipliedAlpha: false
+    }) as WebGLRenderingContext;
+    if (!gl) return;
+    this.gl = gl;
+    
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    
+    this.initShaders();
+    this.initBuffers();
+    this.initFramebuffers();
+    this.initDummyTextures();
+    
     this.textures.prev = this.dummyTexture;
     this.textures.current = this.dummyTexture;
     this.mixFactor = 1.0;
@@ -410,6 +460,9 @@ export class WebGLBlurRenderer {
     let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
       this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
+      if (this.mixFactor === 1.0) {
+        this.animating = false;
+      }
     }
 
     let easedMix = easeOutExpoLike(this.mixFactor);

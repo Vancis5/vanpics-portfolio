@@ -10,7 +10,7 @@ export function renderSingleCardHtml(p) {
   return `
     <div class="asset-card" data-id="${p.id}" data-type="${p.type}" style="cursor: pointer;">
       <div class="card-preview-wrapper">
-        <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
+        <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src='${PLACEHOLDER_SRC}'">
         ${isVideo ? `
           <div class="video-play-indicator">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
