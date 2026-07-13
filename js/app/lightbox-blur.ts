@@ -16,26 +16,26 @@ function solveCubicBezier(x1: number, y1: number, x2: number, y2: number) {
 const easeOutExpoLike = solveCubicBezier(0.15, 1.0, 0.4, 1.0);
 
 export class WebGLBlurRenderer {
-  canvas: any;
-  gl: any;
+  canvas: HTMLCanvasElement;
+  gl: WebGLRenderingContext;
   width: number;
   height: number;
   startTime: number;
   animating: boolean;
   mixFactor: number;
   transitionSpeed: number;
-  animationId: any;
+  animationId: number | null;
   dirPrev: number;
   dirCurr: number;
-  textures: { prev: any; current: any; };
-  progLiquid: any;
-  progDown: any;
-  progUp: any;
-  fbos: any;
-  dummyTexture: any;
-  quadBuffer: any;
+  textures: { prev: WebGLTexture | null; current: WebGLTexture | null; };
+  progLiquid: WebGLProgram | null;
+  progDown: WebGLProgram | null;
+  progUp: WebGLProgram | null;
+  fbos: Array<{ fbo: WebGLFramebuffer | null; texture: WebGLTexture | null; w: number; h: number; }>;
+  dummyTexture: WebGLTexture | null;
+  quadBuffer: WebGLBuffer | null;
 
-  constructor(canvas: any) {
+  constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.gl = canvas.getContext('webgl', {
       alpha: true,
