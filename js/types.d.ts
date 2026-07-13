@@ -1,3 +1,5 @@
+import Lenis from 'lenis';
+
 export interface Photo {
   id?: string | number;
   src: string;
@@ -37,8 +39,8 @@ export type MediaItem = (Photo & { type: 'photo' }) | (Video & { type: 'video' }
 
 declare global {
   interface Window {
-    lenis?: any;
-    fsLenis?: any;
+    lenis?: Lenis;
+    fsLenis?: Lenis;
     _scrollbarDragging?: boolean;
     deletePhoto?: (id: string | number, title?: string) => Promise<void>;
     dropZone?: HTMLElement;

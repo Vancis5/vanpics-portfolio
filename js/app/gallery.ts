@@ -668,46 +668,8 @@ export function buildMasonry(category?: string) {
     card.appendChild(imgEl);
     card.appendChild(overlay);
 
-    card.addEventListener('click', (function (idx, cardCategory) {
-      return function () {
-        if (state.currentCategory !== cardCategory) {
-          state.currentCategory = cardCategory;
-          updateActivePhotos();
-        }
-        openLightbox(idx, 0, cardCategory === 'motion');
-      };
-    })(i, category));
-
-    card.addEventListener('pointerenter', (function (idx, cardCategory) {
-      return function () {
-        if (cardCategory === 'motion') return;
-        if (state.currentCategory !== cardCategory) return;
-        scheduleGalleryBlurPreload(idx, 0);
-      };
-    })(i, category));
-
-    card.addEventListener('focus', (function (idx, cardCategory) {
-      return function () {
-        if (cardCategory === 'motion') return;
-        if (state.currentCategory !== cardCategory) return;
-        scheduleGalleryBlurPreload(idx, 0);
-      };
-    })(i, category));
-
-    card.addEventListener('touchstart', (function (idx, cardCategory) {
-      return function () {
-        if (cardCategory === 'motion') return;
-        if (state.currentCategory !== cardCategory) return;
-        scheduleGalleryBlurPreload(idx, 0);
-      };
-    })(i, category), { passive: true });
-
-    card.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        card.click();
-      }
-    });
+    card.dataset.idx = String(i);
+    card.dataset.category = category;
 
     if (isMotion) {
       yearGrid.appendChild(card);
@@ -730,3 +692,66 @@ export function buildMasonry(category?: string) {
 
   if (category === state.currentCategory) setTimeout(function () { revealCards(panel); }, 150);
 }
+
+// Delegated event listeners for gallery cards
+if (typeof window !== 'undefined') {
+  const masonry = domRefs.masonry;
+  if (masonry) {
+    masonry.addEventListener('click', function (e) {
+      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx || '0', 10);
+      const cardCategory = card.dataset.category || 'all';
+
+      if (state.currentCategory !== cardCategory) {
+        state.currentCategory = cardCategory;
+        updateActivePhotos();
+      }
+      openLightbox(idx, 0, cardCategory === 'motion');
+    });
+
+    masonry.addEventListener('pointerover', function (e) {
+      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx || '0', 10);
+      const cardCategory = card.dataset.category || 'all';
+
+      if (cardCategory === 'motion') return;
+      if (state.currentCategory !== cardCategory) return;
+      scheduleGalleryBlurPreload(idx, 0);
+    });
+
+    masonry.addEventListener('focusin', function (e) {
+      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx || '0', 10);
+      const cardCategory = card.dataset.category || 'all';
+
+      if (cardCategory === 'motion') return;
+      if (state.currentCategory !== cardCategory) return;
+      scheduleGalleryBlurPreload(idx, 0);
+    });
+
+    masonry.addEventListener('touchstart', function (e) {
+      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx || '0', 10);
+      const cardCategory = card.dataset.category || 'all';
+
+      if (cardCategory === 'motion') return;
+      if (state.currentCategory !== cardCategory) return;
+      scheduleGalleryBlurPreload(idx, 0);
+    }, { passive: true });
+
+    masonry.addEventListener('keydown', function (e) {
+      const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+      if (!card) return;
+      const keyEvt = e as KeyboardEvent;
+      if (keyEvt.key === 'Enter' || keyEvt.key === ' ') {
+        keyEvt.preventDefault();
+        card.click();
+      }
+    });
+  }
+}
+
