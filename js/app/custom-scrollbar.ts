@@ -15,6 +15,8 @@ export let updateCustomScrollbar = function () {};
   let fadeTimer = null;
   let SCROLLBAR_CONFIG = APP_CONFIG.scrollbar;
   let cachedYearOffsets: Array<{ absTop: number; year: string }> | null = null;
+  let cachedDocH: number | null = null;
+  let cachedWinH: number | null = null;
 
   // Create and inject the year tag
   let yearTag = document.createElement('div');
@@ -33,7 +35,7 @@ export let updateCustomScrollbar = function () {};
   }
 
   function updateYearTag(thumbY: number, thumbH: number, targetScrollPos: number) {
-    let winH = window.innerHeight;
+    let winH = cachedWinH !== null ? cachedWinH : window.innerHeight;
     let activeYear = null;
 
     if (!cachedYearOffsets) {
@@ -74,9 +76,15 @@ export let updateCustomScrollbar = function () {};
   }
 
   function updateThumb() {
-    cachedYearOffsets = null; // Invalidate cache on resize/scroll range change
-    let winH = window.innerHeight;
-    let docH = document.documentElement.scrollHeight;
+    if (cachedWinH === null) {
+      cachedWinH = window.innerHeight;
+    }
+    if (cachedDocH === null) {
+      cachedDocH = document.documentElement.scrollHeight;
+    }
+
+    let winH = cachedWinH;
+    let docH = cachedDocH;
     let scrollT = window.pageYOffset || document.documentElement.scrollTop;
 
     if (docH <= winH + 5) {
@@ -111,10 +119,14 @@ export let updateCustomScrollbar = function () {};
     // Kill any ongoing smooth animation
     if ((window as any).lenis) (window as any).lenis.scrollTo(window.scrollY, { immediate: true });
     (window as any)._scrollbarDragging = true;
-    cachedYearOffsets = null; // Invalidate cache on click/drag start to guarantee fresh measurements
 
-    let winH = window.innerHeight;
-    let docH = document.documentElement.scrollHeight;
+    // Invalidate caches on drag start to guarantee fresh measurements
+    cachedYearOffsets = null;
+    cachedDocH = document.documentElement.scrollHeight;
+    cachedWinH = window.innerHeight;
+
+    let winH = cachedWinH;
+    let docH = cachedDocH;
     let thumbH = parseFloat(thumb.style.height);
     let maxTrack = winH - thumbH;
     let maxScroll = docH - winH;
@@ -143,8 +155,11 @@ export let updateCustomScrollbar = function () {};
   window.addEventListener('mousemove', function (e) {
     if (!isDragging) return;
     let deltaY = e.clientY - startY;
-    let winH = window.innerHeight;
-    let docH = document.documentElement.scrollHeight;
+
+    if (cachedWinH === null) cachedWinH = window.innerHeight;
+    if (cachedDocH === null) cachedDocH = document.documentElement.scrollHeight;
+    let winH = cachedWinH;
+    let docH = cachedDocH;
     let thumbH = parseFloat(thumb.style.height);
     let maxTrack = winH - thumbH;
     let maxScroll = docH - winH;
@@ -192,11 +207,18 @@ export let updateCustomScrollbar = function () {};
     }
   });
 
-  window.addEventListener('resize', updateThumb);
-  window.addEventListener('load', updateThumb);
+  function invalidateSizeCache() {
+    cachedDocH = null;
+    cachedWinH = null;
+    cachedYearOffsets = null;
+    updateThumb();
+  }
+
+  window.addEventListener('resize', invalidateSizeCache);
+  window.addEventListener('load', invalidateSizeCache);
 
   if (window.ResizeObserver) {
-    new ResizeObserver(updateThumb).observe(document.body);
+    new ResizeObserver(invalidateSizeCache).observe(document.body);
   }
 
   updateCustomScrollbar = updateThumb;

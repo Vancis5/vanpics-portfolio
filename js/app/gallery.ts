@@ -432,7 +432,7 @@ function setActiveGalleryPanel(category: string, options?: any) {
   let gallerySec = domRefs.gallerySection;
   if (!masonry) return null;
 
-  let activePanel = null;
+  let activePanel: HTMLElement | null = null;
   GALLERY_CATEGORIES.forEach(function (cat) {
     let panel = getGalleryPanel(cat);
     if (!panel) return;
@@ -580,9 +580,9 @@ export function buildMasonry(category?: string) {
   let lastYear = null;
   let isMotion = category === 'motion';
   let items = getCategoryItems(category);
-  let yearGrid = null;
-  let columns = [];
-  let colHeights = [];
+  let yearGrid: HTMLDivElement | null = null;
+  let columns: HTMLDivElement[] = [];
+  let colHeights: number[] = [];
   let numCols = getMasonryColumnCount();
 
   items.forEach(function (p, i) {

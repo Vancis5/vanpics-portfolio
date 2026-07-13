@@ -102,43 +102,14 @@ export function buildCarousel() {
   // rows stay visible; eager images handle their own fade-in
   activeRows.forEach(function (r) { r.style.opacity = '1'; });
 
-  let groups = [];
+  let groups: any[][] = [];
   for (let g = 0; g < activeRowCount; g++) groups.push([]);
   state.carouselPhotos.forEach(function (p, i) { groups[i % activeRowCount].push(p); });
 
-  let eagerImgs = [];
-  let criticalImgs = [];
+  let eagerImgs: HTMLImageElement[] = [];
+  let criticalImgs: HTMLImageElement[] = [];
 
   activeRows.forEach(function (row, ri) {
-    // Add event listeners for mouse/touch down
-    row.addEventListener('mousedown', function (e) {
-      isDragging = true;
-      dragRowIndex = ri;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-      dragStartOffset = rowState[ri].offset;
-      dragWrapAdjust = 0;
-      globalHasDragged = false;
-      dragHistory = [{ x: e.clientX, time: performance.now() }];
-      rowState[ri].velocity = 0;
-      rowState[ri].hasMomentum = false;
-    });
-
-    row.addEventListener('touchstart', function (e) {
-      if (e.touches.length > 0) {
-        isDragging = true;
-        dragRowIndex = ri;
-        dragStartX = e.touches[0].clientX;
-        dragStartY = e.touches[0].clientY;
-        dragStartOffset = rowState[ri].offset;
-        dragWrapAdjust = 0;
-        globalHasDragged = false;
-        dragHistory = [{ x: e.touches[0].clientX, time: performance.now() }];
-        rowState[ri].velocity = 0;
-        rowState[ri].hasMomentum = false;
-      }
-    }, { passive: true });
-
     let group = groups[ri].length > 0 ? groups[ri] : state.carouselPhotos;
     let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
 
@@ -441,3 +412,38 @@ export function recalculateCarouselLayout() {
     }
   });
 }
+
+// Bind row drag events once on load
+if (typeof window !== 'undefined') {
+  domRefs.heroRows.forEach(function (row, ri) {
+    if (!row) return;
+    row.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      dragRowIndex = ri;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragStartOffset = rowState[ri].offset;
+      dragWrapAdjust = 0;
+      globalHasDragged = false;
+      dragHistory = [{ x: e.clientX, time: performance.now() }];
+      rowState[ri].velocity = 0;
+      rowState[ri].hasMomentum = false;
+    });
+
+    row.addEventListener('touchstart', function (e) {
+      if (e.touches.length > 0) {
+        isDragging = true;
+        dragRowIndex = ri;
+        dragStartX = e.touches[0].clientX;
+        dragStartY = e.touches[0].clientY;
+        dragStartOffset = rowState[ri].offset;
+        dragWrapAdjust = 0;
+        globalHasDragged = false;
+        dragHistory = [{ x: e.touches[0].clientX, time: performance.now() }];
+        rowState[ri].velocity = 0;
+        rowState[ri].hasMomentum = false;
+      }
+    }, { passive: true });
+  });
+}
+

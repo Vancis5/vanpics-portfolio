@@ -1,6 +1,8 @@
-export let photoLibrary = [];
+import type { Photo, Video } from '../types.js';
 
-export let motionProjects = [];
+export let photoLibrary: Photo[] = [];
+
+export let motionProjects: Video[] = [];
 
 function parseDate(item) {
   if (!item.date) return new Date(0);
