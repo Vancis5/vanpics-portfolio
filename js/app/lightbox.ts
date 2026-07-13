@@ -8,19 +8,21 @@ import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 import { WebGLBlurRenderer } from './lightbox-blur.js';
 
+import { Photo, Video } from '../types.js';
+
 let blurToken = 0;
-let blurPreloadTimer = null;
-let mobileScrollToSlideCallback = null;
-let photoPlaceholderTimer = null;
+let blurPreloadTimer: any = null;
+let mobileScrollToSlideCallback: ((i: number, immediate: boolean, dir: number) => void) | null = null;
+let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;
-let swipeNeighborsCallback = null;
-let previouslyFocusedElement = null;
+let swipeNeighborsCallback: (() => void) | null = null;
+let previouslyFocusedElement: HTMLElement | null = null;
 
 // In-memory decoded image cache — prevents placeholder flash on revisited photos
 const _imgCache = new Map();
 const _IMG_CACHE_MAX = 30;
 
-function _cacheImage(src) {
+function _cacheImage(src: string) {
   if (!src) return null;
   if (_imgCache.has(src)) return _imgCache.get(src);
   if (_imgCache.size >= _IMG_CACHE_MAX) _imgCache.delete(_imgCache.keys().next().value); // evict oldest
@@ -29,7 +31,7 @@ function _cacheImage(src) {
   const entry = {
     img,
     decoded: false,
-    decodePromise: null
+    decodePromise: null as Promise<any> | null
   };
   entry.decodePromise = new Promise(resolve => {
     function markDecoded() {
@@ -63,7 +65,7 @@ function _cacheImage(src) {
   return entry;
 }
 
-function getLightboxBlurPath(src) {
+function getLightboxBlurPath(src: string) {
   if (!src) return '';
   if (src.includes('photos/') && !src.includes('photos/thumbs/')) {
     return src.replace('photos/', 'photos/thumbs/');
@@ -71,21 +73,21 @@ function getLightboxBlurPath(src) {
   return src;
 }
 
-function getCachedImageDecode(src) {
+function getCachedImageDecode(src: string) {
   let cached = _cacheImage(src);
   if (!cached) return Promise.resolve(null);
   if (cached.decoded) return Promise.resolve(cached);
   return cached.decodePromise || Promise.resolve(cached);
 }
 
-export function preloadLightboxBlurNeighbors(centerIndex, range) {
+export function preloadLightboxBlurNeighbors(centerIndex: number, range?: number) {
   if (state.currentLightboxIsMotion) return;
 
   let currentSet = getCurrentLightboxItems();
   let len = currentSet.length;
   if (!len) return;
 
-  let preloadRange = Number.isFinite(range) ? range : 6;
+  let preloadRange = (range !== undefined && Number.isFinite(range)) ? range : 6;
   for (let offset = -preloadRange; offset <= preloadRange; offset++) {
     let p = currentSet[(centerIndex + offset + len) % len];
     if (!p) continue;
@@ -94,7 +96,7 @@ export function preloadLightboxBlurNeighbors(centerIndex, range) {
   }
 }
 
-function scheduleLightboxBlurNeighborPreload(centerIndex, delay) {
+function scheduleLightboxBlurNeighborPreload(centerIndex: number, delay?: number) {
   if (blurPreloadTimer) {
     clearTimeout(blurPreloadTimer);
     blurPreloadTimer = null;
@@ -106,7 +108,7 @@ function scheduleLightboxBlurNeighborPreload(centerIndex, delay) {
   }, delay || 0);
 }
 
-export function setMobileScrollToSlideCallback(callback) {
+export function setMobileScrollToSlideCallback(callback: ((i: number, immediate: boolean, dir: number) => void) | null) {
   mobileScrollToSlideCallback = typeof callback === 'function' ? callback : null;
 }
 
@@ -127,7 +129,7 @@ function refreshLightboxInfoRefs() {
   return info;
 }
 
-let blurRenderer = null;
+let blurRenderer: WebGLBlurRenderer | null = null;
 
 function initBlurRenderer() {
   if (blurRenderer) return;
@@ -136,7 +138,7 @@ function initBlurRenderer() {
   blurRenderer = new WebGLBlurRenderer(canvas);
 }
 
-export function setLightboxBlur(src) {
+export function setLightboxBlur(src: string) {
   if (!src) return;
 
   initBlurRenderer();
@@ -228,7 +230,7 @@ function showLightboxPhotoError(expectedToken?: number) {
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = 'image failed to load';
 }
 
-export function prepareLightboxPhoto(p) {
+export function prepareLightboxPhoto(p: Photo) {
   let img = domRefs.lightboxImg;
   let wrap = domRefs.lightboxImgWrap;
   if (!img || !wrap || !p) return;
@@ -321,7 +323,7 @@ export function prepareLightboxPhoto(p) {
   }
 }
 
-function runDescFlipTransition(options) {
+function runDescFlipTransition(options: any) {
   let imgWrap = domRefs.lightboxImgWrap;
   let infoWrap = domRefs.lightboxInfoWrap;
   let applyLayoutChange = options.applyLayoutChange;
@@ -362,13 +364,13 @@ function runDescFlipTransition(options) {
       }, 450);
     });
   });
-} function rgbToHsl(r, g, b) {
+} function rgbToHsl(r: number, g: number, b: number) {
   r /= 255;
   g /= 255;
   b /= 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
+  let h: number = 0, s: number = 0, l = (max + min) / 2;
 
   if (max === min) {
     h = s = 0; // achromatic
@@ -399,7 +401,7 @@ function resetDynamicTextColor() {
   }
 }
 
-function updateDynamicTextColor(p) {
+function updateDynamicTextColor(p: Photo) {
   if (state.currentLightboxIsMotion) {
     resetDynamicTextColor();
     return;
@@ -427,6 +429,7 @@ function updateDynamicTextColor(p) {
       canvas.width = 10;
       canvas.height = 10;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
       ctx.drawImage(cached.img, 0, 0, 10, 10);
       const imgData = ctx.getImageData(0, 0, 10, 10).data;
 
@@ -489,17 +492,17 @@ function updateDynamicTextColor(p) {
 }
 
 // updates text + blur bg only — image src is set separately to avoid double-load
-export function setLightboxContent(p, options?: any) {
+export function setLightboxContent(p: Photo | Video, options?: any) {
   if (!p) return;
   options = options || {};
   refreshLightboxInfoRefs();
   if (options.deferDynamicTextColor) {
     resetDynamicTextColor();
     scheduleAfterMotionFrame(function () {
-      updateDynamicTextColor(p);
+      updateDynamicTextColor(p as Photo);
     }, 180);
   } else {
-    updateDynamicTextColor(p);
+    updateDynamicTextColor(p as Photo);
   }
 
   let safeTitle = p.title || '';
@@ -540,8 +543,9 @@ export function setLightboxContent(p, options?: any) {
   }
 
   let musicItem = domRefs.metaMusic;
-  if (p.music) {
-    if (domRefs.metaMusicText) domRefs.metaMusicText.textContent = p.music;
+  const music = (p as Video).music;
+  if (music) {
+    if (domRefs.metaMusicText) domRefs.metaMusicText.textContent = music;
     if (musicItem) musicItem.style.display = 'inline-flex';
   } else if (musicItem) {
     musicItem.style.display = 'none';
@@ -553,12 +557,12 @@ export function setLightboxContent(p, options?: any) {
   let newHash = '#' + catSlug + '/' + slug;
   if (slug && window.location.hash !== newHash) {
     if (state.isPopState) {
-      history.replaceState(null, null, newHash);
+      history.replaceState(null, '', newHash);
     } else if (state.pushNextState) {
-      history.pushState(null, null, newHash);
+      history.pushState(null, '', newHash);
       state.pushNextState = false;
     } else {
-      history.replaceState(null, null, newHash);
+      history.replaceState(null, '', newHash);
     }
   }
 
@@ -613,10 +617,10 @@ function updateLightboxDescPreview() {
 }
 
 
-export function animateInfo(dir) {
+export function animateInfo(dir: number) {
   let info = domRefs.lightboxInfo;
   if (!info || !info.parentNode) {
-    domRefs.lightboxInfo = domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null;
+    domRefs.lightboxInfo = (domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null) as HTMLElement;
     info = domRefs.lightboxInfo;
     if (!info || !info.parentNode) return;
   }
@@ -663,7 +667,7 @@ export function animateInfo(dir) {
 // increments each navigation so stale callbacks from aborted navigations are ignored
 let navGen = 0;
 
-function scheduleAfterMotionFrame(callback, delay) {
+function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
   requestAnimationFrame(function () {
     setTimeout(callback, delay || 0);
   });
@@ -748,11 +752,11 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       // Update content & blur immediately so all layout changes (desc show/hide,
       // meta items, etc.) are fully settled before the animation RAF fires.
       // This prevents desc-related layout shifts mid-slide-in.
-      let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
+      let bSrc = isMotion ? (p.thumb || '') : (p.thumb || p.src || '');
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) {
-        prepareLightboxPhoto(p);
+        prepareLightboxPhoto(p as Photo);
         loadSwipeNeighbors();
       }
 
@@ -762,7 +766,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
         void img.offsetWidth; // force reflow
 
         if (isMotion) {
-          renderVideoInLightbox(p);
+          renderVideoInLightbox(p as Video);
           playerShell.style.transition = 'opacity 0.35s ease';
           playerShell.style.opacity = '1';
         } else {
@@ -784,7 +788,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
   } else {
     // INITIAL OPEN
     let openGen = ++navGen;
-    previouslyFocusedElement = document.activeElement;
+    previouslyFocusedElement = document.activeElement as HTMLElement | null;
 
     // media starts invisible — no content yet
     img.onload = null; img.onerror = null;
@@ -873,7 +877,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
         img.onerror = null;
       }
 
-      let bSrc = isMotion ? p.thumb : (p.thumb || p.src);
+      let bSrc = isMotion ? (p.thumb || '') : (p.thumb || p.src || '');
       setLightboxBlur(bSrc);
       setLightboxContent(p);
       if (!isMotion) loadSwipeNeighbors();
@@ -886,7 +890,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
         void img.offsetWidth; // force reflow — Firefox transition fix
 
         if (isMotion) {
-          renderVideoInLightbox(p);
+          renderVideoInLightbox(p as Video);
           playerShell.style.transition = 'opacity 0.45s ease';
           playerShell.style.opacity = '1';
         } else {
@@ -901,25 +905,25 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       if (isMotion) {
         afterOpenLoad();
       } else {
-        prepareLightboxPhoto(p);
+        prepareLightboxPhoto(p as Photo);
         afterOpenLoad();
       }
     });
   }
 }
 
-export function renderVideoInLightbox(p) {
+export function renderVideoInLightbox(p: Video) {
   let shell = domRefs.motionPlayerShell;
   if (!shell) return;
   let ratio = p.aspectRatio || (16 / 9);
-  shell.style.aspectRatio = ratio;
+  shell.style.aspectRatio = String(ratio);
   shell.style.width = 'min(100%, calc((100svh - 15rem) * ' + ratio + '))';
   shell.innerHTML = getVideoPlayerMarkup(p);
   shell.style.opacity = '1';
   shell.style.display = 'block'; // Ensure it's not hidden
 }
 
-export function startUnifiedMotionPlayer(id) {
+export function startUnifiedMotionPlayer(id: string) {
   let prime = document.getElementById(id);
   if (!prime) return;
   let video = prime.querySelector('video');
@@ -995,10 +999,11 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
     // Restart Lenis and sync state once transition has a head start
     setTimeout(function () {
-      if ((window as any).lenis) {
-        (window as any).lenis.start();
-        (window as any).lenis.animatedScroll = (window as any).lenis.targetScroll = window.scrollY;
-        (window as any).lenis.emit(); // Force sync of all UI driven by scroll hub
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.start();
+        lenis.animatedScroll = lenis.targetScroll = window.scrollY;
+        lenis.emit(); // Force sync of all UI driven by scroll hub
       }
     }, 400);
   });
@@ -1020,7 +1025,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   // Reset hash to category on close
   if (window.location.hash && !state.isPopState) {
     let catSlug = getCategorySlug(state.currentCategory);
-    history.pushState(null, null, '#' + catSlug);
+    history.pushState(null, '', '#' + catSlug);
   }
 
   // Delay DOM teardown until the opacity fade finishes
@@ -1074,7 +1079,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
       state.lbZoomLevel = 1;
       state.lbZoomPanX = 0;
       state.lbZoomPanY = 0;
-      let slides = mWrap ? mWrap.querySelectorAll('.snap-slide') : [];
+      let slides = mWrap ? mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement> : [];
       for (let si = 0; si < slides.length; si++) {
         slides[si].style.opacity = '';
         slides[si].style.transition = '';
@@ -1152,11 +1157,11 @@ export function loadSwipeNeighbors() {
   }
 }
 
-export function setLoadSwipeNeighbors(fn) {
+export function setLoadSwipeNeighbors(fn: (() => void) | null) {
   swipeNeighborsCallback = fn;
 }
 
-export function navigateLightbox(d) {
+export function navigateLightbox(d: number) {
   if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) resetZoom();
   let currentSet = getCurrentLightboxItems();
   state.cur = (state.cur + d + currentSet.length) % currentSet.length;

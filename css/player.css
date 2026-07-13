@@ -445,7 +445,7 @@ media-tooltip-group {
   align-items: center;
   justify-content: center;
   flex: 1;
-  border-radius: calc(infinity * 1px);
+  border-radius: 9999px;
   outline: none;
   cursor: pointer;
 }
@@ -487,7 +487,7 @@ media-tooltip-group {
   width: 0.75rem;
   height: 0.75rem;
   background-color: currentColor;
-  border-radius: calc(infinity * 1px);
+  border-radius: 9999px;
   box-shadow: 0 0 0 1px var(--media-controls-current-shadow-color-subtle, oklch(0 0 0 / 0.1)), 0 1px 3px 0 oklch(0 0 0 / 0.15), 0 1px 2px -1px oklch(0 0 0 / 0.15);
   opacity: 0;
   scale: 0.7;

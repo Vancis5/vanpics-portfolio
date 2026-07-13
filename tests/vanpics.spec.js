@@ -195,3 +195,21 @@ test.describe('mobile lightbox', () => {
     await expectMobileSlideRendered(page, 1);
   });
 });
+
+test('navigates lightbox using keyboard arrow keys', async ({ page }) => {
+  await waitForGallery(page);
+
+  // Open the first photo (collateral)
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+  await expect(page.locator('#lightbox-title')).toHaveText('collateral');
+
+  // Press ArrowRight to go to the next photo (depths)
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#lightbox-title')).toHaveText('depths');
+
+  // Press ArrowLeft to go back to the first photo (collateral)
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.locator('#lightbox-title')).toHaveText('collateral');
+});
+

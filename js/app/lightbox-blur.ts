@@ -301,6 +301,10 @@ export class WebGLBlurRenderer {
   compileShader(source: string, type: number) {
     let gl = this.gl;
     let shader = gl.createShader(type);
+    if (!shader) {
+      console.error('Failed to create WebGL shader.');
+      return null;
+    }
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -454,7 +458,7 @@ export class WebGLBlurRenderer {
   }
 
   render() {
-    if (!this.gl) return;
+    if (!this.gl || !this.progLiquid || !this.progDown || !this.progUp) return;
     let gl = this.gl;
 
     let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;

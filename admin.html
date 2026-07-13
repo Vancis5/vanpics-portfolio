@@ -12,6 +12,7 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>vanpics: darkroom</title>
   
   <!-- favicon -->
@@ -36,29 +37,29 @@
       <p>darkroom</p>
     </div>
     
-    <div class="auth-container" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+    <div class="auth-container header-auth-row">
       <button type="button" class="btn-utilities" id="btn-open-utilities-modal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; margin-right: 6px; display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-btn-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span>utilities</span>
       </button>
 
       <button type="button" class="btn-logout" id="btn-logout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; margin-right: 6px; display: inline-block; vertical-align: middle;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-btn-icon"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span>log out</span>
       </button>
 
       <!-- Legacy hidden auth elements for Playwright testing & script dependencies -->
-      <div style="position: absolute; opacity: 0; z-index: -9999; pointer-events: none; width: 1px; height: 1px; overflow: hidden;">
+      <div class="hidden-auth-wrapper">
         <div class="auth-input-wrapper">
           <div class="auth-status-icon" id="auth-status" title="Token status: Unverified">
             <svg class="lock-icon" id="lock-secured" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
             <svg class="lock-icon text-warning" id="lock-unverified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <div class="spinner" id="auth-spinner" style="display:none;"></div>
           </div>
-          <input type="password" id="secret-token" class="secret-input" placeholder="secret token" style="width: 10px; height: 10px;" autocomplete="new-password">
+          <input type="password" id="secret-token" class="secret-input tiny-secret-token" placeholder="secret token" autocomplete="new-password">
           <button type="button" class="btn-toggle-password" id="toggle-password-btn" title="Toggle token visibility">
             <svg id="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <svg id="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            <svg id="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-hide-svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           </button>
         </div>
         <label class="remember-checkbox-wrapper">
@@ -83,38 +84,38 @@
         
         <div class="dropdowns-group">
           <!-- Filter by Type -->
-          <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
-            <select id="filter-type" class="filter-select" style="min-width: 150px;">
+          <div class="select-wrapper select-wrapper-custom">
+            <select id="filter-type" class="filter-select filter-select-custom">
               <option value="all">type: all</option>
               <option value="photo">type: photos</option>
               <option value="video">type: videos</option>
               <option value="figures">type: figures</option>
               <option value="draft">type: drafts</option>
             </select>
-            <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
+            <svg class="select-arrow select-arrow-custom" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
           </div>
 
           <!-- Sort by -->
-          <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
-            <select id="filter-sort" class="filter-select" style="min-width: 180px;">
+          <div class="select-wrapper select-wrapper-custom">
+            <select id="filter-sort" class="filter-select filter-select-sort">
               <option value="date-desc">sort: newest</option>
               <option value="date-asc">sort: oldest</option>
               <option value="last-modified">sort: last modified</option>
               <option value="name-asc">sort: alphabetical (a-z)</option>
               <option value="name-desc">sort: alphabetical (z-a)</option>
             </select>
-            <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
+            <svg class="select-arrow select-arrow-custom" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
           </div>
 
           <!-- Group by -->
-          <div class="select-wrapper" style="position: relative; display: flex; align-items: center;">
-            <select id="filter-group" class="filter-select" style="min-width: 150px;">
+          <div class="select-wrapper select-wrapper-custom">
+            <select id="filter-group" class="filter-select filter-select-custom">
               <option value="none">group: none</option>
               <option value="year">group: year</option>
               <option value="type">group: media type</option>
               <option value="carousel">group: carousel</option>
             </select>
-            <svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; right: 0.9rem; pointer-events: none; opacity: 0.5;"><path d="M6 9l6 6 6-6"/></svg>
+            <svg class="select-arrow select-arrow-custom" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
           </div>
 
           <!-- Clear Filters (Desktop Only) -->
@@ -141,17 +142,17 @@
 
   <!-- Gorgeous CREATE/UPLOAD Modal overlay -->
   <div class="modal-overlay" id="upload-modal-overlay">
-    <div class="modal-container" style="max-width: 1100px; max-height: 95vh;">
+    <div class="modal-container modal-container-upload">
       <div class="modal-header">
-        <h3 class="modal-title">
+        <h2 class="modal-title">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
           catalog new media
-        </h3>
+        </h2>
         <button class="btn-close-modal" id="btn-close-upload-modal" aria-label="Close modal">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="display-block"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <div class="modal-wrapper" style="max-height: 85vh;">
+      <div class="modal-wrapper modal-wrapper-scroll">
         <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; height: 82vh;">
         <form id="cms-form" class="edit-cms-form">
           <!-- LEFT SIDE: Upload Options & Dropzones -->
@@ -300,45 +301,45 @@
 
   <!-- Gorgeous SYSTEM UTILITIES Modal overlay -->
   <div class="modal-overlay" id="utilities-modal-overlay">
-    <div class="modal-container" style="max-width: 640px;">
+    <div class="modal-container modal-container-utilities">
       <div class="modal-header">
-        <h3 class="modal-title">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <h2 class="modal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-btn-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           system utilities
-        </h3>
+        </h2>
         <button class="btn-close-modal" id="btn-close-utilities-modal" aria-label="Close modal">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="display-block"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       <div class="modal-wrapper">
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.75rem;">
+        <div class="modal-body modal-body-column">
         
         <!-- Utility: DB Chronological Sorter -->
-        <div style="background: rgba(22, 21, 21, 0.4); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;">
-          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-            <h4 style="font-family: 'DM Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">Align DB Order by Capture Date</h4>
-            <p style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.5;">re-sorts all database records sequentially newest-to-oldest using their parsed 'date' strings. this aligns the physical cloud order and replaces the old local 'npm run sort' script.</p>
+        <div class="utility-box">
+          <div class="utility-text-group">
+            <h3 class="utility-title-h3">Align DB Order by Capture Date</h3>
+            <p class="utility-desc-text">re-sorts all database records sequentially newest-to-oldest using their parsed 'date' strings. this aligns the physical cloud order and replaces the old local 'npm run sort' script.</p>
           </div>
-          <button type="button" class="btn" id="btn-run-db-sort" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.65rem; padding: 0.75rem 0;">
+          <button type="button" class="btn utility-button" id="btn-run-db-sort">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
             <span id="btn-run-db-sort-text">run database sorter</span>
           </button>
         </div>
 
         <!-- Utility: Edge CDN Cache Invalidation -->
-        <div style="background: rgba(22, 21, 21, 0.4); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;">
-          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-            <h4 style="font-family: 'DM Mono', monospace; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">Purge CDN Edge Cache</h4>
-            <p style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.5;">flushes the cloudflare edge cdn cache for all API media feeds. run this if your uploaded photos or edits aren't instantly showing up on your main page.</p>
+        <div class="utility-box">
+          <div class="utility-text-group">
+            <h3 class="utility-title-h3">Purge CDN Edge Cache</h3>
+            <p class="utility-desc-text">flushes the cloudflare edge cdn cache for all API media feeds. run this if your uploaded photos or edits aren't instantly showing up on your main page.</p>
           </div>
-          <button type="button" class="btn" id="btn-purge-cdn-cache" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.65rem; padding: 0.75rem 0;">
+          <button type="button" class="btn utility-button" id="btn-purge-cdn-cache">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5M4 8h4.5M4 4h4.5"/></svg>
             <span id="btn-purge-cdn-cache-text">purge edge cache</span>
           </button>
         </div>
 
         <!-- System Pipeline Output Feed -->
-        <div id="utility-terminal" style="display: none; background: #070606; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--warning); max-height: 150px; overflow-y: auto; white-space: pre-wrap;">
+        <div id="utility-terminal" class="utility-terminal-box">
         </div>
 
       </div>
@@ -348,17 +349,17 @@
 
   <!-- Gorgeous EDIT/UPDATE Details Modal overlay -->
   <div class="modal-overlay" id="edit-modal-overlay">
-    <div class="modal-container" style="max-width: 1100px; max-height: 95vh;">
+    <div class="modal-container modal-container-upload">
       <div class="modal-header">
-        <h3 class="modal-title">
+        <h2 class="modal-title">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           edit asset details
-        </h3>
+        </h2>
         <button class="btn-close-modal" id="btn-close-edit-modal" aria-label="Close modal">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="display-block"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <div class="modal-wrapper" style="max-height: 85vh;">
+      <div class="modal-wrapper modal-wrapper-scroll">
         <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; height: 82vh;">
         <form id="edit-cms-form" class="edit-cms-form">
           <!-- LEFT SIDE: Media Preview & Actions -->
@@ -475,18 +476,18 @@
   </div>
 
   <!-- High Fidelity Custom Confirmation Dialog -->
-  <div class="modal-overlay" id="confirm-modal-overlay" style="z-index: 2000;">
-    <div class="modal-wrapper" style="max-width: 420px; padding: 2rem; border-radius: 16px; text-align: center; gap: 1.5rem; background: #0f0e0e; border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,0.8); display: flex; flex-direction: column;">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(217, 104, 104, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+  <div class="modal-overlay confirm-modal-overlay-custom" id="confirm-modal-overlay">
+    <div class="modal-wrapper confirm-modal-wrapper">
+      <div class="confirm-modal-header">
+        <div class="confirm-modal-icon-bg">
           <svg width="24" height="24" fill="none" stroke="var(--danger)" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </div>
-        <h4 style="font-family: 'DM Mono', monospace; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text);">confirm deletion</h4>
-        <p id="confirm-delete-text" style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.6; margin: 0 0.5rem; font-family: 'DM Mono', monospace; letter-spacing: 0.05em; text-transform: lowercase;">are you sure you want to permanently delete this asset? this action cannot be undone.</p>
+        <h2 class="confirm-modal-title">confirm deletion</h2>
+        <p id="confirm-delete-text" class="confirm-modal-desc">are you sure you want to permanently delete this asset? this action cannot be undone.</p>
       </div>
-      <div style="display: flex; gap: 1rem; width: 100%;">
-        <button type="button" class="btn" id="btn-cancel-delete" style="flex: 1; padding: 0.7rem 0;">cancel</button>
-        <button type="button" class="btn" id="btn-confirm-delete" style="flex: 1; padding: 0.7rem 0; border-color: rgba(217, 104, 104, 0.4); color: var(--danger); background: rgba(217, 104, 104, 0.05);">delete</button>
+      <div class="confirm-modal-footer">
+        <button type="button" class="btn confirm-modal-btn-cancel" id="btn-cancel-delete">cancel</button>
+        <button type="button" class="btn confirm-modal-btn-delete" id="btn-confirm-delete">delete</button>
       </div>
     </div>
   </div>

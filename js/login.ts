@@ -54,7 +54,7 @@ if (savedToken) {
       }
     }
 
-    function showToast(text, type = 'success') {
+    function showToast(text: string, type: string = 'success') {
       if (!toast) return;
       toast.innerText = text;
       toast.className = `toast show toast-${type}`;
@@ -64,7 +64,7 @@ if (savedToken) {
     }
 
     // Toggle password visibility (restores focus to keep keyboard open)
-    if (loginTogglePasswordBtn) {
+    if (loginTogglePasswordBtn && loginSecretInput && loginEyeShow && loginEyeHide) {
       loginTogglePasswordBtn.addEventListener('click', (e) => {
         if (loginSecretInput.type === 'password') {
           loginSecretInput.type = 'text';

@@ -28,18 +28,18 @@ let EASE_FRAMES = CAROUSEL_CONFIG.easeFrames;
 let START_SPEED_MULT = CAROUSEL_CONFIG.startSpeedMultiplier;
 let carouselReadyCallback = function () { };
 
-export function setCarouselReadyCallback(callback) {
+export function setCarouselReadyCallback(callback: (() => void) | null) {
   carouselReadyCallback = typeof callback === 'function' ? callback : function () { };
 }
 
-function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-function getCurrentSpeed(frame) {
+function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+function getCurrentSpeed(frame: number) {
   if (frame >= EASE_FRAMES) return CRUISE_SPEED;
   let t = frame / EASE_FRAMES;
   return CRUISE_SPEED * START_SPEED_MULT + (CRUISE_SPEED - CRUISE_SPEED * START_SPEED_MULT) * easeOutCubic(t);
 }
 
-function waitForDecodedImage(img, timeoutMs) {
+function waitForDecodedImage(img: HTMLImageElement, timeoutMs: number) {
   return new Promise<void>(resolve => {
     let settled = false;
     const done = function () {
@@ -227,7 +227,7 @@ export function buildCarousel() {
 
 let lastTime = 0;
 
-export function tick(timestamp) {
+export function tick(timestamp: number) {
   try {
     if (!state.heroVisible || !state.pageVisible) {
       state.heroRafId = null;

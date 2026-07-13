@@ -43,7 +43,7 @@ const closeUploadModalBtn = getDocEl('btn-close-upload-modal');
 const editModal = getDocEl('edit-modal-overlay');
 const closeEditModalBtn = getDocEl('btn-close-edit-modal');
 const editForm = getDocEl('edit-cms-form');
-let currentlyEditingItem = null;
+let currentlyEditingItem: any = null;
 
 // Utilities Modal elements
 const utilitiesModal = getDocEl('utilities-modal-overlay');
@@ -59,10 +59,10 @@ const utilityTerminal = getDocEl('utility-terminal');
 const searchInput = getDocEl('dashboard-search');
 
 // Replacement photo states
-let processedEditPhotoBlob = null;
-let processedEditThumbBlob = null;
-let processedEditRawBlob = null;
-let computedEditAspectRatio = null;
+let processedEditPhotoBlob: Blob | null = null;
+let processedEditThumbBlob: Blob | null = null;
+let processedEditRawBlob: Blob | null = null;
+let computedEditAspectRatio: number | null = null;
 
 // Restore cached search and filter parameters on load
 if (searchInput) {
@@ -143,22 +143,22 @@ const eyeShow = getDocEl('eye-show');
 const eyeHide = getDocEl('eye-hide');
 
 // File reference state
-let selectedFile = null; // Photo mode
-let selectedVideoFile = null; // Video mode
-let selectedPosterFile = null; // Video mode
+let selectedFile: File | null = null; // Photo mode
+let selectedVideoFile: File | null = null; // Video mode
+let selectedPosterFile: File | null = null; // Video mode
 
 let computedAspectRatio = 1.0;
 
 // Processed blobs state
-let processedPhotoBlob = null;
-let processedThumbBlob = null;
-let processedRawBlob = null;
+let processedPhotoBlob: Blob | null = null;
+let processedThumbBlob: Blob | null = null;
+let processedRawBlob: Blob | null = null;
 
 
-let processedVideoBlob = null;
-let processedPosterBlob = null;
+let processedVideoBlob: Blob | null = null;
+let processedPosterBlob: Blob | null = null;
 
-function showToast(text, type = 'success') {
+function showToast(text: string, type: 'success' | 'error' | string = 'success') {
   if (!toast) return;
   toast.innerText = text;
   toast.className = `toast show toast-${type}`;
@@ -205,9 +205,11 @@ if (editPreviewImg) {
         canvas.width = 1;
         canvas.height = 1;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(editPreviewImg, 0, 0, 1, 1);
-        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-        container.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 0.25)`;
+        if (ctx) {
+          ctx.drawImage(editPreviewImg, 0, 0, 1, 1);
+          const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+          container.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 0.25)`;
+        }
       } catch (err) {
         container.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
       }
@@ -222,7 +224,7 @@ const confirmDeleteBtn = getDocEl('btn-confirm-delete');
 const editDeleteBtn = getDocEl('edit-delete-btn');
 const confirmDeleteText = getDocEl('confirm-delete-text');
 
-function preventDefaultScroll(e) {
+function preventDefaultScroll(e: any) {
   if (e.target && typeof e.target.closest === 'function') {
     const textarea = e.target.closest('textarea');
     if (textarea) {
@@ -260,7 +262,7 @@ function preventDefaultScroll(e) {
   e.preventDefault();
 }
 
-function preventDefaultKeys(e) {
+function preventDefaultKeys(e: any) {
   const keys = ['Space', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'End', 'Home'];
   if (keys.includes(e.code)) {
     if (e.target && typeof e.target.closest === 'function') {
@@ -509,7 +511,7 @@ if (togglePasswordBtn) {
   });
 }
 
-function handleUnauthorized(res) {
+function handleUnauthorized(res: Response) {
   if (res.status === 401) {
     showToast('session expired, please re-authenticate', 'error');
     localStorage.removeItem('vanpics_admin_token');
@@ -544,7 +546,7 @@ if (logoutBtn) {
   });
 }
 
-let verifyTimeout = null;
+let verifyTimeout: any = null;
 if (secretInput) {
   secretInput.addEventListener('input', () => {
     const token = secretInput.value.trim();
@@ -582,7 +584,7 @@ if (rememberCheckbox) {
   });
 }
 
-function setAuthStatus(status) {
+function setAuthStatus(status: 'verifying' | 'secured' | 'failed' | 'unverified' | string) {
   if (!authSpinner) return;
   authSpinner.style.display = 'none';
   lockSecured.style.display = 'none';
@@ -609,7 +611,7 @@ function setAuthStatus(status) {
   }
 }
 
-async function verifyToken(token) {
+async function verifyToken(token: string) {
   if (!token) return;
   
   setAuthStatus('verifying');
@@ -658,7 +660,7 @@ if (tabVideoBtn) {
   });
 }
 
-function switchMode(mode) {
+function switchMode(mode: 'photo' | 'video' | string) {
   if (currentMode === mode) return;
   currentMode = mode;
   
@@ -692,11 +694,18 @@ function switchMode(mode) {
 }
 
 // Dynamic Dropzone Setup
-function setupDropzone(zone, input, type, previewContainer, previewEl, removeBtn) {
+function setupDropzone(
+  zone: HTMLElement | null,
+  input: HTMLInputElement | null,
+  type: string,
+  previewContainer: HTMLElement | null,
+  previewEl: HTMLElement | HTMLImageElement | HTMLVideoElement | null,
+  removeBtn: HTMLElement | null
+) {
   if (!zone) return;
-  zone.addEventListener('click', () => input.click());
+  if (input) zone.addEventListener('click', () => input.click());
   
-  zone.addEventListener('dragover', (e) => {
+  zone.addEventListener('dragover', (e: DragEvent) => {
     e.preventDefault();
     zone.classList.add('dragover');
   });
@@ -705,24 +714,29 @@ function setupDropzone(zone, input, type, previewContainer, previewEl, removeBtn
     zone.classList.remove('dragover');
   });
 
-  zone.addEventListener('drop', (e) => {
+  zone.addEventListener('drop', (e: DragEvent) => {
     e.preventDefault();
     zone.classList.remove('dragover');
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileSelect(e.dataTransfer.files[0], type, previewContainer, previewEl);
     }
   });
 
-  input.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelect(e.target.files[0], type, previewContainer, previewEl);
-    }
-  });
+  if (input) {
+    input.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target && target.files && target.files[0]) {
+        handleFileSelect(target.files[0], type, previewContainer, previewEl);
+      }
+    });
+  }
 
-  removeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    resetSpecificFile(type, input, previewContainer, previewEl);
-  });
+  if (removeBtn) {
+    removeBtn.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      resetSpecificFile(type, input, previewContainer, previewEl);
+    });
+  }
 }
 
 setupDropzone(dropZonePhoto, fileInputPhoto, 'photo', previewContainerPhoto, imgPreviewPhoto, removeBtnPhoto);
@@ -768,19 +782,24 @@ function resetFileSelection() {
   if (fileInputPoster) fileInputPoster.value = '';
 }
 
-function resetSpecificFile(type, input, previewContainer, previewEl) {
-  input.value = '';
-  previewContainer.style.display = 'none';
+function resetSpecificFile(
+  type: string,
+  input: HTMLInputElement | null,
+  previewContainer: HTMLElement | null,
+  previewEl: HTMLElement | HTMLImageElement | HTMLVideoElement | null
+) {
+  if (input) input.value = '';
+  if (previewContainer) previewContainer.style.display = 'none';
   if (type === 'video') {
-    previewEl.src = '';
+    if (previewEl) (previewEl as any).src = '';
     selectedVideoFile = null;
     processedVideoBlob = null;
   } else if (type === 'poster') {
-    previewEl.src = '';
+    if (previewEl) (previewEl as any).src = '';
     selectedPosterFile = null;
     processedPosterBlob = null;
   } else {
-    previewEl.src = '';
+    if (previewEl) (previewEl as any).src = '';
     selectedFile = null;
     processedPhotoBlob = null;
     processedThumbBlob = null;
@@ -792,7 +811,12 @@ function resetSpecificFile(type, input, previewContainer, previewEl) {
   }
 }
 
-function handleFileSelect(file, type, previewContainer, previewEl) {
+function handleFileSelect(
+  file: File,
+  type: string,
+  previewContainer: HTMLElement | null,
+  previewEl: HTMLElement | HTMLImageElement | HTMLVideoElement | null
+) {
   if (type === 'video') {
     if (!file.type.startsWith('video/')) {
       showToast('file is not a video', 'error');
@@ -803,9 +827,15 @@ function handleFileSelect(file, type, previewContainer, previewEl) {
       return;
     }
     selectedVideoFile = file;
-    previewEl.src = URL.createObjectURL(file);
-    previewContainer.style.display = 'block';
-    processVideoPipeline(file);
+    const reader = new FileReader();
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      if (e.target && e.target.result) {
+        if (previewEl) (previewEl as any).src = e.target.result as string;
+        if (previewContainer) previewContainer.style.display = 'block';
+        processVideoPipeline(file);
+      }
+    };
+    reader.readAsDataURL(file);
   } else if (type === 'poster') {
     if (!file.type.startsWith('image/')) {
       showToast('file is not an image', 'error');
@@ -817,10 +847,12 @@ function handleFileSelect(file, type, previewContainer, previewEl) {
     }
     selectedPosterFile = file;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      previewEl.src = e.target.result;
-      previewContainer.style.display = 'block';
-      processPosterPipeline(e.target.result);
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      if (e.target && e.target.result) {
+        if (previewEl) (previewEl as any).src = e.target.result as string;
+        if (previewContainer) previewContainer.style.display = 'block';
+        processPosterPipeline(e.target.result as string);
+      }
     };
     reader.readAsDataURL(file);
   } else {
@@ -834,16 +866,18 @@ function handleFileSelect(file, type, previewContainer, previewEl) {
     }
     selectedFile = file;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      previewEl.src = e.target.result;
-      previewContainer.style.display = 'block';
-      processImagePipeline(e.target.result);
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      if (e.target && e.target.result) {
+        if (previewEl) (previewEl as any).src = e.target.result as string;
+        if (previewContainer) previewContainer.style.display = 'block';
+        processImagePipeline(e.target.result as string);
+      }
     };
     reader.readAsDataURL(file);
   }
 }
 
-async function processVideoPipeline(videoFile) {
+async function processVideoPipeline(videoFile: File) {
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
     <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
@@ -875,7 +909,7 @@ async function processVideoPipeline(videoFile) {
   }
 }
 
-async function processPosterPipeline(imgSrc) {
+async function processPosterPipeline(imgSrc: string) {
   if (!pipelineStatus) return;
   
   if (!getDocEl('step-poster-compress')) {
@@ -900,7 +934,7 @@ async function processPosterPipeline(imgSrc) {
   }
 }
 
-async function processImagePipeline(imgSrc) {
+async function processImagePipeline(imgSrc: string) {
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
     <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
@@ -935,7 +969,7 @@ async function processImagePipeline(imgSrc) {
   showToast('photo processed successfully', 'success');
 }
 
-function setStepState(step, state) {
+function setStepState(step: string, state: 'active' | 'success' | 'failed' | string) {
   const el = getDocEl(`step-${step}`);
   if (el) {
     el.className = `pipeline-step ${state}`;
@@ -982,8 +1016,8 @@ async function loadArchives() {
 
     // Cache globally for filters
     globalArchivesList = [
-      ...data.photos.map(p => ({ ...p, type: 'photo' })),
-      ...data.videos.map(v => ({ ...v, type: 'video' }))
+      ...data.photos.map((p: any) => ({ ...p, type: 'photo' })),
+      ...data.videos.map((v: any) => ({ ...v, type: 'video' }))
     ];
 
     // Sort items by creation date
@@ -999,7 +1033,7 @@ async function loadArchives() {
 
 // Handles Search and Filter events instantly
 if (searchInput) {
-  searchInput.addEventListener('input', (e) => {
+  searchInput.addEventListener('input', (e: Event) => {
     searchQuery = (e.target as any).value.trim();
     localStorage.setItem('vanpics_cms_search', searchQuery);
     renderArchives();
@@ -1008,7 +1042,7 @@ if (searchInput) {
 
 const filterTypeDrop = getDocEl('filter-type');
 if (filterTypeDrop) {
-  filterTypeDrop.addEventListener('change', (e) => {
+  filterTypeDrop.addEventListener('change', (e: Event) => {
     activeFilter = (e.target as any).value;
     localStorage.setItem('vanpics_cms_filter_type', activeFilter);
     renderArchives();
@@ -1018,7 +1052,7 @@ if (filterTypeDrop) {
 
 const filterSortDrop = getDocEl('filter-sort');
 if (filterSortDrop) {
-  filterSortDrop.addEventListener('change', (e) => {
+  filterSortDrop.addEventListener('change', (e: Event) => {
     localStorage.setItem('vanpics_cms_filter_sort', (e.target as any).value);
     renderArchives();
     (e.target as any).blur();
@@ -1027,7 +1061,7 @@ if (filterSortDrop) {
 
 const filterGroupDrop = getDocEl('filter-group');
 if (filterGroupDrop) {
-  filterGroupDrop.addEventListener('change', (e) => {
+  filterGroupDrop.addEventListener('change', (e: Event) => {
     localStorage.setItem('vanpics_cms_filter_group', (e.target as any).value);
     renderArchives();
     (e.target as any).blur();
@@ -1067,7 +1101,7 @@ if (btnClearFiltersMobile) {
 
 // Delegate grid clicks for opening the edit modal
 if (itemsContainer) {
-  itemsContainer.addEventListener('click', (e) => {
+  itemsContainer.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
     if (!target) return;
     const card = target.closest('.asset-card') as HTMLElement | null;
@@ -1082,7 +1116,7 @@ if (itemsContainer) {
 }
 
 // Populate and open edit details modal (Read & Update setup)
-function openEditModal(type, id) {
+function openEditModal(type: string, id: string | number) {
   const item = globalArchivesList.find(i => i.id == id && i.type === type);
   if (!item) return;
 
@@ -1161,7 +1195,7 @@ function openEditModal(type, id) {
   updateEditNavArrows();
 }
 
-async function processEditImagePipeline(imgSrc) {
+async function processEditImagePipeline(imgSrc: string) {
   const pipeline = getDocEl('edit-pipeline-status');
   if (!pipeline) return;
   pipeline.style.display = 'block';
@@ -1202,17 +1236,19 @@ async function processEditImagePipeline(imgSrc) {
 const editFileInput = getDocEl('edit-photo-file-input');
 const editFileStatus = getDocEl('edit-photo-file-status');
 if (editFileInput) {
-  editFileInput.addEventListener('change', async (e) => {
+  editFileInput.addEventListener('change', async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
     if (editFileStatus) editFileStatus.innerText = `selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
     
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const imgPreview = getDocEl('edit-media-preview-img');
-      if (imgPreview) imgPreview.src = (event.target as FileReader).result as string;
-      await processEditImagePipeline(event.target.result);
+    reader.onload = async (event: ProgressEvent<FileReader>) => {
+      if (event.target && event.target.result) {
+        const imgPreview = getDocEl('edit-media-preview-img');
+        if (imgPreview) imgPreview.src = event.target.result as string;
+        await processEditImagePipeline(event.target.result as string);
+      }
     };
     reader.readAsDataURL(file);
   });
@@ -1229,12 +1265,13 @@ if (editCancelBtn) {
 
 // Submit metadata update to backend (Update CRUD action)
 if (editForm) {
-  editForm.addEventListener('submit', async (e) => {
+  editForm.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
     if (!currentlyEditingItem) return;
 
     const editSubmitBtn = getDocEl('edit-submit-btn');
-    const submitText = editSubmitBtn.querySelector('span');
+    const submitText = editSubmitBtn ? editSubmitBtn.querySelector('span') : null;
+    if (!editSubmitBtn || !submitText) return;
     
     editSubmitBtn.disabled = true;
     submitText.innerText = 'saving changes...';
@@ -1259,15 +1296,20 @@ if (editForm) {
     }
 
     try {
+      const editPhotoBlob = processedEditPhotoBlob;
+      const editThumbBlob = processedEditThumbBlob;
+      const editRawBlob = processedEditRawBlob;
+      const editAspectRatio = computedEditAspectRatio;
+
       // If we have a replacement photo, run the R2 replace action first!
-      if (type === 'photo' && processedEditPhotoBlob && processedEditThumbBlob && processedEditRawBlob) {
+      if (type === 'photo' && editPhotoBlob && editThumbBlob && editRawBlob) {
         submitText.innerText = 'replacing R2 asset file...';
         const fileFormData = new FormData();
-        fileFormData.append('photo', processedEditPhotoBlob, 'photo.webp');
-        fileFormData.append('thumb', processedEditThumbBlob, 'thumb.webp');
-        fileFormData.append('aspectRatio', String(computedEditAspectRatio));
-        if (processedEditRawBlob) {
-          fileFormData.append('raw', processedEditRawBlob, 'raw.webp');
+        fileFormData.append('photo', editPhotoBlob, 'photo.webp');
+        fileFormData.append('thumb', editThumbBlob, 'thumb.webp');
+        fileFormData.append('aspectRatio', String(editAspectRatio));
+        if (editRawBlob) {
+          fileFormData.append('raw', editRawBlob, 'raw.webp');
         }
 
         const fileRes = await replacePhotoItem(id, fileFormData, token);
@@ -1309,7 +1351,7 @@ if (editForm) {
 }
 
 // Delete CRUD Action
-async function deleteItem(type, id, title) {
+async function deleteItem(type: string, id: string | number, title: string) {
   const token = currentAdminToken;
   try {
     const res = await deleteArchiveItem(type, id, token);
@@ -1329,24 +1371,30 @@ async function deleteItem(type, id, title) {
 }
 
 // Playwright test compatibility
-function deletePhoto(id, title) {
+function deletePhoto(id: string | number, title: string) {
   return deleteItem('photo', id, title);
 }
 
-window.deletePhoto = deletePhoto;
+(window as any).deletePhoto = deletePhoto;
 
 // Submit photo/video catalog creation (Create CRUD Action)
 if (form) {
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
     
+    const photoBlob = processedPhotoBlob;
+    const thumbBlob = processedThumbBlob;
+    const rawBlob = processedRawBlob;
+    const videoBlob = processedVideoBlob;
+    const posterBlob = processedPosterBlob;
+
     if (currentMode === 'photo') {
-      if (!processedPhotoBlob || !processedThumbBlob) {
+      if (!photoBlob || !thumbBlob) {
         showToast('processing file...', 'error');
         return;
       }
     } else {
-      if (!processedVideoBlob || !processedPosterBlob) {
+      if (!videoBlob || !posterBlob) {
         showToast('processing files...', 'error');
         return;
       }
@@ -1365,16 +1413,16 @@ if (form) {
     formData.append('aspectRatio', String(computedAspectRatio));
 
     if (currentMode === 'photo') {
-      formData.append('photo', processedPhotoBlob);
-      formData.append('thumb', processedThumbBlob);
-      if (processedRawBlob) {
-        formData.append('raw', processedRawBlob, 'raw.webp');
+      if (photoBlob) formData.append('photo', photoBlob);
+      if (thumbBlob) formData.append('thumb', thumbBlob);
+      if (rawBlob) {
+        formData.append('raw', rawBlob, 'raw.webp');
       }
       formData.append('category', getDocEl('category').value);
       formData.append('heroSlide', String(getDocEl('hero-slide').checked));
     } else {
-      formData.append('video', processedVideoBlob);
-      formData.append('poster', processedPosterBlob);
+      if (videoBlob) formData.append('video', videoBlob);
+      if (posterBlob) formData.append('poster', posterBlob);
       formData.append('music', getDocEl('music').value);
     }
 
@@ -1459,7 +1507,11 @@ if (prevEditBtn) {
     const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
     if (currentIndex > 0) {
       const prevCard = cards[currentIndex - 1];
-      openEditModal(prevCard.dataset.type, prevCard.dataset.id);
+      const type = prevCard.dataset.type;
+      const id = prevCard.dataset.id;
+      if (type && id) {
+        openEditModal(type, id);
+      }
     }
   });
 }
@@ -1471,7 +1523,11 @@ if (nextEditBtn) {
     const currentIndex = cards.findIndex(card => card.dataset.id == currentlyEditingItem.id && card.dataset.type === currentlyEditingItem.type);
     if (currentIndex < cards.length - 1 && currentIndex !== -1) {
       const nextCard = cards[currentIndex + 1];
-      openEditModal(nextCard.dataset.type, nextCard.dataset.id);
+      const type = nextCard.dataset.type;
+      const id = nextCard.dataset.id;
+      if (type && id) {
+        openEditModal(type, id);
+      }
     }
   });
 }
@@ -1509,7 +1565,9 @@ if (controlPanel) {
   sentinel.style.top = '0';
   sentinel.style.left = '0';
   sentinel.style.pointerEvents = 'none';
-  controlPanel.parentElement.style.position = 'relative';
+  if (controlPanel.parentElement) {
+    controlPanel.parentElement.style.position = 'relative';
+  }
   controlPanel.before(sentinel);
 
   const obs = new IntersectionObserver(([entry]) => {

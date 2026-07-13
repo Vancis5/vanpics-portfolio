@@ -1,4 +1,4 @@
-export function escapeHtml(text) {
+export function escapeHtml(text: string | null | undefined): string {
   return String(text == null ? '' : text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -7,11 +7,19 @@ export function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
-export function slugify(text) {
+export function slugify(text: string | number): string {
   return text.toString().toLowerCase().trim()
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '')
     .replace(/--+/g, '-');
+}
+
+export function getRequiredElement<T extends HTMLElement = HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) {
+    throw new Error(`Required element with id "${id}" was not found in the DOM.`);
+  }
+  return el as T;
 }
 
 export function sanitizeHtml(html: string): string {

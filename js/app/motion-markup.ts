@@ -1,20 +1,21 @@
 import { escapeHtml } from './utils.js';
+import type { Video } from '../types.js';
 
-function createMotionPosterElement(item) {
+function createMotionPosterElement(item: Video) {
   const poster = document.createElement('media-poster');
   const img = document.createElement('img');
-  img.src = item.thumb;
+  img.src = item.thumb || '';
   img.alt = (item.title || '') + ' thumbnail';
   poster.appendChild(img);
   return poster;
 }
 
-export function getMotionThumbnailMarkup(item) {
+export function getMotionThumbnailMarkup(item: Video) {
   if (item.thumb) return '<img src="' + escapeHtml(item.thumb) + '" alt="' + escapeHtml(item.title) + '" loading="lazy">';
   return '<div class="motion-card-fallback" aria-hidden="true"></div>';
 }
 
-export function getVideoPlayerMarkup(item) {
+export function getVideoPlayerMarkup(item: Video) {
   const template = document.getElementById('motion-player-template') as HTMLTemplateElement;
   if (!template) return '';
 

@@ -8,95 +8,95 @@ DELETE FROM photos;
 DELETE FROM videos;
 
 -- Seed Photos
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('collateral', 'photos/tch-crash.webp', 'thumbs/tch-crash.webp', 'photos-raw/tch-crash.jpg', 1.3345, '', 'balamban, cebu', 'apr 11, 2026', 'someone crashed their truck onto a wall. lots of people die and crash in this road daily, which is ironic because the highway itself is beautiful <br> <br> taken by <a href=''https://www.facebook.com/share/p/1aePoJX4dk/'' target=''_blank'' rel=''noopener noreferrer''>JohnB</a>', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('depths', 'photos/depths-remake.webp', 'thumbs/depths-remake.webp', 'photos-raw/depths-remake.jpg', 0.75, '', 'saint joseph college', 'mar 29, 2026', 'railing in a college building. they have this stair-looking holes spaced a few meters apart as part of its design. i essentially took a pic of that "hole" and copy-pasted it to look like a neverending abyss', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('harbinger', 'photos/red-moon.webp', 'thumbs/red-moon.webp', 'photos-raw/red-moon.jpg', 0.7727, '', 'macrohon', 'mar 22, 2026', 'last night on earth', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('leaving', 'photos/fog-motorcycle.webp', 'thumbs/fog-motorcycle.webp', NULL, 0.75, '', 'cebu', 'jan 22, 2026', 'a friend took this, he was driving through the mountains and the fog was so thick that every photo he took was already atmospheric', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('refuge', 'photos/lone-house-hill.webp', 'thumbs/lone-house-hill.webp', NULL, 0.75, '', 'noah''s ark', 'jan 9, 2026', 'it''s a small hut atop a hill. nobody lives there. i think it''s just used as a hangout/picnic spot. it still feels lonely regardless because of where it''s placed. i really like how the lines lead along the hut <br> <br> also first pic in 2026', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('reach', 'photos/ray-of-light-bw.webp', 'thumbs/ray-of-light-bw.webp', NULL, 1, '', 'talisay, bontoc', 'dec 29, 2025', 'used to be a rainbow. desaturated it as part of the 2025 black-and-white edit. the rainbow became a shaft of light breaking through overcast grey onto the treeline. <br> <br> god is reaching down but maybe not for good reasons', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('last flight', 'photos/moths-light.webp', 'thumbs/moths-light.webp', NULL, 1, '', 'our frontyard', 'dec 22, 2025', 'it was raining at night. i went outside and there was literally 200 moths flocking near the light bulb in our shed', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('rainbow', 'photos/rainbow.webp', 'thumbs/rainbow.webp', NULL, 1, '', 'talisay, bontoc', 'dec 17, 2025', 'was taken while i was strolling around in bontoc. i spotted a rainbow with a short, faint-ish arc and it landed in-between mountains far away', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('peer into the void', 'photos/fish-eye-cosmos.webp', 'thumbs/fish-eye-cosmos.webp', NULL, 1, '', 'maasin public market', 'oct 19, 2025', 'this is an eye of a huge fish i found in the wet market. it was fresh and it was still pulsating. i stared at it for 5 seconds until i realized i needed to take a pic of it. <br><br> i took the photo 2023 and only edited it at 2025', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('faceless girl', 'photos/faceless-beach.webp', 'thumbs/faceless-beach.webp', NULL, 0.75, 'figures', 'macrohon', 'aug 22, 2025', NULL, 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('inhabited', 'photos/broken-house-night.webp', 'thumbs/broken-house-night.webp', NULL, 0.75, '', 'tagnipa', 'aug 10, 2025', 'i was at a friend''s sleepover but we were too alive to fall asleep, so we strolled around the neighborhood at midnight. <br> <br> one particular house felt mysterious', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('flight', 'photos/birds-lamppost.webp', 'thumbs/birds-lamppost.webp', NULL, 1, '', 'libhu hill resort', 'may 25, 2025', NULL, 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('interim', 'photos/cityscape-night.webp', 'thumbs/cityscape-night.webp', NULL, 1.3333, '', 'hanginan', 'mar 14, 2025', 'taken in hanginan at 4:30am. it''s a view of my entire hometown (or city) just before you climb the stairs towards the shrine', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('dusk', 'photos/crescent-moon-tower.webp', 'thumbs/crescent-moon-tower.webp', NULL, 1, '', 'baybay', 'feb 17, 2025', 'the moon just happened to align in a cell tower while the sky had a good gradient going', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('between', 'photos/motorcycle-bridge.webp', 'thumbs/motorcycle-bridge.webp', NULL, 1, '', 'tuburan bridge, r. kangleon st.', 'feb 15, 2025', 'the rider paused mid-crossing, the bridge suspended over water, the bird perched on a wire between two points, sky that''s neither storm nor clear <br> <br> nobody''s arrived anywhere yet. they''re all just... between.. get it get it?', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('reclaim', 'photos/red-rectangle-sea.webp', 'thumbs/red-rectangle-sea.webp', NULL, 1, '', 'maasin reclaimation', 'feb 2, 2025', 'i saw a stranger things edit on pinterest with this huge red object floating in an ocean. i liked how ominous and mysterious it felt so i recreated it', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('cathedral', 'photos/church-tower-fog.webp', 'thumbs/church-tower-fog.webp', NULL, 1, '', 'maasin cathedral', 'dec 18, 2024', 'its a bell tower from a church that''s several decades old. the birds were pure luck, they fled the moment i took it ', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('birds on a feather', 'photos/birds-sunset.webp', 'thumbs/birds-sunset.webp', NULL, 1.5004, '', 'sjc extension, mambajao', 'oct 23, 2024', 'birds on a feather, we should stick together, i know <br> i said i''d never think i wasn''t better alone <br> can''t change the weather, might not be forever <br> but if it''s forever, it''s even better', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('procession', 'photos/banner-sunlight.webp', 'thumbs/banner-sunlight.webp', NULL, 1.5004, '', 'r. kangleon st., abgao', 'oct 17, 2024', 'shot during a parade for our school''s intramurals. somebody was holding this banner up and the sun came through the fabric at exactly the right angle. <br> <br> the fleur-de-lis became a shadow', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('almost', 'photos/door-crack.webp', 'thumbs/door-crack.webp', NULL, 1, '', 'saint joseph college', 'aug 17, 2024', 'this was taken inside a utility room next to an office i worked on before. i just finished cleaning, but when i turned back, the light outside was seeping through the door in a slightly cinematic way. got on the floor to take this', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('trash girl', 'photos/golden-hour-portrait.webp', 'thumbs/golden-hour-portrait.webp', NULL, 1, 'figures', 'tagnipa', 'jun 29, 2024', 'my friend had a project about making a really fashionable outfit out of recycled materials. her dress is a trash bag, her headband is made with cellophane', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('elsewhere', 'photos/cafe-window.webp', 'thumbs/cafe-window.webp', NULL, 0.75, 'figures', 'jolibee maasin', 'jan 24, 2024', 'the warmth will never reach him <br> shot inside jolibee', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/crescent-tower-bw.webp', 'thumbs/crescent-tower-bw.webp', NULL, 1, '', 'baybay', '2024', 'the color gradient was cool but this version has more weight to it. there''s also more grain. the alignment reads almost sacred now, like a signal going both ways.', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('specimen', 'photos/chess-science-room.webp', 'thumbs/chess-science-room.webp', NULL, 1.7778, '', 'sjc high school', 'oct 25, 2023', 'this is a tense shot during a chess competition during our school''s intramurals. it was held in the high school biology room <br> i was mostly there to hype up my friend, but i also ended up with shots of the other players too', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('dissolve', 'photos/figure-water-dusk.webp', 'thumbs/figure-water-dusk.webp', NULL, 1.0005, 'figures', 'san antonio, tomas oppus', 'aug 8, 2023', 'we were at a random beach and was about to head home. my niece was contemplating in the ocean. she was tired from swimming', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('rish', 'photos/girl-waves-rock.webp', 'thumbs/girl-waves-rock.webp', NULL, 1.3342, 'figures', 'punta beach, macrohon', 'june 11, 2023', 'it was our culmination gathering held by our class. i was asked to take pics of her during the occasion. this was one of the best shots we''ve taken', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('beach girl', 'photos/beach-hat-girl.webp', 'thumbs/beach-hat-girl.webp', NULL, 1.3333, 'figures', 'punta beach, macrohon', 'june 11, 2023', 'taken the same day with rish on our class culmination. this one was really random. her outfit and vibe was really asian and i feel like the border leaned onto that. it just needs japanese characters but that would be pretentious', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('prom', 'photos/upside-down-event.webp', 'thumbs/upside-down-event.webp', NULL, 1.2508, '', 'capitol gymnasium', 'may 24, 2023', 'senior high prom. the chandelier was too good not to shoot. flipped it. added particles in post', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/red-rectangle-bw.webp', 'thumbs/red-rectangle-bw.webp', NULL, 1, '', 'maasin city, southern leyte', '2023', 'pic sa reklem na edited pero black and white', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/fish-eye-bw.webp', 'thumbs/fish-eye-bw.webp', NULL, 1, '', 'maasin city, southern leyte', '2023', 'isda black and white', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('bee and the flower', 'photos/bee-flower.webp', 'thumbs/bee-flower.webp', NULL, 1, '', 'bontoc', 'oct 19, 2022', NULL, 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('they didn''t make it', 'photos/mama-cat-kittens.webp', 'thumbs/mama-cat-kittens.webp', NULL, 1.3369, '', 'tagnipa', 'aug 24, 2022', 'all the kittens died because she wasn''t able to feed them. they died one by one in my friend''s house. the mama cat then fled and never came back', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('distancia', 'photos/jeepney-ground.webp', 'thumbs/jeepney-ground.webp', NULL, 0.7495, '', 'san francisco, southern leyte', 'aug 7, 2022', 'my mom''s side was having a beach reunion. i wasn''t in the mood so i went uphill where the road was and just stayed in my uncle''s motorcab <br> he had an audio system there and i remember playing acoustic songs to chill', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('wait', 'photos/silhouette-door-sunset.webp', 'thumbs/silhouette-door-sunset.webp', NULL, 1.3333, 'figures', 'jolibee maasin', 'apr 30, 2022', 'my friend was falling in line in jolibee and it was like 5:30pm. she''s the one in the silhouette', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('floating hut', 'photos/floating-hut-sunrise.webp', 'thumbs/floating-hut-sunrise.webp', NULL, 1, '', 'bontoc', 'apr 1, 2022', 'my sister was pregnant and wanted to do walking exercises so i tagged along with her. we went to the bontoc coast around 5am <br> the coast was recently revamped so there were new floating huts on the beach at the time. the sun was just starting to rise', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('depths (old)', 'photos/depths-2022.webp', 'thumbs/depths-2022.webp', NULL, 1.0005, '', 'saint joseph college', 'mar 29, 2022', 'the first version of the abyss. it was during the first friday mass and i was sitting on the 2nd floor feeling bored', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('ghosts', 'photos/ghost-sheets-sunglasses.webp', 'thumbs/ghost-sheets-sunglasses.webp', NULL, 0.75, '', 'basak, lonoy', 'nov 2, 2021', 'it was days after halloween and souls day <br> 4 of us went into a sleepover at a place with no internet so we just did random shit <br> we had sheets and sunglasses and it was time-appropriate so we just went with it', 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('dappled', 'photos/portrait-dappled-light.webp', 'thumbs/portrait-dappled-light.webp', NULL, 0.75, 'figures', 'college of maasin', 'feb 17, 2020', 'taken at 2019 in our room after a parade', 1);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/bsod-building.webp', 'thumbs/bsod-building.webp', NULL, 1.2945, '', NULL, NULL, NULL, 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/film-grain-sunset.webp', 'thumbs/film-grain-sunset.webp', NULL, 0.9987, '', NULL, NULL, NULL, 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/jungle-structure.webp', 'thumbs/jungle-structure.webp', NULL, 1, '', NULL, NULL, NULL, 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/pink-sky-tree.webp', 'thumbs/pink-sky-tree.webp', NULL, 0.9995, '', NULL, NULL, NULL, 0);
-INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, desc, hero_slide)
+INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, `desc`, hero_slide)
 VALUES ('', 'photos/wires-crescent-pink.webp', 'thumbs/wires-crescent-pink.webp', NULL, 0.75, '', NULL, NULL, NULL, 0);
 
 -- Seed Videos
-INSERT INTO videos (title, src, poster, aspect_ratio, location, date, desc, music)
+INSERT INTO videos (title, src, poster, aspect_ratio, location, date, `desc`, music)
 VALUES ('after hours', 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev/media/videos/after-hours.mp4', 'posters/after-hours.webp', 1.777, 'maasin city', 'aug 11, 2025', 'filmed with a friend from 3am to 6am. completely impromptu. the entire city was asleep and we had it to ourselves <br> <br> stabilization failed us but i tried to make everything look intentional', 'Cigarettes After Sex - Sunsetz');
 
 COMMIT;

@@ -17,7 +17,7 @@ export async function fetchArchives() {
   };
 }
 
-export async function deleteArchiveItem(type, id, token) {
+export async function deleteArchiveItem(type: 'photo' | 'video' | string, id: string | number, token: string) {
   const endpoint = type === 'video' 
     ? `${API_BASE_URL}/api/admin/video/${id}`
     : `${API_BASE_URL}/api/admin/photo/${id}`;
@@ -32,7 +32,7 @@ export async function deleteArchiveItem(type, id, token) {
   return res;
 }
 
-export async function updateArchiveItem(type, id, payload, token) {
+export async function updateArchiveItem(type: 'photo' | 'video' | string, id: string | number, payload: any, token: string) {
   const endpoint = type === 'photo'
     ? `${API_BASE_URL}/api/admin/photo/${id}`
     : `${API_BASE_URL}/api/admin/video/${id}`;
@@ -49,7 +49,7 @@ export async function updateArchiveItem(type, id, payload, token) {
   return res;
 }
 
-export async function uploadArchiveItem(type, formData, token) {
+export async function uploadArchiveItem(type: 'photo' | 'video' | string, formData: FormData, token: string) {
   const endpoint = type === 'photo'
     ? `${API_BASE_URL}/api/admin/upload-photo`
     : `${API_BASE_URL}/api/admin/upload-video`;
@@ -65,7 +65,7 @@ export async function uploadArchiveItem(type, formData, token) {
   return res;
 }
 
-export async function replacePhotoItem(id, formData, token) {
+export async function replacePhotoItem(id: string | number, formData: FormData, token: string) {
   const endpoint = `${API_BASE_URL}/api/admin/photo/${id}/replace`;
   const res = await fetch(endpoint, {
     method: 'POST',

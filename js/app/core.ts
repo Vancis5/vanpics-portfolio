@@ -2,13 +2,13 @@ import { domRefs } from './dom.js';
 import { state } from './state.js';
 
 let filmstripVisibilityHandlers: any = {};
-let startLoopsCallback = null;
+let startLoopsCallback: (() => void) | null = null;
 
-export function setFilmstripVisibilityHandlers(handlers) {
+export function setFilmstripVisibilityHandlers(handlers: any) {
   filmstripVisibilityHandlers = handlers || {};
 }
 
-export function setStartLoopsCallback(callback) {
+export function setStartLoopsCallback(callback: (() => void) | null) {
   startLoopsCallback = callback;
 }
 
@@ -29,7 +29,7 @@ export function clearFilmstripHideTimerIfReady() {
   }
 }
 
-export function setFilmstripLiftZoneDisplay(display) {
+export function setFilmstripLiftZoneDisplay(display: string) {
   const liftZone = domRefs.filmstripLiftZone;
   if (liftZone) liftZone.style.display = display;
 }
@@ -46,7 +46,7 @@ let mouseInHero = false;
 
 // Declared at outer scope so bootstrap.js can always find it via typeof check,
 // even under strict mode or future ES module migration.
-export let animateGlow = null;
+export let animateGlow: (() => void) | null = null;
 
 if (glowBall && domRefs.hero) {
   const hero = domRefs.hero;
@@ -80,7 +80,7 @@ if (glowBall && domRefs.hero) {
       state.glowRafId = null;
       return;
     }
-    state.glowRafId = requestAnimationFrame(animateGlow);
+    state.glowRafId = requestAnimationFrame(animateGlow as FrameRequestCallback);
   };
 }
 
@@ -90,7 +90,7 @@ const siteFooter = domRefs.siteFooter;
 let footerGlowX = 0, footerGlowY = 0;
 let footerGlowTargetX = 0, footerGlowTargetY = 0;
 let mouseInFooter = false;
-let footerGlowRafId = null;
+let footerGlowRafId: number | null = null;
 
 function animateFooterGlow() {
   if (!mouseInFooter) {

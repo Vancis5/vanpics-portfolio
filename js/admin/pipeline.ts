@@ -1,10 +1,19 @@
-export function resizeImage(img, maxDimension, quality, applyBlur = false) {
+export function resizeImage(
+  img: HTMLImageElement | HTMLCanvasElement,
+  maxDimension: number,
+  quality: number,
+  applyBlur = false
+): Promise<Blob | null> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      resolve(null);
+      return;
+    }
     
-    let width = img.width;
-    let height = img.height;
+    let width = img instanceof HTMLImageElement ? img.width : (img as HTMLCanvasElement).width;
+    let height = img instanceof HTMLImageElement ? img.height : (img as HTMLCanvasElement).height;
     
     if (width > height) {
       if (width > maxDimension) {
