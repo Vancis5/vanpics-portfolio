@@ -14,6 +14,54 @@ export function slugify(text) {
     .replace(/--+/g, '-');
 }
 
+export function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const body = doc.body;
+  
+  const allowedTags = new Set(['A', 'BR']);
+  const allowedAttrs: Record<string, Set<string>> = {
+    'A': new Set(['href', 'target', 'rel'])
+  };
+
+  function sanitize(node: Node): Node {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.cloneNode(true);
+    }
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+      const tagName = el.tagName.toUpperCase();
+      if (allowedTags.has(tagName)) {
+        const cleanEl = doc.createElement(tagName);
+        const attrs = allowedAttrs[tagName] || new Set();
+        for (let i = 0; i < el.attributes.length; i++) {
+          const attr = el.attributes[i];
+          if (attrs.has(attr.name.toLowerCase())) {
+            if (attr.name.toLowerCase() === 'href') {
+              const val = attr.value.trim().toLowerCase();
+              if (val.startsWith('javascript:') || val.startsWith('data:') || val.startsWith('vbscript:')) {
+                continue;
+              }
+            }
+            cleanEl.setAttribute(attr.name, attr.value);
+          }
+        }
+        for (let i = 0; i < el.childNodes.length; i++) {
+          cleanEl.appendChild(sanitize(el.childNodes[i]));
+        }
+        return cleanEl;
+      }
+    }
+    return doc.createTextNode(node.textContent || '');
+  }
+
+  const cleanBody = doc.createElement('body');
+  for (let i = 0; i < body.childNodes.length; i++) {
+    cleanBody.appendChild(sanitize(body.childNodes[i]));
+  }
+  return cleanBody.innerHTML;
+}
+
 const RATIO_CACHE_KEY = 'van_ratios_v1';
 let ratioCacheMemory: Record<string, string> = {};
 

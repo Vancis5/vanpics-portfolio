@@ -32,7 +32,7 @@ let currentMode = 'photo'; // 'photo' or 'video'
 // Dashboard navigation state
 let activeFilter = localStorage.getItem('vanpics_cms_filter_type') || 'all';
 let searchQuery = localStorage.getItem('vanpics_cms_search') || '';
-let globalArchivesList = []; // Caches all items for instantaneous filtering
+let globalArchivesList: any[] = []; // Caches all items for instantaneous filtering
 
 // Modal elements
 const uploadModal = getDocEl('upload-modal-overlay');

@@ -174,11 +174,9 @@ body.lightbox-open #custom-scrollbar {
   /* Above content, below scrollbar/cursor */
   pointer-events: none;
   background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.45) 150%);
-  backdrop-filter: saturate(0.8) brightness(0.9);
-  -webkit-backdrop-filter: saturate(0.8) brightness(0.9);
   opacity: 0;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), -webkit-backdrop-filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, backdrop-filter;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
 }
 
 body.is-dragging-scrollbar #drag-vignette {
