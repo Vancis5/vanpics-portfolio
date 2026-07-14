@@ -917,7 +917,19 @@ export function renderVideoInLightbox(p: Video) {
   if (!shell) return;
   let ratio = p.aspectRatio || (16 / 9);
   shell.style.aspectRatio = String(ratio);
-  shell.style.width = 'min(100%, calc((100svh - 15rem) * ' + ratio + '))';
+  
+  // Set custom properties for responsive width & info-clamp sizing
+  let wrap = domRefs.lightboxImgWrap;
+  if (wrap) {
+    wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
+  }
+  if (domRefs.lightboxContent) {
+    domRefs.lightboxContent.style.setProperty('--lightbox-photo-ratio', String(ratio));
+  }
+
+  // Clear inline width override to let CSS handle it
+  shell.style.width = '';
+  
   shell.innerHTML = getVideoPlayerMarkup(p);
   shell.style.opacity = '1';
   shell.style.display = 'block'; // Ensure it's not hidden

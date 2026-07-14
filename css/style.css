@@ -997,9 +997,10 @@ body::after {
 
 #motion-player-shell {
   position: relative;
-  width: min(100%, calc((100svh - 16rem) * 16 / 9), 1080px);
+  --lightbox-video-max-height: 78svh;
+  width: min(100%, calc(var(--lightbox-video-max-height) * var(--lightbox-photo-ratio, 1.7777777777777777)), 1080px);
   /* slightly larger max for desktop */
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--lightbox-photo-ratio, 16 / 9);
   background: transparent;
   border-radius: var(--motion-player-radius, 0.75rem);
   overflow: hidden;
@@ -1714,6 +1715,7 @@ body::after {
   }
 
   #motion-player-shell {
+    --lightbox-video-max-height: 44dvh;
     max-height: 44dvh;
     /* Match photo lightbox height */
   }
@@ -1845,6 +1847,11 @@ body::after {
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
     height: 72dvh;
+  }
+
+  #motion-player-shell {
+    --lightbox-video-max-height: 72dvh;
+    max-height: 72dvh;
   }
 }
 
