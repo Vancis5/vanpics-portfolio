@@ -1,8 +1,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { getCategorySlug, motionProjects } from './media-data.js';
-import { getVideoPlayerMarkup } from './motion-markup.js';
-import { slugify, getPhotoAspectRatio, saveRatioToCache, sanitizeHtml } from './utils.js';
+import { slugify, sanitizeHtml } from './utils.js';
 import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfReady, setFilmstripLiftZoneDisplay } from './core.js';
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
@@ -10,75 +9,23 @@ import { WebGLBlurRenderer } from './lightbox-blur.js';
 
 import { Photo, Video } from '../types.js';
 
+import { cacheImage, getLightboxBlurPath } from './lightbox-cache.js';
+import { resetDynamicTextColor, updateDynamicTextColor } from './lightbox-color.js';
+import {
+  prepareLightboxPhoto,
+  renderVideoInLightbox,
+  startUnifiedMotionPlayer,
+  clearLightboxPhotoPlaceholder
+} from './lightbox-media.js';
+
+// Re-export for public module interface compatibility
+export { prepareLightboxPhoto, renderVideoInLightbox, startUnifiedMotionPlayer };
+
 let blurToken = 0;
 let blurPreloadTimer: any = null;
 let mobileScrollToSlideCallback: ((i: number, immediate: boolean, dir: number) => void) | null = null;
-let photoPlaceholderTimer: any = null;
-let photoPlaceholderToken = 0;
 let swipeNeighborsCallback: (() => void) | null = null;
 let previouslyFocusedElement: HTMLElement | null = null;
-
-// In-memory decoded image cache — prevents placeholder flash on revisited photos
-const _imgCache = new Map();
-const _IMG_CACHE_MAX = 30;
-
-function _cacheImage(src: string) {
-  if (!src) return null;
-  if (_imgCache.has(src)) return _imgCache.get(src);
-  if (_imgCache.size >= _IMG_CACHE_MAX) _imgCache.delete(_imgCache.keys().next().value); // evict oldest
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  const entry = {
-    img,
-    decoded: false,
-    decodePromise: null as Promise<any> | null
-  };
-  entry.decodePromise = new Promise(resolve => {
-    function markDecoded() {
-      const cacheDimensions = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          saveRatioToCache(src, img.naturalWidth, img.naturalHeight);
-        }
-      };
-      if (img.decode) {
-        img.decode().then(function () {
-          entry.decoded = true;
-          cacheDimensions();
-          resolve(entry);
-        }).catch(function () {
-          cacheDimensions();
-          resolve(entry);
-        });
-      } else {
-        entry.decoded = true;
-        cacheDimensions();
-        resolve(entry);
-      }
-    }
-
-    img.onload = markDecoded;
-    img.onerror = function () { resolve(entry); };
-    img.src = src;
-    if (img.complete && img.naturalWidth > 0) markDecoded();
-  });
-  _imgCache.set(src, entry);
-  return entry;
-}
-
-function getLightboxBlurPath(src: string) {
-  if (!src) return '';
-  if (src.includes('photos/') && !src.includes('photos/thumbs/')) {
-    return src.replace('photos/', 'photos/thumbs/');
-  }
-  return src;
-}
-
-function getCachedImageDecode(src: string) {
-  let cached = _cacheImage(src);
-  if (!cached) return Promise.resolve(null);
-  if (cached.decoded) return Promise.resolve(cached);
-  return cached.decodePromise || Promise.resolve(cached);
-}
 
 export function preloadLightboxBlurNeighbors(centerIndex: number, range?: number) {
   if (state.currentLightboxIsMotion) return;
@@ -92,7 +39,7 @@ export function preloadLightboxBlurNeighbors(centerIndex: number, range?: number
     let p = currentSet[(centerIndex + offset + len) % len];
     if (!p) continue;
     let bSrc = p.thumb || p.src;
-    if (bSrc) _cacheImage(getLightboxBlurPath(bSrc));
+    if (bSrc) cacheImage(getLightboxBlurPath(bSrc));
   }
 }
 
@@ -145,7 +92,7 @@ export function setLightboxBlur(src: string) {
   let blurPath = getLightboxBlurPath(src);
   let token = ++blurToken;
 
-  let cached = _cacheImage(blurPath);
+  let cached = cacheImage(blurPath);
 
   function fadeToBlackFallback() {
     if (blurRenderer) {
@@ -194,132 +141,15 @@ export function setLightboxBlur(src: string) {
     }
   }, 50);
 
-  let decodePromise = cached && cached.decodePromise ? cached.decodePromise : getCachedImageDecode(blurPath);
-  decodePromise.then(function () {
-    if (token !== blurToken) return;
-    clearTimeout(timer);
-    doSwap();
-  });
-}
-
-function clearLightboxPhotoPlaceholder(expectedToken?: number) {
-  if (expectedToken && expectedToken !== photoPlaceholderToken) return;
-  if (!expectedToken) photoPlaceholderToken++;
-  let wrap = domRefs.lightboxImgWrap;
-  let img = domRefs.lightboxImg;
-  if (!wrap) return;
-  wrap.classList.remove('photo-error');
-  wrap.classList.add('photo-loaded');
-  if (img) img.removeAttribute('data-loading-photo');
-  if (img) img.style.opacity = '1';
-  if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
-  clearTimeout(photoPlaceholderTimer);
-  photoPlaceholderTimer = setTimeout(function () {
-    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded');
-  }, 260);
-}
-
-function showLightboxPhotoError(expectedToken?: number) {
-  if (expectedToken !== photoPlaceholderToken) return;
-  let wrap = domRefs.lightboxImgWrap;
-  let img = domRefs.lightboxImg;
-  if (!wrap) return;
-  wrap.classList.remove('photo-loaded');
-  wrap.classList.add('photo-loading', 'photo-placeholder-visible', 'photo-error');
-  if (img) img.removeAttribute('data-loading-photo');
-  if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = 'image failed to load';
-}
-
-export function prepareLightboxPhoto(p: Photo) {
-  let img = domRefs.lightboxImg;
-  let wrap = domRefs.lightboxImgWrap;
-  if (!img || !wrap || !p) return;
-
-  let ratio = getPhotoAspectRatio(p);
-  let token = ++photoPlaceholderToken;
-  clearTimeout(photoPlaceholderTimer);
-  wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
-  img.alt = p.title || '';
-  img.removeAttribute('title');
-  if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
-
-  // ── Cache hit: image already decoded, swap instantly with no placeholder ──
-  const cached = _imgCache.get(p.src);
-  if (cached && cached.decoded) {
-    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded', 'photo-error');
-    img.removeAttribute('data-loading-photo');
-    img.style.opacity = '0';
-    img.src = p.src;
-    if (cached.img.naturalWidth && cached.img.naturalHeight) {
-      let r = cached.img.naturalWidth / cached.img.naturalHeight;
-      wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-    }
-    setTimeout(() => {
-      if (token !== photoPlaceholderToken) return;
-      img.style.opacity = '1';
-    }, 20);
-    return;
-  }
-
-  // ── Cache miss: show placeholder while loading ──
-  let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
-  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading');
-  if (previewSrc) {
-    img.removeAttribute('data-loading-photo');
-    img.style.opacity = '0';
-    img.src = previewSrc;
-    setTimeout(() => {
-      if (token !== photoPlaceholderToken) return;
-      img.style.opacity = '1';
-    }, 20);
-  } else {
-    wrap.classList.add('photo-placeholder-visible');
-    img.dataset.loadingPhoto = 'true';
-  }
-
-  // Load and decode the image entirely off-DOM in the background cache.
-  // This prevents the DOM injection from stalling the CSS entrance animations.
-  let cacheEntry = _cacheImage(p.src);
-
-  if (cacheEntry && cacheEntry.decodePromise) {
-    cacheEntry.decodePromise.then(() => {
-      if (token !== photoPlaceholderToken) return;
-      
-      if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
-        let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
-        wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-      }
-
-      // Swap immediately at full opacity to prevent double-fading/flickering
-      img.src = p.src;
-      clearLightboxPhotoPlaceholder(token);
-      img.style.opacity = '1';
+  if (cached && cached.decodePromise) {
+    cached.decodePromise.then(function () {
+      if (token !== blurToken) return;
+      clearTimeout(timer);
+      doSwap();
     });
   } else {
-    // Fallback just in case
-    img.src = p.src;
-    img.onload = function () {
-      if (token !== photoPlaceholderToken) return;
-      const handleFallbackDecode = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          let r = img.naturalWidth / img.naturalHeight;
-          wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-        }
-        clearLightboxPhotoPlaceholder(token);
-        img.style.opacity = '1';
-      };
-      if (img.decode) {
-        img.decode().then(handleFallbackDecode).catch(handleFallbackDecode);
-      } else {
-        handleFallbackDecode();
-      }
-    };
-    img.onerror = function () {
-      if (token !== photoPlaceholderToken) return;
-      showLightboxPhotoError(token);
-    };
+    clearTimeout(timer);
+    fadeToBlackFallback();
   }
 }
 
@@ -364,134 +194,8 @@ function runDescFlipTransition(options: any) {
       }, 450);
     });
   });
-} function rgbToHsl(r: number, g: number, b: number) {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h: number = 0, s: number = 0, l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0; // achromatic
-  } else {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100)
-  };
 }
 
-function resetDynamicTextColor() {
-  const lbEl = domRefs.lightbox;
-  if (lbEl) {
-    lbEl.style.removeProperty('--dynamic-text-color');
-    lbEl.style.removeProperty('--dynamic-text-muted');
-    lbEl.style.removeProperty('--dynamic-text-faint');
-  }
-}
-
-function updateDynamicTextColor(p: Photo) {
-  if (state.currentLightboxIsMotion) {
-    resetDynamicTextColor();
-    return;
-  }
-
-  const thumbSrc = p.thumb || p.src;
-  if (!thumbSrc) {
-    resetDynamicTextColor();
-    return;
-  }
-
-  const cached = _cacheImage(thumbSrc);
-  if (!cached) {
-    resetDynamicTextColor();
-    return;
-  }
-
-  function processColor() {
-    // Verify that we are still displaying the same photo
-    const currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
-    if (!currentSet || currentSet[state.cur] !== p) return;
-
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 10;
-      canvas.height = 10;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(cached.img, 0, 0, 10, 10);
-      const imgData = ctx.getImageData(0, 0, 10, 10).data;
-
-      let rSum = 0, gSum = 0, bSum = 0, count = 0;
-      for (let i = 0; i < imgData.length; i += 4) {
-        const r = imgData[i];
-        const g = imgData[i + 1];
-        const b = imgData[i + 2];
-        const a = imgData[i + 3];
-        if (a > 200) {
-          rSum += r;
-          gSum += g;
-          bSum += b;
-          count++;
-        }
-      }
-
-      if (count > 0) {
-        const r = Math.round(rSum / count);
-        const g = Math.round(gSum / count);
-        const b = Math.round(bSum / count);
-
-        const hsl = rgbToHsl(r, g, b);
-
-        // Mute saturation to a beautiful elegant range (18% - 35%)
-        const s = Math.min(Math.max(hsl.s * 0.75, 18), 35);
-
-        // Lightness kept high and highly readable (82% - 85%) to guarantee contrast
-        const l = Math.min(Math.max(hsl.l, 82), 85);
-
-        const lbEl = domRefs.lightbox;
-        if (lbEl) {
-          lbEl.style.setProperty('--dynamic-text-color', `hsl(${hsl.h}, ${s}%, ${l}%)`);
-          lbEl.style.setProperty('--dynamic-text-muted', `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`);
-          lbEl.style.setProperty('--dynamic-text-faint', `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`);
-        }
-      } else {
-        resetDynamicTextColor();
-      }
-    } catch (e) {
-      console.warn("Dynamic text color extraction failed (possibly CORS):", e);
-      resetDynamicTextColor();
-    }
-  }
-
-  if (cached.decoded) {
-    processColor();
-  } else if (cached.decodePromise) {
-    cached.decodePromise.then(processColor);
-  } else {
-    cached.img.addEventListener('load', function onLoad() {
-      cached.img.removeEventListener('load', onLoad);
-      processColor();
-    });
-    cached.img.addEventListener('error', function onError() {
-      cached.img.removeEventListener('error', onError);
-      resetDynamicTextColor();
-    });
-  }
-}
-
-// updates text + blur bg only — image src is set separately to avoid double-load
 export function setLightboxContent(p: Photo | Video, options?: any) {
   if (!p) return;
   options = options || {};
@@ -616,7 +320,6 @@ function updateLightboxDescPreview() {
   btn.classList.toggle('no-desc', !hasOverflow);
 }
 
-
 export function animateInfo(dir: number) {
   let info = domRefs.lightboxInfo;
   if (!info || !info.parentNode) {
@@ -664,7 +367,6 @@ export function animateInfo(dir: number) {
   refreshLightboxInfoRefs();
 }
 
-// increments each navigation so stale callbacks from aborted navigations are ignored
 let navGen = 0;
 
 function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
@@ -887,7 +589,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
         if (!state.isMobile) {
           animateInfo(0);
         }
-        void img.offsetWidth; // force reflow — Firefox transition fix
+        void img.offsetWidth; // force reflow
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
@@ -910,92 +612,6 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       }
     });
   }
-}
-
-export function renderVideoInLightbox(p: Video) {
-  let shell = domRefs.motionPlayerShell;
-  if (!shell) return;
-  let ratio = p.aspectRatio || (16 / 9);
-  shell.style.aspectRatio = String(ratio);
-  
-  // Set custom properties for responsive width & info-clamp sizing
-  let wrap = domRefs.lightboxImgWrap;
-  if (wrap) {
-    wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
-  }
-  if (domRefs.lightboxContent) {
-    domRefs.lightboxContent.style.setProperty('--lightbox-photo-ratio', String(ratio));
-  }
-
-  // Clear inline width override to let CSS handle it
-  shell.style.width = '';
-  
-  shell.innerHTML = getVideoPlayerMarkup(p);
-  shell.style.opacity = '1';
-  shell.style.display = 'block'; // Ensure it's not hidden
-
-  // Double-tap/double-click gesture for fullscreen
-  const container = shell.querySelector('media-container');
-  if (container) {
-    let lastTap = 0;
-    
-    // Desktop double-click
-    container.addEventListener('dblclick', (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('media-controls') || target.closest('.motion-start-button')) {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const videoPlayer = container.closest('video-player') || container;
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      } else {
-        if (videoPlayer && videoPlayer.requestFullscreen) {
-          videoPlayer.requestFullscreen().catch(() => {});
-        } else {
-          container.requestFullscreen().catch(() => {});
-        }
-      }
-    });
-
-    // Mobile double-tap
-    container.addEventListener('click', (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('media-controls') || target.closest('.motion-start-button')) {
-        return;
-      }
-      
-      const now = Date.now();
-      if (now - lastTap < 300) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const videoPlayer = container.closest('video-player') || container;
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
-        } else {
-          if (videoPlayer && videoPlayer.requestFullscreen) {
-            videoPlayer.requestFullscreen().catch(() => {});
-          } else {
-            container.requestFullscreen().catch(() => {});
-          }
-        }
-        lastTap = 0;
-      } else {
-        lastTap = now;
-      }
-    });
-  }
-}
-
-export function startUnifiedMotionPlayer(id: string) {
-  let prime = document.getElementById(id);
-  if (!prime) return;
-  let video = prime.querySelector('video');
-  prime.classList.add('is-started');
-  if (video) video.play().catch(function () { });
 }
 
 export function closeLightbox(eventOrIsKeyboard: any = false) {
@@ -1189,7 +805,6 @@ export function toggleLightboxDesc() {
   });
 }
 
-// reset desc expansion on new photo
 export function resetDescToggle() {
   let info = domRefs.lightboxInfo;
   let btn = domRefs.lightboxDescToggle;
@@ -1205,16 +820,16 @@ export function loadSwipeNeighbors() {
   // Preload & cache ±2 high-res neighbors (to save bandwidth)
   [-2, -1, 1, 2].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
-    if (p && p.src) _cacheImage(p.src);
+    if (p && p.src) cacheImage(p.src);
   });
 
-  // Preload & cache ±6 blurred backgrounds (super light, 3.7KB each)
+  // Preload & cache ±6 blurred backgrounds (super light)
   [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
     if (p) {
       let bSrc = p.thumb || p.src;
       if (bSrc) {
-        _cacheImage(getLightboxBlurPath(bSrc));
+        cacheImage(getLightboxBlurPath(bSrc));
       }
     }
   });
@@ -1249,7 +864,6 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'ArrowLeft' || key === 'a' || key === 'w') navigateLightbox(-1);
 });
 
-// desktop: click bg to close
 if (!state.isMobile && domRefs.lightboxBg) domRefs.lightboxBg.addEventListener('click', closeLightbox);
 
 function handleLightboxBlur() {
