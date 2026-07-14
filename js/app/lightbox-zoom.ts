@@ -329,6 +329,7 @@ window.addEventListener('keyup', function (e) {
 domRefs.lightboxImgWrap.addEventListener('wheel', function (e) {
   let lb = domRefs.lightbox;
   if (!lb.classList.contains('open') || state.isMobile) return;
+  if (state.currentLightboxIsMotion) return;
 
   let img = state.isMobile ? mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') : domRefs.lightboxImg;
   if (!img || !img.classList.contains('zoomable')) return;

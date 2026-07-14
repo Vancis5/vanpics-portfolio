@@ -429,6 +429,7 @@ if (state.isMobile) {
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
+      if (state.currentLightboxIsMotion) return;
       // stricter check to prevent interaction fight between filmstrip and dismiss gesture
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
 
@@ -491,6 +492,7 @@ if (state.isMobile) {
 
     lbEl.addEventListener('touchmove', function (e) {
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if (state.currentLightboxIsMotion) return;
       if (isPinching && e.touches.length === 2) {
         e.preventDefault();
         let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
