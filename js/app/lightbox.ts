@@ -933,6 +933,61 @@ export function renderVideoInLightbox(p: Video) {
   shell.innerHTML = getVideoPlayerMarkup(p);
   shell.style.opacity = '1';
   shell.style.display = 'block'; // Ensure it's not hidden
+
+  // Double-tap/double-click gesture for fullscreen
+  const container = shell.querySelector('media-container');
+  if (container) {
+    let lastTap = 0;
+    
+    // Desktop double-click
+    container.addEventListener('dblclick', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('media-controls') || target.closest('.motion-start-button')) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const videoPlayer = container.closest('video-player') || container;
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      } else {
+        if (videoPlayer && videoPlayer.requestFullscreen) {
+          videoPlayer.requestFullscreen().catch(() => {});
+        } else {
+          container.requestFullscreen().catch(() => {});
+        }
+      }
+    });
+
+    // Mobile double-tap
+    container.addEventListener('click', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('media-controls') || target.closest('.motion-start-button')) {
+        return;
+      }
+      
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const videoPlayer = container.closest('video-player') || container;
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        } else {
+          if (videoPlayer && videoPlayer.requestFullscreen) {
+            videoPlayer.requestFullscreen().catch(() => {});
+          } else {
+            container.requestFullscreen().catch(() => {});
+          }
+        }
+        lastTap = 0;
+      } else {
+        lastTap = now;
+      }
+    });
+  }
 }
 
 export function startUnifiedMotionPlayer(id: string) {

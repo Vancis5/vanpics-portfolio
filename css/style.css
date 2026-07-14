@@ -2455,6 +2455,14 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   outline: none !important;
 }
 
+/* Ensure video player focus rings respect curved corners */
+#motion-player-shell:focus-visible,
+.media-minimal-skin:focus-visible,
+#motion-player-shell video-player:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #0d0c0c, 0 0 0 4px var(--text, #ddd8cf) !important;
+}
+
 /* The close button lives inside a dark overlay with clear hover/active states —
    programmatic .focus() on page load always triggers :focus-visible, so we
    suppress the outline entirely and rely on the button's own border for feedback */
