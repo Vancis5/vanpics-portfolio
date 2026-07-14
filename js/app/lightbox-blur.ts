@@ -464,9 +464,6 @@ export class WebGLBlurRenderer {
     let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
       this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
-      if (this.mixFactor === 1.0) {
-        this.animating = false;
-      }
     }
 
     let easedMix = easeOutExpoLike(this.mixFactor);
