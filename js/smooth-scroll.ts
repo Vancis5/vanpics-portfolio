@@ -79,9 +79,10 @@ export function initSmoothScroll(options: any = {}) {
     updateScrollDrivenUi();
   }, { passive: true });
 
+  let rafId: number | null = null;
   function lenisRaf(time: number) {
     if (document.hidden) {
-      requestAnimationFrame(lenisRaf);
+      rafId = null;
       return;
     }
     
@@ -98,9 +99,16 @@ export function initSmoothScroll(options: any = {}) {
     if (window.fsLenis && fsWrap && fsWrap.classList.contains('visible')) {
       window.fsLenis.raf(time);
     }
-    requestAnimationFrame(lenisRaf);
+    rafId = requestAnimationFrame(lenisRaf);
   }
-  requestAnimationFrame(lenisRaf);
+  
+  rafId = requestAnimationFrame(lenisRaf);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && rafId === null) {
+      rafId = requestAnimationFrame(lenisRaf);
+    }
+  });
 
   lenis.on('scroll', function (event: any) {
     updateScrollDrivenUi(event.scroll);

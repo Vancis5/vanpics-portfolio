@@ -338,6 +338,9 @@ body::after {
   z-index: 2;
   will-change: transform;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 .carousel-item {

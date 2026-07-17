@@ -18,12 +18,17 @@ const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
 };
 
 let CAROUSEL_CONFIG = APP_CONFIG.carousel;
+
+function computeCruiseSpeed(): number {
+  return state.isMobile
+    ? CAROUSEL_CONFIG.cruiseSpeed.mobile
+    : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
+      ? CAROUSEL_CONFIG.cruiseSpeed.tablet
+      : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+}
+
 // cruise speed scaled by device — mobile narrower so same px/frame looks faster
-let CRUISE_SPEED = state.isMobile
-  ? CAROUSEL_CONFIG.cruiseSpeed.mobile
-  : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
-    ? CAROUSEL_CONFIG.cruiseSpeed.tablet
-    : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+let CRUISE_SPEED = computeCruiseSpeed();
 let EASE_FRAMES = CAROUSEL_CONFIG.easeFrames;
 let START_SPEED_MULT = CAROUSEL_CONFIG.startSpeedMultiplier;
 let carouselReadyCallback = function () { };
@@ -85,11 +90,7 @@ let dragHistory: { x: number; time: number }[] = [];
 export function buildCarousel() {
   let rows = domRefs.heroRows;
 
-  CRUISE_SPEED = state.isMobile
-    ? CAROUSEL_CONFIG.cruiseSpeed.mobile
-    : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
-      ? CAROUSEL_CONFIG.cruiseSpeed.tablet
-      : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+  CRUISE_SPEED = computeCruiseSpeed();
 
   // Clear existing images before building/rebuilding to avoid duplicates
   rows.forEach(function (r) { r.innerHTML = ''; });
@@ -373,11 +374,7 @@ window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
 
 export function recalculateCarouselLayout() {
-  CRUISE_SPEED = state.isMobile
-    ? CAROUSEL_CONFIG.cruiseSpeed.mobile
-    : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
-      ? CAROUSEL_CONFIG.cruiseSpeed.tablet
-      : CAROUSEL_CONFIG.cruiseSpeed.desktop);
+  CRUISE_SPEED = computeCruiseSpeed();
 
   let rows = domRefs.heroRows;
 
@@ -427,6 +424,10 @@ domRefs.heroRows.forEach(function (row, ri) {
     dragHistory = [{ x: e.clientX, time: performance.now() }];
     rowState[ri].velocity = 0;
     rowState[ri].hasMomentum = false;
+  });
+
+  row.addEventListener('dragstart', function (e) {
+    e.preventDefault();
   });
 
   row.addEventListener('touchstart', function (e) {
