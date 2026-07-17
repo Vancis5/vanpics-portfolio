@@ -378,6 +378,11 @@ body::after {
   transform: scale(0.985);
 }
 
+.carousel-item.no-transition::before,
+.carousel-item.no-transition img {
+  transition: none !important;
+}
+
 .carousel-item::after {
   content: "";
   position: absolute;
@@ -839,6 +844,11 @@ body::after {
 .photo-card.photo-loaded::before {
   opacity: 0;
   transform: scale(0.985);
+}
+
+.photo-card.no-transition::before,
+.photo-card.no-transition img {
+  transition: none !important;
 }
 
 .photo-card img {

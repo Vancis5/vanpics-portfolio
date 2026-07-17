@@ -398,7 +398,7 @@ function scheduleGalleryBlurPreload(centerIndex: number, delay?: number) {
   }, delay || 0);
 }
 
-function getMasonryColumnCount() {
+export function getMasonryColumnCount() {
   if (window.innerWidth >= 1024) return 4;
   if (window.innerWidth >= 640) return 3;
   return 2;
@@ -647,7 +647,17 @@ export function buildMasonry(category?: string) {
     imgEl.alt = p.title || "video";
     imgEl.loading = i < 4 ? 'eager' : 'lazy';
     imgEl.decoding = 'async';
-    revealImageOnLoad(imgEl);
+
+    if (galleryPanelsBuilt && imgEl.complete && imgEl.naturalWidth > 0) {
+      card.classList.add('no-transition');
+      card.classList.add('photo-loaded');
+      imgEl.classList.add('media-loaded');
+      setTimeout(function () {
+        card.classList.remove('no-transition');
+      }, 50);
+    } else {
+      revealImageOnLoad(imgEl);
+    }
 
     let r = getPhotoAspectRatio(p, isMotion);
     card.style.setProperty('--photo-aspect-ratio', String(r));

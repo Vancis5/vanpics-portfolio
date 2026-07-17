@@ -4,7 +4,7 @@ import { state, updateActivePhotos } from './state.js';
 import { getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
 import { slugify } from './utils.js';
 import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
-import { buildMasonry, initFilters, rebuildGallery } from './gallery.js';
+import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
 import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick } from './hero-carousel.js';
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
@@ -69,6 +69,7 @@ window.addEventListener('orientationchange', updateStickyHeaderSurface, { passiv
 // Rebuild masonry on resize to handle column count changes (width-only check to avoid mobile address bar flicker)
 let _masonryResizeTimer: any;
 let _lastMasonryWidth = window.innerWidth;
+let _lastColumnCount = getMasonryColumnCount();
 window.addEventListener('resize', function () {
   if (window.innerWidth === _lastMasonryWidth) return;
   _lastMasonryWidth = window.innerWidth;
@@ -78,11 +79,16 @@ window.addEventListener('resize', function () {
     const oldIsMobile = state.isMobile;
     state.isMobile = window.matchMedia('(hover: none)').matches;
     if (state.isMobile !== oldIsMobile) {
-      buildCarousel();
+      buildCarousel(true);
     } else {
       recalculateCarouselLayout();
     }
-    buildMasonry();
+
+    const newColumnCount = getMasonryColumnCount();
+    if (newColumnCount !== _lastColumnCount) {
+      _lastColumnCount = newColumnCount;
+      buildMasonry();
+    }
   }, MASONRY_CONFIG.resizeDebounce);
 });
 
@@ -362,7 +368,7 @@ function renderUI(photos: Photo[], videos: Video[]) {
 
     // If data actually changed (e.g. user set a photo as draft in CMS), rebuild UI
     if (dataChanged) {
-      buildCarousel();
+      buildCarousel(true);
       buildMasonry();
     }
   }

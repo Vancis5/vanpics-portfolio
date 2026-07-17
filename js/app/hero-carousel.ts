@@ -87,7 +87,7 @@ let dragWrapAdjust = 0; // cumulative setWidth corrections during a drag
 let globalHasDragged = false;
 let dragHistory: { x: number; time: number }[] = [];
 
-export function buildCarousel() {
+export function buildCarousel(isRebuild = false) {
   let rows = domRefs.heroRows;
 
   CRUISE_SPEED = computeCruiseSpeed();
@@ -139,28 +139,36 @@ export function buildCarousel() {
           wrapper.classList.add('photo-loaded');
         }
 
-        if (c === 0) {
-          img.loading = 'eager';
-          img.addEventListener('load', reveal);
-          img.addEventListener('error', function () {
-            img.style.display = 'none';
-          });
-          eagerImgs.push(img);
-          if (pi === 0) {
-            criticalImgs.push(img);
-          }
+        if (isRebuild && img.complete && img.naturalWidth > 0) {
+          wrapper.classList.add('no-transition');
+          wrapper.classList.add('photo-loaded');
+          setTimeout(function () {
+            wrapper.classList.remove('no-transition');
+          }, 50);
         } else {
-          img.loading = 'lazy';
-          img.addEventListener('load', reveal);
-          img.addEventListener('error', function () {
-            img.style.display = 'none';
-          });
-        }
+          if (c === 0) {
+            img.loading = 'eager';
+            img.addEventListener('load', reveal);
+            img.addEventListener('error', function () {
+              img.style.display = 'none';
+            });
+            eagerImgs.push(img);
+            if (pi === 0) {
+              criticalImgs.push(img);
+            }
+          } else {
+            img.loading = 'lazy';
+            img.addEventListener('load', reveal);
+            img.addEventListener('error', function () {
+              img.style.display = 'none';
+            });
+          }
 
-        if (img.complete && img.naturalWidth > 0) {
-          reveal();
-        } else if (img.complete) {
-          img.style.display = 'none';
+          if (img.complete && img.naturalWidth > 0) {
+            reveal();
+          } else if (img.complete) {
+            img.style.display = 'none';
+          }
         }
 
         wrapper.addEventListener('click', function (e) {
