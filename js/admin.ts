@@ -22,8 +22,12 @@ import {
 import { renderArchivesList } from './admin/render.js';
 import { resizeImage } from './admin/pipeline.js';
 
-function getDocEl(id: string): any {
-  return document.getElementById(id);
+function getDocEl<T extends HTMLElement = HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) {
+    throw new Error(`Required element with id "${id}" was not found in the DOM.`);
+  }
+  return el as T;
 }
 
 // Form mode state
@@ -552,14 +556,10 @@ if (secretInput) {
     const token = secretInput.value.trim();
     currentAdminToken = token;
     
-    if (rememberCheckbox.checked) {
-      localStorage.setItem('vanpics_admin_token', token);
-    } else {
-      sessionStorage.setItem('vanpics_admin_token', token);
-    }
-
     clearTimeout(verifyTimeout);
     if (!token) {
+      localStorage.removeItem('vanpics_admin_token');
+      sessionStorage.removeItem('vanpics_admin_token');
       setAuthStatus('unverified');
       return;
     }
@@ -574,6 +574,12 @@ if (secretInput) {
 if (rememberCheckbox) {
   rememberCheckbox.addEventListener('change', () => {
     const token = currentAdminToken;
+    if (!token) return;
+
+    // Only update storage if verified/secured
+    const isSecured = lockSecured && lockSecured.style.display === 'block';
+    if (!isSecured) return;
+
     if (rememberCheckbox.checked) {
       localStorage.setItem('vanpics_admin_token', token);
       sessionStorage.removeItem('vanpics_admin_token');

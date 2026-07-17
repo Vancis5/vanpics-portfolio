@@ -4,7 +4,7 @@ import path from 'path';
 export default {
   server: {
     host: true,
-    port: 5173,
+    port: 5199,
     allowedHosts: true
   },
   publicDir: 'public',

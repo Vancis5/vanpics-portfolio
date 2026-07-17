@@ -99,7 +99,7 @@ export function getPhotoAspectRatio(p: any, isMotion = false): number {
   if (!p) return isMotion ? 1.777 : 1;
 
   let pRatio = p.aspectRatio !== undefined && p.aspectRatio !== null ? Number(p.aspectRatio) : NaN;
-  if (!isNaN(pRatio) && pRatio > 0 && pRatio !== 1) {
+  if (!isNaN(pRatio) && pRatio > 0) {
     return pRatio;
   }
 
@@ -107,10 +107,6 @@ export function getPhotoAspectRatio(p: any, isMotion = false): number {
   if (basePath && ratioCacheMemory[basePath]) {
     let cachedVal = Number(ratioCacheMemory[basePath]);
     if (cachedVal > 0) return cachedVal;
-  }
-
-  if (!isNaN(pRatio) && pRatio > 0) {
-    return pRatio;
   }
 
   return isMotion ? 1.777 : 1;

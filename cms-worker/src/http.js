@@ -14,15 +14,17 @@ export function isOriginAllowed(origin, env) {
     const url = new URL(origin);
     const hostname = url.hostname;
     
-    // Always allow local hostnames for development and debugging
-    if (
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname.startsWith('192.168.') ||
-      hostname.startsWith('10.') ||
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-    ) {
-      return true;
+    // Always allow local hostnames for development and debugging, unless in production env
+    if (env.ENVIRONMENT !== 'production') {
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+      ) {
+        return true;
+      }
     }
   } catch (e) {}
 

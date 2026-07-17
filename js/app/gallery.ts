@@ -413,20 +413,24 @@ function updateGalleryNav(category: string) {
     if (button) {
       button.classList.remove('active');
       button.classList.add('inactive');
+      button.setAttribute('aria-pressed', 'false');
     }
   });
 
   if (category === 'all' && photoBtn) {
     photoBtn.classList.remove('inactive');
     photoBtn.classList.add('active');
+    photoBtn.setAttribute('aria-pressed', 'true');
   }
   if (category === 'figures' && figuresBtn) {
     figuresBtn.classList.remove('inactive');
     figuresBtn.classList.add('active');
+    figuresBtn.setAttribute('aria-pressed', 'true');
   }
   if (category === 'motion' && motionBtn) {
     motionBtn.classList.remove('inactive');
     motionBtn.classList.add('active');
+    motionBtn.setAttribute('aria-pressed', 'true');
   }
 }
 
