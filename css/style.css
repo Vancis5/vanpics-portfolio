@@ -228,7 +228,7 @@ body::after {
   html.custom-cursor-enabled,
   html.custom-cursor-enabled body,
   html.custom-cursor-enabled body *:not(.zoomable) {
-    cursor: none;
+    cursor: none !important;
   }
 
   #cursor {
