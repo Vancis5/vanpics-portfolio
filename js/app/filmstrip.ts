@@ -4,6 +4,7 @@ import { state } from './state.js';
 import { motionProjects } from './media-data.js';
 import { openLightbox } from './lightbox.js';
 import { setFilmstripVisibilityHandlers } from './core.js';
+import { PLACEHOLDER_SVG } from './utils.js';
 
 // FILMSTRIP
 let filmstripWrap = domRefs.filmstripWrap;
@@ -86,7 +87,19 @@ export function buildFilmstrip() {
     img.loading = 'eager';
     img.decoding = 'async';
     img.fetchPriority = Math.abs(i - state.cur) <= 8 ? 'high' : 'auto';
+    let isPlaceholder = false;
+    function handleLoadError() {
+      if (isPlaceholder) return;
+      isPlaceholder = true;
+      img.src = PLACEHOLDER_SVG;
+      img.classList.add('placeholder-fallback');
+    }
+    img.addEventListener('error', handleLoadError, { once: true });
+
     if (galleryAlreadyHasThumb(thumbPath, loadedThumbs) || (img.complete && img.naturalWidth > 0)) {
+      img.classList.add('media-loaded');
+    } else if (img.complete && img.naturalWidth === 0) {
+      handleLoadError();
       img.classList.add('media-loaded');
     } else {
       let loaded = false;

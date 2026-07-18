@@ -14,6 +14,10 @@ export function slugify(text: string | number): string {
     .replace(/--+/g, '-');
 }
 
+export const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%"><rect width="100" height="100" fill="#141313"/><path d="M35 38h6l3-3h12l3 3h6a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H35a3 3 0 0 1-3-3V41a3 3 0 0 1 3-3zm15 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-3a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" fill="#666" opacity="0.6"/></svg>`
+);
+
 export function getRequiredElement<T extends HTMLElement = HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) {
