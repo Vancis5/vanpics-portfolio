@@ -2587,3 +2587,22 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
     margin-top: 0.25rem;
   }
 }
+
+/* PLACEHOLDER FALLBACK STYLES */
+img.placeholder-fallback {
+  object-fit: contain !important;
+  opacity: 0.25 !important;
+  background-color: #141313;
+}
+
+.filmstrip-thumb img.placeholder-fallback {
+  padding: 4px !important;
+}
+
+.photo-card img.placeholder-fallback {
+  padding: 24px !important;
+}
+
+.carousel-item img.placeholder-fallback {
+  padding: 16px !important;
+}

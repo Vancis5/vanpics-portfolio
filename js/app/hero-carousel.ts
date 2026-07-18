@@ -5,7 +5,7 @@ import { getInternalCategory } from './media-data.js';
 import { openLightbox } from './lightbox.js';
 import { rebuildGallery } from './gallery.js';
 import { startLoopsIfReady } from './core.js';
-import { getPhotoAspectRatio } from './utils.js';
+import { getPhotoAspectRatio, PLACEHOLDER_SVG } from './utils.js';
 
 // CAROUSEL
 let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }];
@@ -135,6 +135,14 @@ export function buildCarousel(isRebuild = false) {
           }
         }
 
+        let isPlaceholder = false;
+        function handleLoadError() {
+          if (isPlaceholder) return;
+          isPlaceholder = true;
+          img.src = PLACEHOLDER_SVG;
+          img.classList.add('placeholder-fallback');
+        }
+
         function reveal() {
           wrapper.classList.add('photo-loaded');
         }
@@ -145,13 +153,20 @@ export function buildCarousel(isRebuild = false) {
           setTimeout(function () {
             wrapper.classList.remove('no-transition');
           }, 50);
+        } else if (isRebuild && img.complete && img.naturalWidth === 0) {
+          handleLoadError();
+          wrapper.classList.add('no-transition');
+          wrapper.classList.add('photo-loaded');
+          setTimeout(function () {
+            wrapper.classList.remove('no-transition');
+          }, 50);
         } else {
+          img.addEventListener('error', handleLoadError, { once: true });
+          img.addEventListener('error', reveal, { once: true });
+
           if (c === 0) {
             img.loading = 'eager';
             img.addEventListener('load', reveal);
-            img.addEventListener('error', function () {
-              img.style.display = 'none';
-            });
             eagerImgs.push(img);
             if (pi === 0) {
               criticalImgs.push(img);
@@ -159,15 +174,13 @@ export function buildCarousel(isRebuild = false) {
           } else {
             img.loading = 'lazy';
             img.addEventListener('load', reveal);
-            img.addEventListener('error', function () {
-              img.style.display = 'none';
-            });
           }
 
           if (img.complete && img.naturalWidth > 0) {
             reveal();
           } else if (img.complete) {
-            img.style.display = 'none';
+            handleLoadError();
+            reveal();
           }
         }
 

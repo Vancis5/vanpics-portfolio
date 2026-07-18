@@ -5,7 +5,7 @@ import { getMotionThumbnailMarkup } from './motion-markup.js';
 import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
-import { getPhotoAspectRatio, saveRatioToCache, isRatioCached } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, isRatioCached, PLACEHOLDER_SVG } from './utils.js';
 
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 let galleryScrollDirection = 'down';
@@ -199,15 +199,23 @@ function revealImageOnLoad(img: HTMLImageElement) {
       card.classList.add('photo-loaded');
     }
   }
+  let isPlaceholder = false;
+  function handleLoadError() {
+    if (isPlaceholder) return;
+    isPlaceholder = true;
+    img.src = PLACEHOLDER_SVG;
+    img.classList.add('placeholder-fallback');
+  }
+
   if (img.complete && img.naturalWidth > 0) {
     requestAnimationFrame(reveal);
   } else if (img.complete) {
-    img.style.display = 'none';
+    handleLoadError();
+    requestAnimationFrame(reveal);
   } else {
     img.addEventListener('load', reveal, { once: true });
-    img.addEventListener('error', function () {
-      img.style.display = 'none';
-    }, { once: true });
+    img.addEventListener('error', handleLoadError, { once: true });
+    img.addEventListener('error', reveal, { once: true });
   }
 }
 
@@ -649,6 +657,15 @@ export function buildMasonry(category?: string) {
     imgEl.decoding = 'async';
 
     if (galleryPanelsBuilt && imgEl.complete && imgEl.naturalWidth > 0) {
+      card.classList.add('no-transition');
+      card.classList.add('photo-loaded');
+      imgEl.classList.add('media-loaded');
+      setTimeout(function () {
+        card.classList.remove('no-transition');
+      }, 50);
+    } else if (galleryPanelsBuilt && imgEl.complete && imgEl.naturalWidth === 0) {
+      imgEl.src = PLACEHOLDER_SVG;
+      imgEl.classList.add('placeholder-fallback');
       card.classList.add('no-transition');
       card.classList.add('photo-loaded');
       imgEl.classList.add('media-loaded');
