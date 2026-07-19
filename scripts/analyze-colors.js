@@ -50,8 +50,6 @@ const MANUAL_OVERRIDES = {
   "photos/red-rectangle-bw.webp": "grey", // Monochromatic version
   "photos/fish-eye-bw.webp": "grey",      // Black & white
   "photos/ray-of-light-bw.webp": "grey",  // Black & white
-  "photos/depths-remake.webp": "grey",    // Abyssal stairs, virtually monochromatic
-  "photos/depths-2022.webp": "grey",      // Old version, grey
   "photos/crescent-tower-bw.webp": "grey",// Black & white
 };
 
