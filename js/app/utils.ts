@@ -23,6 +23,15 @@ export function setupImagePlaceholderFallback(img: HTMLImageElement, onFallback?
   function handleLoadError() {
     if (isPlaceholder) return;
     isPlaceholder = true;
+    // Preserve the card's aspect ratio before swapping to placeholder
+    const card = img.closest('.photo-card, .carousel-item, .filmstrip-thumb') as HTMLElement;
+    if (card) {
+      const existingRatio = card.style.getPropertyValue('--photo-aspect-ratio') ||
+                            card.style.getPropertyValue('--carousel-photo-ratio');
+      if (existingRatio) {
+        img.style.aspectRatio = existingRatio;
+      }
+    }
     img.src = PLACEHOLDER_SVG;
     img.classList.add('placeholder-fallback');
     if (onFallback) onFallback();
@@ -113,6 +122,22 @@ export function saveRatioToCache(src: string, width: number, height: number) {
 
 export function isRatioCached(src: string): boolean {
   return !!(src && ratioCacheMemory[src]);
+}
+
+export function pruneRatioCache(validSrcs: string[]) {
+  const validSet = new Set(validSrcs);
+  let pruned = false;
+  for (const key of Object.keys(ratioCacheMemory)) {
+    if (!validSet.has(key)) {
+      delete ratioCacheMemory[key];
+      pruned = true;
+    }
+  }
+  if (pruned) {
+    try {
+      localStorage.setItem(RATIO_CACHE_KEY, JSON.stringify(ratioCacheMemory));
+    } catch (e) {}
+  }
 }
 
 export function getPhotoAspectRatio(p: any, isMotion = false): number {
