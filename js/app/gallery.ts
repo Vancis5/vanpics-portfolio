@@ -1,5 +1,5 @@
 import { domRefs } from './dom.js';
-import { state, updateActivePhotos } from './state.js';
+import { state, updateActivePhotos, getPhotoColor } from './state.js';
 import { getCategorySlug, getPhotoLibrary, motionProjects } from './media-data.js';
 import { getMotionThumbnailMarkup } from './motion-markup.js';
 import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
@@ -360,7 +360,11 @@ function refreshGalleryScrollMetrics() {
 
 function getCategoryItems(category: string) {
   if (category === 'motion') return motionProjects;
-  return getPhotoLibrary(category);
+  const items = getPhotoLibrary(category);
+  if (state.selectedColor) {
+    return items.filter(p => getPhotoColor(p) === state.selectedColor);
+  }
+  return items;
 }
 
 function getCategoryIndex(category: string) {
@@ -504,6 +508,11 @@ export function rebuildGallery(newCategory: string, options?: any) {
     rememberGalleryScroll(previousCategory);
   }
 
+  if (newCategory === 'motion') {
+    state.selectedColor = null;
+    updateSwatchUI();
+  }
+
   state.currentCategory = newCategory;
   updateActivePhotos();
 
@@ -527,6 +536,27 @@ export function rebuildGallery(newCategory: string, options?: any) {
     setTimeout(refreshGalleryScrollMetrics, 120);
     if (typeof options.onReady === 'function') options.onReady();
   });
+}
+
+export function updateSwatchUI() {
+  const swatches = document.querySelectorAll('#gallery-header .swatch');
+  swatches.forEach(swatch => {
+    const isSelected = swatch.getAttribute('data-color') === state.selectedColor;
+    swatch.classList.toggle('selected-swatch', isSelected);
+    swatch.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+  });
+}
+
+export function clearColorFilter() {
+  state.selectedColor = null;
+  updateSwatchUI();
+  updateActivePhotos();
+  buildMasonry(state.currentCategory);
+  const panel = getActiveGalleryPanel();
+  if (panel) {
+    revealCards(panel, { immediate: true });
+  }
+  refreshGalleryScrollMetrics();
 }
 
 export function initFilters() {
@@ -555,6 +585,39 @@ export function initFilters() {
       }
     });
   });
+
+  const swatches = document.querySelectorAll('#gallery-header .swatch');
+  swatches.forEach(function (swatchEl) {
+    const swatch = swatchEl as HTMLElement;
+    const color = swatch.getAttribute('data-color');
+    if (!color) return;
+
+    swatch.addEventListener('click', function () {
+      if (state.selectedColor === color) {
+        state.selectedColor = null;
+      } else {
+        state.selectedColor = color;
+      }
+      updateSwatchUI();
+      updateActivePhotos();
+      buildMasonry(state.currentCategory);
+      
+      const panel = getActiveGalleryPanel();
+      if (panel) {
+        revealCards(panel, { immediate: true });
+      }
+      refreshGalleryScrollMetrics();
+    });
+
+    swatch.addEventListener('keydown', function (e: KeyboardEvent) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        swatch.click();
+      }
+    });
+  });
+
+  updateSwatchUI();
 }
 
 export function buildMasonry(category?: string) {
@@ -595,6 +658,21 @@ export function buildMasonry(category?: string) {
   let lastYear: string | null = null;
   let isMotion = category === 'motion';
   let items = getCategoryItems(category);
+
+  if (items.length === 0) {
+    let emptyEl = document.createElement('div');
+    emptyEl.className = 'masonry-empty';
+    emptyEl.innerHTML = `
+      <p>no photos match this color in ${category === 'all' ? 'photographs' : category}</p>
+      <button class="clear-color-filter-btn" type="button">clear filter</button>
+    `;
+    panel.appendChild(emptyEl);
+    
+    emptyEl.querySelector('.clear-color-filter-btn')?.addEventListener('click', function () {
+      clearColorFilter();
+    });
+    return;
+  }
   let yearGrid: HTMLDivElement | null = null;
   let columns: HTMLDivElement[] = [];
   let colHeights: number[] = [];

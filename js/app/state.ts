@@ -1,5 +1,6 @@
 import type { Photo } from '../types.js';
 import { photoLibrary, getPhotoLibrary } from './media-data.js';
+import { photoColorMap, photoTitleColorMap } from '../data/photo-colors.js';
 
 function getInitialCategory() {
   if (!window.location.hash) return 'all';
@@ -21,6 +22,7 @@ export const state = {
   pushNextState: false,
   isPopState: false,
   currentCategory: getInitialCategory(),
+  selectedColor: null as string | null,
   activePhotos: [] as Photo[],
   carouselPhotos: getCarouselPhotos() as Photo[],
   cur: 0,
@@ -41,8 +43,30 @@ export const state = {
   lastInputType: 'pointer'
 };
 
+export function getPhotoColor(photo: Photo): string | undefined {
+  if (!photo) return undefined;
+  if (photo.src && photoColorMap[photo.src]) return photoColorMap[photo.src];
+  if (photo.src) {
+    const filename = photo.src.substring(photo.src.lastIndexOf('/') + 1);
+    if (photoColorMap[filename]) return photoColorMap[filename];
+  }
+  if (photo.thumb) {
+    const thumbFilename = photo.thumb.substring(photo.thumb.lastIndexOf('/') + 1);
+    if (photoColorMap[thumbFilename]) return photoColorMap[thumbFilename];
+  }
+  if (photo.title) {
+    const cleanTitle = photo.title.toLowerCase().trim();
+    if (photoTitleColorMap[cleanTitle]) return photoTitleColorMap[cleanTitle];
+  }
+  return undefined;
+}
+
 export function updateActivePhotos() {
-  state.activePhotos = getPhotoLibrary(state.currentCategory);
+  let photos = getPhotoLibrary(state.currentCategory);
+  if (state.selectedColor) {
+    photos = photos.filter(p => getPhotoColor(p) === state.selectedColor);
+  }
+  state.activePhotos = photos;
   return state.activePhotos;
 }
 

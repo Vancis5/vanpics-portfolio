@@ -23,7 +23,8 @@
     "generate-thumbs": "node scripts/generate-thumbs.js",
     "generate-seed": "node scripts/generate-seed.mjs",
     "copy-assets": "node scripts/copy-assets.js",
-    "check-dims": "node scripts/check-dims.js"
+    "check-dims": "node scripts/check-dims.js",
+    "analyze-colors": "node scripts/analyze-colors.js"
   },
   "dependencies": {
     "lenis": "^1.3.23"
