@@ -16,23 +16,6 @@ const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
   'fog-motorcycle.webp': '30% center',
   // Add other cropped photos here as needed
 };
-let CAROUSEL_CONFIG = APP_CONFIG.carousel;
-// cruise speed scaled by device — mobile narrower so same px/frame looks faster
-let CRUISE_SPEED = state.isMobile
-  ? CAROUSEL_CONFIG.cruiseSpeed.mobile
-  : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
-    ? CAROUSEL_CONFIG.cruiseSpeed.tablet
-    : CAROUSEL_CONFIG.cruiseSpeed.desktop);
-let EASE_FRAMES = CAROUSEL_CONFIG.easeFrames;
-let START_SPEED_MULT = CAROUSEL_CONFIG.startSpeedMultiplier;
-let carouselReadyCallback = function () {};
-
-// Custom horizontal focus points (object-position) for mobile carousel images under the 0.75 ratio clamp.
-// Maps photo filename to an object-position value (e.g. '30% center', 'left center', etc.).
-const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
-  'fog-motorcycle.webp': '30% center',
-  // Add other cropped photos here as needed
-};
 
 let CAROUSEL_CONFIG = APP_CONFIG.carousel;
 
