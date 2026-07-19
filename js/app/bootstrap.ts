@@ -2,7 +2,7 @@ import { APP_CONFIG } from './config.js';
 import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
 import { getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
-import { slugify } from './utils.js';
+import { slugify, pruneRatioCache } from './utils.js';
 import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
 import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
 import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick } from './hero-carousel.js';
@@ -285,6 +285,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
 (async function loadDynamicMedia() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
   let renderedFromCache = false;
+  let renderedPhotos: any[] = [];
+  let renderedVideos: any[] = [];
 
   // ── 1. Instant render from localStorage cache ──
   try {
@@ -292,6 +294,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
     if (raw) {
       const { photos, videos } = JSON.parse(raw);
       if (Array.isArray(photos) && photos.length > 0) {
+        renderedPhotos = processPhotos(photos);
+        renderedVideos = processVideos(videos || []);
         warmStartupImages(photos).catch(function() {});
         renderUI(photos, videos || []);
         renderedFromCache = true;
@@ -322,6 +326,13 @@ function renderUI(photos: Photo[], videos: Video[]) {
       try {
         localStorage.setItem(MEDIA_CACHE_KEY, JSON.stringify({ photos: newPhotos, videos: newVideos }));
       } catch (e) { /* quota exceeded — not critical */ }
+
+      // Prune orphaned aspect ratio cache entries
+      const allSrcs = [
+        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb].filter(Boolean)),
+        ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter(Boolean))
+      ];
+      pruneRatioCache(allSrcs);
     }
   } catch (err) {
     console.warn('Failed to fetch media from Cloudflare R2:', err);
@@ -335,30 +346,15 @@ function renderUI(photos: Photo[], videos: Video[]) {
     renderUI(newPhotos, newVideos);
     if (state.carouselPhotos.length === 0) safeLift();
   } else if (newPhotos.length > 0) {
-    // ── Already rendered from cache: check if the fresh data has actually changed ──
-    let dataChanged = true;
-    try {
-      const raw = localStorage.getItem(MEDIA_CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        const cachedPhotos = processPhotos(cached.photos || []);
-        const cachedVideos = processVideos(cached.videos || []);
+    // ── Already rendered from cache: compare fresh data against what we rendered ──
+    const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
+    const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}-${v.thumb || ''}-${v.date || ''}-${v.desc || ''}`;
 
-        const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.category || ''}-${p.heroSlide}`;
-        const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}`;
-
-        const photosSame = newPhotos.length === cachedPhotos.length &&
-                           newPhotos.every((p: Photo, idx: number) => photoSig(p) === photoSig(cachedPhotos[idx]));
-        const videosSame = newVideos.length === cachedVideos.length &&
-                           newVideos.every((v: Video, idx: number) => videoSig(v) === videoSig(cachedVideos[idx]));
-
-        if (photosSame && videosSame) {
-          dataChanged = false;
-        }
-      }
-    } catch (e) {
-      dataChanged = true;
-    }
+    const photosSame = newPhotos.length === renderedPhotos.length &&
+                       newPhotos.every((p: Photo, idx: number) => photoSig(p) === photoSig(renderedPhotos[idx]));
+    const videosSame = newVideos.length === renderedVideos.length &&
+                       newVideos.every((v: Video, idx: number) => videoSig(v) === videoSig(renderedVideos[idx]));
+    const dataChanged = !(photosSame && videosSame);
 
     // Update data store
     updateMediaLibrary(newPhotos, newVideos);

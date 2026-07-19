@@ -192,7 +192,7 @@ export async function listPhotos(request, env, params, ctx) {
     headers: {
       ...corsHeaders(request, env),
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, s-maxage=300, max-age=60',
+      'Cache-Control': 'public, s-maxage=300, max-age=0, must-revalidate',
     },
   });
 
@@ -236,7 +236,7 @@ export async function listVideos(request, env, params, ctx) {
     headers: {
       ...corsHeaders(request, env),
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, s-maxage=300, max-age=60',
+      'Cache-Control': 'public, s-maxage=300, max-age=0, must-revalidate',
     },
   });
 
