@@ -30,8 +30,8 @@ function rgbToHsl(r, g, b) {
 }
 
 function classifyColor(h, s, l) {
-  // If low saturation or extremely dark/light, it is grey (monochromatic)
-  if (s < 0.08 || l < 0.08 || l > 0.92) {
+  // A pixel is grey if saturation is extremely low (virtually monochromatic)
+  if (s < 0.06) {
     return 'grey';
   }
   if (h < 15 || h >= 345) return 'red';
@@ -120,9 +120,10 @@ async function analyzeRemoteImage(url) {
       green: 0,
       blue: 0,
       indigo: 0,
-      violet: 0,
-      grey: 0
+      violet: 0
     };
+
+    let greyCount = 0;
 
     for (let i = 0; i < pixelCount; i++) {
       const r = data[i * 4];
@@ -130,30 +131,21 @@ async function analyzeRemoteImage(url) {
       const b = data[i * 4 + 2];
       const { h, s, l } = rgbToHsl(r, g, b);
       const color = classifyColor(h, s, l);
+      
       if (color === 'grey') {
-        colorBuckets.grey += 1.0;
+        greyCount++;
       } else {
         colorBuckets[color] += (s * 2.0);
       }
     }
 
     let dominantColor = 'grey';
-    let maxWeight = 0;
-
-    let absoluteGreyCount = 0;
-    for (let i = 0; i < pixelCount; i++) {
-      const r = data[i * 4];
-      const g = data[i * 4 + 1];
-      const b = data[i * 4 + 2];
-      const { h, s, l } = rgbToHsl(r, g, b);
-      if (classifyColor(h, s, l) === 'grey') {
-        absoluteGreyCount++;
-      }
-    }
-
-    if (absoluteGreyCount / pixelCount > 0.6) {
+    // If 95% or more of the pixels are grey, the image is classified as grey (monochromatic)
+    if (greyCount / pixelCount >= 0.95) {
       dominantColor = 'grey';
     } else {
+      // Otherwise, find the dominant color among the non-grey pixels
+      let maxWeight = 0;
       for (const [color, weight] of Object.entries(colorBuckets)) {
         if (weight > maxWeight) {
           maxWeight = weight;
@@ -161,6 +153,7 @@ async function analyzeRemoteImage(url) {
         }
       }
     }
+
     return dominantColor;
   } catch (err) {
     console.error(`Failed to analyze remote image ${url}:`, err.message);
@@ -236,9 +229,10 @@ async function run() {
         green: 0,
         blue: 0,
         indigo: 0,
-        violet: 0,
-        grey: 0
+        violet: 0
       };
+
+      let greyCount = 0;
 
       for (let i = 0; i < pixelCount; i++) {
         const r = data[i * 4];
@@ -248,29 +242,17 @@ async function run() {
         const color = classifyColor(h, s, l);
         
         if (color === 'grey') {
-          colorBuckets.grey += 1.0;
+          greyCount++;
         } else {
           colorBuckets[color] += (s * 2.0);
         }
       }
 
       let dominantColor = 'grey';
-      let maxWeight = 0;
-
-      let absoluteGreyCount = 0;
-      for (let i = 0; i < pixelCount; i++) {
-        const r = data[i * 4];
-        const g = data[i * 4 + 1];
-        const b = data[i * 4 + 2];
-        const { h, s, l } = rgbToHsl(r, g, b);
-        if (classifyColor(h, s, l) === 'grey') {
-          absoluteGreyCount++;
-        }
-      }
-
-      if (absoluteGreyCount / pixelCount > 0.6) {
+      if (greyCount / pixelCount >= 0.95) {
         dominantColor = 'grey';
       } else {
+        let maxWeight = 0;
         for (const [color, weight] of Object.entries(colorBuckets)) {
           if (weight > maxWeight) {
             maxWeight = weight;
