@@ -508,7 +508,7 @@ export function rebuildGallery(newCategory: string, options?: any) {
     rememberGalleryScroll(previousCategory);
   }
 
-  if (newCategory === 'motion') {
+  if (previousCategory !== newCategory) {
     state.selectedColor = null;
     updateSwatchUI();
   }
