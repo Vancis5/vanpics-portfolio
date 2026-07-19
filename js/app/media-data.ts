@@ -1,8 +1,10 @@
-export let photoLibrary = [];
+import type { Photo, Video } from '../types.js';
 
-export let motionProjects = [];
+export let photoLibrary: Photo[] = [];
 
-function parseDate(item) {
+export let motionProjects: Video[] = [];
+
+function parseDate(item: Photo | Video) {
   if (!item.date) return new Date(0);
   const dateStr = item.date.trim().toLowerCase();
   const parsed = new Date(dateStr);
@@ -15,7 +17,7 @@ function parseDate(item) {
   return new Date(0);
 }
 
-export function updateMediaLibrary(newPhotos, newVideos) {
+export function updateMediaLibrary(newPhotos: Photo[], newVideos: Video[]) {
   if (Array.isArray(newPhotos) && newPhotos.length > 0) {
     const sortedPhotos = [...newPhotos].sort((a, b) => parseDate(b).getTime() - parseDate(a).getTime());
     photoLibrary.length = 0;
@@ -33,19 +35,19 @@ export function updateMediaLibrary(newPhotos, newVideos) {
   }
 }
 
-export function getCategorySlug(category) {
+export function getCategorySlug(category: string) {
   if (category === 'all') return 'photographs';
   if (category === 'figures') return 'figures';
   return 'motion';
 }
 
-export function getInternalCategory(slug) {
+export function getInternalCategory(slug: string) {
   if (slug === 'figures') return 'figures';
   if (slug === 'motion') return 'motion';
   return 'all';
 }
 
-export function getPhotoLibrary(category) {
+export function getPhotoLibrary(category: string) {
   if (category === 'motion') return [];
   return photoLibrary.filter(function (photo) {
     const t = (photo.title || '').toLowerCase().trim();

@@ -11,13 +11,80 @@ export let updateCustomScrollbar = function () {};
   if (!track || !thumb) return;
 
   let isDragging = false;
-  let startY, startScroll;
-  let fadeTimer = null;
+  let startY: number, startScroll: number;
+  let fadeTimer: any = null;
   let SCROLLBAR_CONFIG = APP_CONFIG.scrollbar;
+  let cachedYearOffsets: Array<{ absTop: number; year: string }> | null = null;
+  let cachedDocH: number | null = null;
+  let cachedWinH: number | null = null;
+
+  // Create and inject the year tag
+  let yearTag = document.createElement('div');
+  yearTag.id = 'custom-scrollbar-year';
+  yearTag.className = 'custom-scrollbar-year';
+  track.appendChild(yearTag);
+
+  function getAbsoluteOffsetTop(element: Element): number {
+    let top = 0;
+    let curr = element as HTMLElement | null;
+    while (curr) {
+      top += curr.offsetTop;
+      curr = curr.offsetParent as HTMLElement | null;
+    }
+    return top;
+  }
+
+  function updateYearTag(thumbY: number, thumbH: number, targetScrollPos: number) {
+    let winH = cachedWinH !== null ? cachedWinH : window.innerHeight;
+    let activeYear = null;
+
+    if (!cachedYearOffsets) {
+      cachedYearOffsets = [];
+      let activePanel = document.querySelector('.masonry-panel.is-active');
+      if (activePanel) {
+        let yearSections = activePanel.querySelectorAll('.masonry-year');
+        for (let i = 0; i < yearSections.length; i++) {
+          let section = yearSections[i];
+          let absTop = getAbsoluteOffsetTop(section);
+          let header = section.querySelector('.date-header');
+          let year = header && header.textContent ? header.textContent.trim() : null;
+          if (year && year !== 'undated') {
+            cachedYearOffsets.push({ absTop, year });
+          }
+        }
+      }
+    }
+
+    let triggerLine = targetScrollPos + winH * 0.4;
+    for (let i = 0; i < cachedYearOffsets.length; i++) {
+      let item = cachedYearOffsets[i];
+      if (item.absTop <= triggerLine) {
+        activeYear = item.year;
+      }
+    }
+
+    if (activeYear) {
+      yearTag.textContent = activeYear;
+      yearTag.classList.add('visible');
+      let yearTagH = 22; // Fixed height of the year tag badge to avoid reading offsetHeight
+      let tagY = thumbY + (thumbH - yearTagH) / 2;
+      tagY = Math.max(8, Math.min(tagY, winH - yearTagH - 8));
+      yearTag.style.setProperty('--scrollbar-year-y', tagY + 'px');
+    } else {
+      yearTag.classList.remove('visible');
+    }
+  }
 
   function updateThumb() {
-    let winH = window.innerHeight;
-    let docH = document.documentElement.scrollHeight;
+    if (cachedWinH === null) {
+      cachedWinH = window.innerHeight;
+    }
+    if (cachedDocH === null) {
+      cachedDocH = document.documentElement.scrollHeight;
+    }
+
+    let winH = cachedWinH;
+    let docH = cachedDocH;
     let scrollT = window.pageYOffset || document.documentElement.scrollTop;
 
     if (docH <= winH + 5) {
@@ -50,11 +117,17 @@ export let updateCustomScrollbar = function () {};
     track.classList.add('dragging');
     document.body.classList.add('is-dragging-scrollbar');
     // Kill any ongoing smooth animation
-    if ((window as any).lenis) (window as any).lenis.scrollTo(window.scrollY, { immediate: true });
+    const lenis = (window as any).lenis;
+    if (lenis) lenis.scrollTo(window.scrollY, { immediate: true });
     (window as any)._scrollbarDragging = true;
 
-    let winH = window.innerHeight;
-    let docH = document.documentElement.scrollHeight;
+    // Invalidate caches on drag start to guarantee fresh measurements
+    cachedYearOffsets = null;
+    cachedDocH = document.documentElement.scrollHeight;
+    cachedWinH = window.innerHeight;
+
+    let winH = cachedWinH;
+    let docH = cachedDocH;
     let thumbH = parseFloat(thumb.style.height);
     let maxTrack = winH - thumbH;
     let maxScroll = docH - winH;
@@ -71,6 +144,11 @@ export let updateCustomScrollbar = function () {};
     startY = e.clientY;
     startScroll = window.pageYOffset || document.documentElement.scrollTop;
 
+    // Show year tag immediately on drag start
+    let currentThumbY = parseFloat(thumb.style.transform.replace('translateY(', '').replace('px)', '')) || 0;
+    let dragStartScroll = window.pageYOffset || document.documentElement.scrollTop;
+    updateYearTag(currentThumbY, thumbH, dragStartScroll);
+
     document.body.style.userSelect = 'none';
     e.preventDefault();
   });
@@ -78,8 +156,11 @@ export let updateCustomScrollbar = function () {};
   window.addEventListener('mousemove', function (e) {
     if (!isDragging) return;
     let deltaY = e.clientY - startY;
-    let winH = window.innerHeight;
-    let docH = document.documentElement.scrollHeight;
+
+    if (cachedWinH === null) cachedWinH = window.innerHeight;
+    if (cachedDocH === null) cachedDocH = document.documentElement.scrollHeight;
+    let winH = cachedWinH;
+    let docH = cachedDocH;
     let thumbH = parseFloat(thumb.style.height);
     let maxTrack = winH - thumbH;
     let maxScroll = docH - winH;
@@ -87,6 +168,10 @@ export let updateCustomScrollbar = function () {};
     let scrollDelta = (deltaY / maxTrack) * maxScroll;
     let targetPos = Math.max(0, Math.min(startScroll + scrollDelta, maxScroll));
     document.documentElement.scrollTop = targetPos;
+
+    // Update year tag position while dragging
+    let thumbY = (targetPos / maxScroll) * maxTrack;
+    updateYearTag(thumbY, thumbH, targetPos);
   });
 
   window.addEventListener('mouseup', function () {
@@ -100,17 +185,22 @@ export let updateCustomScrollbar = function () {};
       // We CANNOT use scrollTo() because it calls setScroll() internally
       // which uses window.scrollTo() — and the browser blocks that API
       // while lenis CSS is active.
-      if ((window as any).lenis) {
+      const lenis = (window as any).lenis;
+      if (lenis) {
         let pos = document.documentElement.scrollTop;
-        (window as any).lenis.animatedScroll = pos;
-        (window as any).lenis.targetScroll = pos;
-        (window as any).lenis.velocity = 0;
-        (window as any).lenis.isScrolling = false;
-        if ((window as any).lenis.animate) (window as any).lenis.animate.stop();
+        lenis.animatedScroll = pos;
+        lenis.targetScroll = pos;
+        lenis.velocity = 0;
+        lenis.isScrolling = false;
+        if (lenis.animate) lenis.animate.stop();
       }
 
       // Unblock lenis AFTER state is set
-      window._scrollbarDragging = false;
+      (window as any)._scrollbarDragging = false;
+
+      // Hide year tag immediately when drag ends
+      yearTag.classList.remove('visible');
+
 
       if (state.isMobile) {
         clearTimeout(fadeTimer);
@@ -119,11 +209,18 @@ export let updateCustomScrollbar = function () {};
     }
   });
 
-  window.addEventListener('resize', updateThumb);
-  window.addEventListener('load', updateThumb);
+  function invalidateSizeCache() {
+    cachedDocH = null;
+    cachedWinH = null;
+    cachedYearOffsets = null;
+    updateThumb();
+  }
+
+  window.addEventListener('resize', invalidateSizeCache);
+  window.addEventListener('load', invalidateSizeCache);
 
   if (window.ResizeObserver) {
-    new ResizeObserver(updateThumb).observe(document.body);
+    new ResizeObserver(invalidateSizeCache).observe(document.body);
   }
 
   updateCustomScrollbar = updateThumb;

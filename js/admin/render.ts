@@ -1,6 +1,6 @@
 import { escapeHtml, PLACEHOLDER_SRC, isUntitled, parseDate, getYearFromDate } from './utils.js';
 
-export function renderSingleCardHtml(p) {
+export function renderSingleCardHtml(p: any) {
   const isVideo = p.type === 'video';
   const isDraft = isUntitled(p);
   const typeLabel = isDraft ? 'draft' : (isVideo ? 'video' : (p.category || 'photo'));
@@ -10,7 +10,7 @@ export function renderSingleCardHtml(p) {
   return `
     <div class="asset-card" data-id="${p.id}" data-type="${p.type}" style="cursor: pointer;">
       <div class="card-preview-wrapper">
-        <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src=PLACEHOLDER_SRC">
+        <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src='${PLACEHOLDER_SRC}'">
         ${isVideo ? `
           <div class="video-play-indicator">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -39,10 +39,17 @@ export function renderSingleCardHtml(p) {
 }
 
 // Renders matching and sorted archive items to our Google Drive directory grid
-export function renderArchivesList(itemsContainer, list, activeFilter, searchQuery, sortVal, groupVal) {
+export function renderArchivesList(
+  itemsContainer: HTMLElement | null,
+  list: any[],
+  activeFilter: string,
+  searchQuery: string,
+  sortVal: string,
+  groupVal: string
+) {
   if (!itemsContainer) return;
 
-  const filtered = list.filter(item => {
+  const filtered = list.filter((item: any) => {
     // Filter by category segment dropdown option
     if (activeFilter === 'photo' && item.type !== 'photo') return false;
     if (activeFilter === 'video' && item.type !== 'video') return false;
@@ -63,16 +70,16 @@ export function renderArchivesList(itemsContainer, list, activeFilter, searchQue
   });
 
   // Sort filtered items (always placing draft items at the bottom of the list)
-  filtered.sort((a, b) => {
+  filtered.sort((a: any, b: any) => {
     const draftA = isUntitled(a);
     const draftB = isUntitled(b);
     if (draftA && !draftB) return 1;
     if (!draftA && draftB) return -1;
 
     if (sortVal === 'date-desc') {
-      return parseDate(b) - parseDate(a);
+      return parseDate(b).getTime() - parseDate(a).getTime();
     } else if (sortVal === 'date-asc') {
-      return parseDate(a) - parseDate(b);
+      return parseDate(a).getTime() - parseDate(b).getTime();
     } else if (sortVal === 'last-modified') {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     } else if (sortVal === 'name-asc') {
@@ -89,10 +96,10 @@ export function renderArchivesList(itemsContainer, list, activeFilter, searchQue
   }
 
   if (groupVal === 'none') {
-    itemsContainer.innerHTML = filtered.map(p => renderSingleCardHtml(p)).join('');
+    itemsContainer.innerHTML = filtered.map((p: any) => renderSingleCardHtml(p)).join('');
   } else {
-    const groups = {};
-    filtered.forEach(item => {
+    const groups: Record<string, any[]> = {};
+    filtered.forEach((item: any) => {
       let groupKey = '';
       if (groupVal === 'year') {
         groupKey = getYearFromDate(item.date);
@@ -124,7 +131,7 @@ export function renderArchivesList(itemsContainer, list, activeFilter, searchQue
 
     itemsContainer.innerHTML = groupKeys.map(groupKey => {
       const groupItems = groups[groupKey];
-      const renderedCards = groupItems.map(p => renderSingleCardHtml(p)).join('');
+      const renderedCards = groupItems.map((p: any) => renderSingleCardHtml(p)).join('');
       return `
         <div class="group-section" style="grid-column: 1 / -1; margin-bottom: 2.5rem; width: 100%;">
           <div class="group-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">

@@ -45,7 +45,7 @@ function sortPhotos() {
   const content = fs.readFileSync(PHOTOS_FILE, 'utf8');
 
   // Extract array using markers
-  const startMarker = 'var photos = [';
+  const startMarker = 'export const photos = [';
   const endMarker = '];';
   
   const startIndex = content.indexOf(startMarker);
@@ -63,8 +63,7 @@ function sortPhotos() {
   // Parse the array safely
   let photos;
   try {
-    // We wrap it in brackets to treat it as a literal array
-    photos = eval(`[${arrayContent}]`);
+    photos = new Function('return [' + arrayContent + ']')();
   } catch (e) {
     console.error('Error parsing photos array:', e.message);
     return;

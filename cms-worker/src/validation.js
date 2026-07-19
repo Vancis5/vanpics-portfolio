@@ -77,7 +77,7 @@ export function isFileLike(value, prefix) {
 }
 
 export function parsePagination(searchParams) {
-  const limit = Math.min(Math.max(Number.parseInt(searchParams.get('limit') || '50', 10), 1), 100);
+  const limit = Math.min(Math.max(Number.parseInt(searchParams.get('limit') || '50', 10), 1), 500);
   const offset = Math.max(Number.parseInt(searchParams.get('offset') || '0', 10), 0);
 
   return { limit, offset };

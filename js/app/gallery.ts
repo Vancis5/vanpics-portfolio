@@ -5,18 +5,18 @@ import { getMotionThumbnailMarkup } from './motion-markup.js';
 import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
-import { getPhotoAspectRatio, saveRatioToCache, isRatioCached } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, isRatioCached, setupImagePlaceholderFallback } from './utils.js';
 
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 let galleryScrollDirection = 'down';
 let gallerySuppressScrollRevealUntil = 0;
-let galleryRevealRepairTimer = null;
-let galleryTabSwitchSettleTimer = null;
+let galleryRevealRepairTimer: any = null;
+let galleryTabSwitchSettleTimer: any = null;
 const GALLERY_REVEAL_CLEANUP_MS = 850;
 const GALLERY_REVEAL_IMAGE_WAIT_MS = 1400;
 const GALLERY_TAB_SWITCH_SETTLE_MS = 920;
 
-function clearCardRevealTimers(card) {
+function clearCardRevealTimers(card: HTMLElement) {
   if (card.dataset.revealCleanupTimer) {
     window.clearTimeout(Number(card.dataset.revealCleanupTimer));
   }
@@ -25,7 +25,7 @@ function clearCardRevealTimers(card) {
   }
 }
 
-function cleanupCardScrollReveal(card) {
+function cleanupCardScrollReveal(card: HTMLElement) {
   clearCardRevealTimers(card);
   card.classList.remove('pending-reveal');
   card.classList.remove('revealed');
@@ -34,11 +34,11 @@ function cleanupCardScrollReveal(card) {
   delete card.dataset.revealFallbackTimer;
 }
 
-function showCardWithoutScrollReveal(card) {
+function showCardWithoutScrollReveal(card: HTMLElement) {
   cleanupCardScrollReveal(card);
 }
 
-function finishCardScrollReveal(card) {
+function finishCardScrollReveal(card: HTMLElement) {
   if (!card.classList.contains('pending-reveal')) {
     cleanupCardScrollReveal(card);
     return;
@@ -53,7 +53,7 @@ function finishCardScrollReveal(card) {
   card.dataset.revealCleanupTimer = String(cleanupTimer);
 }
 
-function playCardScrollReveal(card) {
+function playCardScrollReveal(card: HTMLElement) {
   if (!card.classList.contains('pending-reveal')) return;
   if (card.dataset.revealPending === 'true') return;
   card.dataset.revealPending = 'true';
@@ -79,11 +79,12 @@ function playCardScrollReveal(card) {
   }
 }
 
-function armCardsBelowViewport(scope) {
+function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
   let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
 
-  root.querySelectorAll('.photo-card').forEach(function (card) {
+  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
     let rect = card.getBoundingClientRect();
     if (rect.top > viewportBottom + 24) {
       clearCardRevealTimers(card);
@@ -96,24 +97,26 @@ function armCardsBelowViewport(scope) {
   });
 }
 
-function isCardInViewport(card) {
+function isCardInViewport(card: HTMLElement) {
   let rect = card.getBoundingClientRect();
   let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
   return rect.bottom > 0 && rect.top < viewportBottom;
 }
 
-function showVisibleCardsWithoutScrollReveal(scope) {
+function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
 
-  root.querySelectorAll('.photo-card').forEach(function (card) {
+  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
     if (isCardInViewport(card)) showCardWithoutScrollReveal(card);
   });
 }
 
-function repairVisiblePendingCards(scope) {
+function repairVisiblePendingCards(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
 
-  root.querySelectorAll('.photo-card.pending-reveal').forEach(function (card) {
+  root.querySelectorAll('.photo-card.pending-reveal').forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
     if (!isCardInViewport(card)) return;
 
     if (galleryScrollDirection === 'down') {
@@ -124,7 +127,7 @@ function repairVisiblePendingCards(scope) {
   });
 }
 
-function scheduleGalleryRevealRepair(scope, delay) {
+function scheduleGalleryRevealRepair(scope: HTMLElement | Document | null, delay?: number) {
   if (galleryRevealRepairTimer) window.clearTimeout(galleryRevealRepairTimer);
 
   galleryRevealRepairTimer = window.setTimeout(function () {
@@ -135,7 +138,7 @@ function scheduleGalleryRevealRepair(scope, delay) {
 
 let cardObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {
-    let card = entry.target;
+    let card = entry.target as HTMLElement;
     let suppressReveal = performance.now() < gallerySuppressScrollRevealUntil;
 
     if (entry.isIntersecting && galleryScrollDirection === 'down' && !suppressReveal) {
@@ -154,7 +157,8 @@ let cardObserver = new IntersectionObserver(function (entries) {
 export function revealCards(scope: any, options?: any) {
   options = options || {};
   let root = scope || getActiveGalleryPanel() || document;
-  root.querySelectorAll('.photo-card').forEach(function (card) {
+  root.querySelectorAll('.photo-card').forEach(function (cardEl: any) {
+    const card = cardEl as HTMLElement;
     if (options.immediate) showCardWithoutScrollReveal(card);
     cardObserver.observe(card);
   });
@@ -162,7 +166,7 @@ export function revealCards(scope: any, options?: any) {
   if (!options.immediate) armCardsBelowViewport(root);
 }
 
-function settleGalleryTabSwitch(panel) {
+function settleGalleryTabSwitch(panel: HTMLElement | null) {
   if (!panel) return;
 
   if (galleryTabSwitchSettleTimer) {
@@ -186,7 +190,7 @@ function settleGalleryTabSwitch(panel) {
 // Masonry: scroll reveal handles fade-in.
 // Aspect ratios are resolved using getPhotoAspectRatio and cached in utils.ts.
 
-function revealImageOnLoad(img) {
+function revealImageOnLoad(img: HTMLImageElement) {
   if (!img) return;
   let card = img.closest('.photo-card');
   function reveal() {
@@ -195,23 +199,22 @@ function revealImageOnLoad(img) {
       card.classList.add('photo-loaded');
     }
   }
-  if (img.complete && img.naturalWidth > 0) {
+
+  setupImagePlaceholderFallback(img, reveal);
+
+  if (img.complete) {
     requestAnimationFrame(reveal);
-  } else if (img.complete) {
-    img.style.display = 'none';
   } else {
     img.addEventListener('load', reveal, { once: true });
-    img.addEventListener('error', function () {
-      img.style.display = 'none';
-    }, { once: true });
+    img.addEventListener('error', reveal, { once: true });
   }
 }
 
 let GALLERY_CATEGORIES = ['all', 'figures', 'motion'];
 let GALLERY_SCROLL_MEMORY_KEY = 'van_gallery_scroll_v2';
-let galleryScrollPositions = { all: null, figures: null, motion: null };
+let galleryScrollPositions: Record<string, number | null> = { all: null, figures: null, motion: null };
 let galleryPanelsBuilt = false;
-let galleryBlurPreloadTimer = null;
+let galleryBlurPreloadTimer: any = null;
 
 try {
   let storedScrollPositions = sessionStorage.getItem(GALLERY_SCROLL_MEMORY_KEY);
@@ -224,11 +227,11 @@ try {
   }
 } catch (e) { }
 
-function normalizeGalleryCategory(category) {
+function normalizeGalleryCategory(category: string) {
   return GALLERY_CATEGORIES.indexOf(category) >= 0 ? category : 'all';
 }
 
-function rememberGalleryScroll(category) {
+function rememberGalleryScroll(category: string) {
   category = normalizeGalleryCategory(category);
   galleryScrollPositions[category] = window.pageYOffset || document.documentElement.scrollTop || 0;
   try { sessionStorage.setItem(GALLERY_SCROLL_MEMORY_KEY, JSON.stringify(galleryScrollPositions)); } catch (e) { }
@@ -287,19 +290,28 @@ function handleGalleryScroll() {
 
 window.addEventListener('scroll', handleGalleryScroll, { passive: true });
 
+function getElementDocumentTop(el: HTMLElement): number {
+  let top = 0;
+  let curr: HTMLElement | null = el;
+  while (curr) {
+    top += curr.offsetTop;
+    curr = curr.offsetParent as HTMLElement | null;
+  }
+  return top;
+}
+
 function getGalleryAnchorScrollY() {
   let section = domRefs.gallerySection;
   if (!section) return 0;
-  return section.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+  return getElementDocumentTop(section);
 }
 
 function getGalleryStickyStartScrollY() {
   let section = domRefs.gallerySection;
-  let header = document.querySelector('#gallery-header');
+  let header = document.querySelector('#gallery-header') as HTMLElement;
   if (!section || !header) return getGalleryAnchorScrollY();
 
-  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let sectionTop = section.getBoundingClientRect().top + scrollY;
+  let sectionTop = getElementDocumentTop(section);
   let sectionStyles = window.getComputedStyle(section);
   let headerStyles = window.getComputedStyle(header);
   let sectionPaddingTop = parseFloat(sectionStyles.paddingTop) || 0;
@@ -317,38 +329,41 @@ function getMaxPageScroll() {
   return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 }
 
-function restoreWindowScroll(scrollY) {
+function restoreWindowScroll(scrollY: number) {
   let clampedScroll = Math.max(0, Math.min(scrollY, getMaxPageScroll()));
-  if ((window as any).lenis) (window as any).lenis.scrollTo(clampedScroll, { immediate: true });
+  const lenis = (window as any).lenis;
+  if (lenis) lenis.scrollTo(clampedScroll, { immediate: true });
   else window.scrollTo({ top: clampedScroll, behavior: 'auto' });
   return clampedScroll;
 }
 
-function getGalleryTargetScroll(category, options) {
+function getGalleryTargetScroll(category: string, options?: any): number {
   options = options || {};
   category = normalizeGalleryCategory(category);
   let saved = galleryScrollPositions[category];
-  let targetScrollY = Number.isFinite(saved) ? saved : getGalleryAnchorScrollY();
+  let targetScrollY = (saved !== null && Number.isFinite(saved)) ? saved : getGalleryAnchorScrollY();
 
   if (options.lockToStickyStart) {
-    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY());
+    // Add a 2px buffer to ensure the sticky header is firmly stuck and doesn't shift due to subpixel routing/clamping.
+    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY() + 2);
   }
 
   return targetScrollY;
 }
 
 function refreshGalleryScrollMetrics() {
-  if ((window as any).lenis && typeof (window as any).lenis.resize === 'function') (window as any).lenis.resize();
+  const lenis = (window as any).lenis;
+  if (lenis && typeof lenis.resize === 'function') lenis.resize();
   updateStickyHeaderSurface();
   updateCustomScrollbar();
 }
 
-function getCategoryItems(category) {
+function getCategoryItems(category: string) {
   if (category === 'motion') return motionProjects;
   return getPhotoLibrary(category);
 }
 
-function getCategoryIndex(category) {
+function getCategoryIndex(category: string) {
   return GALLERY_CATEGORIES.indexOf(normalizeGalleryCategory(category));
 }
 
@@ -372,7 +387,7 @@ function getActiveGalleryPanel() {
   return getGalleryPanel(state.currentCategory);
 }
 
-function scheduleGalleryBlurPreload(centerIndex, delay) {
+function scheduleGalleryBlurPreload(centerIndex: number, delay?: number) {
   if (state.currentCategory === 'motion') return;
   if (galleryBlurPreloadTimer) window.clearTimeout(galleryBlurPreloadTimer);
 
@@ -382,13 +397,13 @@ function scheduleGalleryBlurPreload(centerIndex, delay) {
   }, delay || 0);
 }
 
-function getMasonryColumnCount() {
+export function getMasonryColumnCount() {
   if (window.innerWidth >= 1024) return 4;
   if (window.innerWidth >= 640) return 3;
   return 2;
 }
 
-function updateGalleryNav(category) {
+function updateGalleryNav(category: string) {
   let photoBtn = document.querySelector('#gallery-header .photographs-btn');
   let figuresBtn = document.querySelector('#gallery-header .figures-btn');
   let motionBtn = document.querySelector('#gallery-header .motion-btn');
@@ -397,20 +412,24 @@ function updateGalleryNav(category) {
     if (button) {
       button.classList.remove('active');
       button.classList.add('inactive');
+      button.setAttribute('aria-pressed', 'false');
     }
   });
 
   if (category === 'all' && photoBtn) {
     photoBtn.classList.remove('inactive');
     photoBtn.classList.add('active');
+    photoBtn.setAttribute('aria-pressed', 'true');
   }
   if (category === 'figures' && figuresBtn) {
     figuresBtn.classList.remove('inactive');
     figuresBtn.classList.add('active');
+    figuresBtn.setAttribute('aria-pressed', 'true');
   }
   if (category === 'motion' && motionBtn) {
     motionBtn.classList.remove('inactive');
     motionBtn.classList.add('active');
+    motionBtn.setAttribute('aria-pressed', 'true');
   }
 }
 
@@ -422,31 +441,33 @@ function setActiveGalleryPanel(category: string, options?: any) {
   let gallerySec = domRefs.gallerySection;
   if (!masonry) return null;
 
-  let activePanel = null;
-  GALLERY_CATEGORIES.forEach(function (cat) {
+  let activePanel: HTMLElement | null = null;
+  for (const cat of GALLERY_CATEGORIES) {
     let panel = getGalleryPanel(cat);
-    if (!panel) return;
+    if (!panel) continue;
     let isActive = cat === category;
     panel.hidden = !isActive;
     panel.classList.toggle('is-active', isActive);
     panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
     if (isActive) activePanel = panel;
     else panel.classList.remove('is-entering');
-  });
+  }
 
   masonry.classList.toggle('motion-grid-active', category === 'motion');
   if (gallerySec) gallerySec.classList.toggle('motion-active', category === 'motion');
   updateGalleryNav(category);
 
-  if (activePanel && options.animate) {
-    activePanel.style.setProperty('--masonry-x', (options.direction || 1) > 0 ? '-36px' : '36px');
-    activePanel.classList.remove('is-entering');
-    void activePanel.offsetWidth;
-    activePanel.classList.add('is-entering');
-    setTimeout(function () {
+  if (activePanel) {
+    if (options.animate) {
+      activePanel.style.setProperty('--masonry-x', (options.direction || 1) > 0 ? '-36px' : '36px');
       activePanel.classList.remove('is-entering');
-      activePanel.style.removeProperty('--masonry-x');
-    }, 820);
+      void activePanel.offsetWidth;
+      activePanel.classList.add('is-entering');
+      setTimeout(function () {
+        activePanel.classList.remove('is-entering');
+        activePanel.style.removeProperty('--masonry-x');
+      }, 820);
+    }
   }
 
   requestAnimationFrame(function () {
@@ -490,7 +511,7 @@ export function rebuildGallery(newCategory: string, options?: any) {
     let catSlug = getCategorySlug(newCategory);
     let curHash = window.location.hash.substring(1);
     if (!curHash.startsWith(catSlug)) {
-      history.pushState(null, null, '#' + catSlug);
+      history.pushState(null, '', '#' + catSlug);
     }
   }
 
@@ -562,17 +583,21 @@ export function buildMasonry(category?: string) {
     return;
   }
 
-  category = normalizeGalleryCategory(category);
-  let panel = getGalleryPanel(category);
+  const normalizedCategory = normalizeGalleryCategory(category);
+  let panel = getGalleryPanel(normalizedCategory);
   if (!panel) return;
 
+  panel.querySelectorAll('.photo-card').forEach(function (card) {
+    cardObserver.unobserve(card);
+  });
+
   panel.innerHTML = '';
-  let lastYear = null;
+  let lastYear: string | null = null;
   let isMotion = category === 'motion';
   let items = getCategoryItems(category);
-  let yearGrid = null;
-  let columns = [];
-  let colHeights = [];
+  let yearGrid: HTMLDivElement | null = null;
+  let columns: HTMLDivElement[] = [];
+  let colHeights: number[] = [];
   let numCols = getMasonryColumnCount();
 
   items.forEach(function (p, i) {
@@ -621,7 +646,19 @@ export function buildMasonry(category?: string) {
     imgEl.alt = p.title || "video";
     imgEl.loading = i < 4 ? 'eager' : 'lazy';
     imgEl.decoding = 'async';
-    revealImageOnLoad(imgEl);
+
+    setupImagePlaceholderFallback(imgEl);
+
+    if (galleryPanelsBuilt && imgEl.complete) {
+      card.classList.add('no-transition');
+      card.classList.add('photo-loaded');
+      imgEl.classList.add('media-loaded');
+      setTimeout(function () {
+        card.classList.remove('no-transition');
+      }, 50);
+    } else {
+      revealImageOnLoad(imgEl);
+    }
 
     let r = getPhotoAspectRatio(p, isMotion);
     card.style.setProperty('--photo-aspect-ratio', String(r));
@@ -658,65 +695,90 @@ export function buildMasonry(category?: string) {
     card.appendChild(imgEl);
     card.appendChild(overlay);
 
-    card.addEventListener('click', (function (idx, cardCategory) {
-      return function () {
-        if (state.currentCategory !== cardCategory) {
-          state.currentCategory = cardCategory;
-          updateActivePhotos();
+    card.dataset.idx = String(i);
+    card.dataset.category = category;
+
+    if (yearGrid) {
+      if (isMotion) {
+        yearGrid.appendChild(card);
+      } else {
+        let shortestIdx = 0;
+        let minH = colHeights[0];
+        for (let h = 1; h < numCols; h++) {
+          if (colHeights[h] < minH) {
+            minH = colHeights[h];
+            shortestIdx = h;
+          }
         }
-        openLightbox(idx, 0, cardCategory === 'motion');
-      };
-    })(i, category));
 
-    card.addEventListener('pointerenter', (function (idx, cardCategory) {
-      return function () {
-        if (cardCategory === 'motion') return;
-        if (state.currentCategory !== cardCategory) return;
-        scheduleGalleryBlurPreload(idx, 0);
-      };
-    })(i, category));
-
-    card.addEventListener('focus', (function (idx, cardCategory) {
-      return function () {
-        if (cardCategory === 'motion') return;
-        if (state.currentCategory !== cardCategory) return;
-        scheduleGalleryBlurPreload(idx, 0);
-      };
-    })(i, category));
-
-    card.addEventListener('touchstart', (function (idx, cardCategory) {
-      return function () {
-        if (cardCategory === 'motion') return;
-        if (state.currentCategory !== cardCategory) return;
-        scheduleGalleryBlurPreload(idx, 0);
-      };
-    })(i, category), { passive: true });
-
-    card.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        card.click();
-      }
-    });
-
-    if (isMotion) {
-      yearGrid.appendChild(card);
-    } else {
-      let shortestIdx = 0;
-      let minH = colHeights[0];
-      for (let h = 1; h < numCols; h++) {
-        if (colHeights[h] < minH) {
-          minH = colHeights[h];
-          shortestIdx = h;
+        if (columns[shortestIdx]) {
+          columns[shortestIdx].appendChild(card);
+          colHeights[shortestIdx] += (1 / r);
         }
-      }
-
-      if (columns[shortestIdx]) {
-        columns[shortestIdx].appendChild(card);
-        colHeights[shortestIdx] += (1 / r);
       }
     }
   });
 
   if (category === state.currentCategory) setTimeout(function () { revealCards(panel); }, 150);
 }
+
+// Delegated event listeners for gallery cards
+const masonry = domRefs.masonry;
+if (masonry) {
+  masonry.addEventListener('click', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
+
+    if (state.currentCategory !== cardCategory) {
+      state.currentCategory = cardCategory;
+      updateActivePhotos();
+    }
+    openLightbox(idx, 0, cardCategory === 'motion');
+  });
+
+  masonry.addEventListener('pointerover', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
+
+    if (cardCategory === 'motion') return;
+    if (state.currentCategory !== cardCategory) return;
+    scheduleGalleryBlurPreload(idx, 0);
+  });
+
+  masonry.addEventListener('focusin', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
+
+    if (cardCategory === 'motion') return;
+    if (state.currentCategory !== cardCategory) return;
+    scheduleGalleryBlurPreload(idx, 0);
+  });
+
+  masonry.addEventListener('touchstart', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx || '0', 10);
+    const cardCategory = card.dataset.category || 'all';
+
+    if (cardCategory === 'motion') return;
+    if (state.currentCategory !== cardCategory) return;
+    scheduleGalleryBlurPreload(idx, 0);
+  }, { passive: true });
+
+  masonry.addEventListener('keydown', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const keyEvt = e as KeyboardEvent;
+    if (keyEvt.key === 'Enter' || keyEvt.key === ' ') {
+      keyEvt.preventDefault();
+      card.click();
+    }
+  });
+}
+

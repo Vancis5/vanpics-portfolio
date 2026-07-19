@@ -3,12 +3,13 @@ import { domRefs } from './dom.js';
 // CURSOR - mouse only
 let isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 if (isMouseDevice) {
+  document.documentElement.classList.add('custom-cursor-enabled');
   let cursor = domRefs.cursor;
   let ring = domRefs.cursorRing;
   let mx = 0, my = 0, rx = 0, ry = 0;
   let cursorVisible = false;
   let isDraggingScrollbar = false;
-  let ringRafId = null;
+  let ringRafId: number | null = null;
 
   // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
   function hideCursor() {
@@ -45,7 +46,7 @@ if (isMouseDevice) {
     ringRafId = null;
   }
 
-  let cursorTimeout;
+  let cursorTimeout: any;
   function resetCursorTimeout() {
     showCursor();
     clearTimeout(cursorTimeout);
@@ -97,17 +98,17 @@ if (isMouseDevice) {
   document.addEventListener('mouseenter', showCursor);
   document.documentElement.addEventListener('mouseenter', showCursor);
   document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
-  // Delegated hover for cursor ring — works on dynamically added cards and carousel imgs
-  let interactiveSelector = 'button, .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .footer-instagram, .footer-email';
+  // Delegated hover for cursor ring — works on dynamically added cards, carousel imgs, navbar, etc.
+  const interactiveSelector = 'button, a, [role="button"], .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .filmstrip-thumb';
   document.addEventListener('mouseover', function (e) {
     const target = e.target as HTMLElement;
-    if (target && (target.matches(interactiveSelector) || target.closest('.photo-card, #scroll-hint, .footer-instagram, .footer-email'))) {
+    if (target && target.closest(interactiveSelector)) {
       ring.style.width = '44px'; ring.style.height = '44px'; ring.style.borderColor = 'rgba(221,216,207,0.4)';
     }
   });
   document.addEventListener('mouseout', function (e) {
     const target = e.target as HTMLElement;
-    if (target && (target.matches(interactiveSelector) || target.closest('.photo-card, #scroll-hint, .footer-instagram, .footer-email'))) {
+    if (target && target.closest(interactiveSelector)) {
       ring.style.width = '28px'; ring.style.height = '28px'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
     }
   });

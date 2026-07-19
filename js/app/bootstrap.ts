@@ -2,12 +2,13 @@ import { APP_CONFIG } from './config.js';
 import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
 import { getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
-import { slugify } from './utils.js';
+import { slugify, pruneRatioCache } from './utils.js';
 import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
-import { buildMasonry, initFilters, rebuildGallery } from './gallery.js';
+import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
 import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick } from './hero-carousel.js';
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
+import type { Photo, Video } from '../types.js';
 
 const MEDIA_CACHE_KEY = 'vanpics_media_cache_v1';
 
@@ -31,8 +32,9 @@ setTimeout(safeLift, LOADER_CONFIG.hardFallbackDelay);
 setCarouselReadyCallback(function () { setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay); });
 
 function scrollToGallery() {
-  if ((window as any).lenis) {
-    (window as any).lenis.scrollTo('#gallery-section');
+  const lenis = (window as any).lenis;
+  if (lenis) {
+    lenis.scrollTo('#gallery-section');
   } else {
     domRefs.gallerySection.scrollIntoView({ behavior: 'smooth' });
   }
@@ -53,7 +55,8 @@ function bindStaticUiHandlers() {
 
     const startButton = target.closest('.motion-start-button[data-player-id]') as HTMLElement;
     if (!startButton) return;
-    startUnifiedMotionPlayer(startButton.dataset.playerId);
+    const playerId = startButton.dataset.playerId;
+    if (playerId) startUnifiedMotionPlayer(playerId);
   });
 }
 
@@ -64,8 +67,9 @@ window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });
 window.addEventListener('orientationchange', updateStickyHeaderSurface, { passive: true });
 
 // Rebuild masonry on resize to handle column count changes (width-only check to avoid mobile address bar flicker)
-let _masonryResizeTimer;
+let _masonryResizeTimer: any;
 let _lastMasonryWidth = window.innerWidth;
+let _lastColumnCount = getMasonryColumnCount();
 window.addEventListener('resize', function () {
   if (window.innerWidth === _lastMasonryWidth) return;
   _lastMasonryWidth = window.innerWidth;
@@ -75,11 +79,16 @@ window.addEventListener('resize', function () {
     const oldIsMobile = state.isMobile;
     state.isMobile = window.matchMedia('(hover: none)').matches;
     if (state.isMobile !== oldIsMobile) {
-      buildCarousel();
+      buildCarousel(true);
     } else {
       recalculateCarouselLayout();
     }
-    buildMasonry();
+
+    const newColumnCount = getMasonryColumnCount();
+    if (newColumnCount !== _lastColumnCount) {
+      _lastColumnCount = newColumnCount;
+      buildMasonry();
+    }
   }, MASONRY_CONFIG.resizeDebounce);
 });
 
@@ -162,8 +171,8 @@ window.addEventListener('popstate', function () {
 });
 
 // ─── HELPERS ───
-function processPhotos(raw) {
-  return raw.map(p => ({
+function processPhotos(raw: any[]) {
+  return raw.map((p: any) => ({
     ...p,
     aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : undefined),
     heroSlide: p.hero_slide === 1 || p.hero_slide === true,
@@ -171,31 +180,31 @@ function processPhotos(raw) {
   }));
 }
 
-function processVideos(raw) {
-  return raw.map(v => ({
+function processVideos(raw: any[]) {
+  return raw.map((v: any) => ({
     ...v,
     thumb: v.poster || '',
     aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : (v.aspect_ratio ? parseFloat(v.aspect_ratio) : undefined)
   }));
 }
 
-function isUntitled(p) {
+function isUntitled(p: any) {
   const t = (p.title || '').toLowerCase().trim();
   return !t || t === 'untitled';
 }
 
-function applyCarouselPhotos(photos) {
-  state.carouselPhotos = photos.filter(p => p.heroSlide === true && !isUntitled(p));
-  if (state.carouselPhotos.length === 0) state.carouselPhotos = photos.filter(p => !isUntitled(p));
+function applyCarouselPhotos(photos: Photo[]) {
+  state.carouselPhotos = photos.filter((p: Photo) => p.heroSlide === true && !isUntitled(p));
+  if (state.carouselPhotos.length === 0) state.carouselPhotos = photos.filter((p: Photo) => !isUntitled(p));
 }
 
-function getStartupImageUrls(photos) {
+function getStartupImageUrls(photos: Photo[]) {
   return Array.from(new Set(
-    photos.filter(p => p.heroSlide === true && !isUntitled(p)).slice(0, 6).map(p => p.thumb || p.src).filter(Boolean)
+    photos.filter((p: Photo) => p.heroSlide === true && !isUntitled(p)).slice(0, 6).map((p: Photo) => p.thumb || p.src).filter(Boolean)
   ));
 }
 
-function decodeImageUrl(url, timeoutMs?: number) {
+function decodeImageUrl(url: string, timeoutMs?: number) {
   return new Promise<void>(resolve => {
     if (!url) {
       resolve();
@@ -225,22 +234,22 @@ function decodeImageUrl(url, timeoutMs?: number) {
   });
 }
 
-async function warmStartupImages(photos) {
+async function warmStartupImages(photos: Photo[]) {
   await Promise.all(getStartupImageUrls(photos).map(url => decodeImageUrl(url, 1800)));
 }
 
-function updateFooterStats(photos, videos) {
-  const photographs = photos.filter(p => p.category !== 'figures' && !isUntitled(p));
-  const figures = photos.filter(p => p.category === 'figures' && !isUntitled(p));
-  const motion = videos ? videos.filter(v => (!!v.thumb || !!v.src) && !isUntitled(v)) : [];
+function updateFooterStats(photos: Photo[], videos: Video[]) {
+  const photographs = photos.filter((p: Photo) => p.category !== 'figures' && !isUntitled(p));
+  const figures = photos.filter((p: Photo) => p.category === 'figures' && !isUntitled(p));
+  const motion = videos ? videos.filter((v: Video) => (!!v.thumb || !!v.src) && !isUntitled(v)) : [];
 
   let since = '—';
   const years = photos
-    .map(p => p.date ? new Date(p.date).getFullYear() : NaN)
-    .filter(y => !isNaN(y) && y > 1900);
+    .map((p: Photo) => p.date ? new Date(p.date).getFullYear() : NaN)
+    .filter((y: number) => !isNaN(y) && y > 1900);
   if (years.length > 0) since = String(Math.min(...years));
 
-  function set(id, num) {
+  function set(id: string, num: number) {
     const el = document.getElementById(id);
     if (!el) return;
     const numEl = el.querySelector('.stat-num');
@@ -258,7 +267,7 @@ function updateFooterStats(photos, videos) {
   }
 }
 
-function renderUI(photos, videos) {
+function renderUI(photos: Photo[], videos: Video[]) {
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
   applyCarouselPhotos(photos);
@@ -276,6 +285,8 @@ function renderUI(photos, videos) {
 (async function loadDynamicMedia() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
   let renderedFromCache = false;
+  let renderedPhotos: any[] = [];
+  let renderedVideos: any[] = [];
 
   // ── 1. Instant render from localStorage cache ──
   try {
@@ -283,6 +294,8 @@ function renderUI(photos, videos) {
     if (raw) {
       const { photos, videos } = JSON.parse(raw);
       if (Array.isArray(photos) && photos.length > 0) {
+        renderedPhotos = processPhotos(photos);
+        renderedVideos = processVideos(videos || []);
         warmStartupImages(photos).catch(function() {});
         renderUI(photos, videos || []);
         renderedFromCache = true;
@@ -313,6 +326,13 @@ function renderUI(photos, videos) {
       try {
         localStorage.setItem(MEDIA_CACHE_KEY, JSON.stringify({ photos: newPhotos, videos: newVideos }));
       } catch (e) { /* quota exceeded — not critical */ }
+
+      // Prune orphaned aspect ratio cache entries
+      const allSrcs = [
+        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb].filter(Boolean)),
+        ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter(Boolean))
+      ];
+      pruneRatioCache(allSrcs);
     }
   } catch (err) {
     console.warn('Failed to fetch media from Cloudflare R2:', err);
@@ -326,30 +346,15 @@ function renderUI(photos, videos) {
     renderUI(newPhotos, newVideos);
     if (state.carouselPhotos.length === 0) safeLift();
   } else if (newPhotos.length > 0) {
-    // ── Already rendered from cache: check if the fresh data has actually changed ──
-    let dataChanged = true;
-    try {
-      const raw = localStorage.getItem(MEDIA_CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        const cachedPhotos = processPhotos(cached.photos || []);
-        const cachedVideos = processVideos(cached.videos || []);
+    // ── Already rendered from cache: compare fresh data against what we rendered ──
+    const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
+    const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}-${v.thumb || ''}-${v.date || ''}-${v.desc || ''}`;
 
-        const photoSig = p => `${p.id}-${p.title || ''}-${p.src || ''}-${p.category || ''}-${p.heroSlide}`;
-        const videoSig = v => `${v.id}-${v.title || ''}-${v.src || ''}`;
-
-        const photosSame = newPhotos.length === cachedPhotos.length &&
-                           newPhotos.every((p, idx) => photoSig(p) === photoSig(cachedPhotos[idx]));
-        const videosSame = newVideos.length === cachedVideos.length &&
-                           newVideos.every((v, idx) => videoSig(v) === videoSig(cachedVideos[idx]));
-
-        if (photosSame && videosSame) {
-          dataChanged = false;
-        }
-      }
-    } catch (e) {
-      dataChanged = true;
-    }
+    const photosSame = newPhotos.length === renderedPhotos.length &&
+                       newPhotos.every((p: Photo, idx: number) => photoSig(p) === photoSig(renderedPhotos[idx]));
+    const videosSame = newVideos.length === renderedVideos.length &&
+                       newVideos.every((v: Video, idx: number) => videoSig(v) === videoSig(renderedVideos[idx]));
+    const dataChanged = !(photosSame && videosSame);
 
     // Update data store
     updateMediaLibrary(newPhotos, newVideos);
@@ -359,7 +364,7 @@ function renderUI(photos, videos) {
 
     // If data actually changed (e.g. user set a photo as draft in CMS), rebuild UI
     if (dataChanged) {
-      buildCarousel();
+      buildCarousel(true);
       buildMasonry();
     }
   }

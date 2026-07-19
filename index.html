@@ -12,6 +12,19 @@
   <meta name="description" content="Photography portfolio by Francis Evan.">
   <meta name="theme-color" content="#111010">
 
+  <!-- Structured Data (JSON-LD) for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Francis Evan",
+    "jobTitle": "Photographer & Motion Designer",
+    "url": "https://vanpics.pages.dev",
+    "image": "https://vanpics.pages.dev/preview.jpg",
+    "description": "Professional photography and motion design portfolio by Francis Evan."
+  }
+  </script>
+
   <!-- favicon -->
   <link rel="icon" type="image/svg+xml" href="icons/aperture.svg">
   <link rel="apple-touch-icon" href="icons/aperture.svg">
@@ -42,7 +55,6 @@
     onerror="import('/vendor/video-minimal-ui.js')"></script>
   <link rel="stylesheet" href="css/motion-section.css">
   <!-- video.js -->
-  <link rel="stylesheet" href="css/media-minimal-skin.css">
   <link rel="stylesheet" href="css/runtime-effects.css">
 </head>
 
@@ -154,7 +166,7 @@
     <div class="motion-player-prime">
       <video-player>
         <media-container class="media-minimal-skin media-minimal-skin--video">
-          <video playsinline controlslist="nodownload"></video>
+          <video playsinline controlslist="nodownload" crossorigin="anonymous"></video>
           <span data-motion-poster-slot></span>
           <media-buffering-indicator class="media-buffering-indicator">
             <svg class="media-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"

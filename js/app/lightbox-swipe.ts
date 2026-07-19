@@ -55,7 +55,7 @@ lbEl.addEventListener('click', function (e) {
 if (state.isMobile) {
   (function () {
     let slidesBuilt = false;
-    let snapTimer = null;
+    let snapTimer: any = null;
     function clearSlides() {
       let slides = imgWrap.querySelectorAll('.snap-slide');
       slides.forEach(function (slide) { slide.remove(); });
@@ -154,9 +154,6 @@ if (state.isMobile) {
         let finalP = state.activePhotos[idx];
         setLightboxBlur(finalP.thumb || finalP.src);
 
-        // Turn off scroll snapping immediately to prevent browser layout snaps during transition
-        imgWrap.style.scrollSnapType = 'none';
-
         if (currentInner) {
           currentInner.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
           currentInner.style.opacity = '0';
@@ -169,6 +166,9 @@ if (state.isMobile) {
         }
 
         setTimeout(function () {
+          // Turn off scroll snapping right before instant scroll to prevent browser layout snaps during transition
+          imgWrap.style.scrollSnapType = 'none';
+
           imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
 
           state.cur = idx;
@@ -176,9 +176,6 @@ if (state.isMobile) {
           showFilmstripIfReady();
           if (typeof updateLoading === 'function') updateLoading();
           if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
-
-          // Animate the details text using the same CSS animation engine as desktop
-          animateInfo(slideDir);
 
           let targetInner = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"] .snap-slide-inner') as HTMLElement;
           if (targetInner) {
@@ -189,6 +186,9 @@ if (state.isMobile) {
           }
 
           requestAnimationFrame(function () {
+            // Animate text after layout settles — matches desktop's rAF-wrapped pattern
+            animateInfo(slideDir);
+
             if (targetInner) {
               targetInner.style.transition = 'opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1)';
               targetInner.style.opacity = '1';
@@ -196,6 +196,8 @@ if (state.isMobile) {
             }
           });
 
+          // Guard must cover full lbInfoIn animation (0.55s) to prevent onSnapSettle
+          // from killing the animation mid-flight with inline style overrides
           setTimeout(function () {
             window.isAutoRapidScrolling = false;
             // Restore scroll snapping once transition is complete
@@ -210,7 +212,7 @@ if (state.isMobile) {
               targetInner.style.opacity = '';
               targetInner.style.transform = '';
             }
-          }, 240);
+          }, 600);
         }, 150);
       } else {
         imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
@@ -264,7 +266,7 @@ if (state.isMobile) {
       for (let i = 0; i < imgs.length; i++) {
         let shouldEager = (Math.abs(i - state.cur) <= 2);
         imgs[i].loading = shouldEager ? 'eager' : 'lazy';
-        if (shouldEager && imgs[i].decode && !imgs[i].dataset.decoded) {
+        if (shouldEager && typeof imgs[i].decode === 'function' && !imgs[i].dataset.decoded) {
           (function (img) {
             img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
           })(imgs[i]);
@@ -274,7 +276,7 @@ if (state.isMobile) {
 
     // ── Scroll settle — detect new active slide ──
     function onSnapSettle(targetIdx?: number) {
-      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
+      if (state.currentLightboxIsMotion || state.lbZoomLevel > 1 || window.isAutoRapidScrolling) return;
       if (isUserTouching && typeof targetIdx === 'undefined') return;
       state.isManuallyNavigating = false; // Reset navigation flag on settle
       let w = imgWrap.offsetWidth;
@@ -422,11 +424,12 @@ if (state.isMobile) {
     // ─── SWIPE DOWN TO DISMISS & PINCH TO ZOOM ───
     let dStartX = 0, dStartY = 0, dDY = 0;
     let dLocked = false, dChecked = false;
-    let dPts = [];
+    let dPts: Array<{ y: number; t: number }> = [];
     let isPinching = false, wasPinchingOrZooming = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
+      if (state.currentLightboxIsMotion) return;
       // stricter check to prevent interaction fight between filmstrip and dismiss gesture
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
 
@@ -461,7 +464,8 @@ if (state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
           let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
           for (let i = 0; i < slides.length; i++) {
-            if (parseInt(slides[i].dataset.idx) !== state.cur) {
+            const idxStr = slides[i].dataset.idx;
+            if (idxStr !== undefined && parseInt(idxStr) !== state.cur) {
               slides[i].style.transition = 'none';
               slides[i].style.opacity = '0';
             }
@@ -488,6 +492,7 @@ if (state.isMobile) {
 
     lbEl.addEventListener('touchmove', function (e) {
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if (state.currentLightboxIsMotion) return;
       if (isPinching && e.touches.length === 2) {
         e.preventDefault();
         let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);

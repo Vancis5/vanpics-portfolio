@@ -7,7 +7,11 @@ export const APP_CONFIG = {
     },
     desktopBreakpoint: 1024,
     easeFrames: 120,
-    startSpeedMultiplier: 8
+    startSpeedMultiplier: 8,
+    friction: {
+      mobile: 0.96,
+      desktop: 0.93
+    }
   },
   filmstrip: {
     activeHideDelay: 2800,

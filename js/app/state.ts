@@ -1,3 +1,4 @@
+import type { Photo } from '../types.js';
 import { photoLibrary, getPhotoLibrary } from './media-data.js';
 
 function getInitialCategory() {
@@ -20,20 +21,20 @@ export const state = {
   pushNextState: false,
   isPopState: false,
   currentCategory: getInitialCategory(),
-  activePhotos: [],
-  carouselPhotos: getCarouselPhotos(),
+  activePhotos: [] as Photo[],
+  carouselPhotos: getCarouselPhotos() as Photo[],
   cur: 0,
   isMobile: window.matchMedia('(hover: none)').matches,
   heroVisible: true,
   pageVisible: true,
-  heroRafId: null,
-  glowRafId: null,
+  heroRafId: null as number | null,
+  glowRafId: null as number | null,
   heroScrollY: 0,
   currentLightboxIsMotion: false,
   isManuallyNavigating: false,
   isTouchingFilmstrip: false,
-  fsRaf: null,
-  filmstripHideTimer: null,
+  fsRaf: null as number | null,
+  filmstripHideTimer: null as any,
   lbZoomLevel: 1,
   lbZoomPanX: 0,
   lbZoomPanY: 0,
@@ -52,14 +53,12 @@ state.carouselPhotos.slice(0, 6).forEach(function (photo) {
   img.src = photo.thumb || photo.src;
 });
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', function () {
-    state.lastInputType = 'keyboard';
-  }, { passive: true });
-  window.addEventListener('mousedown', function () {
-    state.lastInputType = 'pointer';
-  }, { passive: true });
-  window.addEventListener('touchstart', function () {
-    state.lastInputType = 'pointer';
-  }, { passive: true });
-}
+window.addEventListener('keydown', function () {
+  state.lastInputType = 'keyboard';
+}, { passive: true });
+window.addEventListener('mousedown', function () {
+  state.lastInputType = 'pointer';
+}, { passive: true });
+window.addEventListener('touchstart', function () {
+  state.lastInputType = 'pointer';
+}, { passive: true });

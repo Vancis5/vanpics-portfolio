@@ -51,12 +51,12 @@
 }
 
 ::selection {
-  background-color: rgba(221, 216, 207, 0.25);
+  background-color: rgba(var(--text-rgb), 0.25);
   color: var(--text);
 }
 
 #lightbox ::selection {
-  background-color: var(--dynamic-text-color, rgba(221, 216, 207, 0.25));
+  background-color: var(--dynamic-text-color, rgba(var(--text-rgb), 0.25));
   color: #0d0c0c;
 }
 
@@ -67,9 +67,12 @@
 :root {
   --bg: #0d0c0c;
   --text: #ddd8cf;
-  --text-muted: rgba(221, 216, 207, 0.48);
-  --text-faint: rgba(221, 216, 207, 0.22);
-  --border: rgba(221, 216, 207, 0.09);
+  --text-rgb: 221, 216, 207;
+  --text-ivory-rgb: 242, 238, 231;
+  --text-muted: rgba(var(--text-rgb), 0.48);
+  --text-faint: rgba(var(--text-rgb), 0.22);
+  --border: rgba(var(--text-rgb), 0.09);
+  --font-mono: 'DM Mono', monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --browser-bottom: 0px;
@@ -106,7 +109,7 @@ html::-webkit-scrollbar {
   width: 32px;
   /* Large invisible hit zone at the edge */
   z-index: 10000;
-  pointer-events: all;
+  pointer-events: auto;
   transition: opacity 0.4s ease;
 }
 
@@ -115,7 +118,7 @@ html::-webkit-scrollbar {
   top: 0;
   right: 4px;
   width: 3px;
-  background: rgba(221, 216, 207, 0.25);
+  background: rgba(var(--text-rgb), 0.25);
   border-radius: 10px;
   cursor: grab;
   transition: background 0.3s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -123,12 +126,12 @@ html::-webkit-scrollbar {
 }
 
 #custom-scrollbar:hover #custom-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.5);
+  background: rgba(var(--text-rgb), 0.5);
   /* Pulse brighter on hover */
 }
 
 #custom-scrollbar.dragging #custom-scrollbar-thumb {
-  background: rgba(221, 216, 207, 0.85);
+  background: rgba(var(--text-rgb), 0.85);
   /* Bright when dragging */
   width: 8px;
   /* Thicker when dragging */
@@ -136,26 +139,36 @@ html::-webkit-scrollbar {
   cursor: grabbing;
 }
 
+.custom-scrollbar-year {
+  position: absolute;
+  right: 28px;
+  top: 0;
+  padding: 4px 8px;
+  background: #161515;
+  border: 1px solid rgba(var(--text-rgb), 0.15);
+  color: var(--text, #ddd8cf);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(var(--scrollbar-year-y, 0px)) scale(0.9);
+  transition: opacity 0.25s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.custom-scrollbar-year.visible {
+  opacity: 1;
+  transform: translateY(var(--scrollbar-year-y, 0px)) scale(1);
+}
+
 body.lightbox-open #custom-scrollbar {
   display: none !important;
 }
 
-/* Focus effect on scroll drag */
-#hero,
-#masonry,
-#gallery-header p,
-#lightbox,
-footer {
-  transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
 
-body.is-dragging-scrollbar #hero,
-body.is-dragging-scrollbar #masonry,
-body.is-dragging-scrollbar #gallery-header p,
-body.is-dragging-scrollbar #lightbox,
-body.is-dragging-scrollbar footer {
-  filter: saturate(0.8) brightness(0.9);
-}
 
 #drag-vignette {
   position: fixed;
@@ -166,6 +179,7 @@ body.is-dragging-scrollbar footer {
   background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.45) 150%);
   opacity: 0;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
 }
 
 body.is-dragging-scrollbar #drag-vignette {
@@ -180,6 +194,10 @@ body.is-dragging-scrollbar #drag-vignette {
 
   #custom-scrollbar.moving {
     opacity: 1;
+  }
+
+  .custom-scrollbar-year {
+    display: none !important;
   }
 }
 
@@ -207,9 +225,9 @@ body::after {
 
 @media (hover: hover) and (pointer: fine) {
 
-  html,
-  body,
-  body *:not(.zoomable) {
+  html.custom-cursor-enabled,
+  html.custom-cursor-enabled body,
+  html.custom-cursor-enabled body *:not(.zoomable) {
     cursor: none !important;
   }
 
@@ -217,7 +235,7 @@ body::after {
     position: fixed;
     width: 7px;
     height: 7px;
-    background: rgba(221, 216, 207, 0.9);
+    background: rgba(var(--text-rgb), 0.9);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9999;
@@ -232,7 +250,7 @@ body::after {
     position: fixed;
     width: 28px;
     height: 28px;
-    border: 1px solid rgba(221, 216, 207, 0.25);
+    border: 1px solid rgba(var(--text-rgb), 0.25);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9998;
@@ -308,7 +326,7 @@ body::after {
 
   #hero::before,
   #hero::after {
-    width: 40px;
+    display: none;
   }
 }
 
@@ -320,6 +338,9 @@ body::after {
   z-index: 2;
   will-change: transform;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 .carousel-item {
@@ -341,9 +362,9 @@ body::after {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-    rgba(242, 238, 231, 0.035);
-  border: 1px solid rgba(242, 238, 231, 0.08);
+    linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+    rgba(var(--text-ivory-rgb), 0.035);
+  border: 1px solid rgba(var(--text-ivory-rgb), 0.08);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 1;
   transform: scale(1);
@@ -355,6 +376,22 @@ body::after {
 .carousel-item.photo-loaded::before {
   opacity: 0;
   transform: scale(0.985);
+}
+
+.carousel-item.no-transition::before,
+.carousel-item.no-transition img {
+  transition: none !important;
+}
+
+.carousel-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
 }
 
 .carousel-item img {
@@ -409,7 +446,11 @@ body::after {
 }
 
 @media (hover: hover) {
-  .carousel-item img:hover {
+  .carousel-item:hover::after {
+    border-color: rgba(var(--text-rgb), 0.18);
+  }
+
+  .carousel-item:hover img {
     filter: brightness(1) saturate(1);
     transform: scale(1.03);
   }
@@ -452,7 +493,7 @@ body::after {
   font-weight: 400;
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   margin-top: 0.25rem;
   text-transform: lowercase;
   text-shadow: var(--hero-text-shadow);
@@ -484,7 +525,7 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-size: 0.57rem;
   letter-spacing: 0.18em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   text-transform: lowercase;
   text-shadow: var(--hero-text-shadow);
 }
@@ -547,9 +588,9 @@ body::after {
   padding-left: calc(50vw - 50%);
   padding-right: calc(50vw - 50%);
 
-  background: rgba(13, 12, 12, 0.85);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: rgba(13, 12, 12, 0.96);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   padding-top: calc(1.5rem + var(--safe-top, 0px));
   padding-bottom: 1.5rem;
   margin-bottom: 0rem;
@@ -560,6 +601,13 @@ body::after {
 
   opacity: 0;
   animation: fadeup 0.8s ease 0.2s forwards;
+}
+
+/* Enable beautiful 20px blur for iOS/iPhones and Desktop devices */
+.enable-header-blur #gallery-header {
+  background: rgba(13, 12, 12, 0.85);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 /* Disable expensive backdrop-filter on mobile/touch devices for buttery smooth scrolling */
@@ -606,7 +654,7 @@ body::after {
 }
 
 #gallery-header .inactive {
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   cursor: pointer;
   transition: color 0.3s ease;
   /* Full-height Hitbox */
@@ -719,7 +767,7 @@ body::after {
   font-family: 'DM Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 0.25em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   text-transform: uppercase;
   margin: 4.5rem 0 0;
   padding-bottom: 2.1rem;
@@ -778,9 +826,9 @@ body::after {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-    rgba(242, 238, 231, 0.035);
-  border: 1px solid rgba(242, 238, 231, 0.08);
+    linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+    rgba(var(--text-ivory-rgb), 0.035);
+  border: 1px solid rgba(var(--text-ivory-rgb), 0.08);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 1;
   transform: scale(1);
@@ -789,9 +837,25 @@ body::after {
   z-index: 1;
 }
 
+.photo-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
+}
+
 .photo-card.photo-loaded::before {
   opacity: 0;
   transform: scale(0.985);
+}
+
+.photo-card.no-transition::before,
+.photo-card.no-transition img {
+  transition: none !important;
 }
 
 .photo-card img {
@@ -812,6 +876,10 @@ body::after {
 }
 
 @media (hover: hover) {
+  .photo-card:hover::after {
+    border-color: rgba(var(--text-rgb), 0.18);
+  }
+
   .photo-card:hover img {
     transform: scale(1.03);
     filter: brightness(1) saturate(1);
@@ -879,7 +947,7 @@ body::after {
   font-size: clamp(1.1rem, 3vw, 1.8rem);
   font-style: italic;
   text-align: center;
-  color: rgba(221, 216, 207, 0.85);
+  color: rgba(var(--text-rgb), 0.85);
   transition: color 0.8s cubic-bezier(0.16, 1, 0.3, 1), text-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 1.1;
   padding: 0 1rem;
@@ -892,7 +960,7 @@ body::after {
   }
 
   .motion-card:hover .photo-card-title {
-    color: rgba(242, 238, 231, 1);
+    color: rgba(var(--text-ivory-rgb), 1);
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
   }
 }
@@ -949,9 +1017,10 @@ body::after {
 
 #motion-player-shell {
   position: relative;
-  width: min(100%, calc((100svh - 16rem) * 16 / 9), 1080px);
+  --lightbox-video-max-height: 78svh;
+  width: min(100%, calc(var(--lightbox-video-max-height) * var(--lightbox-photo-ratio, 1.7777777777777777)), 1080px);
   /* slightly larger max for desktop */
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--lightbox-photo-ratio, 16 / 9);
   background: transparent;
   border-radius: var(--motion-player-radius, 0.75rem);
   overflow: hidden;
@@ -1034,7 +1103,7 @@ body::after {
   background: rgba(17, 16, 16, 0.72);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(221, 216, 207, 0.12);
+  border: 1.5px solid rgba(var(--text-rgb), 0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1047,7 +1116,7 @@ body::after {
 
 #motion-player-shell .motion-start-button:hover {
   background: rgba(17, 16, 16, 0.88);
-  border-color: rgba(221, 216, 207, 0.3);
+  border-color: rgba(var(--text-rgb), 0.3);
 }
 
 #motion-player-shell .motion-start-button__icon {
@@ -1087,8 +1156,8 @@ body::after {
   overflow: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  --text-muted: rgba(221, 216, 207, 0.78);
-  --text-faint: rgba(221, 216, 207, 0.40);
+  --text-muted: rgba(var(--text-rgb), 0.78);
+  --text-faint: rgba(var(--text-rgb), 0.40);
   background: #0d0c0c;
 }
 
@@ -1098,7 +1167,7 @@ body::after {
 
 #lightbox.open {
   opacity: 1;
-  pointer-events: all;
+  pointer-events: auto;
 }
 
 #lightbox-bg {
@@ -1130,7 +1199,6 @@ body::after {
   pointer-events: none;
   will-change: opacity;
   background: #0d0c0c;
-  filter: saturate(1.5) brightness(0.2);
 }
 
 #lightbox-blur-canvas.ready {
@@ -1213,9 +1281,9 @@ body::after {
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-    rgba(242, 238, 231, 0.035);
-  border: 1.8px solid rgba(242, 238, 231, 0.06);
+    linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+    rgba(var(--text-ivory-rgb), 0.035);
+  border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 0;
   transform: scale(0.985);
@@ -1246,10 +1314,10 @@ body::after {
   z-index: 3;
   display: none;
   padding: 0.55rem 0.75rem;
-  border: 1px solid rgba(221, 216, 207, 0.18);
+  border: 1px solid rgba(var(--text-rgb), 0.18);
   border-radius: 3px;
   background: rgba(17, 16, 16, 0.78);
-  color: rgba(221, 216, 207, 0.82);
+  color: rgba(var(--text-rgb), 0.82);
   font-family: 'DM Mono', monospace;
   font-size: 0.62rem;
   letter-spacing: 0.12em;
@@ -1274,7 +1342,7 @@ body::after {
   max-height: 44svh;
   object-fit: contain;
   border-radius: 3px;
-  border: 1.8px solid rgba(242, 238, 231, 0.06);
+  border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out;
   will-change: transform, opacity;
 }
@@ -1406,8 +1474,8 @@ body::after {
     min-height: 1.35rem;
     background: none;
     border: 0;
-    border-bottom: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.40));
-    color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.78));
+    border-bottom: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.40));
+    color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.78));
     font-family: 'DM Mono', monospace;
     font-size: 0.5rem;
     letter-spacing: 0.08em;
@@ -1432,7 +1500,7 @@ body::after {
 
   #lightbox-desc-toggle:active {
     color: var(--text-muted);
-    border-color: rgba(221, 216, 207, 0.5);
+    border-color: rgba(var(--text-rgb), 0.5);
   }
 
   /* hide the toggle when there's no description to show */
@@ -1589,12 +1657,10 @@ body::after {
   top: calc(1.25rem + var(--safe-top));
   right: calc(1.25rem + env(safe-area-inset-right, 0px));
   z-index: 1000;
-  background: rgba(17, 16, 16, 0.76);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--dynamic-text-faint, rgba(221, 216, 207, 0.12));
+  background: rgba(17, 16, 16, 0.94);
+  border: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.12));
   border-radius: 4px;
-  color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.60));
+  color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.60));
   font-family: 'DM Mono', monospace;
   font-weight: 400;
   font-size: 0.57rem;
@@ -1608,10 +1674,17 @@ body::after {
   outline: none;
 }
 
+/* Enable blur only for iOS and Desktop */
+.enable-header-blur #lightbox-close {
+  background: rgba(17, 16, 16, 0.76);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
 #lightbox-close:hover,
 #lightbox-close:active {
   color: var(--dynamic-text-color, var(--text));
-  border-color: var(--dynamic-text-muted, rgba(221, 216, 207, 0.28));
+  border-color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.28));
 }
 
 /* kill focus rings on all lightbox interactive elements — Firefox mobile shows them on tap */
@@ -1653,7 +1726,7 @@ body::after {
     /* The transparent bottom area lets native scroll-snap own touches over the info zone. */
     position: relative;
     scrollbar-width: none;
-    overscroll-behavior-x: contain;
+    overscroll-behavior-x: none;
     justify-content: flex-start;
   }
 
@@ -1662,6 +1735,7 @@ body::after {
   }
 
   #motion-player-shell {
+    --lightbox-video-max-height: 44dvh;
     max-height: 44dvh;
     /* Match photo lightbox height */
   }
@@ -1691,7 +1765,7 @@ body::after {
     max-height: 46dvh;
     object-fit: contain;
     border-radius: 3px;
-    border: 1.8px solid rgba(242, 238, 231, 0.06);
+    border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease;
     will-change: transform, opacity;
     /* prevent images from exceeding their slide on notched phones */
@@ -1716,9 +1790,9 @@ body::after {
     inset: 0;
     border-radius: inherit;
     background:
-      linear-gradient(135deg, rgba(242, 238, 231, 0.08), rgba(242, 238, 231, 0.025)),
-      rgba(242, 238, 231, 0.035);
-    border: 1.8px solid rgba(242, 238, 231, 0.06);
+      linear-gradient(135deg, rgba(var(--text-ivory-rgb), 0.08), rgba(var(--text-ivory-rgb), 0.025)),
+      rgba(var(--text-ivory-rgb), 0.035);
+    border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
     box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
     opacity: 0;
     transform: scale(0.985);
@@ -1794,6 +1868,11 @@ body::after {
   #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
     height: 72dvh;
   }
+
+  #motion-player-shell {
+    --lightbox-video-max-height: 72dvh;
+    max-height: 72dvh;
+  }
 }
 
 /* FILMSTRIP */
@@ -1832,7 +1911,7 @@ body::after {
 #filmstrip-wrap.visible {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: all;
+  pointer-events: auto;
 }
 
 #filmstrip {
@@ -1874,6 +1953,7 @@ body::after {
 }
 
 .filmstrip-thumb {
+  position: relative;
   flex-shrink: 0;
   width: 52px;
   height: 38px;
@@ -1886,6 +1966,17 @@ body::after {
   transition: opacity 0.2s ease, transform 0.2s ease;
   opacity: 0.32;
   -webkit-tap-highlight-color: transparent;
+}
+
+.filmstrip-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
 }
 
 .filmstrip-thumb img {
@@ -1933,6 +2024,18 @@ body::after {
   }
 }
 
+@media (hover: hover) {
+  .filmstrip-thumb:hover {
+    opacity: 0.85;
+  }
+  .filmstrip-thumb.active:hover {
+    opacity: 1;
+  }
+  .filmstrip-thumb:hover::after {
+    border-color: rgba(var(--text-rgb), 0.18);
+  }
+}
+
 
 /* invisible hit zone — always pointer-events active so hover can revive hidden filmstrip */
 #filmstrip-lift-zone {
@@ -1949,7 +2052,7 @@ body::after {
     height: 80px;
     z-index: 9;
     /* just below filmstrip-wrap (z-index: 10) */
-    pointer-events: all;
+    pointer-events: auto;
     cursor: default;
   }
 }
@@ -1979,6 +2082,7 @@ body::after {
 
 /* FOOTER LIQUID BACKGROUND */
 .footer-bg-blur {
+  display: none; /* Hide when off-screen to optimize performance */
   position: absolute;
   width: 15%;
   height: 60%;
@@ -1995,6 +2099,11 @@ body::after {
     filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-mask-image: radial-gradient(circle, black 25%, transparent 70%);
   mask-image: radial-gradient(circle, black 25%, transparent 70%);
+}
+
+#site-footer.is-visible .footer-bg-blur,
+#site-footer:hover .footer-bg-blur {
+  display: block;
 }
 
 #site-footer:hover .footer-bg-blur {
@@ -2095,7 +2204,7 @@ body::after {
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: 0;
-  color: rgba(221, 216, 207, 0.76);
+  color: rgba(var(--text-rgb), 0.76);
   transform: translateY(-0.18rem);
   transition: color 0.4s ease;
 }
@@ -2115,7 +2224,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   white-space: nowrap;
 }
 
@@ -2132,7 +2241,7 @@ body::after {
   height: 1.22rem;
   align-items: center;
   justify-content: center;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
   transition:
     color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
@@ -2164,7 +2273,7 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.65;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.60);
+  color: rgba(var(--text-rgb), 0.60);
 }
 
 .footer-copyright {
@@ -2173,12 +2282,12 @@ body::after {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(221, 216, 207, 0.50);
+  color: rgba(var(--text-rgb), 0.50);
 }
 
 #site-footer:hover .footer-brand h2,
 #site-footer.is-visible .footer-brand h2 {
-  color: rgba(221, 216, 207, 0.95);
+  color: rgba(var(--text-rgb), 0.95);
 }
 
 #site-footer:hover .footer-brand p,
@@ -2194,7 +2303,7 @@ body::after {
 
 #site-footer:hover .footer-copyright,
 #site-footer.is-visible .footer-copyright {
-  color: rgba(221, 216, 207, 0.35);
+  color: rgba(var(--text-rgb), 0.35);
 }
 
 #site-footer .footer-instagram:hover,
@@ -2350,11 +2459,7 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   }
 }
 
-/* Prevent horizontal shift by locking the scrollbar gutter */
-html {
-  scrollbar-gutter: stable !important;
-  overflow-y: scroll !important;
-}
+
 
 
 
@@ -2393,6 +2498,14 @@ html {
 #lightbox-close:focus:not(:focus-visible),
 .filmstrip-thumb:focus:not(:focus-visible) {
   outline: none !important;
+}
+
+/* Ensure video player focus rings respect curved corners */
+#motion-player-shell:focus-visible,
+.media-minimal-skin:focus-visible,
+#motion-player-shell video-player:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #0d0c0c, 0 0 0 4px var(--text, #ddd8cf) !important;
 }
 
 /* The close button lives inside a dark overlay with clear hover/active states —
@@ -2453,7 +2566,7 @@ html {
   font-size: clamp(0.52rem, 1.2vw, 0.6rem);
   letter-spacing: 0.18em;
   text-transform: lowercase;
-  color: rgba(221, 216, 207, 0.28);
+  color: rgba(var(--text-rgb), 0.28);
   transition: color 0.4s ease;
 }
 
@@ -2466,7 +2579,7 @@ html {
 
 #site-footer:hover #footer-stats,
 #site-footer.is-visible #footer-stats {
-  color: rgba(221, 216, 207, 0.42);
+  color: rgba(var(--text-rgb), 0.42);
 }
 
 .footer-stat {
@@ -2474,17 +2587,17 @@ html {
 }
 
 .stat-num {
-  color: rgba(221, 216, 207, 0.55);
+  color: rgba(var(--text-rgb), 0.55);
   transition: color 0.4s ease;
 }
 
 #site-footer:hover .stat-num,
 #site-footer.is-visible .stat-num {
-  color: rgba(221, 216, 207, 0.78);
+  color: rgba(var(--text-rgb), 0.78);
 }
 
 .footer-stat-dot {
-  color: rgba(221, 216, 207, 0.15);
+  color: rgba(var(--text-rgb), 0.15);
   user-select: none;
 }
 
@@ -2505,4 +2618,23 @@ html {
     text-align: center;
     margin-top: 0.25rem;
   }
+}
+
+/* PLACEHOLDER FALLBACK STYLES */
+img.placeholder-fallback {
+  object-fit: contain !important;
+  opacity: 0.25 !important;
+  background-color: #141313;
+}
+
+.filmstrip-thumb img.placeholder-fallback {
+  padding: 4px !important;
+}
+
+.photo-card img.placeholder-fallback {
+  padding: 24px !important;
+}
+
+.carousel-item img.placeholder-fallback {
+  padding: 16px !important;
 }
