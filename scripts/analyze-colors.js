@@ -43,15 +43,7 @@ function classifyColor(h, s, l) {
   return 'violet';
 }
 
-// Hand-tuned manual overrides for photos where artistic focus is different from statistical dominance
-const MANUAL_OVERRIDES = {
-  "photos/red-moon.webp": "red",          // Blood moon
-  "photos/red-rectangle-sea.webp": "red", // Mostly blue sea/sky, but the subject is a bright red floating box
-  "photos/red-rectangle-bw.webp": "grey", // Monochromatic version
-  "photos/fish-eye-bw.webp": "grey",      // Black & white
-  "photos/ray-of-light-bw.webp": "grey",  // Black & white
-  "photos/crescent-tower-bw.webp": "grey",// Black & white
-};
+
 
 function findLocalMatch(livePhoto, localPhotos) {
   // Try 1: check if live src filename matches local src filename
@@ -203,12 +195,7 @@ async function run() {
 
   for (const file of files) {
     const srcPath = `photos/${file}`;
-    
-    if (MANUAL_OVERRIDES[srcPath]) {
-      localFileColors[srcPath] = MANUAL_OVERRIDES[srcPath];
-      console.log(`[OVERRIDE] ${srcPath} -> ${MANUAL_OVERRIDES[srcPath]}`);
-      continue;
-    }
+
 
     const fullPath = path.join(PHOTOS_DIR, file);
 
