@@ -30,8 +30,8 @@ function rgbToHsl(r, g, b) {
 }
 
 function classifyColor(h, s, l) {
-  // A pixel is grey if saturation is extremely low (virtually monochromatic)
-  if (s < 0.06) {
+  // A pixel is grey if saturation is very low (virtually monochromatic)
+  if (s < 0.10) {
     return 'grey';
   }
   if (h < 15 || h >= 345) return 'red';
@@ -42,8 +42,6 @@ function classifyColor(h, s, l) {
   if (h >= 235 && h < 275) return 'indigo';
   return 'violet';
 }
-
-
 
 function findLocalMatch(livePhoto, localPhotos) {
   // Try 1: check if live src filename matches local src filename
@@ -125,13 +123,19 @@ async function analyzeRemoteImage(url) {
       if (color === 'grey') {
         greyCount++;
       } else {
-        colorBuckets[color] += (s * 2.0);
+        // Saliency Weighting: weight color contributions exponentially by saturation.
+        let weight = Math.pow(s, 2.5);
+        // Saliency Multiplier: warm colors (red, orange, yellow) are highly salient and dominate human perception
+        if (color === 'red' || color === 'orange' || color === 'yellow') {
+          weight *= 2.5;
+        }
+        colorBuckets[color] += weight;
       }
     }
 
     let dominantColor = 'grey';
-    // If 95% or more of the pixels are grey, the image is classified as grey (monochromatic)
-    if (greyCount / pixelCount >= 0.95) {
+    // If 85% or more of the pixels are grey, the image is classified as grey (monochromatic/black-and-white)
+    if (greyCount / pixelCount >= 0.85) {
       dominantColor = 'grey';
     } else {
       // Otherwise, find the dominant color among the non-grey pixels
@@ -195,8 +199,6 @@ async function run() {
 
   for (const file of files) {
     const srcPath = `photos/${file}`;
-
-
     const fullPath = path.join(PHOTOS_DIR, file);
 
     try {
@@ -229,12 +231,18 @@ async function run() {
         if (color === 'grey') {
           greyCount++;
         } else {
-          colorBuckets[color] += (s * 2.0);
+          // Saliency Weighting
+          let weight = Math.pow(s, 2.5);
+          // Saliency Multiplier
+          if (color === 'red' || color === 'orange' || color === 'yellow') {
+            weight *= 2.5;
+          }
+          colorBuckets[color] += weight;
         }
       }
 
       let dominantColor = 'grey';
-      if (greyCount / pixelCount >= 0.95) {
+      if (greyCount / pixelCount >= 0.85) {
         dominantColor = 'grey';
       } else {
         let maxWeight = 0;
