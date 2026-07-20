@@ -1234,11 +1234,23 @@ body::after {
   z-index: 20;
 }
 
-/* Mobile: tighter top padding so image gets full breathing room */
-@media (hover: none) and (max-width: 767px) {
-  #lightbox-content {
-    padding: calc(3.25rem + var(--safe-top)) 0.75rem var(--filmstrip-clearance);
+/* Android phones + tablets: hide close btn — hardware/gesture back handles dismiss */
+@media (hover: none) {
+  #lightbox-close {
+    display: none;
   }
+
+  #lightbox-content {
+    padding: calc(var(--safe-top) + 0.75rem) 0.75rem var(--filmstrip-clearance);
+  }
+}
+
+/* iOS / iPadOS: keep the close btn but move it to the left (matches iOS back-button convention) */
+.ios-device #lightbox-close {
+  display: flex;
+  align-items: center;
+  right: auto;
+  left: calc(1.25rem + env(safe-area-inset-left, 0px));
 }
 
 #lightbox-zoom-darken {

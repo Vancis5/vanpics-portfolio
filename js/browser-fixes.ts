@@ -20,3 +20,8 @@ const isDesktop = !window.matchMedia('(hover: none)').matches;
 if (isIOS || isDesktop) {
   document.documentElement.classList.add('enable-header-blur');
 }
+
+// Tag iOS so CSS can keep the lightbox close button but shift it to the left
+if (isIOS) {
+  document.documentElement.classList.add('ios-device');
+}
