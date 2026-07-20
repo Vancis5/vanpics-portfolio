@@ -9,24 +9,18 @@ export function getAllowedOrigins(env) {
 
 export function isOriginAllowed(origin, env) {
   if (!origin) return false;
-  
-  try {
-    const url = new URL(origin);
-    const hostname = url.hostname;
-    
-    // Always allow local hostnames for development and debugging, unless in production env
-    if (env.ENVIRONMENT !== 'production') {
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname.startsWith('192.168.') ||
-        hostname.startsWith('10.') ||
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-      ) {
-        return true;
-      }
-    }
-  } catch (e) {}
+
+  // Raw string checks for private/LAN IPs (handles any port, protocol)
+  if (
+    /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+    /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
+    /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin) ||
+    /^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin) ||
+    /^https?:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+(:\d+)?$/.test(origin) ||
+    /^https?:\/\/[^/]+\.local(:\d+)?$/.test(origin)
+  ) {
+    return true;
+  }
 
   const allowed = getAllowedOrigins(env);
   return allowed.has(origin);
@@ -40,6 +34,9 @@ export function corsHeaders(request, env) {
     'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
+    // Override Cloudflare's injected Permissions-Policy to suppress browser warnings
+    // about unrecognized privacy sandbox / ad-auction features
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   };
 
   if (origin && isOriginAllowed(origin, env)) {
