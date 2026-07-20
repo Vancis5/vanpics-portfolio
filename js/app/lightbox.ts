@@ -849,7 +849,6 @@ export function navigateLightbox(d: number) {
   state.cur = (state.cur + d + currentSet.length) % currentSet.length;
   openLightbox(state.cur, d, state.currentLightboxIsMotion);
 }
-
 document.addEventListener('keydown', function (e) {
   let target = e.target as HTMLElement;
   let isTyping = target && (
@@ -858,7 +857,31 @@ document.addEventListener('keydown', function (e) {
   if (isTyping || !domRefs.lightbox.classList.contains('open')) return;
   if (e.key === 'Escape') {
     closeLightbox(true);
+    return;
   }
+  
+  if (e.key === ' ' || e.code === 'Space') {
+    if (state.currentLightboxIsMotion) {
+      e.preventDefault();
+      const prime = document.getElementById('motion-player-instance');
+      if (prime) {
+        if (!prime.classList.contains('is-started')) {
+          startUnifiedMotionPlayer('motion-player-instance');
+        } else {
+          const video = prime.querySelector('video');
+          if (video) {
+            if (video.paused) {
+              video.play().catch(() => {});
+            } else {
+              video.pause();
+            }
+          }
+        }
+      }
+      return;
+    }
+  }
+
   let key = e.key.toLowerCase();
   if (e.key === 'ArrowRight' || key === 'd' || key === 's') navigateLightbox(1);
   if (e.key === 'ArrowLeft' || key === 'a' || key === 'w') navigateLightbox(-1);

@@ -158,43 +158,23 @@ export function renderVideoInLightbox(p: Video) {
   shell.style.opacity = '1';
   shell.style.display = 'block'; // Ensure it's not hidden
 
-  // Double-tap/double-click gesture for fullscreen
+  // Play/pause and fullscreen gesture handling
   const container = shell.querySelector('media-container') as HTMLElement | null;
   if (container) {
-    let lastTap = 0;
+    let clickTimer: any = null;
     
-    // Desktop double-click
-    container.addEventListener('dblclick', (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('media-controls') || target.closest('.motion-start-button')) {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const videoPlayer = container.closest('video-player') || container;
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      } else {
-        if (videoPlayer && videoPlayer.requestFullscreen) {
-          videoPlayer.requestFullscreen().catch(() => {});
-        } else {
-          container.requestFullscreen().catch(() => {});
-        }
-      }
-    });
-
-    // Mobile double-tap
     container.addEventListener('click', (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('media-controls') || target.closest('.motion-start-button')) {
         return;
       }
       
-      const now = Date.now();
-      if (now - lastTap < 300) {
-        e.preventDefault();
-        e.stopPropagation();
+      e.preventDefault();
+      
+      if (clickTimer) {
+        // Double click/tap: toggle fullscreen
+        clearTimeout(clickTimer);
+        clickTimer = null;
         
         const videoPlayer = container.closest('video-player') || container;
         if (document.fullscreenElement) {
@@ -206,9 +186,28 @@ export function renderVideoInLightbox(p: Video) {
             container.requestFullscreen().catch(() => {});
           }
         }
-        lastTap = 0;
       } else {
-        lastTap = now;
+        // First click: set a timeout to check if it's a single or double click
+        clickTimer = setTimeout(() => {
+          clickTimer = null;
+          
+          // Single click: toggle play/pause
+          const prime = document.getElementById('motion-player-instance');
+          if (prime) {
+            if (!prime.classList.contains('is-started')) {
+              startUnifiedMotionPlayer('motion-player-instance');
+            } else {
+              const video = prime.querySelector('video');
+              if (video) {
+                if (video.paused) {
+                  video.play().catch(() => {});
+                } else {
+                  video.pause();
+                }
+              }
+            }
+          }
+        }, 250);
       }
     });
   }
