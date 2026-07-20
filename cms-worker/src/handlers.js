@@ -1,4 +1,4 @@
-import { corsHeaders, errorResponse, jsonResponse } from './http.js';
+import { corsHeaders, errorResponse, jsonResponse, applyCors } from './http.js';
 import {
   extensionForContentType,
   inferContentType,
@@ -78,7 +78,7 @@ export async function serveMedia(request, env, params, ctx) {
 
     let cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) {
-      return cachedResponse;
+      return applyCors(cachedResponse, request, env);
     }
   }
 
@@ -165,7 +165,7 @@ export async function listPhotos(request, env, params, ctx) {
   const cacheUrl = new URL(request.url).toString();
   const cacheReq = new Request(cacheUrl, { method: 'GET' });
   const cached = await cache.match(cacheReq);
-  if (cached) return cached;
+  if (cached) return applyCors(cached, request, env);
 
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
@@ -209,7 +209,7 @@ export async function listVideos(request, env, params, ctx) {
   const cacheUrl = new URL(request.url).toString();
   const cacheReq = new Request(cacheUrl, { method: 'GET' });
   const cached = await cache.match(cacheReq);
-  if (cached) return cached;
+  if (cached) return applyCors(cached, request, env);
 
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
