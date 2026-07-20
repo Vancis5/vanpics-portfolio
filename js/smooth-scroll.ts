@@ -5,6 +5,7 @@ import type { CustomLenis } from './types.js';
 
 export function initSmoothScroll(options: any = {}) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(hover: none)').matches) return;
 
   const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
   const updateCustomScrollbar = options.updateCustomScrollbar || function () {};

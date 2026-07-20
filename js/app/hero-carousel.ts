@@ -381,7 +381,7 @@ export function recalculateCarouselLayout() {
   CRUISE_SPEED = computeCruiseSpeed();
 
   let rows = domRefs.heroRows;
-
+  
   let activeRows = rows;
   let activeRowCount = activeRows.length;
 
