@@ -1022,7 +1022,7 @@ body::after {
   /* slightly larger max for desktop */
   aspect-ratio: var(--lightbox-photo-ratio, 16 / 9);
   background: transparent;
-  border-radius: var(--motion-player-radius, 0.75rem);
+  border-radius: 0;
   overflow: hidden;
   margin: 0 auto;
 }
@@ -2500,13 +2500,7 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   outline: none !important;
 }
 
-/* Ensure video player focus rings respect curved corners */
-#motion-player-shell:focus-visible,
-.media-minimal-skin:focus-visible,
-#motion-player-shell video-player:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 2px #0d0c0c, 0 0 0 4px var(--text, #ddd8cf) !important;
-}
+/* Video player has no border-radius so standard outline works fine */
 
 /* The close button lives inside a dark overlay with clear hover/active states —
    programmatic .focus() on page load always triggers :focus-visible, so we
