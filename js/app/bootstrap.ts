@@ -114,6 +114,8 @@ document.addEventListener('visibilitychange', function () {
 });
 
 // Deep Link Initial Load
+let _isInitialDeepLink = true; // true only for the very first checkHash call (from renderUI)
+
 function checkHash() {
   const fullHash = window.location.hash.substring(1);
 
@@ -126,7 +128,10 @@ function checkHash() {
     return;
   }
 
-  if (!fullHash) return;
+  if (!fullHash) {
+    _isInitialDeepLink = false;
+    return;
+  }
 
   const parts = fullHash.split('/');
   const catSlug = parts[0];
@@ -155,6 +160,16 @@ function checkHash() {
         // If already open to this item, do nothing
         if (isLbOpen && state.cur === i) return;
 
+        // Deep link guard: if the user landed directly on this photo URL (e.g. from a
+        // share link), there's no history entry beneath it — back would exit the site.
+        // Fix: replace the current entry with a clean #cat URL, then push the photo
+        // hash back on top so back always lands safely on the category view.
+        if (_isInitialDeepLink && itemSlug) {
+          history.replaceState(null, '', '#' + catSlug);
+          history.pushState(null, '', '#' + catSlug + '/' + itemSlug);
+        }
+        _isInitialDeepLink = false;
+
         state.isPopState = true;
         openLightbox(i, 0, state.currentCategory === 'motion');
         setTimeout(function () { state.isPopState = false; }, ROUTING_CONFIG.itemRecheckDelay);
@@ -162,6 +177,8 @@ function checkHash() {
       }
     }
   }
+
+  _isInitialDeepLink = false;
 }
 
 window.addEventListener('popstate', function () {
