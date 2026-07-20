@@ -15,6 +15,23 @@ function solveCubicBezier(x1: number, y1: number, x2: number, y2: number) {
 
 const easeOutExpoLike = solveCubicBezier(0.15, 1.0, 0.4, 1.0);
 
+// Cached uniform/attrib locations for a shader program
+interface LiquidUniforms {
+  a_position: number;
+  u_texture_prev: WebGLUniformLocation | null;
+  u_texture: WebGLUniformLocation | null;
+  u_mix: WebGLUniformLocation | null;
+  u_time: WebGLUniformLocation | null;
+  u_dir_prev: WebGLUniformLocation | null;
+  u_dir_curr: WebGLUniformLocation | null;
+}
+interface BlurUniforms {
+  a_position: number;
+  u_texture: WebGLUniformLocation | null;
+  u_halfPixel: WebGLUniformLocation | null;
+  u_offset: WebGLUniformLocation | null;
+}
+
 export class WebGLBlurRenderer {
   canvas: HTMLCanvasElement;
   gl: WebGLRenderingContext;
@@ -31,6 +48,9 @@ export class WebGLBlurRenderer {
   progLiquid: WebGLProgram | null;
   progDown: WebGLProgram | null;
   progUp: WebGLProgram | null;
+  locLiquid: LiquidUniforms | null;
+  locDown: BlurUniforms | null;
+  locUp: BlurUniforms | null;
   fbos: Array<{ fbo: WebGLFramebuffer | null; texture: WebGLTexture | null; w: number; h: number; }>;
   dummyTexture: WebGLTexture | null;
   quadBuffer: WebGLBuffer | null;
@@ -81,6 +101,10 @@ export class WebGLBlurRenderer {
       current: null
     };
 
+    this.locLiquid = null;
+    this.locDown = null;
+    this.locUp = null;
+
     this.initShaders();
     this.initBuffers();
     this.initFramebuffers();
@@ -98,6 +122,9 @@ export class WebGLBlurRenderer {
     this.progLiquid = null;
     this.progDown = null;
     this.progUp = null;
+    this.locLiquid = null;
+    this.locDown = null;
+    this.locUp = null;
     this.quadBuffer = null;
     this.fbos = [];
     this.textures.prev = null;
@@ -129,6 +156,37 @@ export class WebGLBlurRenderer {
     this.textures.current = this.dummyTexture;
     this.mixFactor = 1.0;
     this.render();
+  }
+
+  cacheLocations() {
+    const gl = this.gl;
+    if (this.progLiquid) {
+      this.locLiquid = {
+        a_position: gl.getAttribLocation(this.progLiquid, 'a_position'),
+        u_texture_prev: gl.getUniformLocation(this.progLiquid, 'u_texture_prev'),
+        u_texture: gl.getUniformLocation(this.progLiquid, 'u_texture'),
+        u_mix: gl.getUniformLocation(this.progLiquid, 'u_mix'),
+        u_time: gl.getUniformLocation(this.progLiquid, 'u_time'),
+        u_dir_prev: gl.getUniformLocation(this.progLiquid, 'u_dir_prev'),
+        u_dir_curr: gl.getUniformLocation(this.progLiquid, 'u_dir_curr'),
+      };
+    }
+    if (this.progDown) {
+      this.locDown = {
+        a_position: gl.getAttribLocation(this.progDown, 'a_position'),
+        u_texture: gl.getUniformLocation(this.progDown, 'u_texture'),
+        u_halfPixel: gl.getUniformLocation(this.progDown, 'u_halfPixel'),
+        u_offset: gl.getUniformLocation(this.progDown, 'u_offset'),
+      };
+    }
+    if (this.progUp) {
+      this.locUp = {
+        a_position: gl.getAttribLocation(this.progUp, 'a_position'),
+        u_texture: gl.getUniformLocation(this.progUp, 'u_texture'),
+        u_halfPixel: gl.getUniformLocation(this.progUp, 'u_halfPixel'),
+        u_offset: gl.getUniformLocation(this.progUp, 'u_offset'),
+      };
+    }
   }
 
   initShaders() {
@@ -296,6 +354,7 @@ export class WebGLBlurRenderer {
     this.progLiquid = this.createProgram(VS_SOURCE, FS_LIQUID);
     this.progDown = this.createProgram(VS_SOURCE, FS_DOWN);
     this.progUp = this.createProgram(VS_SOURCE, FS_UP);
+    this.cacheLocations();
   }
 
   compileShader(source: string, type: number) {
@@ -458,8 +517,9 @@ export class WebGLBlurRenderer {
   }
 
   render() {
-    if (!this.gl || !this.progLiquid || !this.progDown || !this.progUp) return;
+    if (!this.gl || !this.progLiquid || !this.progDown || !this.progUp || !this.locLiquid || !this.locDown || !this.locUp) return;
     let gl = this.gl;
+    const loc = this.locLiquid;
 
     let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
@@ -468,10 +528,10 @@ export class WebGLBlurRenderer {
 
     let easedMix = easeOutExpoLike(this.mixFactor);
 
-    let positionLocation = gl.getAttribLocation(this.progLiquid, 'a_position');
-    gl.enableVertexAttribArray(positionLocation);
+    // Use cached attrib location — no driver round-trip per frame
+    gl.enableVertexAttribArray(loc.a_position);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(loc.a_position, 2, gl.FLOAT, false, 0, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbos[0].fbo);
     gl.viewport(0, 0, this.fbos[0].w, this.fbos[0].h);
@@ -479,29 +539,29 @@ export class WebGLBlurRenderer {
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.textures.prev || this.dummyTexture);
-    gl.uniform1i(gl.getUniformLocation(this.progLiquid, 'u_texture_prev'), 0);
+    gl.uniform1i(loc.u_texture_prev, 0);
 
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.textures.current || this.dummyTexture);
-    gl.uniform1i(gl.getUniformLocation(this.progLiquid, 'u_texture'), 1);
+    gl.uniform1i(loc.u_texture, 1);
 
-    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_mix'), easedMix);
-    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_time'), elapsedSeconds);
-    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_dir_prev'), this.dirPrev);
-    gl.uniform1f(gl.getUniformLocation(this.progLiquid, 'u_dir_curr'), this.dirCurr);
+    gl.uniform1f(loc.u_mix, easedMix);
+    gl.uniform1f(loc.u_time, elapsedSeconds);
+    gl.uniform1f(loc.u_dir_prev, this.dirPrev);
+    gl.uniform1f(loc.u_dir_curr, this.dirCurr);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     if ((window as any).__killBlur) {
-      this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, null, 0.0);
+      this.runBlurPass(this.locDown, this.fbos[0].texture, 256, 256, null, 0.0);
     } else {
-      this.runBlurPass(this.progDown, this.fbos[0].texture, 256, 256, this.fbos[1], 1.0);
-      this.runBlurPass(this.progDown, this.fbos[1].texture, 128, 128, this.fbos[2], 1.0);
-      this.runBlurPass(this.progDown, this.fbos[2].texture, 64, 64, this.fbos[3], 1.0);
+      this.runBlurPass(this.locDown, this.fbos[0].texture, 256, 256, this.fbos[1], 1.0);
+      this.runBlurPass(this.locDown, this.fbos[1].texture, 128, 128, this.fbos[2], 1.0);
+      this.runBlurPass(this.locDown, this.fbos[2].texture, 64, 64, this.fbos[3], 1.0);
 
-      this.runBlurPass(this.progUp, this.fbos[3].texture, 32, 32, this.fbos[4], 1.2);
-      this.runBlurPass(this.progUp, this.fbos[4].texture, 64, 64, this.fbos[5], 1.0);
-      this.runBlurPass(this.progUp, this.fbos[5].texture, 128, 128, null, 1.0);
+      this.runBlurPass(this.locUp, this.fbos[3].texture, 32, 32, this.fbos[4], 1.2);
+      this.runBlurPass(this.locUp, this.fbos[4].texture, 64, 64, this.fbos[5], 1.0);
+      this.runBlurPass(this.locUp, this.fbos[5].texture, 128, 128, null, 1.0);
     }
 
     if (this.animating) {
@@ -509,9 +569,11 @@ export class WebGLBlurRenderer {
     }
   }
 
-  runBlurPass(program: any, inputTexture: any, sourceWidth: number, sourceHeight: number, outputFbo: any, offset: number) {
+  runBlurPass(loc: BlurUniforms, inputTexture: any, sourceWidth: number, sourceHeight: number, outputFbo: any, offset: number) {
     let gl = this.gl;
-    gl.useProgram(program);
+    // Program must already be bound by caller or we switch here based on loc identity
+    const prog = (loc === this.locDown) ? this.progDown : this.progUp;
+    gl.useProgram(prog);
 
     if (outputFbo) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, outputFbo.fbo);
@@ -523,10 +585,10 @@ export class WebGLBlurRenderer {
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, inputTexture);
-    gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
-
-    gl.uniform2f(gl.getUniformLocation(program, 'u_halfPixel'), 1.0 / (2.0 * sourceWidth), 1.0 / (2.0 * sourceHeight));
-    gl.uniform1f(gl.getUniformLocation(program, 'u_offset'), offset);
+    // Use cached uniform locations — no driver round-trip per call
+    gl.uniform1i(loc.u_texture, 0);
+    gl.uniform2f(loc.u_halfPixel, 1.0 / (2.0 * sourceWidth), 1.0 / (2.0 * sourceHeight));
+    gl.uniform1f(loc.u_offset, offset);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
