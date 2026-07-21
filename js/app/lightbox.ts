@@ -1,7 +1,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { getCategorySlug, motionProjects } from './media-data.js';
-import { slugify, sanitizeHtml } from './utils.js';
+import { slugify, sanitizeHtml, getPhotoAspectRatio } from './utils.js';
 import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfReady, setFilmstripLiftZoneDisplay } from './core.js';
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
@@ -165,30 +165,32 @@ function runDescFlipTransition(options: any) {
     return;
   }
 
-  let startImg = options.startImgRect || imgWrap.getBoundingClientRect();
+  let photoVisual = state.isMobile ? (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement) : imgWrap;
+  if (!photoVisual) photoVisual = imgWrap;
+  let startImg = options.startImgRect || photoVisual.getBoundingClientRect();
   let startInfo = options.startInfoRect || infoWrap.getBoundingClientRect();
 
   applyLayoutChange();
 
-  let endImg = imgWrap.getBoundingClientRect();
+  let endImg = photoVisual.getBoundingClientRect();
   let endInfo = infoWrap.getBoundingClientRect();
   let dImg = startImg.top - endImg.top;
   let dInfo = startInfo.top - endInfo.top;
 
-  imgWrap.style.transition = 'none';
-  imgWrap.style.transform = 'translateY(' + dImg + 'px)';
+  photoVisual.style.transition = 'none';
+  photoVisual.style.transform = 'translateY(' + dImg + 'px)';
   infoWrap.style.transition = 'none';
   infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
   if (options.afterInvert) options.afterInvert();
 
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
-      imgWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      imgWrap.style.transform = '';
+      photoVisual.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+      photoVisual.style.transform = '';
       infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
       infoWrap.style.transform = '';
       setTimeout(function () {
-        imgWrap.style.transition = '';
+        photoVisual.style.transition = '';
         infoWrap.style.transition = '';
         if (cleanup) cleanup();
       }, 450);
@@ -286,12 +288,14 @@ export function setLightboxContent(p: Photo | Video, options?: any) {
         content.classList.remove('desc-open');
         if (btn) btn.textContent = 'read more';
         updateLightboxDescPreview();
+        updateMobileImgWrapHeight();
       },
       cleanup: state.isMobile && descEl ? function () { descEl.style.transition = ''; } : null
     });
   } else if (btn) {
     btn.textContent = 'read more';
     updateLightboxDescPreview();
+    if (!options.skipHeightUpdate) updateMobileImgWrapHeight();
   }
 }
 
@@ -374,6 +378,48 @@ function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
     setTimeout(callback, delay || 0);
   });
 }
+
+export function updateMobileImgWrapHeight() {
+  if (!state.isMobile) {
+    domRefs.lightboxImgWrap?.style.removeProperty('height');
+    domRefs.lightboxContent?.style.removeProperty('--lightbox-img-wrap-height');
+    return;
+  }
+  const imgWrap = domRefs.lightboxImgWrap;
+  const content = domRefs.lightboxContent;
+  const infoWrap = domRefs.lightboxInfoWrap;
+  const info = domRefs.lightboxInfo;
+  if (!imgWrap || !content || !infoWrap || !info) return;
+  const viewportHeight = content.clientHeight;
+  const viewportWidth = content.clientWidth;
+  if (!viewportHeight || !viewportWidth) return;
+
+  const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
+  const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
+  const items = getCurrentLightboxItems();
+  const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
+  const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
+  const naturalHeight = Math.max(100, viewportWidth - 16) / ratio;
+  let maxHeight = viewportHeight * 0.65;
+
+  if (content.classList.contains('desc-open')) {
+    const contentStyle = window.getComputedStyle(content);
+    const infoMarginTop = parseFloat(window.getComputedStyle(infoWrap).marginTop) || 0;
+    const availableHeight = viewportHeight - (parseFloat(contentStyle.paddingTop) || 0)
+      - (parseFloat(contentStyle.paddingBottom) || 0) - info.offsetHeight - infoMarginTop - 12;
+    maxHeight = Math.min(maxHeight, availableHeight);
+  }
+
+  // No minimum: a wide image must be allowed to take its natural short height.
+  const targetHeight = Math.max(1, Math.min(naturalHeight, maxHeight));
+
+  imgWrap.style.height = `${targetHeight}px`;
+  content.style.setProperty('--lightbox-img-wrap-height', `${targetHeight}px`);
+}
+
+window.addEventListener('resize', function () {
+  if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
+}, { passive: true });
 
 function getCurrentLightboxItems() {
   return state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
@@ -532,7 +578,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     lb.scrollTop = 0;
     document.body.style.overflow = 'hidden';
 
-    // ── FLIP: Invert ──
+    // -- FLIP: Invert --
     if (header && headerRect) {
       let last = header.getBoundingClientRect();
       let dX = headerRect.left - last.left;
@@ -653,7 +699,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   hideFilmstripIfReady();
   setFilmstripLiftZoneDisplay('none');
 
-  // ── FLIP: Invert ──
+  // -- FLIP: Invert --
   if (header && headerRect) {
     let last = header.getBoundingClientRect();
     let dX = headerRect.left - last.left;
@@ -796,6 +842,7 @@ export function toggleLightboxDesc() {
       content.classList.toggle('desc-open', opening);
       btn.textContent = opening ? 'read less' : 'read more';
       updateLightboxDescPreview();
+      updateMobileImgWrapHeight();
       if (opening) hideFilmstripIfReady();
       else showFilmstripIfReady();
     },

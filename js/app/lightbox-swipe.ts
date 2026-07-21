@@ -2,7 +2,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { motionProjects } from './media-data.js';
-import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback } from './lightbox.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback, updateMobileImgWrapHeight } from './lightbox.js';
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
@@ -254,7 +254,6 @@ if (state.isMobile) {
         filmstripReleaseFollowUntil = performance.now() + FILMSTRIP_RELEASE_FOLLOW_MS;
         setTimeout(function () {
           filmstripReleaseFollowUntil = 0;
-          onSnapSettle();
         }, FILMSTRIP_RELEASE_FOLLOW_MS);
       }
     }, { passive: true });
@@ -292,6 +291,9 @@ if (state.isMobile) {
         // blur bg crossfade immediately
         setLightboxBlur(p.thumb || p.src);
 
+        // At the 50% handoff the outgoing info is already fully faded out.
+        // Prepare the incoming photo height now, so its text fades back in at
+        // the correct vertical position instead of jumping after scrollend.
         setLightboxContent(p);
         showFilmstripIfReady();
         updateLoading();
@@ -300,6 +302,9 @@ if (state.isMobile) {
 
       // enforce visible opacity if this was called by snap-settle completion (no arg)
       if (typeof targetIdx !== 'number') {
+        // This is normally a no-op: the height was prepared during the hidden
+        // 50% handoff. It only covers programmatic or interrupted swipes.
+        updateMobileImgWrapHeight();
         let info = domRefs.lightboxInfo;
         if (info) {
           // clear all lingering inline styles to prevent conflicts
@@ -323,7 +328,6 @@ if (state.isMobile) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
-      if (performance.now() < filmstripReleaseFollowUntil) return;
       if (!state.isManuallyNavigating) onSnapSettle();
     });
     imgWrap.addEventListener('scroll', function () {

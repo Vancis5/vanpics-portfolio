@@ -5,7 +5,15 @@ export default {
   server: {
     host: true,
     port: 5199,
-    allowedHosts: true
+    allowedHosts: true,
+    headers: {
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+    }
+  },
+  preview: {
+    headers: {
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+    }
   },
   publicDir: 'public',
   build: {

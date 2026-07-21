@@ -3,6 +3,7 @@ import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 import { cacheImage, getImageCacheEntry } from './lightbox-cache.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
 import { Photo, Video } from '../types.js';
+import { updateMobileImgWrapHeight } from './lightbox.js';
 
 let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;
@@ -67,6 +68,7 @@ export function prepareLightboxPhoto(p: Photo) {
       let r = cached.img.naturalWidth / cached.img.naturalHeight;
       wrap.style.setProperty('--lightbox-photo-ratio', String(r));
     }
+    updateMobileImgWrapHeight();
     setTimeout(() => {
       if (token !== photoPlaceholderToken) return;
       img.style.opacity = '1';
@@ -108,6 +110,7 @@ export function prepareLightboxPhoto(p: Photo) {
       img.src = p.src;
       clearLightboxPhotoPlaceholder(token);
       img.style.opacity = '1';
+      updateMobileImgWrapHeight();
     });
   } else {
     // Fallback just in case
@@ -122,6 +125,7 @@ export function prepareLightboxPhoto(p: Photo) {
         }
         clearLightboxPhotoPlaceholder(token);
         img.style.opacity = '1';
+        updateMobileImgWrapHeight();
       };
       if (img.decode) {
         img.decode().then(handleFallbackDecode).catch(handleFallbackDecode);
