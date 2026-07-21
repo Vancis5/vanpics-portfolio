@@ -17,6 +17,28 @@ export function escapeHtml(str: string | null | undefined): string {
     .replace(/`/g, '&#96;');
 }
 
+export function unescapeHtml(str: string | null | undefined): string {
+  if (!str) return '';
+  let text = str;
+  if (typeof document !== 'undefined') {
+    let prev = '';
+    while (text !== prev && /&[a-zA-Z0-9#]+;/.test(text)) {
+      prev = text;
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      text = doc.documentElement.textContent || text;
+    }
+    return text;
+  }
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#039;/g, "'")
+    .replace(/&#96;/g, '`');
+}
+
 export function plaintextToHtml(text: string | null | undefined): string {
   if (!text) return '';
   
@@ -77,7 +99,7 @@ export function htmlToPlaintext(html: string | null | undefined): string {
   // Clean up spacing around newlines
   text = text.replace(/ \n /g, '\n').replace(/ \n/g, '\n').replace(/\n /g, '\n');
   
-  return text.trim();
+  return unescapeHtml(text).trim();
 }
 
 export function getYearFromDate(dateStr: string | null | undefined): string {

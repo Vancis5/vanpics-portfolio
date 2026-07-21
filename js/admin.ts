@@ -4,6 +4,7 @@ import {
   MAX_VIDEO_BYTES,
   PLACEHOLDER_SRC,
   escapeHtml,
+  unescapeHtml,
   plaintextToHtml,
   htmlToPlaintext,
   getYearFromDate,
@@ -1150,9 +1151,9 @@ function openEditModal(type: string, id: string | number) {
   if (editFileInput) editFileInput.value = '';
 
   // Populate fields
-  getDocEl('edit-title').value = item.title || '';
-  getDocEl('edit-date').value = item.date || '';
-  getDocEl('edit-location').value = item.location || '';
+  getDocEl('edit-title').value = unescapeHtml(item.title || '');
+  getDocEl('edit-date').value = unescapeHtml(item.date || '');
+  getDocEl('edit-location').value = unescapeHtml(item.location || '');
   getDocEl('edit-desc').value = htmlToPlaintext(item.desc || '');
   getDocEl('edit-aspect-ratio').value = item.aspect_ratio || 1.0;
 
@@ -1169,7 +1170,7 @@ function openEditModal(type: string, id: string | number) {
     editPhotoOnly.forEach(el => (el as HTMLElement).style.display = 'none');
     editVideoOnly.forEach(el => (el as HTMLElement).style.display = '');
     
-    getDocEl('edit-music').value = item.music || '';
+    getDocEl('edit-music').value = unescapeHtml(item.music || '');
   }
 
   const imgPreview = getDocEl('edit-media-preview-img');
