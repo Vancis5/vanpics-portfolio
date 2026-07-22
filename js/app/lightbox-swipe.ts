@@ -2,11 +2,11 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { motionProjects } from './media-data.js';
-import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback, updateMobileImgWrapHeight } from './lightbox.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback, updateMobileImgWrapHeight, getPhotoTargetHeight, setMobileImgWrapHeightValue } from './lightbox.js';
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
-import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml } from './utils.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -136,105 +136,32 @@ if (state.isMobile) {
       });
     }
 
-    function scrollToSlide(idx: any, smooth: any, dir?: any) {
+    function scrollToSlide(idx: number, smooth = true) {
       if (state.currentLightboxIsMotion) return;
-      let w = imgWrap.offsetWidth;
-      if (!w) return;
-      if (smooth) {
-        let oldIdx = Math.round(imgWrap.scrollLeft / w);
-        if (idx === oldIdx) return;
-
-        window.isAutoRapidScrolling = true;
-        let slideDir = dir || (idx > oldIdx ? 1 : -1);
-        let exitX = slideDir > 0 ? '-6%' : '6%';
-        let enterX = slideDir > 0 ? '6%' : '-6%';
-
-        let currentInner = imgWrap.querySelector('.snap-slide[data-idx="' + oldIdx + '"] .snap-slide-inner') as HTMLElement;
-        let info = domRefs.lightboxInfo;
-        let finalP = state.activePhotos[idx];
-        setLightboxBlur(finalP.thumb || finalP.src);
-
-        if (currentInner) {
-          currentInner.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-          currentInner.style.opacity = '0';
-          currentInner.style.transform = 'translateX(' + exitX + ') scale(0.98)';
-        }
-        if (info) {
-          info.style.animation = 'none';
-          info.style.transition = 'none';
-          info.style.opacity = '0';
-        }
-
-        setTimeout(function () {
-          // Turn off scroll snapping right before instant scroll to prevent browser layout snaps during transition
-          imgWrap.style.scrollSnapType = 'none';
-
-          imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
-
-          state.cur = idx;
-          setLightboxContent(finalP);
-          showFilmstripIfReady();
-          if (typeof updateLoading === 'function') updateLoading();
-          if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
-
-          let targetInner = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"] .snap-slide-inner') as HTMLElement;
-          if (targetInner) {
-            targetInner.style.transition = 'none';
-            targetInner.style.transform = 'translateX(' + enterX + ') scale(0.98)';
-            targetInner.style.opacity = '0';
-            void targetInner.offsetWidth;
-          }
-
-          requestAnimationFrame(function () {
-            // Animate text after layout settles — matches desktop's rAF-wrapped pattern
-            animateInfo(slideDir);
-
-            if (targetInner) {
-              targetInner.style.transition = 'opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1)';
-              targetInner.style.opacity = '1';
-              targetInner.style.transform = '';
-            }
-          });
-
-          // Guard must cover full lbInfoIn animation (0.55s) to prevent onSnapSettle
-          // from killing the animation mid-flight with inline style overrides
-          setTimeout(function () {
-            window.isAutoRapidScrolling = false;
-            // Restore scroll snapping once transition is complete
-            imgWrap.style.scrollSnapType = '';
-            if (currentInner) {
-              currentInner.style.transition = '';
-              currentInner.style.opacity = '';
-              currentInner.style.transform = '';
-            }
-            if (targetInner) {
-              targetInner.style.transition = '';
-              targetInner.style.opacity = '';
-              targetInner.style.transform = '';
-            }
-          }, 600);
-        }, 150);
-      } else {
-        imgWrap.scrollTo({ left: idx * w, behavior: 'instant' });
+      let slide = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"]') as HTMLElement;
+      if (slide) {
+        imgWrap.scrollTo({
+          left: slide.offsetLeft,
+          behavior: smooth ? 'smooth' : 'auto'
+        });
       }
     }
-    mobileScrollToSlide = scrollToSlide;
     setMobileScrollToSlideCallback(scrollToSlide);
 
-    // Over-scroll loop detection bounds
     let wrapTouchX = 0;
-    let isUserTouching = false;
     let filmstripReleaseFollowUntil = 0;
-    let FILMSTRIP_RELEASE_FOLLOW_MS = 72;
+    const FILMSTRIP_RELEASE_FOLLOW_MS = 300;
+
     imgWrap.addEventListener('touchstart', function (e) {
       if (state.currentLightboxIsMotion) return;
-      isUserTouching = true;
+      state.isUserTouching = true;
       filmstripReleaseFollowUntil = 0;
       if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
     }, { passive: true });
+
     imgWrap.addEventListener('touchend', function (e) {
       if (state.currentLightboxIsMotion) return;
-      isUserTouching = false;
+      state.isUserTouching = false;
       if (wasPinchingOrZooming) {
         if (e.touches.length === 0) {
           wasPinchingOrZooming = false;
@@ -258,6 +185,10 @@ if (state.isMobile) {
       }
     }, { passive: true });
 
+    imgWrap.addEventListener('touchcancel', function () {
+      state.isUserTouching = false;
+    }, { passive: true });
+
     // ── Eager-load nearby slides ──
     function updateLoading() {
       if (state.currentLightboxIsMotion) return;
@@ -276,8 +207,8 @@ if (state.isMobile) {
     // ── Scroll settle — detect new active slide ──
     function onSnapSettle(targetIdx?: number) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1 || window.isAutoRapidScrolling) return;
-      if (isUserTouching && typeof targetIdx === 'undefined') return;
-      state.isManuallyNavigating = false; // Reset navigation flag on settle
+      if (state.isUserTouching && typeof targetIdx === 'undefined') return;
+      state.isManuallyNavigating = false;
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let rawNearest = Math.round(imgWrap.scrollLeft / w);
@@ -288,38 +219,27 @@ if (state.isMobile) {
         state.cur = idx;
         let p = state.activePhotos[state.cur];
 
-        // blur bg crossfade immediately
         setLightboxBlur(p.thumb || p.src);
-
-        // At the 50% handoff the outgoing info is already fully faded out.
-        // Prepare the incoming photo height now, so its text fades back in at
-        // the correct vertical position instead of jumping after scrollend.
         setLightboxContent(p);
         showFilmstripIfReady();
         updateLoading();
       }
       if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
 
-      // enforce visible opacity if this was called by snap-settle completion (no arg)
-      if (typeof targetIdx !== 'number') {
-        // This is normally a no-op: the height was prepared during the hidden
-        // 50% handoff. It only covers programmatic or interrupted swipes.
-        updateMobileImgWrapHeight();
-        let info = domRefs.lightboxInfo;
-        if (info) {
-          // clear all lingering inline styles to prevent conflicts
-          info.style.animation = 'none';
-          info.style.transition = 'opacity 0.3s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1)';
-          info.style.opacity = '1';
-          info.style.filter = '';
-          info.style.transform = '';
-          // clean up inline overrides after transition completes
-          setTimeout(function () {
-            if (!info.parentNode) return;
-            info.style.animation = '';
-            info.style.transition = '';
-          }, 400);
-        }
+      updateMobileImgWrapHeight();
+
+      let info = domRefs.lightboxInfo;
+      if (info) {
+        info.style.animation = 'none';
+        info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+        info.style.opacity = '1';
+        info.style.filter = '';
+        info.style.transform = '';
+        setTimeout(function () {
+          if (!info.parentNode) return;
+          info.style.animation = '';
+          info.style.transition = '';
+        }, 400);
       }
     }
 
@@ -330,6 +250,7 @@ if (state.isMobile) {
       clearTimeout(snapTimer);
       if (!state.isManuallyNavigating) onSnapSettle();
     });
+
     imgWrap.addEventListener('scroll', function () {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       clearTimeout(snapTimer);
@@ -337,6 +258,9 @@ if (state.isMobile) {
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;
+
+
+
       let nearest = Math.round(f);
       nearest = Math.max(0, Math.min(nearest, state.activePhotos.length - 1));
 
@@ -345,9 +269,8 @@ if (state.isMobile) {
         hint.classList.remove('visible');
       }
 
-      let isFilmstripDirectPhase = isUserTouching || performance.now() < filmstripReleaseFollowUntil;
+      let isFilmstripDirectPhase = state.isUserTouching || performance.now() < filmstripReleaseFollowUntil;
 
-      // Use exact sync while touching and briefly after release, then rAF-settle the final bit.
       if (!state.fsRaf && !state.isManuallyNavigating && !window.isAutoRapidScrolling && !state.isTouchingFilmstrip) {
         if (isFilmstripDirectPhase && typeof syncFilmstripToPhotoProgress === 'function') {
           syncFilmstripToPhotoProgress(f);
@@ -356,38 +279,35 @@ if (state.isMobile) {
         }
       }
 
-      // rapid scroll mode suspends normal text updates to keep transition fluid
       if (window.isAutoRapidScrolling) {
         state.cur = nearest;
         return;
       }
 
-      // preload text underneath if we cross 50% mark — but ONLY if not currently holding
       if (nearest !== state.cur && !isFilmstripDirectPhase && !state.isManuallyNavigating) {
         onSnapSettle(nearest);
       }
 
-      let dist = Math.abs(imgWrap.scrollLeft - nearest * w) / w;
       let info = domRefs.lightboxInfo;
       if (info) {
         info.style.animation = 'none';
         info.style.transition = 'none';
         let swipeDelta = imgWrap.scrollLeft - state.cur * w;
+        let distFromStart = Math.abs(swipeDelta) / w;
 
-        if (dist === 0) {
+        if (distFromStart === 0) {
           info.style.opacity = '1';
           info.style.filter = '';
           info.style.transform = '';
         } else {
-          // 1:1 physical mapping — fades completely out by 16% scroll distance
-          let op = Math.max(0, 1 - dist * 6.25);
-          let bl = Math.min(10, dist * 40);
-          // Calculate slide direction offset
-          let tx = swipeDelta > 0 ? Math.max(-20, -dist * 80) : Math.min(20, dist * 80);
+          // 1:1 physical mapping relative to active slide — fades out by 16% drag distance and stays at 0 while dragging away
+          let op = Math.max(0, 1 - distFromStart * 6.25);
+          let bl = Math.min(10, distFromStart * 40);
+          let tx = swipeDelta > 0 ? Math.max(-20, -distFromStart * 80) : Math.min(20, distFromStart * 80);
 
           info.style.opacity = op.toString();
-          info.style.filter = 'blur(' + bl + 'px)';
-          info.style.transform = 'translateX(' + tx + 'px)';
+          info.style.filter = bl > 0.1 ? `blur(${bl.toFixed(1)}px)` : '';
+          info.style.transform = `translateX(${tx.toFixed(1)}px)`;
         }
       }
     }, { passive: true });

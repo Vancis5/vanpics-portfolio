@@ -214,6 +214,10 @@ export function setLightboxContent(p: Photo | Video, options?: any) {
   let safeTitle = p.title || '';
   let safeDesc = p.desc || '';
   let content = domRefs.lightboxContent;
+  if (content) {
+    let ratio = getPhotoAspectRatio(p) || 1;
+    content.style.setProperty('--lightbox-photo-ratio', String(ratio));
+  }
   let btn = domRefs.lightboxDescToggle;
   let descEl = domRefs.lightboxDesc;
   let isCollapsingOpenDesc = content && content.classList.contains('desc-open');
@@ -272,10 +276,9 @@ export function setLightboxContent(p: Photo | Video, options?: any) {
     }
   }
 
-  // conditionally hide the "read" toggle when photo has no description
+  // hide the "read" toggle by default; updateLightboxDescPreview will reveal ONLY if text overflows 2 lines
   if (btn) {
-    let hasDesc = safeDesc.replace(/<[^>]*>/g, '').trim().length > 0;
-    btn.classList.toggle('no-desc', !hasDesc);
+    btn.classList.add('no-desc');
   }
 
   updateLightboxDescPreview();
@@ -305,26 +308,48 @@ function updateLightboxDescPreview() {
   let content = domRefs.lightboxContent;
   if (!desc || !btn || !content || !state.isMobile) return;
 
-  let hasDesc = desc.textContent.trim().length > 0;
+  let cleanText = (desc.textContent || '').trim();
   desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
 
-  if (!hasDesc) {
+  if (!cleanText) {
     desc.classList.remove('desc-overflow');
     btn.classList.add('no-desc');
     return;
   }
 
-  let styles = window.getComputedStyle(desc);
-  let lineHeight = parseFloat(styles.lineHeight);
-  if (!lineHeight) lineHeight = parseFloat(styles.fontSize) * 1.75;
-  let previewHeight = lineHeight * 2;
-  let hasOverflow = desc.scrollHeight > previewHeight + 1;
+  // Fast path: short descriptions (< 50 chars without linebreaks) never overflow 2 lines
+  if (cleanText.length < 50 && !cleanText.includes('\n')) {
+    desc.classList.remove('desc-overflow');
+    btn.classList.add('no-desc');
+    return;
+  }
+
+  // Temporarily disable transitions during measurement to get clean values
+  let prevTransition = desc.style.transition;
+  let prevMaxHeight = desc.style.maxHeight;
+  desc.style.transition = 'none';
+  
+  // Measure natural uncapped height
+  desc.style.maxHeight = 'none';
+  let naturalH = desc.offsetHeight;
+
+  // Measure capped height at 2 lines
+  desc.style.maxHeight = '3.5em';
+  let clampedH = desc.offsetHeight;
+
+  let hasOverflow = naturalH > clampedH + 4;
+
+  // Restore style and trigger layout sync to prevent twitching
+  desc.style.maxHeight = prevMaxHeight;
+  void desc.offsetHeight;
+  desc.style.transition = prevTransition;
 
   desc.classList.toggle('desc-overflow', hasOverflow);
   btn.classList.toggle('no-desc', !hasOverflow);
 }
 
 export function animateInfo(dir: number) {
+  if (state.isMobile) return;
   let info = domRefs.lightboxInfo;
   if (!info || !info.parentNode) {
     domRefs.lightboxInfo = (domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null) as HTMLElement;
@@ -383,38 +408,28 @@ export function updateMobileImgWrapHeight() {
   if (!state.isMobile) {
     domRefs.lightboxImgWrap?.style.removeProperty('height');
     domRefs.lightboxContent?.style.removeProperty('--lightbox-img-wrap-height');
+    domRefs.lightboxInfoWrap?.style.removeProperty('transform');
     return;
   }
+  if (state.isUserTouching) return;
   const imgWrap = domRefs.lightboxImgWrap;
-  const content = domRefs.lightboxContent;
   const infoWrap = domRefs.lightboxInfoWrap;
-  const info = domRefs.lightboxInfo;
-  if (!imgWrap || !content || !infoWrap || !info) return;
-  const viewportHeight = content.clientHeight;
-  const viewportWidth = content.clientWidth;
-  if (!viewportHeight || !viewportWidth) return;
+  if (!imgWrap || !infoWrap) return;
+
+  const containerH = imgWrap.clientHeight;
+  if (!containerH) return;
 
   const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
   const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
   const items = getCurrentLightboxItems();
   const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
   const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
-  const naturalHeight = Math.max(100, viewportWidth - 16) / ratio;
-  let maxHeight = viewportHeight * 0.65;
 
-  if (content.classList.contains('desc-open')) {
-    const contentStyle = window.getComputedStyle(content);
-    const infoMarginTop = parseFloat(window.getComputedStyle(infoWrap).marginTop) || 0;
-    const availableHeight = viewportHeight - (parseFloat(contentStyle.paddingTop) || 0)
-      - (parseFloat(contentStyle.paddingBottom) || 0) - info.offsetHeight - infoMarginTop - 12;
-    maxHeight = Math.min(maxHeight, availableHeight);
-  }
+  const viewportWidth = imgWrap.clientWidth || window.innerWidth;
+  const photoDisplayedH = Math.min(containerH, (viewportWidth - 8) / ratio);
+  const offset = -Math.max(0, (containerH - photoDisplayedH) / 2);
 
-  // No minimum: a wide image must be allowed to take its natural short height.
-  const targetHeight = Math.max(1, Math.min(naturalHeight, maxHeight));
-
-  imgWrap.style.height = `${targetHeight}px`;
-  content.style.setProperty('--lightbox-img-wrap-height', `${targetHeight}px`);
+  infoWrap.style.transform = `translateY(${offset}px)`;
 }
 
 window.addEventListener('resize', function () {

@@ -1388,9 +1388,13 @@ body::after {
 
 @media (hover: none) and (max-width: 767px) {
   #lightbox-info-wrap {
-    margin-top: 1rem;
-    padding: 0 0.5rem;
+    margin-top: 0.85rem;
+    width: min(calc(100% - 0.25rem), calc(65dvh * var(--lightbox-photo-ratio)));
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 0.15rem;
     position: relative;
+    box-sizing: border-box;
   }
 }
 
@@ -1479,7 +1483,7 @@ body::after {
     display: inline-flex;
     position: absolute;
     top: -0.02rem;
-    right: max(0px, calc(50vw - 23svh - 1.25rem));
+    right: 0;
     z-index: 4;
     /* Keep every photo top-aligned; the active info offset follows its bottom. */
     align-items: flex-start;
@@ -1518,16 +1522,11 @@ body::after {
 
   /* hide the toggle when there's no description to show */
   #lightbox-desc-toggle.no-desc {
+    display: none !important;
     opacity: 0;
     filter: blur(4px);
     visibility: hidden;
     pointer-events: none;
-    transition:
-      color 0.2s ease,
-      border-color 0.2s ease,
-      opacity 0.28s ease,
-      filter 0.28s ease,
-      visibility 0s linear 0.28s;
   }
 }
 
@@ -1739,11 +1738,9 @@ body::after {
     justify-content: flex-start;
     align-items: flex-start;
 
-    /* Use dynamic height set by JS, but expand touch container to bottom of viewport */
-    --lightbox-total-avail-height: calc(var(--app-height) - 3.25rem - var(--safe-top));
-    height: var(--lightbox-total-avail-height) !important;
-    margin-bottom: calc(var(--lightbox-img-wrap-height, 46dvh) - var(--lightbox-total-avail-height)) !important;
-    padding-bottom: calc(var(--lightbox-total-avail-height) - var(--lightbox-img-wrap-height, 46dvh)) !important;
+    height: 65dvh !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
     box-sizing: border-box;
   }
 
@@ -1764,7 +1761,7 @@ body::after {
   .snap-slide {
     flex: 0 0 100%;
     width: 100%;
-    height: var(--lightbox-img-wrap-height, 46dvh) !important;
+    height: 100% !important;
     padding: 0 0.5rem;
     scroll-snap-align: center;
     scroll-snap-stop: always;
@@ -1779,7 +1776,7 @@ body::after {
     width: auto;
     height: auto;
     max-width: 100%;
-    max-height: var(--lightbox-img-wrap-height, 46dvh);
+    max-height: 65dvh;
     object-fit: contain;
     border-radius: 3px;
     border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
@@ -1795,9 +1792,9 @@ body::after {
     align-items: center;
     justify-content: center;
     max-width: calc(100% - 0.25rem);
-    max-height: var(--lightbox-img-wrap-height, 46dvh);
+    max-height: 65dvh;
     aspect-ratio: var(--lightbox-photo-ratio);
-    width: min(100%, calc(var(--lightbox-img-wrap-height, 46dvh) * var(--lightbox-photo-ratio)));
+    width: min(100%, calc(65dvh * var(--lightbox-photo-ratio)));
     border-radius: 3px;
   }
 

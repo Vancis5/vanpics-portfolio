@@ -32,6 +32,7 @@ export const state = {
   heroScrollY: 0,
   currentLightboxIsMotion: false,
   isManuallyNavigating: false,
+  isUserTouching: false,
   isTouchingFilmstrip: false,
   fsRaf: null as number | null,
   filmstripHideTimer: null as any,
