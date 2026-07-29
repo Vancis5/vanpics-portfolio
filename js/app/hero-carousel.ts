@@ -112,7 +112,7 @@ export function buildCarousel(isRebuild = false) {
 
   activeRows.forEach(function (row, ri) {
     let group = groups[ri].length > 0 ? groups[ri] : state.carouselPhotos;
-    let copies = Math.max(2, Math.ceil((window.innerWidth * 3) / 220 / group.length));
+    let copies = Math.max(2, Math.ceil((window.innerWidth * 1.5) / 220 / group.length));
 
     for (let c = 0; c < copies * 2; c++) {
       group.forEach(function (p, pi) {
@@ -264,7 +264,7 @@ export function tick(timestamp: number) {
     rowState.forEach(function (rowSt, ri) {
       if (ri >= rows.length) return;
       if (isDragging && dragRowIndex === ri) {
-        rows[ri].style.transform = 'translateX(' + (rowSt.offset + px[ri]) + 'px)';
+        rows[ri].style.transform = 'translate3d(' + (rowSt.offset + px[ri]) + 'px, 0, 0)';
         return;
       }
 
@@ -286,7 +286,7 @@ export function tick(timestamp: number) {
         while (rowSt.offset < -rowSt.setWidth) rowSt.offset += rowSt.setWidth;
         while (rowSt.offset > 0) rowSt.offset -= rowSt.setWidth;
       }
-      rows[ri].style.transform = 'translateX(' + (rowSt.offset + px[ri]) + 'px)';
+      rows[ri].style.transform = 'translate3d(' + (rowSt.offset + px[ri]) + 'px, 0, 0)';
     });
   } catch (error) {
     console.error('Error in hero carousel tick loop:', error);
