@@ -177,12 +177,10 @@ function runDescFlipTransition(options: any) {
   let dImg = startImg.top - endImg.top;
   let dInfo = startInfo.top - endInfo.top;
 
-  let targetInfoTransform = state.isMobile ? (infoWrap.style.transform || '') : '';
-
   photoVisual.style.transition = 'none';
   photoVisual.style.transform = 'translateY(' + dImg + 'px)';
   infoWrap.style.transition = 'none';
-  infoWrap.style.transform = targetInfoTransform ? (targetInfoTransform + ' translateY(' + dInfo + 'px)') : ('translateY(' + dInfo + 'px)');
+  infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
   if (options.afterInvert) options.afterInvert();
 
   requestAnimationFrame(function () {
@@ -190,12 +188,10 @@ function runDescFlipTransition(options: any) {
       photoVisual.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
       photoVisual.style.transform = '';
       infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      infoWrap.style.transform = targetInfoTransform;
+      infoWrap.style.transform = '';
       setTimeout(function () {
         photoVisual.style.transition = '';
         infoWrap.style.transition = '';
-        if (state.isMobile) updateMobileImgWrapHeight();
-        else infoWrap.style.transform = '';
         if (cleanup) cleanup();
       }, 450);
     });
@@ -430,12 +426,10 @@ export function updateMobileImgWrapHeight() {
   const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
 
   const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-  const photoDisplayedH = Math.min(containerH, (viewportWidth - 32) / ratio);
+  const photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
   const offset = -Math.max(0, (containerH - photoDisplayedH) / 2);
 
-  infoWrap.style.removeProperty('width');
   infoWrap.style.transform = `translateY(${offset}px)`;
-  updateLightboxDescPreview();
 }
 
 window.addEventListener('resize', function () {
