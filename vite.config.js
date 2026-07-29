@@ -25,7 +25,8 @@ export default {
       input: {
         main: path.resolve('index.html'),
         admin: path.resolve('admin.html'),
-        login: path.resolve('login.html')
+        login: path.resolve('login.html'),
+        googleVerification: path.resolve('google5d62f08d6e05793e.html')
       }
     }
   },
