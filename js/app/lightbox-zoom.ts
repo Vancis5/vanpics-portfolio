@@ -138,9 +138,7 @@ export function updateZoomTransform(img: any, smooth = true) {
     if (isDraggingZoom) img.style.setProperty('cursor', 'grabbing', 'important');
 
     let dark = domRefs.lightboxZoomDarken;
-    // base darkness leaps to 30%, climbing dynamically to 90%
-    if (dark) dark.style.opacity = String(Math.min(0.95, 0.3 + (state.lbZoomLevel - 1) * 0.5));
-    hideFilmstripIfReady();
+    if (dark) dark.style.opacity = String(Math.min(0.85, 0.25 + (state.lbZoomLevel - 1) * 0.45));
 
     if (state.isMobile && mWrap.style.overflowX !== 'visible') {
       // Prevent browser from zero-ing out scroll when we swap to visible overflow

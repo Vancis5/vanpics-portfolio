@@ -172,27 +172,37 @@ function runDescFlipTransition(options: any) {
 
   applyLayoutChange();
 
+  let targetTransform = state.isMobile ? (infoWrap.style.transform || '') : '';
   let endImg = photoVisual.getBoundingClientRect();
   let endInfo = infoWrap.getBoundingClientRect();
   let dImg = startImg.top - endImg.top;
   let dInfo = startInfo.top - endInfo.top;
 
-  let targetInfoTransform = state.isMobile ? (infoWrap.style.transform || '') : '';
+  const moveImg = Math.abs(dImg) >= 1;
 
-  photoVisual.style.transition = 'none';
-  photoVisual.style.transform = 'translateY(' + dImg + 'px)';
+  if (moveImg) {
+    photoVisual.style.transition = 'none';
+    photoVisual.style.transform = 'translateY(' + dImg + 'px)';
+  }
   infoWrap.style.transition = 'none';
-  infoWrap.style.transform = targetInfoTransform ? (targetInfoTransform + ' translateY(' + dInfo + 'px)') : ('translateY(' + dInfo + 'px)');
+  void infoWrap.offsetHeight;
+
+  infoWrap.style.transform = targetTransform ? (targetTransform + ' translateY(' + dInfo + 'px)') : ('translateY(' + dInfo + 'px)');
   if (options.afterInvert) options.afterInvert();
 
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
-      photoVisual.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      photoVisual.style.transform = '';
+      if (moveImg) {
+        photoVisual.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+        photoVisual.style.transform = '';
+      }
       infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      infoWrap.style.transform = targetInfoTransform;
+      infoWrap.style.transform = targetTransform;
       setTimeout(function () {
-        photoVisual.style.transition = '';
+        if (moveImg) {
+          photoVisual.style.transition = '';
+          photoVisual.style.transform = '';
+        }
         infoWrap.style.transition = '';
         if (!state.isMobile) infoWrap.style.transform = '';
         if (cleanup) cleanup();

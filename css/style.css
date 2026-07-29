@@ -1857,19 +1857,20 @@ body::after {
   }
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
-    height: var(--lightbox-img-wrap-height, 46dvh) !important;
+    height: 100% !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
     overflow: visible;
-    z-index: 4;
+    z-index: 50 !important;
   }
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-info-wrap {
-    z-index: 1;
+    z-index: 1 !important;
+    pointer-events: none;
   }
 
   #lightbox.zoom-active #lightbox-zoom-darken {
-    z-index: 3;
+    z-index: 5 !important;
   }
 }
 
