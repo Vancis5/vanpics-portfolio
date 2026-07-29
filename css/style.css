@@ -1016,8 +1016,8 @@ body::after {
 
 #motion-player-shell {
   position: relative;
-  --lightbox-video-max-height: 78svh;
-  width: min(100%, calc(var(--lightbox-video-max-height) * var(--lightbox-photo-ratio, 1.7777777777777777)), 1080px);
+  --lightbox-video-max-height: 72svh;
+  width: min(100%, calc(var(--lightbox-video-max-height) * var(--lightbox-photo-ratio, 1.7777777777777777)));
   /* slightly larger max for desktop */
   aspect-ratio: var(--lightbox-photo-ratio, 16 / 9);
   background: transparent;
@@ -1240,7 +1240,7 @@ body::after {
   }
 
   #lightbox-content {
-    padding: calc(var(--safe-top) + 0.75rem) 0.75rem var(--filmstrip-clearance);
+    padding: calc(var(--safe-top) + 0.75rem) 0 var(--filmstrip-clearance);
   }
 }
 
@@ -1368,6 +1368,8 @@ body::after {
   margin-top: 1.5rem;
   flex-shrink: 0;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 #lightbox-info {
@@ -1387,11 +1389,11 @@ body::after {
 
 @media (hover: none) and (max-width: 767px) {
   #lightbox-info-wrap {
-    margin-top: 0.85rem;
-    width: min(calc(100% - 0.25rem), calc(65dvh * var(--lightbox-photo-ratio)));
+    margin-top: 1.35rem;
+    width: min(100%, calc(65dvh * var(--lightbox-photo-ratio)));
     margin-left: auto;
     margin-right: auto;
-    padding: 0 0.15rem;
+    padding: 0 1rem;
     position: relative;
     box-sizing: border-box;
   }
@@ -1582,6 +1584,8 @@ body::after {
     transition: padding-bottom 0.3s ease;
     gap: 3rem;
     height: var(--app-height);
+    width: 100%;
+    max-width: none;
   }
 
   /* filmstrip visible — shift center up to account for filmstrip height */
@@ -1592,14 +1596,14 @@ body::after {
   #lightbox-img-wrap {
     flex: 0 1 auto;
     width: auto;
-    max-width: 50vw;
+    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
     display: flex;
     align-items: center;
   }
 
   #lightbox-img-wrap.photo-loading {
-    width: min(50vw, calc(72svh * var(--lightbox-photo-ratio)));
-    max-width: 50vw;
+    width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
   }
 
   /* Ensure video container fills available row space on desktop */
@@ -1628,9 +1632,10 @@ body::after {
 
 @media (min-width: 1024px) {
   #lightbox-content {
-    max-width: 1350px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto;
-    padding: calc(4.5rem + var(--safe-top)) 3rem calc(4.5rem + var(--safe-bottom));
+    padding: calc(4.5rem + var(--safe-top)) 4rem calc(4.5rem + var(--safe-bottom));
     gap: 4rem;
     transition: padding-bottom 0.3s ease;
   }
@@ -1640,12 +1645,12 @@ body::after {
   }
 
   #lightbox-img-wrap {
-    max-width: min(70vw, calc(72svh * var(--lightbox-photo-ratio)), calc(640px * var(--lightbox-photo-ratio)));
+    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
   }
 
   #lightbox-img-wrap.photo-loading {
-    width: min(70vw, calc(72svh * var(--lightbox-photo-ratio)), calc(640px * var(--lightbox-photo-ratio)));
-    max-width: min(70vw, calc(72svh * var(--lightbox-photo-ratio)), calc(640px * var(--lightbox-photo-ratio)));
+    width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
   }
 
   #lightbox-img {
@@ -1730,17 +1735,18 @@ body::after {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     flex-shrink: 0;
-    /* The transparent bottom area lets native scroll-snap own touches over the info zone. */
     position: relative;
     scrollbar-width: none;
     overscroll-behavior-x: none;
     justify-content: flex-start;
     align-items: flex-start;
 
+
     height: 65dvh !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
     box-sizing: border-box;
+    z-index: 2;
   }
 
   #lightbox.mode-motion #lightbox-img-wrap {
@@ -1761,7 +1767,8 @@ body::after {
     flex: 0 0 100%;
     width: 100%;
     height: 100% !important;
-    padding: 0 0.5rem;
+    padding: 0 1rem;
+    box-sizing: border-box;
     scroll-snap-align: center;
     scroll-snap-stop: always;
     display: flex;
@@ -1832,17 +1839,19 @@ body::after {
 
   #lightbox:not(.mode-motion) #lightbox-info-wrap {
     position: relative;
-    z-index: 3;
+    z-index: 1;
     pointer-events: none;
   }
 
   #lightbox-info a,
   #lightbox-desc a {
     pointer-events: auto;
+    position: relative;
+    z-index: 10;
   }
 
   #lightbox:not(.mode-motion) #lightbox-desc-toggle {
-    z-index: 4;
+    z-index: 10;
     pointer-events: auto;
   }
 

@@ -426,7 +426,7 @@ export function updateMobileImgWrapHeight() {
   const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
 
   const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-  const photoDisplayedH = Math.min(containerH, (viewportWidth - 8) / ratio);
+  const photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
   const offset = -Math.max(0, (containerH - photoDisplayedH) / 2);
 
   infoWrap.style.transform = `translateY(${offset}px)`;
@@ -468,6 +468,10 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     mobileScrollToSlideCallback(i, true, dir);
 
     state.cur = i;
+    if (p) {
+      setLightboxBlur(p.thumb || p.src);
+      setLightboxContent(p);
+    }
     updateFilmstrip();
     return;
   }
