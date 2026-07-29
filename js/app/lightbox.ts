@@ -177,10 +177,12 @@ function runDescFlipTransition(options: any) {
   let dImg = startImg.top - endImg.top;
   let dInfo = startInfo.top - endInfo.top;
 
+  let targetInfoTransform = state.isMobile ? (infoWrap.style.transform || '') : '';
+
   photoVisual.style.transition = 'none';
   photoVisual.style.transform = 'translateY(' + dImg + 'px)';
   infoWrap.style.transition = 'none';
-  infoWrap.style.transform = 'translateY(' + dInfo + 'px)';
+  infoWrap.style.transform = targetInfoTransform ? (targetInfoTransform + ' translateY(' + dInfo + 'px)') : ('translateY(' + dInfo + 'px)');
   if (options.afterInvert) options.afterInvert();
 
   requestAnimationFrame(function () {
@@ -188,10 +190,11 @@ function runDescFlipTransition(options: any) {
       photoVisual.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
       photoVisual.style.transform = '';
       infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      infoWrap.style.transform = '';
+      infoWrap.style.transform = targetInfoTransform;
       setTimeout(function () {
         photoVisual.style.transition = '';
         infoWrap.style.transition = '';
+        if (!state.isMobile) infoWrap.style.transform = '';
         if (cleanup) cleanup();
       }, 450);
     });
@@ -317,13 +320,6 @@ function updateLightboxDescPreview() {
     return;
   }
 
-  // Fast path: short descriptions (< 50 chars without linebreaks) never overflow 2 lines
-  if (cleanText.length < 50 && !cleanText.includes('\n')) {
-    desc.classList.remove('desc-overflow');
-    btn.classList.add('no-desc');
-    return;
-  }
-
   // Temporarily disable transitions during measurement to get clean values
   let prevTransition = desc.style.transition;
   let prevMaxHeight = desc.style.maxHeight;
@@ -427,7 +423,8 @@ export function updateMobileImgWrapHeight() {
 
   const viewportWidth = imgWrap.clientWidth || window.innerWidth;
   const photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
-  const offset = -Math.max(0, (containerH - photoDisplayedH) / 2);
+  const topShift = window.innerHeight * 0.04;
+  const offset = -Math.max(0, (containerH - photoDisplayedH) / 2) - topShift;
 
   infoWrap.style.transform = `translateY(${offset}px)`;
 }

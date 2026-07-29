@@ -1240,7 +1240,7 @@ body::after {
   }
 
   #lightbox-content {
-    padding: calc(var(--safe-top) + 0.75rem) 0 var(--filmstrip-clearance);
+    padding: calc(var(--safe-top) + 0.75rem) 0 0;
   }
 }
 
@@ -1390,7 +1390,7 @@ body::after {
 @media (hover: none) and (max-width: 767px) {
   #lightbox-info-wrap {
     margin-top: 1.35rem;
-    width: min(100%, calc(65dvh * var(--lightbox-photo-ratio)));
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
     padding: 0 1rem;
@@ -1742,7 +1742,7 @@ body::after {
     align-items: flex-start;
 
 
-    height: 65dvh !important;
+    height: 100% !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
     box-sizing: border-box;
@@ -1802,6 +1802,7 @@ body::after {
     aspect-ratio: var(--lightbox-photo-ratio);
     width: min(100%, calc(65dvh * var(--lightbox-photo-ratio)));
     border-radius: 3px;
+    transform: translateY(-4dvh);
   }
 
   .snap-slide-inner.photo-loading::before {
@@ -1839,7 +1840,7 @@ body::after {
 
   #lightbox:not(.mode-motion) #lightbox-info-wrap {
     position: relative;
-    z-index: 1;
+    z-index: 3;
     pointer-events: none;
   }
 
