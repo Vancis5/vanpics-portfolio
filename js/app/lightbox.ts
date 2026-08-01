@@ -802,6 +802,13 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
       domRefs.lightboxImgWrap.style.transition = '';
       domRefs.lightboxImgWrap.style.transform = '';
       domRefs.lightboxImgWrap.style.opacity = '';
+      domRefs.lightboxImgWrap.style.filter = '';
+    }
+
+    if (domRefs.filmstripWrap) {
+      domRefs.filmstripWrap.style.transition = '';
+      domRefs.filmstripWrap.style.filter = '';
+      domRefs.filmstripWrap.style.opacity = '';
     }
 
     let info = domRefs.lightboxInfo;

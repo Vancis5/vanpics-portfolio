@@ -241,6 +241,35 @@ if (state.isMobile) {
           info.style.transition = '';
         }, 400);
       }
+
+      let fsWrap = domRefs.filmstripWrap;
+      if (fsWrap) {
+        fsWrap.style.transition = 'filter 0.35s ease, opacity 0.35s ease';
+        fsWrap.style.filter = '';
+        fsWrap.style.opacity = '';
+        setTimeout(function () {
+          if (!fsWrap.parentNode) return;
+          fsWrap.style.transition = '';
+        }, 400);
+      }
+
+      let imgWrapEl = domRefs.lightboxImgWrap;
+      if (imgWrapEl) {
+        imgWrapEl.style.transition = 'filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
+        imgWrapEl.style.filter = '';
+        setTimeout(function () {
+          if (!imgWrapEl.parentNode) return;
+          imgWrapEl.style.transition = '';
+        }, 580);
+      }
+
+      let slideImgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLElement>;
+      slideImgs.forEach(function (s) {
+        s.style.transition = 'filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
+        s.style.filter = '';
+        s.style.transform = '';
+        setTimeout(function () { s.style.transition = ''; }, 580);
+      });
     }
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
@@ -258,8 +287,6 @@ if (state.isMobile) {
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;
-
-
 
       let nearest = Math.round(f);
       nearest = Math.max(0, Math.min(nearest, state.activePhotos.length - 1));
@@ -288,12 +315,13 @@ if (state.isMobile) {
         onSnapSettle(nearest);
       }
 
+      let swipeDelta = imgWrap.scrollLeft - state.cur * w;
+      let distFromStart = Math.abs(swipeDelta) / w;
+
       let info = domRefs.lightboxInfo;
       if (info) {
         info.style.animation = 'none';
         info.style.transition = 'none';
-        let swipeDelta = imgWrap.scrollLeft - state.cur * w;
-        let distFromStart = Math.abs(swipeDelta) / w;
 
         if (distFromStart === 0) {
           info.style.opacity = '1';
@@ -309,6 +337,47 @@ if (state.isMobile) {
           info.style.filter = bl > 0.1 ? `blur(${bl.toFixed(1)}px)` : '';
           info.style.transform = `translateX(${tx.toFixed(1)}px)`;
         }
+      }
+
+      // Mobile photo swipe depth effect:
+      // Outgoing photo zooms IN slightly (1.0 -> 1.08), blurs, and darkens (1.0 -> 0.65 brightness) as it exits.
+      // Incoming photo starts 1.08 zoomed, blurred, and darker (0.65 brightness), then brightens (0.65 -> 1.0), sharpens, and fits exact scale as user commits.
+      if (state.isMobile && !state.currentLightboxIsMotion) {
+        let slides = imgWrap.querySelectorAll('.snap-slide');
+        let targetIdx = swipeDelta > 0 ? state.cur + 1 : state.cur - 1;
+
+        slides.forEach(function (slideEl) {
+          let sIdxStr = (slideEl as HTMLElement).dataset.idx;
+          if (sIdxStr !== undefined) {
+            let sIdx = parseInt(sIdxStr, 10);
+            let img = slideEl.querySelector('img') as HTMLElement;
+            if (img) {
+              if (sIdx === state.cur && distFromStart > 0.01) {
+                // Smooth ease-in-out factor for depth response
+                let easeFactor = 0.5 - 0.5 * Math.cos(Math.min(1, distFromStart) * Math.PI);
+                let curBlur = easeFactor * 14;
+                let curScale = 1.0 + easeFactor * 0.22; // dramatic 22% zoom expansion inside grid
+                let curBright = 1.0 - easeFactor * 0.35; // darkens down to 0.65
+                img.style.transition = 'none';
+                img.style.filter = `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
+                img.style.transform = `scale(${curScale.toFixed(3)})`;
+              } else if (sIdx === targetIdx && distFromStart > 0.01) {
+                // Incoming photo starts 1.22 zoomed & blurred, dramatically scales down to 1.0 & sharpens as user commits
+                let easeFactor = 0.5 - 0.5 * Math.cos((1 - Math.min(1, distFromStart)) * Math.PI);
+                let peekBlur = easeFactor * 14;
+                let peekScale = 1.0 + easeFactor * 0.22;
+                let peekBright = 1.0 - easeFactor * 0.35; // brightens up to 1.0
+                img.style.transition = 'none';
+                img.style.filter = `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
+                img.style.transform = `scale(${peekScale.toFixed(3)})`;
+              } else {
+                img.style.transition = 'none';
+                img.style.filter = '';
+                img.style.transform = '';
+              }
+            }
+          }
+        });
       }
     }, { passive: true });
 
@@ -476,13 +545,37 @@ if (state.isMobile) {
         content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
         content.style.opacity = String(Math.max(0.15, 1 - dy / 400));
 
+        let swipeProgress = Math.min(1, Math.max(0, dy / 300));
+        let blurVal = Math.pow(swipeProgress, 2.4) * 18;
+
         let info = domRefs.lightboxInfo;
         if (info) {
-          let blurVal = Math.min(18, (dy / 300) * 18);
           let txtOpac = Math.max(0, 1 - dy / 180);
           info.style.transition = 'none';
-          info.style.filter = 'blur(' + blurVal + 'px)';
+          info.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
           info.style.opacity = String(txtOpac);
+        }
+
+        // Swipe down exit: blur the entire photo container including its outline border
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = 'none';
+          imgWrapEl.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
+        }
+
+        let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
+        if (activeImg) {
+          activeImg.style.transition = 'none';
+          activeImg.style.filter = '';
+          activeImg.style.transform = '';
+        }
+
+        let fsWrap = domRefs.filmstripWrap;
+        if (fsWrap) {
+          let fsOpac = Math.max(0, 1 - dy / 250);
+          fsWrap.style.transition = 'none';
+          fsWrap.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
+          fsWrap.style.opacity = String(fsOpac);
         }
       }
     }, { passive: false });
@@ -535,20 +628,63 @@ if (state.isMobile) {
           info.style.opacity = '0';
         }
 
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = 'filter 0.2s ease';
+          imgWrapEl.style.filter = 'blur(18px)';
+        }
+
+        let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
+        if (activeImg) {
+          activeImg.style.transition = 'none';
+          activeImg.style.filter = '';
+          activeImg.style.transform = '';
+        }
+
+        let fsWrap = domRefs.filmstripWrap;
+        if (fsWrap) {
+          fsWrap.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
+          fsWrap.style.filter = 'blur(18px)';
+          fsWrap.style.opacity = '0';
+        }
+
         setTimeout(function () {
           closeLightbox();
         }, 280);
       } else {
         let content = domRefs.lightboxContent;
-        content.style.transition = 'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease';
+        content.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
         content.style.transform = '';
         content.style.opacity = '1';
 
         let info = domRefs.lightboxInfo;
         if (info) {
-          info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+          info.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           info.style.filter = '';
           info.style.opacity = '1';
+        }
+
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = 'filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+          imgWrapEl.style.filter = '';
+        }
+
+        let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
+        if (activeImg) {
+          activeImg.style.transition = 'filter 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+          activeImg.style.filter = '';
+          activeImg.style.transform = '';
+          setTimeout(function () {
+            if (activeImg) activeImg.style.transition = '';
+          }, 620);
+        }
+
+        let fsWrap = domRefs.filmstripWrap;
+        if (fsWrap) {
+          fsWrap.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
+          fsWrap.style.filter = '';
+          fsWrap.style.opacity = '';
         }
 
         setTimeout(function () {
@@ -558,6 +694,15 @@ if (state.isMobile) {
           }
           if (info) {
             info.style.transition = '';
+          }
+          if (imgWrapEl) {
+            imgWrapEl.style.transition = '';
+            imgWrapEl.style.filter = '';
+          }
+          if (fsWrap) {
+            fsWrap.style.transition = '';
+            fsWrap.style.filter = '';
+            fsWrap.style.opacity = '';
           }
         }, 360);
       }
