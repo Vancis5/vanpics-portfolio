@@ -1158,6 +1158,16 @@ body::after {
   --text-muted: rgba(var(--text-rgb), 0.78);
   --text-faint: rgba(var(--text-rgb), 0.40);
   background: #0d0c0c;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+#lightbox img {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 #lightbox::-webkit-scrollbar {
@@ -1277,15 +1287,15 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: rgba(22, 22, 26, 0.65);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.22);
   color: #ffffff;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(255, 255, 255, 0.12);
   opacity: 0;
   filter: blur(12px);
   transform-origin: center center;
@@ -1293,18 +1303,18 @@ body::after {
 }
 
 .lightbox-nav-arrow.left {
-  left: 36px;
+  left: 42px;
 }
 
 .lightbox-nav-arrow.right {
-  right: 36px;
+  right: 42px;
 }
 
 .lightbox-nav-arrow svg {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   stroke: #ffffff;
-  stroke-width: 2.2px;
+  stroke-width: 2px;
 }
 
 .lightbox-nav-arrow.pulse {
@@ -1337,21 +1347,19 @@ body::after {
 
 /* iOS / iPadOS: keep the close btn but move it to the left (matches iOS back-button convention) */
 .ios-device #lightbox-close {
-  display: flex;
-  align-items: center;
+  display: inline-block;
   right: auto;
-  left: calc(1.25rem + env(safe-area-inset-left, 0px));
+  left: calc(3.25rem + env(safe-area-inset-left, 0px));
 }
 
 #lightbox-zoom-darken {
-  position: absolute;
-  inset: -50svh -50vw;
+  position: fixed;
+  inset: 0;
   background: #000;
   opacity: 0;
   pointer-events: none;
-  z-index: 1;
-  /* Behind image-wrap, over inherited info */
-  transition: opacity 0.15s ease-out;
+  z-index: 40;
+  transition: opacity 0.25s ease-out;
 }
 
 #lightbox-img-wrap {
@@ -1361,7 +1369,7 @@ body::after {
   display: flex;
   justify-content: center;
   position: relative;
-  z-index: 2;
+  z-index: 50;
   /* Sits above darken layer */
 }
 
@@ -1460,7 +1468,31 @@ body::after {
   flex-shrink: 0;
   min-height: 0;
   position: relative;
-  z-index: 1;
+  z-index: 10;
+}
+
+/* ZOOM ACTIVE DARKENING & FILMSTRIP HIDING */
+#lightbox.zoom-active #lightbox-zoom-darken {
+  opacity: 0.85;
+  z-index: 40 !important;
+}
+
+#lightbox.zoom-active #lightbox-info-wrap {
+  z-index: 10 !important;
+  pointer-events: none;
+}
+
+#lightbox.zoom-active #lightbox-img-wrap {
+  z-index: 50 !important;
+}
+
+#lightbox.zoom-active #filmstrip-wrap,
+#lightbox.zoom-active #filmstrip-lift-zone {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  transform: translateY(100%) !important;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s !important;
 }
 
 #lightbox-info {
@@ -1761,37 +1793,51 @@ body::after {
 
 #lightbox-close {
   position: fixed;
-  top: calc(1.25rem + var(--safe-top));
-  right: calc(1.25rem + env(safe-area-inset-right, 0px));
+  top: calc(2.25rem + var(--safe-top));
+  right: calc(3.25rem + env(safe-area-inset-right, 0px));
   z-index: 1000;
-  background: rgba(17, 16, 16, 0.94);
-  border: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.12));
-  border-radius: 4px;
-  color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.60));
+  display: inline-block;
+  width: fit-content;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.40));
+  color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.78));
   font-family: 'DM Mono', monospace;
   font-weight: 400;
-  font-size: 0.57rem;
-  letter-spacing: 0.14em;
+  font-size: 0.65rem;
+  line-height: 1.1;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  padding: 0.5rem 0.85rem;
-  transition: all 0.4s ease;
+  padding: 0 0 0.28rem 0;
+  margin: 0;
+  transition: color 0.3s ease, border-color 0.3s ease;
   text-transform: lowercase;
   -webkit-tap-highlight-color: transparent;
-  min-height: 40px;
   outline: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#lightbox-close::before {
+  content: '';
+  position: absolute;
+  inset: -12px -16px;
+  cursor: pointer;
 }
 
 /* Enable blur only for iOS and Desktop */
 .enable-header-blur #lightbox-close {
-  background: rgba(17, 16, 16, 0.76);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 #lightbox-close:hover,
 #lightbox-close:active {
   color: var(--dynamic-text-color, var(--text));
-  border-color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.28));
+  border-color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.75));
+  background: transparent;
 }
 
 /* kill focus rings on all lightbox interactive elements — Firefox mobile shows them on tap */

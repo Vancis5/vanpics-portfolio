@@ -20,7 +20,71 @@ let clickStageLeft = 0; // 0: idle, 1: press, 2: release
 let clickProgressRight = 0;
 let clickStageRight = 0;
 
+let lastNavTime = 0;
 let isNavActive = false;
+
+// Hold-to-repeat acceleration state
+let holdRepeatTimer: any = null;
+let holdActiveSide: 'left' | 'right' | null = null;
+let holdStepCount = 0;
+
+function stopHoldRepeat() {
+  if (holdRepeatTimer) {
+    clearTimeout(holdRepeatTimer);
+    holdRepeatTimer = null;
+  }
+  holdActiveSide = null;
+  holdStepCount = 0;
+}
+
+function scheduleHoldRepeatStep(side: 'left' | 'right') {
+  if (holdActiveSide !== side) return;
+
+  // First 5 photos stay at 400ms so photo transitions play out completely.
+  // After 5 photos (holdStepCount > 5), accelerate comfortably down to 250ms.
+  let interval = 400;
+  if (holdStepCount > 5) {
+    const fastSteps = holdStepCount - 5;
+    interval = Math.max(250, 400 - fastSteps * 30);
+  }
+
+  holdRepeatTimer = setTimeout(() => {
+    if (holdActiveSide !== side) return;
+    const lb = domRefs.lightbox;
+    if (!lb || state.isMobile || !lb.classList.contains('open')) {
+      stopHoldRepeat();
+      return;
+    }
+    if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) {
+      stopHoldRepeat();
+      return;
+    }
+
+    const prox = side === 'left' ? currentProximityLeft : currentProximityRight;
+    if (prox <= 0.08) {
+      stopHoldRepeat();
+      return;
+    }
+
+    holdStepCount++;
+    lastNavTime = Date.now();
+    triggerArrowPulse(side);
+    navigateLightbox(side === 'left' ? -1 : 1);
+
+    scheduleHoldRepeatStep(side);
+  }, interval);
+}
+
+function startHoldRepeat(side: 'left' | 'right') {
+  stopHoldRepeat();
+  holdActiveSide = side;
+  holdStepCount = 1;
+
+  // Initial delay matching full transition time (400ms)
+  holdRepeatTimer = setTimeout(() => {
+    scheduleHoldRepeatStep(side);
+  }, 400);
+}
 
 export function initLightboxMouseNav() {
   const lb = domRefs.lightbox;
@@ -31,12 +95,14 @@ export function initLightboxMouseNav() {
     if (state.isMobile || !lb.classList.contains('open')) {
       targetProximityLeft = 0;
       targetProximityRight = 0;
+      stopHoldRepeat();
       return;
     }
 
     if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) {
       targetProximityLeft = 0;
       targetProximityRight = 0;
+      stopHoldRepeat();
       return;
     }
 
@@ -67,6 +133,7 @@ export function initLightboxMouseNav() {
       if (interactive) {
         targetProximityLeft = 0;
         targetProximityRight = 0;
+        stopHoldRepeat();
         return;
       }
     }
@@ -86,16 +153,19 @@ export function initLightboxMouseNav() {
     } else {
       targetProximityLeft = 0;
       targetProximityRight = 0;
+      stopHoldRepeat();
     }
   });
 
+  window.addEventListener('mouseup', stopHoldRepeat);
   window.addEventListener('mouseleave', () => {
     targetProximityLeft = 0;
     targetProximityRight = 0;
+    stopHoldRepeat();
   });
 
-  // Handle side click navigation inside lightbox
-  lb.addEventListener('click', (e: MouseEvent) => {
+  // Instant 0ms navigation & press feedback on mousedown + hold-to-repeat
+  lb.addEventListener('mousedown', (e: MouseEvent) => {
     if (state.isMobile || !lb.classList.contains('open')) return;
     if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) return;
 
@@ -110,13 +180,26 @@ export function initLightboxMouseNav() {
     if (currentProximityLeft > 0.08) {
       e.preventDefault();
       e.stopPropagation();
+      lastNavTime = Date.now();
       triggerArrowPulse('left');
       navigateLightbox(-1);
+      startHoldRepeat('left');
     } else if (currentProximityRight > 0.08) {
       e.preventDefault();
       e.stopPropagation();
+      lastNavTime = Date.now();
       triggerArrowPulse('right');
       navigateLightbox(1);
+      startHoldRepeat('right');
+    }
+  });
+
+  // Prevent duplicate trigger on click
+  lb.addEventListener('click', (e: MouseEvent) => {
+    if (state.isMobile || !lb.classList.contains('open')) return;
+    if (Date.now() - lastNavTime < 350) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   });
 
@@ -126,10 +209,10 @@ export function initLightboxMouseNav() {
 function triggerArrowPulse(side: 'left' | 'right') {
   if (side === 'left') {
     clickStageLeft = 1;
-    clickProgressLeft = 0;
+    clickProgressLeft = 1.0;
   } else {
     clickStageRight = 1;
-    clickProgressRight = 0;
+    clickProgressRight = 1.0;
   }
 }
 
@@ -143,28 +226,24 @@ function startNavAnimationLoop() {
     currentProximityRight += (targetProximityRight - currentProximityRight) * 0.18;
     currentArrowY += (targetArrowY - currentArrowY) * 0.075;
 
-    // Smooth press & release click interpolation (Left)
+    // Instant press -> snappy 0.18 release click interpolation (Left)
     if (clickStageLeft === 1) {
-      clickProgressLeft += (1 - clickProgressLeft) * 0.45;
-      if (clickProgressLeft > 0.88) {
-        clickStageLeft = 2;
-      }
+      clickProgressLeft = 1.0;
+      clickStageLeft = 2;
     } else if (clickStageLeft === 2) {
-      clickProgressLeft += (0 - clickProgressLeft) * 0.12;
+      clickProgressLeft += (0 - clickProgressLeft) * 0.18;
       if (clickProgressLeft < 0.005) {
         clickProgressLeft = 0;
         clickStageLeft = 0;
       }
     }
 
-    // Smooth press & release click interpolation (Right)
+    // Instant press -> snappy 0.18 release click interpolation (Right)
     if (clickStageRight === 1) {
-      clickProgressRight += (1 - clickProgressRight) * 0.45;
-      if (clickProgressRight > 0.88) {
-        clickStageRight = 2;
-      }
+      clickProgressRight = 1.0;
+      clickStageRight = 2;
     } else if (clickStageRight === 2) {
-      clickProgressRight += (0 - clickProgressRight) * 0.12;
+      clickProgressRight += (0 - clickProgressRight) * 0.18;
       if (clickProgressRight < 0.005) {
         clickProgressRight = 0;
         clickStageRight = 0;
@@ -189,14 +268,12 @@ function startNavAnimationLoop() {
     if (arrowLeft) {
       if (pLeft > 0 || clickProgressLeft > 0.01) {
         const baseScale = 0.45 + pLeft * 0.75;
-        // Restrained 8% scale compression on click
         const clickScaleMod = 1 - clickProgressLeft * 0.08;
         const scale = (baseScale * clickScaleMod).toFixed(3);
 
         const opacity = Math.min(1, Math.max(pLeft * 1.25, clickProgressLeft)).toFixed(3);
         const blur = ((1 - Math.min(1, pLeft)) * (12 * (1 - clickProgressLeft))).toFixed(1);
         
-        // Restrained 4px recoil
         const clickRecoilX = -4 * clickProgressLeft;
         const hoverX = -14 * (1 - pLeft);
         const translateX = (hoverX + clickRecoilX).toFixed(1);
@@ -205,7 +282,6 @@ function startNavAnimationLoop() {
         arrowLeft.style.transform = `translate3d(0, calc(${currentArrowY}px - 50%), 0) scale(${scale}) translateX(${translateX}px)`;
         arrowLeft.style.filter = `blur(${blur}px)`;
 
-        // Restrained 3px inner SVG nudge
         const svg = arrowLeft.querySelector('svg');
         if (svg) {
           const svgNudge = -3 * clickProgressLeft;
@@ -267,4 +343,9 @@ export function resetLightboxMouseNav() {
   clickStageLeft = 0;
   clickProgressRight = 0;
   clickStageRight = 0;
+  stopHoldRepeat();
+}
+
+export function getLastSideNavTime(): number {
+  return lastNavTime;
 }

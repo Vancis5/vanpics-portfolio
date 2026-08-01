@@ -1,6 +1,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
+import { getLastSideNavTime } from './lightbox-nav.js';
 
 // Continuous Zoom Physics Framework
 let isDraggingZoom = false;
@@ -80,6 +81,7 @@ export function updateZoomTransform(img: any, smooth = true) {
     }
   } else {
     if (lb) lb.classList.add('zoom-active');
+    hideFilmstripIfReady();
 
     // Load full-resolution photo in the background when zooming in >= 1.3x
     const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
@@ -168,6 +170,13 @@ export function resetZoom() {
 export function toggleImageZoom(e: any) {
   let img = e.target as HTMLImageElement;
   if (!img.classList.contains('zoomable')) return;
+
+  // Ignore zoom attempts during or right after side navigation (400ms buffer)
+  if (Date.now() - getLastSideNavTime() < 400) {
+    e.stopPropagation();
+    e.preventDefault();
+    return;
+  }
   
   // If we just dragged the image, don't toggle zoom!
   if (dragDistance > 5) {
