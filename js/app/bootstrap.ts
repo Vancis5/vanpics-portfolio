@@ -8,6 +8,7 @@ import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from
 import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick } from './hero-carousel.js';
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
+import { initLightboxMouseNav } from './lightbox-nav.js';
 import type { Photo, Video } from '../types.js';
 
 const MEDIA_CACHE_KEY = 'vanpics_media_cache_v1';
@@ -43,6 +44,7 @@ function scrollToGallery() {
 function bindStaticUiHandlers() {
   if (domRefs.scrollHint) domRefs.scrollHint.addEventListener('click', scrollToGallery);
   if (domRefs.lightboxClose) domRefs.lightboxClose.addEventListener('click', closeLightbox);
+  initLightboxMouseNav();
 
   document.addEventListener('click', function (e) {
     const target = e.target as HTMLElement;

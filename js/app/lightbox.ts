@@ -6,6 +6,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfRe
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 import { WebGLBlurRenderer } from './lightbox-blur.js';
+import { resetLightboxMouseNav } from './lightbox-nav.js';
 
 import { Photo, Video } from '../types.js';
 
@@ -724,6 +725,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   clearFilmstripHideTimerIfReady();
   hideFilmstripIfReady();
   setFilmstripLiftZoneDisplay('none');
+  resetLightboxMouseNav();
 
   // -- FLIP: Invert --
   if (header && headerRect) {

@@ -142,7 +142,7 @@ if (state.isMobile) {
       if (slide) {
         imgWrap.scrollTo({
           left: slide.offsetLeft,
-          behavior: smooth ? 'smooth' : 'auto'
+          behavior: smooth ? 'smooth' : 'instant'
         });
       }
     }
@@ -182,6 +182,16 @@ if (state.isMobile) {
         setTimeout(function () {
           filmstripReleaseFollowUntil = 0;
         }, FILMSTRIP_RELEASE_FOLLOW_MS);
+
+        // Snap-back: apply spring ease-out to slide imgs immediately on release
+        // so blur/scale settle smoothly alongside native scroll snap physics
+        let slideImgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLElement>;
+        slideImgs.forEach(function (s) {
+          s.style.transition = 'filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
+          s.style.filter = '';
+          s.style.transform = '';
+          setTimeout(function () { s.style.transition = ''; }, 580);
+        });
       }
     }, { passive: true });
 
