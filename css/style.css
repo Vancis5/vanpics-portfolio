@@ -1334,22 +1334,15 @@ body::after {
   }
 }
 
-/* Android phones + tablets: hide close btn — hardware/gesture back handles dismiss */
-@media (hover: none) {
+/* Mobile: hide close btn on all touch devices — hardware/gesture back handles dismiss */
+@media (hover: none) or (max-width: 768px) {
   #lightbox-close {
-    display: none;
+    display: none !important;
   }
 
   #lightbox-content {
     padding: calc(var(--safe-top) + 0.75rem) 0 0;
   }
-}
-
-/* iOS / iPadOS: keep the close btn but move it to the left (matches iOS back-button convention) */
-.ios-device #lightbox-close {
-  display: inline-block;
-  right: auto;
-  left: calc(3.25rem + env(safe-area-inset-left, 0px));
 }
 
 #lightbox-zoom-darken {
