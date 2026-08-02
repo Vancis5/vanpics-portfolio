@@ -18,7 +18,6 @@ let activeRawLoader: HTMLImageElement | null = null;
 export function updateZoomTransform(img: any, smooth = true) {
   let mWrap = domRefs.lightboxImgWrap;
   let lb = domRefs.lightbox;
-  if (lb) lb.classList.toggle('zoom-active', state.lbZoomLevel > 1);
   
   // Clear any pending transition timeout
   if (zoomTransitionTimeout) {
@@ -26,7 +25,7 @@ export function updateZoomTransform(img: any, smooth = true) {
     zoomTransitionTimeout = null;
   }
 
-  // Cancel active raw loader and downgrade to webp if zoomed back below 1.2x
+  // Cancel active raw loader if zoomed back below 1.2x
   if (state.lbZoomLevel < 1.2) {
     if (activeRawLoader) {
       activeRawLoader.onload = null;
@@ -36,37 +35,41 @@ export function updateZoomTransform(img: any, smooth = true) {
     img.removeAttribute('data-loading-raw');
     let wrap = domRefs.lightboxImgWrap;
     if (wrap) wrap.classList.remove('raw-loading');
-
-    const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
-    if (currentItem && img.src === currentItem.rawSrc) {
-      img.src = currentItem.src;
-    }
   }
   
   if (state.lbZoomLevel <= 1) {
     state.lbZoomLevel = 1;
     state.lbZoomPanX = 0;
     state.lbZoomPanY = 0;
-    if (lb) lb.classList.remove('zoom-active');
-    
-    // Restore optimized webp if it was swapped to raw
-    const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
-    if (currentItem && img.src === currentItem.rawSrc) {
-      img.src = currentItem.src;
-    }
 
+    const finalizeReset = () => {
+      if (lb) lb.classList.remove('zoom-active');
+      img.style.position = '';
+      img.style.zIndex = '';
+      if (state.isMobile && mWrap) {
+        mWrap.style.transform = ''; // revert translation
+        mWrap.style.overflowX = 'auto'; // restore gallery swipe
+        mWrap.style.overflowY = 'hidden';
+        mWrap.scrollLeft = state.cur * mWrap.offsetWidth; // explicitly bind scroll back unconditionally
+        let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
+        for (let i = 0; i < slides.length; i++) slides[i].style.opacity = '1';
+      }
+    };
+    
     // Apply smooth transition when resetting
     if (smooth) {
       img.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       zoomTransitionTimeout = setTimeout(() => {
         img.style.transition = '';
+        finalizeReset();
       }, 300);
+    } else {
+      img.style.transition = '';
+      finalizeReset();
     }
     img.style.transform = '';
     // reset cursor
     img.style.removeProperty('cursor');
-    img.style.position = '';
-    img.style.zIndex = '';
     img.classList.remove('zoomed');
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
@@ -90,14 +93,6 @@ export function updateZoomTransform(img: any, smooth = true) {
       setTimeout(() => { _infoCaptured.style.transition = ''; }, 320);
     }
     showFilmstripIfReady();
-    if (state.isMobile) {
-      mWrap.style.transform = ''; // revert translation
-      mWrap.style.overflowX = 'auto'; // restore gallery swipe
-      mWrap.style.overflowY = 'hidden';
-      mWrap.scrollLeft = state.cur * mWrap.offsetWidth; // explicitly bind scroll back unconditionally
-      let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
-      for (let i = 0; i < slides.length; i++) slides[i].style.opacity = '1';
-    }
   } else {
     if (lb) lb.classList.add('zoom-active');
     hideFilmstripIfReady();
