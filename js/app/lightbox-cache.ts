@@ -23,17 +23,18 @@ export function cacheImage(src: string) {
           saveRatioToCache(src, img.naturalWidth, img.naturalHeight);
         }
       };
+      entry.decoded = (img.naturalWidth > 0);
       if (img.decode) {
         img.decode().then(function () {
-          entry.decoded = true;
+          entry.decoded = (img.naturalWidth > 0);
           cacheDimensions();
           resolve(entry);
         }).catch(function () {
+          entry.decoded = (img.naturalWidth > 0);
           cacheDimensions();
           resolve(entry);
         });
       } else {
-        entry.decoded = true;
         cacheDimensions();
         resolve(entry);
       }

@@ -115,11 +115,12 @@ media-tooltip-group {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background-image: linear-gradient(to top, oklch(0 0 0 / 0.7), oklch(0 0 0 / 0.5) 7.5rem, oklch(0 0 0 / 0));
-  backdrop-filter: blur(0) saturate(1);
+  background-image: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
   opacity: 0;
   pointer-events: none;
-  transition-property: opacity, backdrop-filter;
+  transition-property: opacity;
   transition-duration: var(--media-controls-transition-duration);
   transition-timing-function: ease-out;
 }
@@ -183,11 +184,12 @@ media-tooltip-group {
   container: media-controls / inline-size;
   display: flex;
   align-items: center;
-  --media-controls-current-shadow-color: oklch(from currentColor 0 0 0 / clamp(0, calc((l - 0.5) * 0.5), 0.15));
-  --media-controls-current-shadow-color-subtle: oklch(from var(--media-controls-current-shadow-color) l c h / calc(alpha * 0.4));
-  background-color: var(--media-controls-background-color);
-  backdrop-filter: var(--media-controls-backdrop-filter);
-  text-shadow: 0 1px 0 var(--media-controls-current-shadow-color);
+  --media-controls-current-shadow-color: oklch(0 0 0 / 0.85);
+  --media-controls-current-shadow-color-subtle: oklch(0 0 0 / 0.5);
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  text-shadow: none;
+  filter: none;
 }
 
 .media-minimal-skin .media-time-controls {
@@ -276,14 +278,15 @@ media-tooltip-group {
 }
 
 .media-minimal-skin .media-button--primary {
-  background: oklch(1 0 0);
-  color: oklch(0 0 0);
+  background: transparent !important;
+  color: oklch(1 0 0);
   font-weight: 500;
   text-shadow: none;
+  filter: none;
 }
 
 .media-minimal-skin .media-button--subtle {
-  background: transparent;
+  background: transparent !important;
   color: inherit;
   text-shadow: inherit;
 }
@@ -291,7 +294,7 @@ media-tooltip-group {
 .media-minimal-skin .media-button--subtle:hover,
 .media-minimal-skin .media-button--subtle:focus-visible,
 .media-minimal-skin .media-button--subtle[aria-expanded="true"] {
-  background: oklch(from currentColor l c h / 0.1);
+  background: transparent !important;
 }
 
 .media-minimal-skin .media-button--icon {
@@ -299,6 +302,7 @@ media-tooltip-group {
   width: 2.375rem;
   padding: 0;
   aspect-ratio: 1;
+  background: transparent !important;
 }
 
 .media-minimal-skin .media-button--icon:active {
@@ -306,7 +310,7 @@ media-tooltip-group {
 }
 
 .media-minimal-skin .media-button--icon .media-icon {
-  filter: drop-shadow(0 1px 0 var(--media-controls-current-shadow-color, oklch(0 0 0 / 0.25)));
+  filter: none;
 }
 
 .media-minimal-skin .media-button--seek .media-icon__label {
@@ -832,15 +836,16 @@ media-tooltip-group {
 }
 
 .media-minimal-skin--video .media-controls {
-  padding: 0.25rem;
+  padding: 1.5rem 0.75rem 0.6rem;
   column-gap: 0.5rem;
   flex-wrap: wrap;
   position: absolute;
-  bottom: 0.25rem;
-  inset-inline: 0.25rem;
+  bottom: 0;
+  inset-inline: 0;
   z-index: 10;
   color: oklch(1 0 0);
-  border-radius: 0.75rem;
+  border-radius: 0 0 var(--media-video-border-radius, 0) var(--media-video-border-radius, 0) !important;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.22) 65%, transparent 100%) !important;
   transition-duration: var(--media-controls-transition-duration);
   transition-timing-function: var(--media-controls-transition-timing-function);
 }
@@ -895,8 +900,9 @@ media-tooltip-group {
 @container media-root (width > 42rem) {
   .media-minimal-skin--video .media-controls {
     flex-wrap: nowrap;
-    bottom: 0.5rem;
-    inset-inline: 0.5rem;
+    bottom: 0;
+    inset-inline: 0;
+    padding: 1.5rem 1rem 0.6rem;
   }
 
   .media-minimal-skin--video .media-controls .media-time-controls {

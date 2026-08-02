@@ -1,6 +1,6 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
-import { navigateLightbox } from './lightbox.js';
+import { navigateLightbox, getCurrentLightboxItems } from './lightbox.js';
 
 let mouseX = -1000;
 let mouseY = -1000;
@@ -40,13 +40,8 @@ function stopHoldRepeat() {
 function scheduleHoldRepeatStep(side: 'left' | 'right') {
   if (holdActiveSide !== side) return;
 
-  // First 5 photos stay at 400ms so photo transitions play out completely.
-  // After 5 photos (holdStepCount > 5), accelerate comfortably down to 250ms.
-  let interval = 400;
-  if (holdStepCount > 5) {
-    const fastSteps = holdStepCount - 5;
-    interval = Math.max(250, 400 - fastSteps * 30);
-  }
+  // Instant fast rate matching keyboard repeat (~60ms)
+  const interval = 60;
 
   holdRepeatTimer = setTimeout(() => {
     if (holdActiveSide !== side) return;
@@ -80,10 +75,10 @@ function startHoldRepeat(side: 'left' | 'right') {
   holdActiveSide = side;
   holdStepCount = 1;
 
-  // Initial delay matching full transition time (400ms)
+  // Initial delay matching keyboard repeat delay (200ms)
   holdRepeatTimer = setTimeout(() => {
     scheduleHoldRepeatStep(side);
-  }, 400);
+  }, 200);
 }
 
 export function initLightboxMouseNav() {
@@ -93,6 +88,14 @@ export function initLightboxMouseNav() {
   // Track mouse movement inside window when lightbox is open
   window.addEventListener('mousemove', (e: MouseEvent) => {
     if (state.isMobile || !lb.classList.contains('open')) {
+      targetProximityLeft = 0;
+      targetProximityRight = 0;
+      stopHoldRepeat();
+      return;
+    }
+
+    const items = getCurrentLightboxItems();
+    if (!items || items.length <= 1) {
       targetProximityLeft = 0;
       targetProximityRight = 0;
       stopHoldRepeat();
@@ -167,6 +170,8 @@ export function initLightboxMouseNav() {
   // Instant 0ms navigation & press feedback on mousedown + hold-to-repeat
   lb.addEventListener('mousedown', (e: MouseEvent) => {
     if (state.isMobile || !lb.classList.contains('open')) return;
+    const items = getCurrentLightboxItems();
+    if (!items || items.length <= 1) return;
     if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) return;
 
     const target = e.target as HTMLElement | null;

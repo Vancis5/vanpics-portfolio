@@ -104,13 +104,43 @@ export function prepareLightboxPhoto(p: Photo) {
       if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
         let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
         wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+        img.src = p.src;
+        clearLightboxPhotoPlaceholder(token);
+        img.style.opacity = '1';
+        updateMobileImgWrapHeight();
+      } else {
+        img.src = p.src;
+        if (img.complete && img.naturalWidth > 0) {
+          clearLightboxPhotoPlaceholder(token);
+          img.style.opacity = '1';
+          updateMobileImgWrapHeight();
+        } else {
+          img.onload = function () {
+            if (token !== photoPlaceholderToken) return;
+            clearLightboxPhotoPlaceholder(token);
+            img.style.opacity = '1';
+            updateMobileImgWrapHeight();
+          };
+          img.onerror = function () {
+            if (token !== photoPlaceholderToken) return;
+            showLightboxPhotoError(token);
+          };
+        }
       }
-
-      // Swap immediately at full opacity to prevent double-fading/flickering
+    }).catch(() => {
+      // decode rejected (hardware timeout etc.) — just load the image directly
+      if (token !== photoPlaceholderToken) return;
       img.src = p.src;
-      clearLightboxPhotoPlaceholder(token);
-      img.style.opacity = '1';
-      updateMobileImgWrapHeight();
+      img.onload = function () {
+        if (token !== photoPlaceholderToken) return;
+        clearLightboxPhotoPlaceholder(token);
+        img.style.opacity = '1';
+        updateMobileImgWrapHeight();
+      };
+      img.onerror = function () {
+        if (token !== photoPlaceholderToken) return;
+        showLightboxPhotoError(token);
+      };
     });
   } else {
     // Fallback just in case

@@ -444,7 +444,7 @@ window.addEventListener('resize', function () {
   if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
 }, { passive: true });
 
-function getCurrentLightboxItems() {
+export function getCurrentLightboxItems() {
   return state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 }
 
@@ -490,11 +490,14 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     let enterX = dir > 0 ? '6%' : '-6%';
     let gen = ++navGen;
 
-    // exit current media immediately — snappy
-    img.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+    // exit current media immediately — snappy, blurring as it slides out
+    img.style.transition = 'opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease';
     img.style.opacity = '0';
     img.style.transform = 'translateX(' + exitX + ') scale(0.98)';
+    img.style.filter = 'blur(10px)';
+    playerShell.style.transition = 'opacity 0.15s ease, filter 0.15s ease';
     playerShell.style.opacity = '0';
+    playerShell.style.filter = 'blur(10px)';
 
     // hide info panel immediately so old text isn't visible
     let infoEl = domRefs.lightboxInfo;
@@ -512,17 +515,20 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       if (entered || gen !== navGen) return;
       entered = true;
 
-      // blank src, position off-screen, fully invisible — nothing bleeds through
+      // blank src, position off-screen, fully invisible & blurred — nothing bleeds through
       img.onload = null; img.onerror = null;
       img.src = '';
       img.style.transition = 'none';
       img.style.transform = '';
       img.style.opacity = '0';
+      img.style.filter = 'blur(10px)';
       imgWrap.style.transition = 'none';
       imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.98)';
       imgWrap.style.opacity = '0';
+      imgWrap.style.filter = 'blur(10px)';
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
+      playerShell.style.filter = 'blur(10px)';
 
       // Update content & blur immediately so all layout changes (desc show/hide,
       // meta items, etc.) are fully settled before the animation RAF fires.
@@ -542,14 +548,17 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
-          playerShell.style.transition = 'opacity 0.35s ease';
+          playerShell.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
           playerShell.style.opacity = '1';
+          playerShell.style.filter = 'blur(0px)';
         } else {
-          imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1)';
+          imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1), filter 0.34s cubic-bezier(0.16,1,0.3,1)';
           imgWrap.style.opacity = '1';
           imgWrap.style.transform = 'translateX(0) scale(1)';
-          img.style.transition = 'opacity 0.24s ease';
+          imgWrap.style.filter = 'blur(0px)';
+          img.style.transition = 'opacity 0.24s ease, filter 0.24s ease';
           img.style.opacity = '1';
+          img.style.filter = 'blur(0px)';
         }
       });
     }
@@ -928,6 +937,7 @@ export function setLoadSwipeNeighbors(fn: (() => void) | null) {
 export function navigateLightbox(d: number) {
   if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) resetZoom();
   let currentSet = getCurrentLightboxItems();
+  if (!currentSet || currentSet.length <= 1) return;
   state.cur = (state.cur + d + currentSet.length) % currentSet.length;
   openLightbox(state.cur, d, state.currentLightboxIsMotion);
 }
