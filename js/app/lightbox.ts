@@ -735,6 +735,14 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   hideFilmstripIfReady();
   setFilmstripLiftZoneDisplay('none');
   resetLightboxMouseNav();
+  // Hard-clear any zoom blur/scale left on the info wrap
+  let infoWrap = domRefs.lightboxInfoWrap;
+  if (infoWrap) {
+    infoWrap.style.transition = '';
+    infoWrap.style.filter = '';
+    infoWrap.style.transform = '';
+    infoWrap.style.transformOrigin = '';
+  }
 
   // -- FLIP: Invert --
   if (header && headerRect) {

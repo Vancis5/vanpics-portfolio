@@ -70,6 +70,15 @@ export function updateZoomTransform(img: any, smooth = true) {
     img.classList.remove('zoomed');
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
+    let info = domRefs.lightboxInfoWrap;
+    if (info) {
+      info.style.transition = 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      info.style.filter = '';
+      if (!state.isMobile) {
+        info.style.transform = '';
+        info.style.transformOrigin = '';
+      }
+    }
     showFilmstripIfReady();
     if (state.isMobile) {
       mWrap.style.transform = ''; // revert translation
@@ -141,6 +150,21 @@ export function updateZoomTransform(img: any, smooth = true) {
 
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = String(Math.min(0.85, 0.25 + (state.lbZoomLevel - 1) * 0.45));
+    let infoBlur = Math.min(40, (state.lbZoomLevel - 1) * 20);
+    let infoWrap = domRefs.lightboxInfoWrap;
+    if (infoWrap) {
+      const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+      if (state.isMobile) {
+        infoWrap.style.transition = smooth ? `filter 0.25s ${easing}` : '';
+        infoWrap.style.filter = infoBlur > 0.1 ? `blur(${infoBlur.toFixed(1)}px)` : '';
+      } else {
+        const infoScale = Math.max(0.82, 1 - (state.lbZoomLevel - 1) * 0.1);
+        infoWrap.style.transition = smooth ? `filter 0.25s ${easing}, transform 0.25s ${easing}` : '';
+        infoWrap.style.transformOrigin = 'center center';
+        infoWrap.style.filter = infoBlur > 0.1 ? `blur(${infoBlur.toFixed(1)}px)` : '';
+        infoWrap.style.transform = infoScale < 0.999 ? `scale(${infoScale.toFixed(3)})` : '';
+      }
+    }
 
     if (state.isMobile && mWrap.style.overflowX !== 'visible') {
       // Prevent browser from zero-ing out scroll when we swap to visible overflow
