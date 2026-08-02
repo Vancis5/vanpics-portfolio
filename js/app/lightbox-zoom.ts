@@ -74,14 +74,20 @@ export function updateZoomTransform(img: any, smooth = true) {
     let infoInner = domRefs.lightboxInfo;
     if (info) {
       info.style.filter = '';
-      info.style.transition = 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      // Mobile: only transition filter — transform is owned by updateMobileImgWrapHeight
+      info.style.transition = state.isMobile
+        ? 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        : 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       if (state.isMobile) {
-        // reset scale on inner child
-        if (infoInner) { infoInner.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'; infoInner.style.transform = ''; infoInner.style.transformOrigin = ''; }
+        // snap-clear inner child scale instantly — no transition so navigation doesn't animate it
+        if (infoInner) { infoInner.style.transition = ''; infoInner.style.transform = ''; infoInner.style.transformOrigin = ''; }
       } else {
         info.style.transform = '';
         info.style.transformOrigin = '';
       }
+      // Clear transition after it finishes so it doesn't persist and slow down swipe filter changes
+      const _infoCaptured = info;
+      setTimeout(() => { _infoCaptured.style.transition = ''; }, 320);
     }
     showFilmstripIfReady();
     if (state.isMobile) {
@@ -161,7 +167,7 @@ export function updateZoomTransform(img: any, smooth = true) {
     if (infoWrap) {
       const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
       if (state.isMobile) {
-        // Blur on wrap (layout stable), scale on inner child (no layout impact)
+        // Blur on wrap (filter only — no transform transition, owned by updateMobileImgWrapHeight)
         infoWrap.style.transition = smooth ? `filter 0.25s ${easing}` : '';
         infoWrap.style.filter = infoBlur > 0.1 ? `blur(${infoBlur.toFixed(1)}px)` : '';
         if (infoInner) {

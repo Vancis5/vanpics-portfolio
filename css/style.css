@@ -1467,6 +1467,8 @@ body::after {
   min-height: 0;
   position: relative;
   z-index: 10;
+  will-change: transform, filter;
+  backface-visibility: hidden;
 }
 
 /* ZOOM ACTIVE DARKENING & FILMSTRIP HIDING */
@@ -1495,6 +1497,8 @@ body::after {
 
 #lightbox-info {
   opacity: 0;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
 }
 
 @media (hover: none) and (max-width: 767px) {
