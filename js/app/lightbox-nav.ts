@@ -81,6 +81,19 @@ function startHoldRepeat(side: 'left' | 'right') {
   }, 200);
 }
 
+let navIdleTimeout: any = null;
+
+function resetNavIdleTimeout() {
+  clearTimeout(navIdleTimeout);
+  if (holdActiveSide) return;
+  // Match custom pointer standby duration (2000ms)
+  navIdleTimeout = setTimeout(() => {
+    targetProximityLeft = 0;
+    targetProximityRight = 0;
+    stopHoldRepeat();
+  }, 2000);
+}
+
 export function initLightboxMouseNav() {
   const lb = domRefs.lightbox;
   if (!lb) return;
@@ -90,6 +103,7 @@ export function initLightboxMouseNav() {
     if (state.isMobile || !lb.classList.contains('open')) {
       targetProximityLeft = 0;
       targetProximityRight = 0;
+      clearTimeout(navIdleTimeout);
       stopHoldRepeat();
       return;
     }
@@ -98,6 +112,7 @@ export function initLightboxMouseNav() {
     if (!items || items.length <= 1) {
       targetProximityLeft = 0;
       targetProximityRight = 0;
+      clearTimeout(navIdleTimeout);
       stopHoldRepeat();
       return;
     }
@@ -105,6 +120,7 @@ export function initLightboxMouseNav() {
     if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) {
       targetProximityLeft = 0;
       targetProximityRight = 0;
+      clearTimeout(navIdleTimeout);
       stopHoldRepeat();
       return;
     }
@@ -136,6 +152,7 @@ export function initLightboxMouseNav() {
       if (interactive) {
         targetProximityLeft = 0;
         targetProximityRight = 0;
+        clearTimeout(navIdleTimeout);
         stopHoldRepeat();
         return;
       }
@@ -158,12 +175,18 @@ export function initLightboxMouseNav() {
       targetProximityRight = 0;
       stopHoldRepeat();
     }
+
+    resetNavIdleTimeout();
   });
 
-  window.addEventListener('mouseup', stopHoldRepeat);
+  window.addEventListener('mouseup', () => {
+    stopHoldRepeat();
+    resetNavIdleTimeout();
+  });
   window.addEventListener('mouseleave', () => {
     targetProximityLeft = 0;
     targetProximityRight = 0;
+    clearTimeout(navIdleTimeout);
     stopHoldRepeat();
   });
 
@@ -373,6 +396,7 @@ export function resetLightboxMouseNav() {
   clickStageLeft = 0;
   clickProgressRight = 0;
   clickStageRight = 0;
+  clearTimeout(navIdleTimeout);
   stopHoldRepeat();
 }
 
