@@ -199,3 +199,21 @@
 #loader:not([style*="display: none"]) ~ #custom-scrollbar {
   display: none !important;
 }
+
+/* Easter Egg Shaders */
+html {
+  transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.easter-egg-bw {
+  filter: grayscale(100%);
+}
+
+html.easter-egg-invert {
+  filter: invert(100%);
+}
+
+html.easter-egg-bw.easter-egg-invert {
+  filter: grayscale(100%) invert(100%);
+}
+

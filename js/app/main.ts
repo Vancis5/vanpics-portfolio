@@ -14,6 +14,7 @@ import './gallery.js';
 import './hero-carousel.js';
 import './cursor.js';
 import './filmstrip.js';
+import './easter-eggs.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import './bootstrap.js';
