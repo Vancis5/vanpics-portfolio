@@ -225,30 +225,57 @@ function startNavAnimationLoop() {
   if (isNavActive) return;
   isNavActive = true;
 
-  function update() {
-    // Lerp proximity & cursor Y (0.075 factor for smooth trailing Y delay)
-    currentProximityLeft += (targetProximityLeft - currentProximityLeft) * 0.18;
-    currentProximityRight += (targetProximityRight - currentProximityRight) * 0.18;
-    currentArrowY += (targetArrowY - currentArrowY) * 0.075;
+  const BASE_HZ = 60;
+  let lastTime = performance.now();
 
-    // Instant press -> snappy 0.18 release click interpolation (Left)
+  function update(now: number) {
+    const dt = Math.min((now - lastTime) / (1000 / BASE_HZ), 3); // clamp to avoid jumps after tab switch
+    lastTime = now;
+
+    // Detect if mouse is directly over either arrow → snap proximity to 1
+    const arrowLeft = domRefs.lightboxArrowLeft;
+    const arrowRight = domRefs.lightboxArrowRight;
+
+    if (arrowLeft) {
+      const r = arrowLeft.getBoundingClientRect();
+      if (mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom) {
+        targetProximityLeft = 1;
+      }
+    }
+    if (arrowRight) {
+      const r = arrowRight.getBoundingClientRect();
+      if (mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom) {
+        targetProximityRight = 1;
+      }
+    }
+
+    // Correct delta-time lerp factor scaling (0.18 & 0.075 calibrated at 60Hz)
+    const alphaProx = 1 - Math.pow(1 - 0.18, dt);
+    const alphaY = 1 - Math.pow(1 - 0.075, dt);
+    const alphaClick = 1 - Math.pow(1 - 0.18, dt);
+
+    currentProximityLeft += (targetProximityLeft - currentProximityLeft) * alphaProx;
+    currentProximityRight += (targetProximityRight - currentProximityRight) * alphaProx;
+    currentArrowY += (targetArrowY - currentArrowY) * alphaY;
+
+    // Instant press -> snappy release click interpolation (Left)
     if (clickStageLeft === 1) {
       clickProgressLeft = 1.0;
       clickStageLeft = 2;
     } else if (clickStageLeft === 2) {
-      clickProgressLeft += (0 - clickProgressLeft) * 0.18;
+      clickProgressLeft += (0 - clickProgressLeft) * alphaClick;
       if (clickProgressLeft < 0.005) {
         clickProgressLeft = 0;
         clickStageLeft = 0;
       }
     }
 
-    // Instant press -> snappy 0.18 release click interpolation (Right)
+    // Instant press -> snappy release click interpolation (Right)
     if (clickStageRight === 1) {
       clickProgressRight = 1.0;
       clickStageRight = 2;
     } else if (clickStageRight === 2) {
-      clickProgressRight += (0 - clickProgressRight) * 0.18;
+      clickProgressRight += (0 - clickProgressRight) * alphaClick;
       if (clickProgressRight < 0.005) {
         clickProgressRight = 0;
         clickStageRight = 0;
@@ -257,8 +284,6 @@ function startNavAnimationLoop() {
 
     const glowLeft = domRefs.lightboxGlowLeft;
     const glowRight = domRefs.lightboxGlowRight;
-    const arrowLeft = domRefs.lightboxArrowLeft;
-    const arrowRight = domRefs.lightboxArrowRight;
 
     const pLeft = currentProximityLeft < 0.005 ? 0 : currentProximityLeft;
     const pRight = currentProximityRight < 0.005 ? 0 : currentProximityRight;
@@ -278,7 +303,7 @@ function startNavAnimationLoop() {
 
         const opacity = Math.min(1, Math.max(pLeft * 1.25, clickProgressLeft)).toFixed(3);
         const blur = ((1 - Math.min(1, pLeft)) * (12 * (1 - clickProgressLeft))).toFixed(1);
-        
+
         const clickRecoilX = -4 * clickProgressLeft;
         const hoverX = -14 * (1 - pLeft);
         const translateX = (hoverX + clickRecoilX).toFixed(1);
@@ -290,7 +315,7 @@ function startNavAnimationLoop() {
         const svg = arrowLeft.querySelector('svg');
         if (svg) {
           const svgNudge = -3 * clickProgressLeft;
-          svg.style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
+          (svg as HTMLElement).style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
         }
       } else {
         arrowLeft.style.opacity = '0';
@@ -325,7 +350,7 @@ function startNavAnimationLoop() {
         const svg = arrowRight.querySelector('svg');
         if (svg) {
           const svgNudge = 3 * clickProgressRight;
-          svg.style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
+          (svg as HTMLElement).style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
         }
       } else {
         arrowRight.style.opacity = '0';
