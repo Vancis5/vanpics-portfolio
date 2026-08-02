@@ -743,6 +743,14 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     infoWrap.style.transform = '';
     infoWrap.style.transformOrigin = '';
   }
+  // Also clear inner child scale (mobile path)
+  let infoInner = domRefs.lightboxInfo;
+  if (infoInner) {
+    infoInner.style.transition = '';
+    infoInner.style.transform = '';
+    infoInner.style.transformOrigin = '';
+  }
+
 
   // -- FLIP: Invert --
   if (header && headerRect) {

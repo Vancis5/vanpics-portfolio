@@ -71,10 +71,14 @@ export function updateZoomTransform(img: any, smooth = true) {
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
     let info = domRefs.lightboxInfoWrap;
+    let infoInner = domRefs.lightboxInfo;
     if (info) {
-      info.style.transition = 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       info.style.filter = '';
-      if (!state.isMobile) {
+      info.style.transition = 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      if (state.isMobile) {
+        // reset scale on inner child
+        if (infoInner) { infoInner.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'; infoInner.style.transform = ''; infoInner.style.transformOrigin = ''; }
+      } else {
         info.style.transform = '';
         info.style.transformOrigin = '';
       }
@@ -151,14 +155,21 @@ export function updateZoomTransform(img: any, smooth = true) {
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = String(Math.min(0.85, 0.25 + (state.lbZoomLevel - 1) * 0.45));
     let infoBlur = Math.min(40, (state.lbZoomLevel - 1) * 20);
+    const infoScale = Math.max(0.82, 1 - (state.lbZoomLevel - 1) * 0.1);
     let infoWrap = domRefs.lightboxInfoWrap;
+    let infoInner = domRefs.lightboxInfo;
     if (infoWrap) {
       const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
       if (state.isMobile) {
+        // Blur on wrap (layout stable), scale on inner child (no layout impact)
         infoWrap.style.transition = smooth ? `filter 0.25s ${easing}` : '';
         infoWrap.style.filter = infoBlur > 0.1 ? `blur(${infoBlur.toFixed(1)}px)` : '';
+        if (infoInner) {
+          infoInner.style.transition = smooth ? `transform 0.25s ${easing}` : '';
+          infoInner.style.transformOrigin = 'center top';
+          infoInner.style.transform = infoScale < 0.999 ? `scale(${infoScale.toFixed(3)})` : '';
+        }
       } else {
-        const infoScale = Math.max(0.82, 1 - (state.lbZoomLevel - 1) * 0.1);
         infoWrap.style.transition = smooth ? `filter 0.25s ${easing}, transform 0.25s ${easing}` : '';
         infoWrap.style.transformOrigin = 'center center';
         infoWrap.style.filter = infoBlur > 0.1 ? `blur(${infoBlur.toFixed(1)}px)` : '';
