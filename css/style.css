@@ -402,8 +402,11 @@ body::after {
   object-fit: cover;
   display: block;
   opacity: 0;
-  filter: brightness(0.82) saturate(0.9);
-  transition: opacity 1.2s ease, filter 0.3s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: brightness(0.82) saturate(0.88);
+  transition:
+    opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1.4s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 1.4s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   -webkit-user-drag: none;
   position: relative;
