@@ -75,6 +75,22 @@
   <meta name="twitter:title" content="vanpics">
   <meta name="twitter:description" content="Official photography and videography portfolio by Francis Evan. Explore curated photo collections, portraits, figures, and video works.">
   <meta name="twitter:image" content="https://vanpics.pages.dev/preview.jpg">
+  <link rel="preload" href="/fonts/cormorant-garamond-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/dm-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    if ('fonts' in document) {
+      Promise.all([
+        document.fonts.load('400 1em "Cormorant Garamond"'),
+        document.fonts.load('400 1em "DM Mono"')
+      ]).then(function() {
+        document.documentElement.classList.add('fonts-ready');
+      }).catch(function() {
+        document.documentElement.classList.add('fonts-ready');
+      });
+    } else {
+      document.documentElement.classList.add('fonts-ready');
+    }
+  </script>
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="css/player.css" as="style">
   <link rel="stylesheet" href="css/style.css">
@@ -90,7 +106,26 @@
 <body>
 
   <div id="loader">
-    <div id="loader-dot"></div>
+    <div class="loader-content">
+      <h1 class="loader-brand">vanpics</h1>
+      <div class="loader-track-container">
+        <div class="loader-track">
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+          <div class="loader-card"></div>
+        </div>
+      </div>
+      <div class="loader-status">loading<span class="loader-dots"><span class="dot-1">.</span><span class="dot-2">.</span><span class="dot-3">.</span></span></div>
+    </div>
   </div>
   <div id="cursor"></div>
   <div id="cursor-ring"></div>
