@@ -180,6 +180,7 @@ export function renderVideoInLightbox(p: Video) {
   let wrap = domRefs.lightboxImgWrap;
   if (wrap) {
     wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
+    wrap.style.filter = 'blur(0px)';
   }
   if (domRefs.lightboxContent) {
     domRefs.lightboxContent.style.setProperty('--lightbox-photo-ratio', String(ratio));
@@ -187,6 +188,7 @@ export function renderVideoInLightbox(p: Video) {
 
   // Clear inline width override to let CSS handle it
   shell.style.width = '';
+  shell.style.filter = 'blur(0px)';
   
   shell.innerHTML = getVideoPlayerMarkup(p);
   shell.style.opacity = '1';

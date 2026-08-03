@@ -551,6 +551,11 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
           playerShell.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
           playerShell.style.opacity = '1';
           playerShell.style.filter = 'blur(0px)';
+          imgWrap.style.transition = 'opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease';
+          imgWrap.style.opacity = '1';
+          imgWrap.style.transform = 'translateX(0) scale(1)';
+          imgWrap.style.filter = 'blur(0px)';
+          img.style.filter = 'blur(0px)';
         } else {
           imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1), filter 0.34s cubic-bezier(0.16,1,0.3,1)';
           imgWrap.style.opacity = '1';
@@ -580,11 +585,14 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     img.style.transition = 'none';
     img.style.opacity = '0';
     img.style.transform = '';
+    img.style.filter = '';
     imgWrap.style.transition = '';
     imgWrap.style.opacity = '';
     imgWrap.style.transform = '';
+    imgWrap.style.filter = '';
     playerShell.innerHTML = '';
     playerShell.style.opacity = '0';
+    playerShell.style.filter = '';
 
     // info panel fully hidden — no stale text visible
     let infoEl2 = domRefs.lightboxInfo;
@@ -675,11 +683,17 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
-          playerShell.style.transition = 'opacity 0.45s ease';
+          playerShell.style.transition = 'opacity 0.45s ease, filter 0.45s ease';
           playerShell.style.opacity = '1';
+          playerShell.style.filter = 'blur(0px)';
+          imgWrap.style.transition = 'opacity 0.45s ease, filter 0.45s ease';
+          imgWrap.style.opacity = '1';
+          imgWrap.style.filter = 'blur(0px)';
         } else {
-          img.style.transition = 'opacity 0.45s ease';
+          img.style.transition = 'opacity 0.45s ease, filter 0.45s ease';
           img.style.opacity = '1';
+          img.style.filter = 'blur(0px)';
+          imgWrap.style.filter = 'blur(0px)';
         }
       });
     }
