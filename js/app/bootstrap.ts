@@ -5,7 +5,7 @@ import { getInternalCategory, motionProjects, updateMediaLibrary } from './media
 import { slugify, pruneRatioCache } from './utils.js';
 import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
 import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
-import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick } from './hero-carousel.js';
+import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick, triggerExposurePulse } from './hero-carousel.js';
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 import { initLightboxMouseNav } from './lightbox-nav.js';
@@ -22,6 +22,7 @@ const MASONRY_CONFIG = APP_CONFIG.masonry;
 function liftLoader() {
   const loader = domRefs.loader;
   loader.classList.add('lifting');
+  triggerExposurePulse();
   setTimeout(function () { loader.style.display = 'none'; }, LOADER_CONFIG.liftDuration);
 }
 

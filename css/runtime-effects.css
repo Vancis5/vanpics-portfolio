@@ -15,6 +15,24 @@
   pointer-events: none;
 }
 
+/* Subtle Additive Diagonal Carousel Brightness Pulse */
+@keyframes pulseBright {
+  0% {
+    --pulse-bright: 0;
+  }
+  35% {
+    --pulse-bright: 0.16;
+  }
+  100% {
+    --pulse-bright: 0;
+  }
+}
+
+.carousel-item img.exposure-pulse {
+  will-change: filter, --pulse-bright;
+  animation: pulseBright 1.15s cubic-bezier(0.25, 1, 0.4, 1);
+}
+
 #gallery-header .active {
   color: var(--text);
   cursor: default;
