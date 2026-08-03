@@ -146,10 +146,11 @@ export function initLightboxMouseNav() {
 
     const target = e.target as HTMLElement | null;
     if (target) {
+      const isArrow = target.closest('.lightbox-nav-arrow');
       const interactive = target.closest(
-        '#lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
+        '#lightbox-img, .zoomable, #lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
       );
-      if (interactive) {
+      if (interactive && !isArrow) {
         targetProximityLeft = 0;
         targetProximityRight = 0;
         clearTimeout(navIdleTimeout);
@@ -199,10 +200,11 @@ export function initLightboxMouseNav() {
 
     const target = e.target as HTMLElement | null;
     if (target) {
+      const isArrow = target.closest('.lightbox-nav-arrow');
       const interactive = target.closest(
-        '#lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
+        '#lightbox-img, .zoomable, #lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
       );
-      if (interactive) return;
+      if (interactive && !isArrow) return;
     }
 
     if (currentProximityLeft > 0.08) {

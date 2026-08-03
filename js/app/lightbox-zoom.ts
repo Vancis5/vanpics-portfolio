@@ -3,6 +3,14 @@ import { state } from './state.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getLastSideNavTime } from './lightbox-nav.js';
 
+const LUCIDE_ZOOM_IN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='11' y1='8' x2='11' y2='14'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E") 9 9, zoom-in`;
+
+const LUCIDE_ZOOM_OUT = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E") 9 9, zoom-out`;
+
+const LUCIDE_GRAB = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Cpath d='M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0'/%3E%3Cpath d='M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2'/%3E%3Cpath d='M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8'/%3E%3Cpath d='M18 8a2 2 0 0 1 2 2v4a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'/%3E%3C/svg%3E") 9 9, grab`;
+
+const LUCIDE_GRABBING = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Cpath d='M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0'/%3E%3Cpath d='M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2'/%3E%3Cpath d='M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8'/%3E%3Cpath d='M18 8a2 2 0 0 1 2 2v4a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'/%3E%3C/svg%3E") 9 9, grabbing`;
+
 // Continuous Zoom Physics Framework
 let isDraggingZoom = false;
 let lastDragX: number | null = null;
@@ -150,8 +158,8 @@ export function updateZoomTransform(img: any, smooth = true) {
     }
 
     // zoom cursor
-    if (!state.isMobile) img.style.setProperty('cursor', isSpacePressed ? 'grab' : 'zoom-out', 'important');
-    if (isDraggingZoom) img.style.setProperty('cursor', 'grabbing', 'important');
+    if (!state.isMobile) img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
+    if (isDraggingZoom) img.style.setProperty('cursor', LUCIDE_GRABBING, 'important');
 
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = String(Math.min(0.85, 0.25 + (state.lbZoomLevel - 1) * 0.45));
@@ -266,44 +274,56 @@ if (domRefs.lightboxImg) {
 
 // Desktop mouse panning - only when left-click is held OR spacebar is pressed
 let mWrap = domRefs.lightboxImgWrap;
+let isMouseDownOnZoomed = false;
+let isPanningActive = false;
+
 mWrap.addEventListener('mousedown', function (e) {
   if (state.isMobile || state.lbZoomLevel <= 1) return;
   if (e.button !== 0) return; // Only left-click
-  isDraggingZoom = true;
+  isMouseDownOnZoomed = true;
+  isPanningActive = false;
+  isDraggingZoom = false;
   lastDragX = e.clientX;
   lastDragY = e.clientY;
   startX = e.clientX;
   startY = e.clientY;
   dragDistance = 0;
-  let img = domRefs.lightboxImg;
-  if (img) img.style.setProperty('cursor', 'grabbing', 'important');
 });
+
 window.addEventListener('mousemove', function (e) {
   // If left click is not held anymore, reset dragging zoom state
-  if (isDraggingZoom && (e.buttons & 1) === 0) {
+  if ((isMouseDownOnZoomed || isDraggingZoom) && (e.buttons & 1) === 0) {
+    isMouseDownOnZoomed = false;
+    isPanningActive = false;
     isDraggingZoom = false;
     lastDragX = null;
     lastDragY = null;
     let img = domRefs.lightboxImg;
     if (img && state.lbZoomLevel > 1) {
-      img.style.setProperty('cursor', isSpacePressed ? 'grab' : 'zoom-out', 'important');
+      img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
       checkAutoZoomOut(img);
     }
   }
 
-  // Only pan if dragging (left-click held)
-  if (!isDraggingZoom) {
+  if (!isMouseDownOnZoomed || state.lbZoomLevel <= 1) {
     lastDragX = null;
     lastDragY = null;
     return;
   }
-  if (state.lbZoomLevel <= 1) return;
   
-  if (isDraggingZoom) {
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    dragDistance = Math.sqrt(dx * dx + dy * dy);
+  const dxTotal = e.clientX - startX;
+  const dyTotal = e.clientY - startY;
+  dragDistance = Math.sqrt(dxTotal * dxTotal + dyTotal * dyTotal);
+
+  // Only switch to grab/pan icon when user actually moves the mouse past drag threshold (>4px)
+  if (dragDistance > 4 && !isPanningActive) {
+    isPanningActive = true;
+    isDraggingZoom = true;
+    let img = domRefs.lightboxImg;
+    if (img) img.style.setProperty('cursor', LUCIDE_GRABBING, 'important');
   }
+
+  if (!isPanningActive) return;
   
   if (lastDragX === null || lastDragY === null) {
     lastDragX = e.clientX;
@@ -322,14 +342,17 @@ window.addEventListener('mousemove', function (e) {
     updateZoomTransform(img, false); // No transition during drag for responsiveness
   }
 });
+
 window.addEventListener('mouseup', function () {
-  if (isDraggingZoom) {
+  if (isMouseDownOnZoomed || isDraggingZoom) {
+    isMouseDownOnZoomed = false;
+    isPanningActive = false;
     isDraggingZoom = false;
     lastDragX = null;
     lastDragY = null;
     let img = domRefs.lightboxImg;
     if (img && state.lbZoomLevel > 1) {
-      img.style.setProperty('cursor', isSpacePressed ? 'grab' : 'zoom-out', 'important');
+      img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
       checkAutoZoomOut(img);
     }
   }
@@ -350,7 +373,7 @@ window.addEventListener('keydown', function (e) {
       lastDragX = null;
       lastDragY = null;
       let img = domRefs.lightboxImg;
-      if (img) img.style.setProperty('cursor', 'grab', 'important');
+      if (img) img.style.setProperty('cursor', LUCIDE_GRAB, 'important');
     }
   }
 });
@@ -361,7 +384,7 @@ window.addEventListener('keyup', function (e) {
     lastDragY = null;
     let img = domRefs.lightboxImg;
     if (img && state.lbZoomLevel > 1) {
-      img.style.setProperty('cursor', 'zoom-out', 'important');
+      img.style.setProperty('cursor', LUCIDE_ZOOM_OUT, 'important');
       checkAutoZoomOut(img);
     }
   }
