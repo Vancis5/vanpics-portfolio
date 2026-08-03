@@ -363,6 +363,8 @@ body::after {
   position: relative;
   z-index: 2;
   will-change: transform;
+  transform: translateZ(0);
+  contain: layout style;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -379,6 +381,8 @@ body::after {
   cursor: grab;
   position: relative;
   overflow: hidden;
+  contain: layout paint style;
+  transform: translateZ(0);
   -webkit-tap-highlight-color: transparent;
 }
 

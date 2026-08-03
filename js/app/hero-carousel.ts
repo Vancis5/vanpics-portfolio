@@ -451,6 +451,7 @@ domRefs.heroRows.forEach(function (row, ri) {
 });
 
 export function triggerExposurePulse() {
+  easeFrame = 0;
   const items: { img: HTMLElement; dist: number }[] = [];
   let minDist = Infinity;
   let maxDist = -Infinity;

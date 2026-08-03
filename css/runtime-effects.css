@@ -7,17 +7,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.7s ease;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   user-select: none;
-  opacity: 0;
-  animation: loaderFadeIn 0.45s ease forwards;
-}
-
-@keyframes loaderFadeIn {
-  to {
-    opacity: 1;
-  }
+  opacity: 1;
 }
 
 #loader.lifting {
@@ -60,8 +53,20 @@ html.fonts-ready .loader-brand {
   position: relative;
   display: flex;
   align-items: center;
-  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 18%, rgba(0, 0, 0, 1) 82%, rgba(0, 0, 0, 0) 100%);
-  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 18%, rgba(0, 0, 0, 1) 82%, rgba(0, 0, 0, 0) 100%);
+  contain: layout paint;
+}
+
+/* Hardware accelerated left & right side fades */
+.loader-track-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 120px;
+  background: linear-gradient(to right, #111010 0%, rgba(17, 16, 16, 0) 100%);
+  pointer-events: none;
+  z-index: 3;
 }
 
 .loader-track-container::after {
@@ -69,10 +74,23 @@ html.fonts-ready .loader-brand {
   position: absolute;
   top: 0;
   bottom: 0;
+  right: 0;
+  width: 120px;
+  background: linear-gradient(to left, #111010 0%, rgba(17, 16, 16, 0) 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.loader-shimmer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   left: -60%;
   width: 220%;
   pointer-events: none;
   z-index: 2;
+  will-change: transform;
+  transform: translateZ(0);
   background: linear-gradient(
     115deg,
     rgba(255, 255, 255, 0) 25%,
@@ -89,6 +107,7 @@ html.fonts-ready .loader-brand {
   gap: 16px;
   width: max-content;
   will-change: transform;
+  transform: translateZ(0);
   animation: loaderCruise 34s linear infinite;
 }
 
@@ -179,18 +198,18 @@ html.fonts-ready .loader-status {
 /* Subtle Additive Diagonal Carousel Brightness Pulse */
 @keyframes pulseBright {
   0% {
-    --pulse-bright: 0;
+    filter: brightness(0.82) saturate(0.88);
   }
   35% {
-    --pulse-bright: 0.16;
+    filter: brightness(1.06) saturate(0.96);
   }
   100% {
-    --pulse-bright: 0;
+    filter: brightness(0.82) saturate(0.88);
   }
 }
 
 .carousel-item img.exposure-pulse {
-  will-change: filter, --pulse-bright;
+  will-change: filter;
   animation: pulseBright 1.15s cubic-bezier(0.25, 1, 0.4, 1);
 }
 
