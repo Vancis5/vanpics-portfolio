@@ -88,15 +88,17 @@ export function initSmoothScroll(options: any = {}) {
     
     const mainLenis = (window as any).lenis;
     if (mainLenis) {
-      if (window._scrollbarDragging) {
+      if (window._scrollbarDragging || !mainLenis.time || (time - mainLenis.time) > 100) {
         mainLenis.time = time;
-      } else {
-        mainLenis.raf(time);
       }
+      mainLenis.raf(time);
     }
     // Only tick fsLenis when filmstrip is visible — saves full RAF work when hidden
     const fsWrap = document.getElementById('filmstrip-wrap');
     if (window.fsLenis && fsWrap && fsWrap.classList.contains('visible')) {
+      if (!window.fsLenis.time || (time - window.fsLenis.time) > 100) {
+        window.fsLenis.time = time;
+      }
       window.fsLenis.raf(time);
     }
     rafId = requestAnimationFrame(lenisRaf);
@@ -106,6 +108,9 @@ export function initSmoothScroll(options: any = {}) {
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && rafId === null) {
+      const mainLenis = (window as any).lenis;
+      if (mainLenis) mainLenis.time = performance.now();
+      if (window.fsLenis) window.fsLenis.time = performance.now();
       rafId = requestAnimationFrame(lenisRaf);
     }
   });

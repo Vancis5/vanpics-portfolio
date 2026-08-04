@@ -323,6 +323,9 @@ body::after {
   justify-content: center;
   gap: 8px;
   --hero-text-shadow: 0 1px 4px rgba(0, 0, 0, 1);
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 100vh;
 }
 
 
@@ -405,7 +408,7 @@ body::after {
 
 .carousel-item.photo-loaded::before {
   opacity: 0;
-  transform: scale(0.985);
+  transform: scale(0.992);
 }
 
 .carousel-item.no-transition::before,
@@ -861,6 +864,9 @@ body::after {
   width: 100%;
   vertical-align: top;
   aspect-ratio: var(--photo-aspect-ratio);
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 300px;
 }
 
 .photo-card::before {
@@ -893,7 +899,7 @@ body::after {
 
 .photo-card.photo-loaded::before {
   opacity: 0;
-  transform: scale(0.985);
+  transform: scale(0.992);
 }
 
 .photo-card.no-transition::before,
@@ -1434,7 +1440,7 @@ body::after {
   border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 0;
-  transform: scale(0.985);
+  transform: scale(0.992);
   transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
@@ -2011,7 +2017,7 @@ html.custom-cursor-enabled #lightbox-close::before {
     border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
     box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
     opacity: 0;
-    transform: scale(0.985);
+    transform: scale(0.992);
     transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
   }

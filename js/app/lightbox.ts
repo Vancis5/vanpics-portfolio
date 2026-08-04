@@ -6,7 +6,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfRe
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip } from './filmstrip.js';
 import { WebGLBlurRenderer } from './lightbox-blur.js';
-import { resetLightboxMouseNav } from './lightbox-nav.js';
+import { resetLightboxMouseNav, startNavAnimationLoop } from './lightbox-nav.js';
 
 import { Photo, Video } from '../types.js';
 
@@ -79,7 +79,7 @@ function refreshLightboxInfoRefs() {
 
 let blurRenderer: WebGLBlurRenderer | null = null;
 
-function initBlurRenderer() {
+export function initBlurRenderer() {
   if (blurRenderer) return;
   let canvas = domRefs.blurCanvas;
   if (!canvas) return;
@@ -493,7 +493,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     // exit current media immediately — snappy, blurring as it slides out
     img.style.transition = 'opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease';
     img.style.opacity = '0';
-    img.style.transform = 'translateX(' + exitX + ') scale(0.98)';
+    img.style.transform = 'translateX(' + exitX + ') scale(0.992)';
     img.style.filter = 'blur(10px)';
     playerShell.style.transition = 'opacity 0.15s ease, filter 0.15s ease';
     playerShell.style.opacity = '0';
@@ -523,7 +523,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       img.style.opacity = '0';
       img.style.filter = 'blur(10px)';
       imgWrap.style.transition = 'none';
-      imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.98)';
+      imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.992)';
       imgWrap.style.opacity = '0';
       imgWrap.style.filter = 'blur(10px)';
       playerShell.innerHTML = '';
@@ -607,6 +607,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     let masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
     lb.classList.add('open');
+    startNavAnimationLoop();
     let closeBtn = document.getElementById('lightbox-close');
     if (closeBtn) {
       if (state.lastInputType !== 'keyboard') {
@@ -671,7 +672,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
       let bSrc = isMotion ? (p.thumb || '') : (p.thumb || p.src || '');
       setLightboxBlur(bSrc);
-      setLightboxContent(p);
+      setLightboxContent(p, { deferDynamicTextColor: true });
       if (!isMotion) loadSwipeNeighbors();
 
       requestAnimationFrame(function () {

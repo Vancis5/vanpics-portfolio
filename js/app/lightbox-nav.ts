@@ -178,6 +178,7 @@ export function initLightboxMouseNav() {
     }
 
     resetNavIdleTimeout();
+    startNavAnimationLoop();
   });
 
   window.addEventListener('mouseup', () => {
@@ -246,29 +247,67 @@ function triggerArrowPulse(side: 'left' | 'right') {
   }
 }
 
-function startNavAnimationLoop() {
+let navRafId: number | null = null;
+let cachedLeftRect: DOMRect | null = null;
+let cachedRightRect: DOMRect | null = null;
+
+function invalidateArrowRects() {
+  cachedLeftRect = null;
+  cachedRightRect = null;
+}
+
+window.addEventListener('resize', invalidateArrowRects, { passive: true });
+
+export function startNavAnimationLoop() {
   if (isNavActive) return;
   isNavActive = true;
+  invalidateArrowRects();
 
   const BASE_HZ = 60;
   let lastTime = performance.now();
 
   function update(now: number) {
+    const lb = domRefs.lightbox;
+    if (!isNavActive || !lb || !lb.classList.contains('open')) {
+      isNavActive = false;
+      navRafId = null;
+      return;
+    }
+
     const dt = Math.min((now - lastTime) / (1000 / BASE_HZ), 3); // clamp to avoid jumps after tab switch
     lastTime = now;
 
-    // Detect if mouse is directly over either arrow → snap proximity to 1
+    // Check idle state — if everything settled and target is 0, stop loop
+    const isIdle = targetProximityLeft === 0 && targetProximityRight === 0 &&
+      currentProximityLeft < 0.005 && currentProximityRight < 0.005 &&
+      Math.abs(currentArrowY - targetArrowY) < 0.5 &&
+      clickStageLeft === 0 && clickStageRight === 0;
+
+    if (isIdle) {
+      currentProximityLeft = 0;
+      currentProximityRight = 0;
+      isNavActive = false;
+      navRafId = null;
+      const arrowLeft = domRefs.lightboxArrowLeft;
+      const arrowRight = domRefs.lightboxArrowRight;
+      if (arrowLeft) { arrowLeft.style.opacity = '0'; arrowLeft.style.filter = 'blur(12px)'; }
+      if (arrowRight) { arrowRight.style.opacity = '0'; arrowRight.style.filter = 'blur(12px)'; }
+      return;
+    }
+
     const arrowLeft = domRefs.lightboxArrowLeft;
     const arrowRight = domRefs.lightboxArrowRight;
 
     if (arrowLeft) {
-      const r = arrowLeft.getBoundingClientRect();
+      if (!cachedLeftRect) cachedLeftRect = arrowLeft.getBoundingClientRect();
+      const r = cachedLeftRect;
       if (mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom) {
         targetProximityLeft = 1;
       }
     }
     if (arrowRight) {
-      const r = arrowRight.getBoundingClientRect();
+      if (!cachedRightRect) cachedRightRect = arrowRight.getBoundingClientRect();
+      const r = cachedRightRect;
       if (mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom) {
         targetProximityRight = 1;
       }
@@ -383,10 +422,10 @@ function startNavAnimationLoop() {
       }
     }
 
-    requestAnimationFrame(update);
+    navRafId = requestAnimationFrame(update);
   }
 
-  requestAnimationFrame(update);
+  navRafId = requestAnimationFrame(update);
 }
 
 export function resetLightboxMouseNav() {
@@ -398,6 +437,11 @@ export function resetLightboxMouseNav() {
   clickStageLeft = 0;
   clickProgressRight = 0;
   clickStageRight = 0;
+  isNavActive = false;
+  if (navRafId) {
+    cancelAnimationFrame(navRafId);
+    navRafId = null;
+  }
   clearTimeout(navIdleTimeout);
   stopHoldRepeat();
 }

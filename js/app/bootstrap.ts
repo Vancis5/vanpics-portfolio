@@ -3,7 +3,7 @@ import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
 import { getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
 import { slugify, pruneRatioCache } from './utils.js';
-import { closeLightbox, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
+import { closeLightbox, initBlurRenderer, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
 import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
 import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick, triggerExposurePulse } from './hero-carousel.js';
 import { animateGlow, setStartLoopsCallback } from './core.js';
@@ -24,6 +24,11 @@ function liftLoader() {
   loader.classList.add('lifting');
   triggerExposurePulse();
   setTimeout(function () { loader.style.display = 'none'; }, LOADER_CONFIG.liftDuration);
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(initBlurRenderer);
+  } else {
+    setTimeout(initBlurRenderer, 1500);
+  }
 }
 
 // Lift loader via direct callback — no MutationObserver (flaky in Firefox)

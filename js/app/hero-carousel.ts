@@ -223,10 +223,10 @@ export function buildCarousel(isRebuild = false) {
     return;
   }
 
-  const imgsToWaitFor = criticalImgs.length > 0 ? criticalImgs : eagerImgs;
+  const imgsToWaitFor = eagerImgs.length > 0 ? eagerImgs : criticalImgs;
 
   Promise.all(imgsToWaitFor.map(function (img) {
-    return waitForDecodedImage(img, 1200);
+    return waitForDecodedImage(img, 2500);
   })).then(finishCarouselReady);
 }
 
@@ -450,57 +450,57 @@ domRefs.heroRows.forEach(function (row, ri) {
   }, { passive: true });
 });
 
+/* 
+ * SAVED EXPOSURE PULSE IMPLEMENTATION (For future reuse):
+ * 
+ * export function triggerExposurePulse() {
+ *   easeFrame = 0;
+ *   const items: { img: HTMLElement; dist: number }[] = [];
+ *   let minDist = Infinity;
+ *   let maxDist = -Infinity;
+ *   const viewWidth = window.innerWidth;
+ * 
+ *   domRefs.heroRows.forEach((row) => {
+ *     if (!row) return;
+ *     const children = row.querySelectorAll('.carousel-item');
+ *     children.forEach((child) => {
+ *       const el = child as HTMLElement;
+ *       const img = el.querySelector('img');
+ *       if (!img) return;
+ *       const rect = el.getBoundingClientRect();
+ *       if (rect.right < -150 || rect.left > viewWidth + 150) return;
+ *       const dist = Math.max(0, rect.left) + rect.top * 1.1;
+ *       if (dist < minDist) minDist = dist;
+ *       if (dist > maxDist) maxDist = dist;
+ *       items.push({ img: img as HTMLElement, dist });
+ *     });
+ *   });
+ *   if (items.length === 0) return;
+ *   const spread = maxDist - minDist || 1;
+ *   const startOffset = 170;
+ *   const maxDelay = 520;
+ *   const animDuration = 1150;
+ * 
+ *   items.forEach(({ img }) => { img.classList.remove('exposure-pulse'); });
+ *   if (items.length > 0) { void items[0].img.offsetWidth; }
+ *   items.forEach(({ img, dist }) => {
+ *     const norm = Math.max(0, (dist - minDist) / spread);
+ *     const delay = startOffset + Math.round(norm * maxDelay);
+ *     img.style.animationDelay = `${delay}ms`;
+ *     img.classList.add('exposure-pulse');
+ *     const cleanUp = () => {
+ *       img.removeEventListener('animationend', cleanUp);
+ *       img.classList.remove('exposure-pulse');
+ *       img.style.animationDelay = '';
+ *     };
+ *     img.addEventListener('animationend', cleanUp, { once: true });
+ *     setTimeout(cleanUp, delay + animDuration + 100);
+ *   });
+ * }
+ */
+
 export function triggerExposurePulse() {
   easeFrame = 0;
-  const items: { img: HTMLElement; dist: number }[] = [];
-  let minDist = Infinity;
-  let maxDist = -Infinity;
-
-  const viewWidth = window.innerWidth;
-
-  domRefs.heroRows.forEach((row) => {
-    if (!row) return;
-    const children = row.querySelectorAll('.carousel-item');
-    children.forEach((child) => {
-      const el = child as HTMLElement;
-      const img = el.querySelector('img');
-      if (!img) return;
-
-      const rect = el.getBoundingClientRect();
-      if (rect.right < -150 || rect.left > viewWidth + 150) return;
-
-      const dist = Math.max(0, rect.left) + rect.top * 1.1;
-      if (dist < minDist) minDist = dist;
-      if (dist > maxDist) maxDist = dist;
-      items.push({ img: img as HTMLElement, dist });
-    });
-  });
-
-  if (items.length === 0) return;
-
-  const spread = maxDist - minDist || 1;
-  const startOffset = 170;
-  const maxDelay = 520;
-  const animDuration = 1150;
-
-  items.forEach(({ img, dist }) => {
-    const norm = Math.max(0, (dist - minDist) / spread);
-    const delay = startOffset + Math.round(norm * maxDelay);
-
-    img.style.animationDelay = `${delay}ms`;
-    img.classList.remove('exposure-pulse');
-    void img.offsetWidth; // force reflow
-    img.classList.add('exposure-pulse');
-
-    const cleanUp = () => {
-      img.removeEventListener('animationend', cleanUp);
-      img.classList.remove('exposure-pulse');
-      img.style.animationDelay = '';
-    };
-
-    img.addEventListener('animationend', cleanUp, { once: true });
-    setTimeout(cleanUp, delay + animDuration + 100);
-  });
 }
 
 

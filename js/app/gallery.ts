@@ -82,11 +82,13 @@ function playCardScrollReveal(card: HTMLElement) {
 function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
   let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
+  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  let threshold = scrollY + viewportBottom + 24;
 
   root.querySelectorAll('.photo-card').forEach(function (cardEl) {
     const card = cardEl as HTMLElement;
-    let rect = card.getBoundingClientRect();
-    if (rect.top > viewportBottom + 24) {
+    let cardTop = card.offsetTop;
+    if (cardTop > threshold) {
       clearCardRevealTimers(card);
       delete card.dataset.revealPending;
       delete card.dataset.revealCleanupTimer;
@@ -98,9 +100,11 @@ function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
 }
 
 function isCardInViewport(card: HTMLElement) {
-  let rect = card.getBoundingClientRect();
-  let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
-  return rect.bottom > 0 && rect.top < viewportBottom;
+  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  let cardTop = card.offsetTop;
+  let cardHeight = card.offsetHeight || 300;
+  return (cardTop + cardHeight) > scrollY && cardTop < (scrollY + viewportHeight);
 }
 
 function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {

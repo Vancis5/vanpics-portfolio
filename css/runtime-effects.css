@@ -11,11 +11,18 @@
   overflow: hidden;
   user-select: none;
   opacity: 1;
+  will-change: opacity;
 }
 
 #loader.lifting {
   opacity: 0;
   pointer-events: none;
+}
+
+#loader.lifting .loader-track,
+#loader.lifting .loader-shimmer,
+#loader.lifting .loader-dots span {
+  animation-play-state: paused !important;
 }
 
 .loader-content {
@@ -195,23 +202,7 @@ html.fonts-ready .loader-status {
   }
 }
 
-/* Subtle Additive Diagonal Carousel Brightness Pulse */
-@keyframes pulseBright {
-  0% {
-    filter: brightness(0.82) saturate(0.88);
-  }
-  35% {
-    filter: brightness(1.06) saturate(0.96);
-  }
-  100% {
-    filter: brightness(0.82) saturate(0.88);
-  }
-}
 
-.carousel-item img.exposure-pulse {
-  will-change: filter;
-  animation: pulseBright 1.15s cubic-bezier(0.25, 1, 0.4, 1);
-}
 
 #gallery-header .active {
   color: var(--text);
