@@ -572,10 +572,19 @@ body::after {
 }
 
 #scroll-hint.faded-out {
-  animation: none !important;
-  opacity: 0 !important;
+  animation: fadeOutHint 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
   pointer-events: none !important;
-  transform: translateY(10px) !important;
+}
+
+@keyframes fadeOutHint {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 
 @media (min-width: 640px) {
@@ -1352,7 +1361,8 @@ body::after {
   position: absolute;
   top: 0;
   z-index: 25;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;

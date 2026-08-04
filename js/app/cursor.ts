@@ -99,7 +99,7 @@ if (isMouseDevice) {
   document.documentElement.addEventListener('mouseenter', showCursor);
   document.addEventListener('contextmenu', function () { hideCursor(); cursor.style.transform = 'translate(-50%,-50%) scale(0.6)'; });
   // Delegated hover for cursor ring — works on dynamically added cards, carousel imgs, navbar, etc.
-  const interactiveSelector = 'button, a, [role="button"], .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .filmstrip-thumb';
+  const interactiveSelector = 'button, a, [role="button"], .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .filmstrip-thumb, .lightbox-nav-arrow';
   document.addEventListener('mouseover', function (e) {
     const target = e.target as HTMLElement;
     if (target && target.closest(interactiveSelector)) {

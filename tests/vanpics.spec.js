@@ -213,3 +213,26 @@ test('navigates lightbox using keyboard arrow keys', async ({ page }) => {
   await expect(page.locator('#lightbox-title')).toHaveText('collateral');
 });
 
+test('fades out scroll hint when scrolled down', async ({ page }) => {
+  await waitForGallery(page);
+  const scrollHint = page.locator('#scroll-hint');
+  await expect(scrollHint).not.toHaveClass(/faded-out/);
+
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight));
+  await expect(scrollHint).toHaveClass(/faded-out/);
+});
+
+test('expands custom cursor ring when hovering over lightbox side buttons', async ({ page }) => {
+  await waitForGallery(page);
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+  const leftArrow = page.locator('#lightbox-nav-arrow-left');
+  await leftArrow.hover({ force: true });
+
+  const cursorRing = page.locator('#cursor-ring');
+  await expect(cursorRing).toHaveCSS('transform', /scale\(1\.57\)/);
+});
+
+
+
