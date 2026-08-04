@@ -116,26 +116,25 @@ html::-webkit-scrollbar {
 #custom-scrollbar-thumb {
   position: absolute;
   top: 0;
-  right: 2px;
-  width: 8px;
+  right: 4px;
+  width: 3px;
   background: rgba(var(--text-rgb), 0.25);
   border-radius: 10px;
   cursor: grab;
-  transform-origin: right center;
-  transform: scaleX(0.375);
-  transition: background 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, background;
+  transition: background 0.3s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, background, width;
 }
 
 #custom-scrollbar:hover #custom-scrollbar-thumb {
   background: rgba(var(--text-rgb), 0.5);
-  /* Pulse brighter on hover */
+  width: 8px;
+  right: 2px;
 }
 
 #custom-scrollbar.dragging #custom-scrollbar-thumb {
   background: rgba(var(--text-rgb), 0.85);
-  /* Bright when dragging */
-  transform: scaleX(1);
+  width: 8px;
+  right: 2px;
   cursor: grabbing;
 }
 
