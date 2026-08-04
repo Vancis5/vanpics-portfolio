@@ -10,16 +10,23 @@ export function getAllowedOrigins(env) {
 export function isOriginAllowed(origin, env) {
   if (!origin) return false;
 
-  // Raw string checks for private/LAN IPs (handles any port, protocol)
-  if (
-    /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
-    /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
-    /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin) ||
-    /^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin) ||
-    /^https?:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+(:\d+)?$/.test(origin) ||
-    /^https?:\/\/[^/]+\.local(:\d+)?$/.test(origin)
-  ) {
-    return true;
+  try {
+    const url = new URL(origin);
+    const { hostname, protocol } = url;
+    if (protocol === 'http:' || protocol === 'https:') {
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.endsWith('.local') ||
+        /^192\.168\.\d+\.\d+$/.test(hostname) ||
+        /^10\.\d+\.\d+\.\d+$/.test(hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+$/.test(hostname)
+      ) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
   }
 
   const allowed = getAllowedOrigins(env);
@@ -143,6 +150,7 @@ async function verifyJWT(token, secret) {
     const sigBinary = base64UrlDecode(signatureStr);
     const sigArr = new Uint8Array(sigBinary.length);
     for (let i = 0; i < sigBinary.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection
       sigArr[i] = sigBinary.charCodeAt(i);
     }
     
@@ -213,6 +221,7 @@ export async function assertAdmin(request, env) {
 
   let mismatch = 0;
   for (let i = 0; i < tokenArr.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection
     mismatch |= tokenArr[i] ^ secretArr[i];
   }
 

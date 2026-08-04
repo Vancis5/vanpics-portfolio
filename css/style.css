@@ -116,13 +116,15 @@ html::-webkit-scrollbar {
 #custom-scrollbar-thumb {
   position: absolute;
   top: 0;
-  right: 4px;
-  width: 3px;
+  right: 2px;
+  width: 8px;
   background: rgba(var(--text-rgb), 0.25);
   border-radius: 10px;
   cursor: grab;
-  transition: background 0.3s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1), right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, background, width;
+  transform-origin: right center;
+  transform: scaleX(0.375);
+  transition: background 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, background;
 }
 
 #custom-scrollbar:hover #custom-scrollbar-thumb {
@@ -133,9 +135,7 @@ html::-webkit-scrollbar {
 #custom-scrollbar.dragging #custom-scrollbar-thumb {
   background: rgba(var(--text-rgb), 0.85);
   /* Bright when dragging */
-  width: 8px;
-  /* Thicker when dragging */
-  right: 2px;
+  transform: scaleX(1);
   cursor: grabbing;
 }
 
@@ -257,7 +257,7 @@ body::after {
     pointer-events: none;
     z-index: 9998;
     transform: translate(-50%, -50%);
-    transition: width 0.3s, height 0.3s, border-color 0.3s, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color 0.3s, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
@@ -322,7 +322,7 @@ body::after {
   flex-direction: column;
   justify-content: center;
   gap: 8px;
-  --hero-text-shadow: 0 1px 4px rgba(0, 0, 0, 1);
+  --hero-text-shadow: 0 0 15px rgba(0, 0, 0, 1), 0 0 35px rgba(0, 0, 0, 0.95), 0 0 75px rgba(0, 0, 0, 0.85), 0 0 120px rgba(0, 0, 0, 0.75), 0 0 160px rgba(0, 0, 0, 0.65);
   contain: layout paint style;
   content-visibility: auto;
   contain-intrinsic-size: 100vh;
@@ -512,6 +512,17 @@ body::after {
   animation: fadeup 0.9s ease 1.2s forwards;
 }
 
+#hero-identity::before {
+  content: "";
+  position: absolute;
+  inset: -6rem -8rem -5rem -5rem;
+  background: radial-gradient(ellipse at bottom left, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 45%, transparent 75%);
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(30px);
+  border-radius: 50%;
+}
+
 @media (min-width: 640px) {
   #hero-identity {
     bottom: 2.25rem;
@@ -558,6 +569,14 @@ body::after {
   gap: 5px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#scroll-hint.faded-out {
+  animation: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(10px) !important;
 }
 
 @media (min-width: 640px) {
@@ -1203,7 +1222,7 @@ body::after {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
-  overflow: hidden;
+  overflow: clip;
   scrollbar-width: none;
   -ms-overflow-style: none;
   --text-muted: rgba(var(--text-rgb), 0.78);
@@ -1763,7 +1782,7 @@ body::after {
     /* vertically center both columns */
     justify-content: center;
     padding: calc(4.5rem + var(--safe-top)) 2.5rem calc(4.5rem + var(--safe-bottom));
-    transition: padding-bottom 0.3s ease;
+    transition: transform 0.3s ease;
     gap: 3rem;
     height: var(--app-height);
     width: 100%;
@@ -1772,7 +1791,7 @@ body::after {
 
   /* filmstrip visible — shift center up to account for filmstrip height */
   #lightbox.filmstrip-visible #lightbox-content {
-    padding-bottom: calc(8rem + var(--safe-bottom));
+    transform: translateY(-1.75rem);
   }
 
   #lightbox-img-wrap {
@@ -1819,11 +1838,11 @@ body::after {
     margin: 0 auto;
     padding: calc(4.5rem + var(--safe-top)) 4rem calc(4.5rem + var(--safe-bottom));
     gap: 4rem;
-    transition: padding-bottom 0.3s ease;
+    transition: transform 0.3s ease;
   }
 
   #lightbox.filmstrip-visible #lightbox-content {
-    padding-bottom: calc(8rem + var(--safe-bottom));
+    transform: translateY(-1.75rem);
   }
 
   #lightbox-img-wrap {

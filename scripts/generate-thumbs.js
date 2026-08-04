@@ -16,16 +16,18 @@ const thumbDir = './photos/thumbs';
 async function processPhotos() {
     const files = fs.readdirSync(inputDir);
     const photos = files.filter(file => {
-        const fullPath = path.join(inputDir, file);
-        return fs.statSync(fullPath).isFile() && /\.(webp|jpg|jpeg|png)$/i.test(file);
+        const safeFile = path.basename(file);
+        const fullPath = path.join(inputDir, safeFile);
+        return fs.statSync(fullPath).isFile() && /\.(webp|jpg|jpeg|png)$/i.test(safeFile);
     });
 
     console.log(`Found ${photos.length} photos to process...`);
 
     let count = 0;
     for (const photo of photos) {
-        const inputPath = path.join(inputDir, photo);
-        const thumbPath = path.join(thumbDir, photo);
+        const safePhoto = path.basename(photo);
+        const inputPath = path.join(inputDir, safePhoto);
+        const thumbPath = path.join(thumbDir, safePhoto);
 
         try {
             await sharp(inputPath)
@@ -36,7 +38,7 @@ async function processPhotos() {
             count++;
             if (count % 20 === 0) console.log(`Processed ${count}/${photos.length}...`);
         } catch (err) {
-            console.error(`Error processing ${photo}:`, err.message);
+            console.error('Error processing %s:', photo, err.message);
         }
     }
 

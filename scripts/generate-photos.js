@@ -31,7 +31,7 @@ async function processRaw() {
             
             console.log(`✅ Processed: ${photo} -> ${fileName}.webp`);
         } catch (err) {
-            console.error(`❌ Error processing ${photo}:`, err.message);
+            console.error('❌ Error processing %s:', photo, err.message);
         }
     }
 

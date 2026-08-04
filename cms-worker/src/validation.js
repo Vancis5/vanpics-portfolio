@@ -9,6 +9,7 @@ const TEXT_LIMITS = {
 export const ALLOWED_CATEGORIES = new Set(['', 'figures']);
 
 export function cleanText(value, fieldName, errors, options = {}) {
+  // eslint-disable-next-line security/detect-object-injection
   const max = options.max || TEXT_LIMITS[fieldName] || 255;
   const required = Boolean(options.required);
   const text = String(value || '').trim().replace(/\s+/g, ' ');

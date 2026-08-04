@@ -21,9 +21,12 @@ const MASONRY_CONFIG = APP_CONFIG.masonry;
 
 function liftLoader() {
   const loader = domRefs.loader;
-  loader.classList.add('lifting');
+  if (loader) {
+    loader.classList.remove('visible');
+    loader.classList.add('lifting');
+  }
   triggerExposurePulse();
-  setTimeout(function () { loader.style.display = 'none'; }, LOADER_CONFIG.liftDuration);
+  setTimeout(function () { if (loader) loader.style.display = 'none'; }, LOADER_CONFIG.liftDuration);
   if (typeof window.requestIdleCallback === 'function') {
     window.requestIdleCallback(initBlurRenderer);
   } else {
@@ -68,7 +71,24 @@ function bindStaticUiHandlers() {
   });
 }
 
+function initScrollHintDismiss() {
+  if (!domRefs.scrollHint) return;
+
+  function onScroll() {
+    if (!domRefs.scrollHint) return;
+    const heroHeight = domRefs.hero ? domRefs.hero.offsetHeight : window.innerHeight;
+    if (window.scrollY >= heroHeight * 0.5) {
+      domRefs.scrollHint.classList.add('faded-out');
+      window.removeEventListener('scroll', onScroll);
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
 bindStaticUiHandlers();
+initScrollHintDismiss();
 
 updateStickyHeaderSurface();
 window.addEventListener('resize', updateStickyHeaderSurface, { passive: true });

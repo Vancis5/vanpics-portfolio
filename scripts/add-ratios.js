@@ -70,7 +70,7 @@ async function addRatios() {
         console.warn(`Warning: File not found: ${p.src}`);
       }
     } catch (e) {
-      console.error(`Error detecting ratio for ${p.src}:`, e.message);
+      console.error('Error detecting ratio for %s:', p.src, e.message);
     }
   }
 
