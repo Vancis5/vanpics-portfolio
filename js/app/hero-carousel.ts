@@ -79,6 +79,7 @@ let easeFrame = 0;
 
 // Drag states
 let isDragging = false;
+let isPendingDrag = false;
 let dragRowIndex = -1;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -320,33 +321,53 @@ window.addEventListener('mousemove', function (e) {
 });
 
 window.addEventListener('touchmove', function (e) {
-  if (!isDragging || dragRowIndex === -1 || !e.touches || e.touches.length === 0) return;
+  if ((!isDragging && !isPendingDrag) || dragRowIndex === -1 || !e.touches || e.touches.length === 0) return;
   let clientX = e.touches[0].clientX;
   let clientY = e.touches[0].clientY;
 
   let dx = clientX - dragStartX;
   let dy = clientY - dragStartY;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
+  if (isPendingDrag) {
+    let absDx = Math.abs(dx);
+    let absDy = Math.abs(dy);
+
+    if (absDx < 6 && absDy < 6) return;
+
+    if (absDy > absDx) {
+      isPendingDrag = false;
+      isDragging = false;
+      dragRowIndex = -1;
+      return;
+    } else {
+      isPendingDrag = false;
+      isDragging = true;
+      let ri = dragRowIndex;
+      rowState[ri].velocity = 0;
+      rowState[ri].hasMomentum = false;
+    }
+  }
+
+  if (isDragging) {
     if (e.cancelable) e.preventDefault();
-  }
 
-  if (Math.abs(dx) > 5) {
-    globalHasDragged = true;
-  }
+    if (Math.abs(dx) > 5) {
+      globalHasDragged = true;
+    }
 
-  let ri = dragRowIndex;
-  let setWidth = rowState[ri].setWidth;
-  let rawOffset = dragStartOffset + dragWrapAdjust + dx;
-  if (setWidth > 0) {
-    while (rawOffset < -setWidth) { rawOffset += setWidth; dragWrapAdjust += setWidth; }
-    while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
-  }
-  rowState[ri].offset = rawOffset;
+    let ri = dragRowIndex;
+    let setWidth = rowState[ri].setWidth;
+    let rawOffset = dragStartOffset + dragWrapAdjust + dx;
+    if (setWidth > 0) {
+      while (rawOffset < -setWidth) { rawOffset += setWidth; dragWrapAdjust += setWidth; }
+      while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
+    }
+    rowState[ri].offset = rawOffset;
 
-  let now = performance.now();
-  dragHistory.push({ x: clientX, time: now });
-  dragHistory = dragHistory.filter(item => now - item.time <= 100);
+    let now = performance.now();
+    dragHistory.push({ x: clientX, time: now });
+    dragHistory = dragHistory.filter(item => now - item.time <= 100);
+  }
 }, { passive: false });
 
 function endDrag() {
@@ -371,11 +392,13 @@ function endDrag() {
     }
   }
   isDragging = false;
+  isPendingDrag = false;
   dragRowIndex = -1;
 }
 
 window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
+window.addEventListener('touchcancel', endDrag);
 
 export function recalculateCarouselLayout() {
   CRUISE_SPEED = computeCruiseSpeed();
@@ -419,6 +442,7 @@ domRefs.heroRows.forEach(function (row, ri) {
   if (!row) return;
   row.addEventListener('mousedown', function (e) {
     isDragging = true;
+    isPendingDrag = false;
     dragRowIndex = ri;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
@@ -436,7 +460,8 @@ domRefs.heroRows.forEach(function (row, ri) {
 
   row.addEventListener('touchstart', function (e) {
     if (e.touches.length > 0) {
-      isDragging = true;
+      isPendingDrag = true;
+      isDragging = false;
       dragRowIndex = ri;
       dragStartX = e.touches[0].clientX;
       dragStartY = e.touches[0].clientY;
@@ -444,8 +469,6 @@ domRefs.heroRows.forEach(function (row, ri) {
       dragWrapAdjust = 0;
       globalHasDragged = false;
       dragHistory = [{ x: e.touches[0].clientX, time: performance.now() }];
-      rowState[ri].velocity = 0;
-      rowState[ri].hasMomentum = false;
     }
   }, { passive: true });
 });
