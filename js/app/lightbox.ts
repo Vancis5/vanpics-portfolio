@@ -356,12 +356,20 @@ function updateLightboxDescPreview() {
 }
 
 export function animateInfo(dir: number) {
-  if (state.isMobile) return;
   let info = domRefs.lightboxInfo;
   if (!info || !info.parentNode) {
     domRefs.lightboxInfo = (domRefs.lightboxInfoWrap ? domRefs.lightboxInfoWrap.querySelector('#lightbox-info') : null) as HTMLElement;
     info = domRefs.lightboxInfo;
     if (!info || !info.parentNode) return;
+  }
+
+  if (state.isMobile) {
+    info.style.animation = 'none';
+    info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+    info.style.opacity = '1';
+    info.style.filter = '';
+    info.style.transform = '';
+    return;
   }
 
   // only animate exit if there's visible content (opacity > 0 means it's shown)
@@ -403,6 +411,42 @@ export function animateInfo(dir: number) {
   refreshLightboxInfoRefs();
 }
 
+export function setViewportUserScalable(scalable: boolean) {
+  let meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) return;
+  if (!scalable) {
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+  } else {
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
+  }
+}
+
+function preventMotionWebpageZoom(e: Event) {
+  if (state.currentLightboxIsMotion || (domRefs.lightbox && domRefs.lightbox.classList.contains('mode-motion'))) {
+    e.preventDefault();
+  }
+}
+
+function preventMotionMultiTouchZoom(e: TouchEvent) {
+  if ((state.currentLightboxIsMotion || (domRefs.lightbox && domRefs.lightbox.classList.contains('mode-motion'))) && e.touches && e.touches.length > 1) {
+    e.preventDefault();
+  }
+}
+
+document.addEventListener('gesturestart', preventMotionWebpageZoom, { passive: false });
+document.addEventListener('gesturechange', preventMotionWebpageZoom, { passive: false });
+document.addEventListener('gestureend', preventMotionWebpageZoom, { passive: false });
+document.addEventListener('touchstart', preventMotionMultiTouchZoom, { passive: false });
+document.addEventListener('touchmove', preventMotionMultiTouchZoom, { passive: false });
+
+window.addEventListener('wheel', function (e: WheelEvent) {
+  if (state.currentLightboxIsMotion || (domRefs.lightbox && domRefs.lightbox.classList.contains('mode-motion'))) {
+    if (e.ctrlKey) {
+      e.preventDefault();
+    }
+  }
+}, { passive: false });
+
 let navGen = 0;
 
 function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
@@ -426,14 +470,27 @@ export function updateMobileImgWrapHeight() {
   const containerH = imgWrap.clientHeight;
   if (!containerH) return;
 
-  const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
-  const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
-  const items = getCurrentLightboxItems();
-  const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
-  const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
+  let ratio = 1;
+  let photoDisplayedH = containerH;
 
-  const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-  const photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
+  if (state.currentLightboxIsMotion) {
+    const shell = domRefs.motionPlayerShell;
+    const items = getCurrentLightboxItems();
+    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : (16 / 9);
+    ratio = fallbackRatio;
+    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
+    const shellRect = shell ? shell.getBoundingClientRect() : null;
+    photoDisplayedH = shellRect && shellRect.height > 0 ? shellRect.height : Math.min(containerH, (viewportWidth - 32) / ratio);
+  } else {
+    const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
+    const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
+    const items = getCurrentLightboxItems();
+    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
+    ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
+    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
+    photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
+  }
+
   const topShift = window.innerHeight * 0.04;
   const offset = -Math.max(0, (containerH - photoDisplayedH) / 2) - topShift;
 
@@ -457,6 +514,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
   state.cur = i;
   state.isManuallyNavigating = true;
   state.currentLightboxIsMotion = !!isMotion;
+  resetZoom();
   let p = getCurrentLightboxItems()[i];
 
   if (!p) return;
@@ -465,8 +523,13 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
   let imgWrap = domRefs.lightboxImgWrap;
   let playerShell = domRefs.motionPlayerShell;
 
-  if (isMotion) lb.classList.add('mode-motion');
-  else lb.classList.remove('mode-motion');
+  if (isMotion) {
+    lb.classList.add('mode-motion');
+    setViewportUserScalable(false);
+  } else {
+    lb.classList.remove('mode-motion');
+    setViewportUserScalable(true);
+  }
   if (isMotion) clearLightboxPhotoPlaceholder();
 
   // Mobile: already open — natively smooth scroll
@@ -677,9 +740,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
       requestAnimationFrame(function () {
         if (openGen !== navGen) return;
-        if (!state.isMobile) {
-          animateInfo(0);
-        }
+        animateInfo(0);
         void img.offsetWidth; // force reflow
 
         if (isMotion) {
@@ -732,6 +793,8 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   let img = domRefs.lightboxImg;
   let activeGen = ++navGen; // invalidates all pending callbacks
   lb.classList.remove('open');
+  lb.classList.remove('mode-motion');
+  setViewportUserScalable(true);
   if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
     let el = previouslyFocusedElement;
     if (!(isKeyboard || state.lastInputType === 'keyboard')) {

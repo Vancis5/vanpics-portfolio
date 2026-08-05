@@ -193,12 +193,11 @@ export function renderVideoInLightbox(p: Video) {
   shell.innerHTML = getVideoPlayerMarkup(p);
   shell.style.opacity = '1';
   shell.style.display = 'block'; // Ensure it's not hidden
+  updateMobileImgWrapHeight();
 
-  // Play/pause and fullscreen gesture handling
+  // Play/pause gesture handling
   const container = shell.querySelector('media-container') as HTMLElement | null;
   if (container) {
-    let clickTimer: any = null;
-    
     container.addEventListener('click', (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('media-controls') || target.closest('.motion-start-button')) {
@@ -207,43 +206,20 @@ export function renderVideoInLightbox(p: Video) {
       
       e.preventDefault();
       
-      if (clickTimer) {
-        // Double click/tap: toggle fullscreen
-        clearTimeout(clickTimer);
-        clickTimer = null;
-        
-        const videoPlayer = container.closest('video-player') || container;
-        if (document.fullscreenElement) {
-          document.exitFullscreen().catch(() => {});
+      const prime = document.getElementById('motion-player-instance');
+      if (prime) {
+        if (!prime.classList.contains('is-started')) {
+          startUnifiedMotionPlayer('motion-player-instance');
         } else {
-          if (videoPlayer && videoPlayer.requestFullscreen) {
-            videoPlayer.requestFullscreen().catch(() => {});
-          } else {
-            container.requestFullscreen().catch(() => {});
-          }
-        }
-      } else {
-        // First click: set a timeout to check if it's a single or double click
-        clickTimer = setTimeout(() => {
-          clickTimer = null;
-          
-          // Single click: toggle play/pause
-          const prime = document.getElementById('motion-player-instance');
-          if (prime) {
-            if (!prime.classList.contains('is-started')) {
-              startUnifiedMotionPlayer('motion-player-instance');
+          const video = prime.querySelector('video');
+          if (video) {
+            if (video.paused) {
+              video.play().catch(() => {});
             } else {
-              const video = prime.querySelector('video');
-              if (video) {
-                if (video.paused) {
-                  video.play().catch(() => {});
-                } else {
-                  video.pause();
-                }
-              }
+              video.pause();
             }
           }
-        }, 250);
+        }
       }
     });
   }
@@ -255,4 +231,13 @@ export function startUnifiedMotionPlayer(id: string) {
   let video = prime.querySelector('video');
   prime.classList.add('is-started');
   if (video) video.play().catch(function () { });
+}
+
+export function pauseMotionVideo() {
+  let shell = domRefs.motionPlayerShell;
+  if (!shell) return;
+  let video = shell.querySelector('video') as HTMLVideoElement | null;
+  if (video && !video.paused) {
+    video.pause();
+  }
 }

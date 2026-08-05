@@ -2,11 +2,12 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { motionProjects } from './media-data.js';
-import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback, updateMobileImgWrapHeight, getPhotoTargetHeight, setMobileImgWrapHeightValue } from './lightbox.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback, updateMobileImgWrapHeight } from './lightbox.js';
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml } from './utils.js';
+import { pauseMotionVideo } from './lightbox-media.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -17,9 +18,9 @@ let lastTapT = 0;
 
 // mobile: tap content area (not interactive elements) to toggle filmstrip
 lbEl.addEventListener('click', function (e) {
-  if (!state.isMobile) return;
+  if (!state.isMobile || state.currentLightboxIsMotion) return;
   if (swipeHappened) { swipeHappened = false; return; }
-  if ((e.target as HTMLElement).closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info')) return;
+  if ((e.target as HTMLElement).closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info, video-player, #motion-player-shell')) return;
 
   let now = Date.now();
   let img = e.target as HTMLImageElement;
@@ -432,9 +433,22 @@ if (state.isMobile) {
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
-      if (state.currentLightboxIsMotion) return;
       // stricter check to prevent interaction fight between filmstrip and dismiss gesture
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+
+      if (state.currentLightboxIsMotion) {
+        if (e.touches.length >= 2) {
+          e.preventDefault();
+          return;
+        }
+        dStartX = e.touches[0].clientX;
+        dStartY = e.touches[0].clientY;
+        dDY = 0;
+        dLocked = false;
+        dChecked = false;
+        dPts = [{ y: dStartY, t: Date.now() }];
+        return;
+      }
 
       if (e.touches.length === 1) {
         wasPinchingOrZooming = false;
@@ -495,7 +509,10 @@ if (state.isMobile) {
 
     lbEl.addEventListener('touchmove', function (e) {
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
-      if (state.currentLightboxIsMotion) return;
+      if (state.currentLightboxIsMotion && e.touches.length >= 2) {
+        e.preventDefault();
+        return;
+      }
       if (isPinching && e.touches.length === 2) {
         e.preventDefault();
         let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -546,6 +563,9 @@ if (state.isMobile) {
       }
 
       if (dLocked && dy > 0) {
+        if (state.currentLightboxIsMotion) {
+          pauseMotionVideo();
+        }
         dDY = dy;
         e.preventDefault();
         let content = domRefs.lightboxContent;

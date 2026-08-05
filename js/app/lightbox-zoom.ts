@@ -24,6 +24,7 @@ let startY = 0;
 let activeRawLoader: HTMLImageElement | null = null;
 
 export function updateZoomTransform(img: any, smooth = true) {
+  if (state.currentLightboxIsMotion) return;
   let mWrap = domRefs.lightboxImgWrap;
   let lb = domRefs.lightbox;
   
@@ -212,6 +213,7 @@ export function resetZoom() {
 }
 
 export function toggleImageZoom(e: any) {
+  if (state.currentLightboxIsMotion) return;
   let img = e.target as HTMLImageElement;
   if (!img.classList.contains('zoomable')) return;
 

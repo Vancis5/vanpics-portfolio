@@ -125,17 +125,19 @@ html::-webkit-scrollbar {
   will-change: transform, background, width;
 }
 
-#custom-scrollbar:hover #custom-scrollbar-thumb {
-  background: rgba(var(--text-rgb), 0.5);
-  width: 8px;
-  right: 2px;
-}
+@media (hover: hover) and (pointer: fine) {
+  #custom-scrollbar:hover #custom-scrollbar-thumb {
+    background: rgba(var(--text-rgb), 0.5);
+    width: 8px;
+    right: 2px;
+  }
 
-#custom-scrollbar.dragging #custom-scrollbar-thumb {
-  background: rgba(var(--text-rgb), 0.85);
-  width: 8px;
-  right: 2px;
-  cursor: grabbing;
+  #custom-scrollbar.dragging #custom-scrollbar-thumb {
+    background: rgba(var(--text-rgb), 0.85);
+    width: 8px;
+    right: 2px;
+    cursor: grabbing;
+  }
 }
 
 .custom-scrollbar-year {
@@ -185,7 +187,7 @@ body.is-dragging-scrollbar #drag-vignette {
   opacity: 1;
 }
 
-/* Mobile: handle the 3s fade */
+/* Mobile: handle the 3s fade & keep scrollbar thumb thin */
 @media (hover: none) {
   #custom-scrollbar {
     opacity: 0;
@@ -193,6 +195,13 @@ body.is-dragging-scrollbar #drag-vignette {
 
   #custom-scrollbar.moving {
     opacity: 1;
+  }
+
+  #custom-scrollbar-thumb,
+  #custom-scrollbar:hover #custom-scrollbar-thumb,
+  #custom-scrollbar.dragging #custom-scrollbar-thumb {
+    width: 3px !important;
+    right: 4px !important;
   }
 
   .custom-scrollbar-year {
@@ -1091,17 +1100,43 @@ body::after {
   display: none !important;
 }
 
+#lightbox.mode-motion,
+#lightbox.mode-motion #lightbox-content,
+#lightbox.mode-motion #lightbox-img-wrap,
+#motion-player-shell,
+#motion-player-shell video-player,
+#motion-player-shell video {
+  touch-action: pan-y !important;
+  overscroll-behavior: none !important;
+}
+
 #motion-player-shell {
   position: relative;
   --lightbox-video-max-height: 72svh;
   width: min(100%, calc(var(--lightbox-video-max-height) * var(--lightbox-photo-ratio, 1.7777777777777777)));
   /* slightly larger max for desktop */
   aspect-ratio: var(--lightbox-photo-ratio, 16 / 9);
-  background: transparent;
-  border-radius: 0;
+  background: #000;
+  border-radius: 3px;
+  border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   overflow: hidden;
-  clip-path: inset(0);
+  clip-path: inset(0 round 3px);
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+#motion-player-shell video-player,
+#motion-player-shell .media-minimal-skin,
+#motion-player-shell media-poster,
+#motion-player-shell media-poster img,
+#motion-player-shell video {
+  border-radius: inherit;
+  clip-path: inset(0 round 3px);
+  outline: none !important;
+}
+
+#motion-player-shell media-poster img {
+  object-fit: cover !important;
 }
 
 #lightbox.mode-motion #lightbox-img-wrap {
@@ -1958,6 +1993,14 @@ html.custom-cursor-enabled #lightbox-close::before {
     display: none;
   }
 
+  #lightbox-img-wrap {
+    height: 100% !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    box-sizing: border-box;
+    z-index: 2;
+  }
+
   #lightbox:not(.mode-motion) #lightbox-img-wrap {
     overflow-x: auto;
     overflow-y: hidden;
@@ -1969,23 +2012,25 @@ html.custom-cursor-enabled #lightbox-close::before {
     overscroll-behavior-x: none;
     justify-content: flex-start;
     align-items: flex-start;
-
-
-    height: 100% !important;
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-    box-sizing: border-box;
-    z-index: 2;
   }
 
   #lightbox.mode-motion #lightbox-img-wrap {
     overflow: visible;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
   }
 
   #motion-player-shell {
-    --lightbox-video-max-height: 44dvh;
-    max-height: 44dvh;
-    /* Match photo lightbox height */
+    --lightbox-video-max-height: 58dvh;
+    max-height: 58dvh;
+    width: min(calc(100% - 2rem), calc(var(--lightbox-video-max-height) * var(--lightbox-photo-ratio, 1.7777777777777777)));
+    border-radius: 3px;
+    border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
+    overflow: hidden;
+    clip-path: inset(0 round 3px);
+    transform: translateY(-4dvh);
+    box-sizing: border-box;
   }
 
   #lightbox-img-wrap::-webkit-scrollbar {
