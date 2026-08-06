@@ -187,10 +187,11 @@ body.is-dragging-scrollbar #drag-vignette {
   opacity: 1;
 }
 
-/* Mobile: handle the 3s fade & keep scrollbar thumb thin */
+/* Mobile: handle the 3s fade, keep scrollbar thumb thin, & make scrollbar non-clickable */
 @media (hover: none) {
   #custom-scrollbar {
     opacity: 0;
+    pointer-events: none !important;
   }
 
   #custom-scrollbar.moving {

@@ -194,6 +194,7 @@ export function initLightboxMouseNav() {
 
   // Instant 0ms navigation & press feedback on mousedown + hold-to-repeat
   lb.addEventListener('mousedown', (e: MouseEvent) => {
+    if (e.button !== 0) return;
     if (state.isMobile || !lb.classList.contains('open')) return;
     const items = getCurrentLightboxItems();
     if (!items || items.length <= 1) return;
@@ -379,7 +380,7 @@ export function startNavAnimationLoop() {
         const svg = arrowLeft.querySelector('svg');
         if (svg) {
           const svgNudge = -3 * clickProgressLeft;
-          (svg as HTMLElement).style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
+          (svg as SVGElement).style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
         }
       } else {
         arrowLeft.style.opacity = '0';
@@ -414,7 +415,7 @@ export function startNavAnimationLoop() {
         const svg = arrowRight.querySelector('svg');
         if (svg) {
           const svgNudge = 3 * clickProgressRight;
-          (svg as HTMLElement).style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
+          (svg as SVGElement).style.transform = `translateX(${svgNudge.toFixed(1)}px)`;
         }
       } else {
         arrowRight.style.opacity = '0';

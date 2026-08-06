@@ -25,3 +25,20 @@ if (isIOS || isDesktop) {
 if (isIOS) {
   document.documentElement.classList.add('ios-device');
 }
+
+// Block mouse thumb buttons (Back / Forward - buttons 3 & 4) from triggering direct site clicks/drags,
+// while keeping default behavior intact so native browser navigation works uninterrupted.
+['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup', 'auxclick'].forEach((eventType) => {
+  window.addEventListener(
+    eventType,
+    (e: Event) => {
+      const mouseEvent = e as MouseEvent;
+      if (mouseEvent.button === 3 || mouseEvent.button === 4) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    },
+    true
+  );
+});
+

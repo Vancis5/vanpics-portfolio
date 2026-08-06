@@ -545,6 +545,7 @@ function initFilmstripDrag() {
   let dragMoved = false;
 
   filmstripEl.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
     isDragging = true;
     dragMoved = false;
     state.isTouchingFilmstrip = true;

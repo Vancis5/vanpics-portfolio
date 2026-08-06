@@ -67,6 +67,7 @@ if (isMouseDevice) {
 
   // Respond to hold (mousedown)
   window.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
     // If clicking near the right edge (scrollbar zone), hide the cursor
     if (e.clientX >= window.innerWidth - 32) {
       isDraggingScrollbar = true;

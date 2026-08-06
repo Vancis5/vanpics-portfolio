@@ -441,6 +441,7 @@ export function recalculateCarouselLayout() {
 domRefs.heroRows.forEach(function (row, ri) {
   if (!row) return;
   row.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
     isDragging = true;
     isPendingDrag = false;
     dragRowIndex = ri;

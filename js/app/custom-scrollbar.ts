@@ -113,6 +113,7 @@ export let updateCustomScrollbar = function () {};
 
   // Track interaction (click to jump + start dragging)
   track.addEventListener('mousedown', function (e) {
+    if (e.button !== 0 || state.isMobile) return;
     isDragging = true;
     track.classList.add('dragging');
     document.body.classList.add('is-dragging-scrollbar');

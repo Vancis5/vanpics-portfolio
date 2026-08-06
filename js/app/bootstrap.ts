@@ -374,8 +374,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
 
       // Prune orphaned aspect ratio cache entries
       const allSrcs = [
-        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb].filter(Boolean)),
-        ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter(Boolean))
+        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb].filter((s): s is string => Boolean(s))),
+        ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter((s): s is string => Boolean(s)))
       ];
       pruneRatioCache(allSrcs);
     }

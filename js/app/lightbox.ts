@@ -411,42 +411,6 @@ export function animateInfo(dir: number) {
   refreshLightboxInfoRefs();
 }
 
-export function setViewportUserScalable(scalable: boolean) {
-  let meta = document.querySelector('meta[name="viewport"]');
-  if (!meta) return;
-  if (!scalable) {
-    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-  } else {
-    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
-  }
-}
-
-function preventMotionWebpageZoom(e: Event) {
-  if (state.currentLightboxIsMotion || (domRefs.lightbox && domRefs.lightbox.classList.contains('mode-motion'))) {
-    e.preventDefault();
-  }
-}
-
-function preventMotionMultiTouchZoom(e: TouchEvent) {
-  if ((state.currentLightboxIsMotion || (domRefs.lightbox && domRefs.lightbox.classList.contains('mode-motion'))) && e.touches && e.touches.length > 1) {
-    e.preventDefault();
-  }
-}
-
-document.addEventListener('gesturestart', preventMotionWebpageZoom, { passive: false });
-document.addEventListener('gesturechange', preventMotionWebpageZoom, { passive: false });
-document.addEventListener('gestureend', preventMotionWebpageZoom, { passive: false });
-document.addEventListener('touchstart', preventMotionMultiTouchZoom, { passive: false });
-document.addEventListener('touchmove', preventMotionMultiTouchZoom, { passive: false });
-
-window.addEventListener('wheel', function (e: WheelEvent) {
-  if (state.currentLightboxIsMotion || (domRefs.lightbox && domRefs.lightbox.classList.contains('mode-motion'))) {
-    if (e.ctrlKey) {
-      e.preventDefault();
-    }
-  }
-}, { passive: false });
-
 let navGen = 0;
 
 function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
@@ -523,13 +487,8 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
   let imgWrap = domRefs.lightboxImgWrap;
   let playerShell = domRefs.motionPlayerShell;
 
-  if (isMotion) {
-    lb.classList.add('mode-motion');
-    setViewportUserScalable(false);
-  } else {
-    lb.classList.remove('mode-motion');
-    setViewportUserScalable(true);
-  }
+  if (isMotion) lb.classList.add('mode-motion');
+  else lb.classList.remove('mode-motion');
   if (isMotion) clearLightboxPhotoPlaceholder();
 
   // Mobile: already open — natively smooth scroll
@@ -794,7 +753,6 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   let activeGen = ++navGen; // invalidates all pending callbacks
   lb.classList.remove('open');
   lb.classList.remove('mode-motion');
-  setViewportUserScalable(true);
   if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
     let el = previouslyFocusedElement;
     if (!(isKeyboard || state.lastInputType === 'keyboard')) {
