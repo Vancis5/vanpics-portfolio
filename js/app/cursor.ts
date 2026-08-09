@@ -118,4 +118,5 @@ if (isMouseDevice) {
   window.addEventListener('lightbox-open', function () {
     ring.style.transform = 'translate(-50%,-50%) scale(1)'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
   });
+  window.addEventListener('hide-cursor', hideCursor);
 }

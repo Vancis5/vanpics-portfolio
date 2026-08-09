@@ -450,3 +450,32 @@ export function resetLightboxMouseNav() {
 export function getLastSideNavTime(): number {
   return lastNavTime;
 }
+
+export function hideLightboxNavImmediately() {
+  targetProximityLeft = 0;
+  targetProximityRight = 0;
+  currentProximityLeft = 0;
+  currentProximityRight = 0;
+  clickProgressLeft = 0;
+  clickStageLeft = 0;
+  clickProgressRight = 0;
+  clickStageRight = 0;
+  stopHoldRepeat();
+  clearTimeout(navIdleTimeout);
+
+  const arrowLeft = domRefs.lightboxArrowLeft;
+  const arrowRight = domRefs.lightboxArrowRight;
+  const glowLeft = domRefs.lightboxGlowLeft;
+  const glowRight = domRefs.lightboxGlowRight;
+
+  if (arrowLeft) {
+    arrowLeft.style.opacity = '0';
+    arrowLeft.style.filter = 'blur(12px)';
+  }
+  if (arrowRight) {
+    arrowRight.style.opacity = '0';
+    arrowRight.style.filter = 'blur(12px)';
+  }
+  if (glowLeft) glowLeft.style.opacity = '0';
+  if (glowRight) glowRight.style.opacity = '0';
+}

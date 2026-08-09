@@ -6,7 +6,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfRe
 import { resetZoom } from './lightbox-zoom.js';
 import { updateFilmstrip, stopFsSync } from './filmstrip.js';
 import { WebGLBlurRenderer } from './lightbox-blur.js';
-import { resetLightboxMouseNav, startNavAnimationLoop } from './lightbox-nav.js';
+import { resetLightboxMouseNav, startNavAnimationLoop, hideLightboxNavImmediately } from './lightbox-nav.js';
 
 import { Photo, Video } from '../types.js';
 
@@ -1029,6 +1029,12 @@ document.addEventListener('keydown', function (e) {
   }
 
   let key = e.key.toLowerCase();
+  const isNavKey = e.key.startsWith('Arrow') || key === 'd' || key === 'a' || key === 's' || key === 'w';
+  if (isNavKey) {
+    window.dispatchEvent(new CustomEvent('hide-cursor'));
+    hideLightboxNavImmediately();
+  }
+
   if (e.key === 'ArrowRight' || key === 'd' || key === 's') navigateLightbox(1);
   if (e.key === 'ArrowLeft' || key === 'a' || key === 'w') navigateLightbox(-1);
 });
