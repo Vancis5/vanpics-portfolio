@@ -16,6 +16,18 @@ const GALLERY_REVEAL_CLEANUP_MS = 850;
 const GALLERY_REVEAL_IMAGE_WAIT_MS = 1400;
 const GALLERY_TAB_SWITCH_SETTLE_MS = 920;
 
+const cardLayerObserver = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
+    const img = entry.target.querySelector('img') as HTMLElement | null;
+    if (!img) return;
+    if (entry.isIntersecting) {
+      img.style.willChange = 'transform';
+    } else {
+      img.style.willChange = 'auto';
+    }
+  });
+}, { rootMargin: '200px' });
+
 function clearCardRevealTimers(card: HTMLElement) {
   if (card.dataset.revealCleanupTimer) {
     window.clearTimeout(Number(card.dataset.revealCleanupTimer));
@@ -698,6 +710,8 @@ export function buildMasonry(category?: string) {
     overlay.appendChild(dateEl);
     card.appendChild(imgEl);
     card.appendChild(overlay);
+
+    cardLayerObserver.observe(card);
 
     card.dataset.idx = String(i);
     card.dataset.category = category;
