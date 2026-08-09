@@ -725,4 +725,22 @@ export async function replacePhotoFile(request, env, params) {
   return jsonResponse(request, env, { success: true });
 }
 
+export async function handleViewCount(request, env) {
+  if (!env.COUNTER_DO) {
+    return errorResponse(request, env, 'durable object binding missing', 500);
+  }
+  const id = env.COUNTER_DO.idFromName('global-counter');
+  const stub = env.COUNTER_DO.get(id);
+
+  const doRes = await stub.fetch(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+
+  const data = await doRes.json();
+  return jsonResponse(request, env, data);
+}
+
+
 

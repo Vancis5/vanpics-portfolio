@@ -39,4 +39,16 @@ enabled = false
 persist = true
 head_sampling_rate = 1
 
+# 3. Durable Object Atomic View Counter
+[durable_objects]
+bindings = [
+  { name = "COUNTER_DO", class_name = "CounterDO" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CounterDO"]
+
+
+
 

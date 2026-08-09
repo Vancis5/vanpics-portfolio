@@ -2926,12 +2926,13 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
     display: none;
   }
 
-  #stat-since {
-    flex-basis: 100%;
+  #stat-since,
+  #stat-views {
     text-align: center;
-    margin-top: 0.25rem;
+    margin-top: 0.2rem;
   }
 }
+
 
 /* PLACEHOLDER FALLBACK STYLES */
 img.placeholder-fallback {

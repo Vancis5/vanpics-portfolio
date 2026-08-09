@@ -12,12 +12,18 @@ import {
   purgeCache,
   sortDatabase,
   replacePhotoFile,
+  handleViewCount,
 } from './handlers.js';
+import { CounterDO } from './counter.js';
+
+export { CounterDO };
 
 const ROUTES = [
   { method: 'GET', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
   { method: 'GET', pattern: /^\/api\/photos$/, handler: listPhotos, public: true },
   { method: 'GET', pattern: /^\/api\/videos$/, handler: listVideos, public: true },
+  { method: 'POST', pattern: /^\/api\/views$/, handler: handleViewCount, public: true },
+  { method: 'GET', pattern: /^\/api\/views$/, handler: handleViewCount, public: true },
   { method: 'GET', pattern: /^\/api\/admin\/verify$/, handler: async (request, env) => jsonResponse(request, env, { success: true, token: request.auth?.token }) },
   { method: 'DELETE', pattern: /^\/api\/admin\/photo\/(?<id>\d+)$/, handler: deletePhoto },
   { method: 'DELETE', pattern: /^\/api\/admin\/video\/(?<id>\d+)$/, handler: deleteVideo },
@@ -29,6 +35,7 @@ const ROUTES = [
   { method: 'POST', pattern: /^\/api\/admin\/sort-db$/, handler: sortDatabase },
   { method: 'POST', pattern: /^\/api\/admin\/photo\/(?<id>\d+)\/replace$/, handler: replacePhotoFile },
 ];
+
 
 function matchRoute(method, pathname) {
   for (const route of ROUTES) {

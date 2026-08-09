@@ -329,9 +329,46 @@ function renderUI(photos: Photo[], videos: Video[]) {
 // always fetches fresh data in background to keep the cache warm.
 (async function loadDynamicMedia() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vanpics-cms-api.lorzanofrancisevan.workers.dev';
+
+  function updateViewsStat(total: number) {
+    const viewsEl = document.getElementById('stat-views');
+    if (viewsEl) {
+      const numEl = viewsEl.querySelector('.stat-num');
+      if (numEl) numEl.textContent = total.toLocaleString();
+    }
+  }
+
+  // Record atomic view count via Durable Object
+  const handleViews = function (res: Response) {
+    if (res.ok) {
+      res.json().then(function (data: any) {
+        if (data && typeof data.total === 'number') {
+          updateViewsStat(data.total);
+        }
+      }).catch(function () {});
+    }
+  };
+
+  if (!sessionStorage.getItem('pv_tracked')) {
+    fetch(`${API_BASE_URL}/api/views?path=${encodeURIComponent(window.location.pathname)}`, {
+      method: 'POST',
+    })
+      .then(function (res) {
+        sessionStorage.setItem('pv_tracked', '1');
+        handleViews(res);
+      })
+      .catch(function () {});
+  } else {
+    fetch(`${API_BASE_URL}/api/views?path=${encodeURIComponent(window.location.pathname)}`)
+      .then(handleViews)
+      .catch(function () {});
+  }
+
+
   let renderedFromCache = false;
   let renderedPhotos: any[] = [];
   let renderedVideos: any[] = [];
+
 
   // ── 1. Instant render from localStorage cache ──
   try {
