@@ -457,6 +457,9 @@ body::after {
   -webkit-user-drag: none;
   position: relative;
   z-index: 2;
+  will-change: transform, filter;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .carousel-item.photo-loaded img {
@@ -503,7 +506,7 @@ body::after {
   .carousel-item:hover img {
     --base-bright: 1;
     --base-sat: 1;
-    transform: scale(1.03);
+    transform: scale(1.03) translateZ(0);
   }
 }
 
@@ -948,6 +951,9 @@ body::after {
   filter: brightness(0.82) saturate(0.88);
   position: relative;
   z-index: 2;
+  will-change: transform, filter;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .photo-card img.media-loaded {
@@ -960,7 +966,7 @@ body::after {
   }
 
   .photo-card:hover img {
-    transform: scale(1.03);
+    transform: scale(1.03) translateZ(0);
     filter: brightness(1) saturate(1);
   }
 
@@ -990,6 +996,9 @@ body::after {
   justify-content: flex-end;
   padding: 1rem;
   z-index: 3;
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .photo-card-title {
@@ -1034,7 +1043,7 @@ body::after {
 
 @media (hover: hover) {
   .motion-card:hover img {
-    transform: scale(1.05);
+    transform: scale(1.05) translateZ(0);
     filter: brightness(0.82) saturate(0.88) blur(4px);
   }
 
@@ -2271,6 +2280,9 @@ html.custom-cursor-enabled #lightbox-close::before {
   transition: opacity 0.2s ease, transform 0.2s ease;
   opacity: 0.32;
   -webkit-tap-highlight-color: transparent;
+  will-change: opacity, transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .filmstrip-thumb::after {
