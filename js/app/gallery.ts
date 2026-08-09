@@ -18,7 +18,7 @@ const GALLERY_TAB_SWITCH_SETTLE_MS = 920;
 
 const cardLayerObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {
-    const img = entry.target.querySelector('img') as HTMLElement | null;
+    const img = entry.target.querySelector('.photo-card-img') as HTMLElement | null;
     if (!img) return;
     if (entry.isIntersecting) {
       img.style.willChange = 'transform';
@@ -654,6 +654,7 @@ export function buildMasonry(category?: string) {
     card.setAttribute('role', 'button');
     card.setAttribute('aria-label', p.title ? `View ${p.title}` : 'View photo');
     let imgEl = document.createElement('img');
+    imgEl.className = 'photo-card-img';
 
     let basePath = isMotion ? (p.thumb || "") : (p.src || "");
     let thumbPath = p.thumb || (basePath.includes('thumbs/') ? basePath : basePath.replace('photos/', 'photos/thumbs/'));
