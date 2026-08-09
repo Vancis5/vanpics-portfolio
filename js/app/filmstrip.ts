@@ -492,15 +492,22 @@ export function showFilmstrip() {
   }
 }
 
-export function hideFilmstrip() {
-  // Don't hide if the cursor is still in the wrap or the lift zone
-  if (filmstripWrap.matches(':hover') || (liftZone && liftZone.matches(':hover'))) {
+export function hideFilmstrip(force = false) {
+  // Don't hide if the cursor is still in the wrap or the lift zone, unless forced (e.g. on lightbox close)
+  if (!force && (filmstripWrap.matches(':hover') || (liftZone && liftZone.matches(':hover')))) {
     state.filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.hoverRetryDelay);
     return;
   }
+  clearTimeout(state.filmstripHideTimer);
+  state.filmstripHideTimer = null;
   filmstripWrap.classList.remove('visible');
   domRefs.lightbox.classList.remove('filmstrip-visible');
 }
+
+window.addEventListener('lightbox-close', function () {
+  hideFilmstrip(true);
+  stopFsSync({ commit: false });
+});
 
 // keep filmstrip visible while hovering it
 filmstripWrap.addEventListener('mouseenter', function () { clearTimeout(state.filmstripHideTimer); });

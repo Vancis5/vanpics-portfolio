@@ -735,10 +735,8 @@ if (masonry) {
     const idx = parseInt(card.dataset.idx || '0', 10);
     const cardCategory = card.dataset.category || 'all';
 
-    if (state.currentCategory !== cardCategory) {
-      state.currentCategory = cardCategory;
-      updateActivePhotos();
-    }
+    state.currentCategory = cardCategory;
+    updateActivePhotos();
     openLightbox(idx, 0, cardCategory === 'motion');
   });
 

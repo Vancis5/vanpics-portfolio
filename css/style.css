@@ -215,6 +215,7 @@ body {
   color: var(--text);
   font-family: 'Cormorant Garamond', serif;
   overflow-x: clip;
+  touch-action: manipulation;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -373,7 +374,6 @@ body::after {
   z-index: 2;
   will-change: transform;
   transform: translateZ(0);
-  contain: layout style;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -390,7 +390,6 @@ body::after {
   cursor: grab;
   position: relative;
   overflow: hidden;
-  contain: layout paint style;
   transform: translateZ(0);
   -webkit-tap-highlight-color: transparent;
 }
@@ -898,7 +897,6 @@ body::after {
   width: 100%;
   vertical-align: top;
   aspect-ratio: var(--photo-aspect-ratio);
-  contain: layout paint;
 }
 
 .photo-card::before {
@@ -1608,7 +1606,8 @@ body::after {
   pointer-events: none !important;
   visibility: hidden !important;
   transform: translateY(100%) !important;
-  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s !important;
+  filter: blur(12px) !important;
+  transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease, visibility 0.25s !important;
 }
 
 #lightbox-info {
@@ -2518,7 +2517,7 @@ html.custom-cursor-enabled #lightbox-close::before {
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: 0;
-  color: rgba(var(--text-rgb), 0.76);
+  color: rgba(var(--text-rgb), 0.55);
   transform: translateY(-0.18rem);
   transition: color 0.4s ease;
 }
@@ -2538,7 +2537,7 @@ html.custom-cursor-enabled #lightbox-close::before {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(var(--text-rgb), 0.60);
+  color: rgba(var(--text-rgb), 0.40);
   white-space: nowrap;
 }
 
@@ -2555,7 +2554,7 @@ html.custom-cursor-enabled #lightbox-close::before {
   height: 1.22rem;
   align-items: center;
   justify-content: center;
-  color: rgba(var(--text-rgb), 0.60);
+  color: rgba(var(--text-rgb), 0.40);
   transition:
     color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
@@ -2587,7 +2586,7 @@ html.custom-cursor-enabled #lightbox-close::before {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.65;
   letter-spacing: 0.1em;
-  color: rgba(var(--text-rgb), 0.60);
+  color: rgba(var(--text-rgb), 0.40);
 }
 
 .footer-copyright {
@@ -2596,36 +2595,47 @@ html.custom-cursor-enabled #lightbox-close::before {
   font-size: clamp(0.58rem, 1.5vw, 0.65rem);
   line-height: 1.6;
   letter-spacing: 0.1em;
-  color: rgba(var(--text-rgb), 0.50);
+  color: rgba(var(--text-rgb), 0.30);
 }
 
-#site-footer:hover .footer-brand h2,
 #site-footer.is-visible .footer-brand h2 {
-  color: rgba(var(--text-rgb), 0.95);
+  color: rgba(var(--text-rgb), 0.75);
 }
 
-#site-footer:hover .footer-brand p,
 #site-footer.is-visible .footer-brand p,
-#site-footer:hover .footer-bio p,
 #site-footer.is-visible .footer-bio p,
-#site-footer:hover .footer-instagram,
 #site-footer.is-visible .footer-instagram,
-#site-footer:hover .footer-email,
 #site-footer.is-visible .footer-email {
-  color: var(--text);
+  color: rgba(var(--text-rgb), 0.60);
 }
 
-#site-footer:hover .footer-copyright,
 #site-footer.is-visible .footer-copyright {
-  color: rgba(var(--text-rgb), 0.35);
+  color: rgba(var(--text-rgb), 0.25);
 }
 
-#site-footer .footer-instagram:hover,
-#site-footer .footer-instagram:focus-visible,
-#site-footer .footer-email:hover,
-#site-footer .footer-email:focus-visible {
-  color: rgba(255, 255, 255, 1);
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.25));
+@media (hover: hover) {
+  #site-footer:hover .footer-brand h2 {
+    color: rgba(var(--text-rgb), 0.96);
+  }
+
+  #site-footer:hover .footer-brand p,
+  #site-footer:hover .footer-bio p,
+  #site-footer:hover .footer-instagram,
+  #site-footer:hover .footer-email {
+    color: rgba(var(--text-rgb), 0.90);
+  }
+
+  #site-footer:hover .footer-copyright {
+    color: rgba(var(--text-rgb), 0.45);
+  }
+
+  #site-footer .footer-instagram:hover,
+  #site-footer .footer-instagram:focus-visible,
+  #site-footer .footer-email:hover,
+  #site-footer .footer-email:focus-visible {
+    color: #ffffff;
+    filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.4));
+  }
 }
 
 @media (min-width: 820px) {

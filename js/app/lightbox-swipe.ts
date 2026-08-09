@@ -140,9 +140,12 @@ if (state.isMobile) {
     function scrollToSlide(idx: number, smooth = true) {
       if (state.currentLightboxIsMotion) return;
       let slide = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"]') as HTMLElement;
+      let w = imgWrap.offsetWidth || window.innerWidth;
+      let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (idx * w);
+      imgWrap.scrollLeft = targetLeft;
       if (slide) {
         imgWrap.scrollTo({
-          left: slide.offsetLeft,
+          left: targetLeft,
           behavior: smooth ? 'smooth' : 'instant'
         });
       }
@@ -220,8 +223,17 @@ if (state.isMobile) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1 || window.isAutoRapidScrolling) return;
       if (state.isUserTouching && typeof targetIdx === 'undefined') return;
       state.isManuallyNavigating = false;
-      let w = imgWrap.offsetWidth;
+      let w = imgWrap.offsetWidth || window.innerWidth;
       if (!w) return;
+
+      // Only force scrollLeft if explicitly opening or programmatically navigating
+      if (typeof targetIdx === 'number' && (!lbEl.classList.contains('open') || state.isManuallyNavigating)) {
+        let expectedLeft = targetIdx * w;
+        if (Math.abs(imgWrap.scrollLeft - expectedLeft) > 5) {
+          imgWrap.scrollLeft = expectedLeft;
+        }
+      }
+
       let rawNearest = Math.round(imgWrap.scrollLeft / w);
       let idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, state.activePhotos.length - 1));
 
@@ -229,9 +241,10 @@ if (state.isMobile) {
         let dir = idx > state.cur ? 1 : -1;
         state.cur = idx;
         let p = state.activePhotos[state.cur];
-
-        setLightboxBlur(p.thumb || p.src);
-        setLightboxContent(p);
+        if (p) {
+          setLightboxBlur(p.thumb || p.src);
+          setLightboxContent(p);
+        }
         showFilmstripIfReady();
         updateLoading();
       }
@@ -239,18 +252,20 @@ if (state.isMobile) {
 
       updateMobileImgWrapHeight();
 
-      let info = domRefs.lightboxInfo;
-      if (info) {
-        info.style.animation = 'none';
-        info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
-        info.style.opacity = '1';
-        info.style.filter = '';
-        info.style.transform = '';
-        setTimeout(function () {
-          if (!info.parentNode) return;
-          info.style.animation = '';
-          info.style.transition = '';
-        }, 400);
+      if (!state.isUserTouching) {
+        let info = domRefs.lightboxInfo;
+        if (info) {
+          info.style.animation = 'none';
+          info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+          info.style.opacity = '1';
+          info.style.filter = '';
+          info.style.transform = '';
+          setTimeout(function () {
+            if (!info.parentNode) return;
+            info.style.animation = '';
+            info.style.transition = '';
+          }, 400);
+        }
       }
 
       let fsWrap = domRefs.filmstripWrap;
@@ -406,14 +421,22 @@ if (state.isMobile) {
         return;
       }
       buildSlides();
+      void imgWrap.offsetWidth;
+      scrollToSlide(state.cur, false);
+
       requestAnimationFrame(function () {
+        void imgWrap.offsetWidth;
         scrollToSlide(state.cur, false);
         updateLoading();
         onSnapSettle(state.cur);
         let p = state.activePhotos[state.cur];
-        setLightboxContent(p);
+        if (p) setLightboxContent(p);
         animateInfo(0);
       });
+    });
+
+    window.addEventListener('lightbox-close', function () {
+      clearSlides();
     });
 
     setLoadSwipeNeighbors(function () { updateLoading(); });

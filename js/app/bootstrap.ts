@@ -176,7 +176,7 @@ function checkHash() {
   }
 
   // 2. If we are in the right category, check for the specific item
-  if (itemSlug) {
+  if (itemSlug && itemSlug.trim().length > 0) {
     const items = state.currentCategory === 'motion' ? motionProjects : state.activePhotos;
     if (items.length === 0 && state.currentCategory !== 'motion') {
       setTimeout(checkHash, ROUTING_CONFIG.itemRecheckDelay);
@@ -184,7 +184,8 @@ function checkHash() {
     }
 
     for (let i = 0; i < items.length; i++) {
-      if (slugify(items[i].title) === itemSlug) {
+      const itemTitleSlug = slugify(items[i].title);
+      if (itemTitleSlug && itemTitleSlug === itemSlug) {
         // If already open to this item, do nothing
         if (isLbOpen && state.cur === i) return;
 

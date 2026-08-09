@@ -19,8 +19,8 @@ export function showFilmstripIfReady() {
   if (typeof filmstripVisibilityHandlers.show === 'function') filmstripVisibilityHandlers.show();
 }
 
-export function hideFilmstripIfReady() {
-  if (typeof filmstripVisibilityHandlers.hide === 'function') filmstripVisibilityHandlers.hide();
+export function hideFilmstripIfReady(force?: boolean) {
+  if (typeof filmstripVisibilityHandlers.hide === 'function') filmstripVisibilityHandlers.hide(force);
 }
 
 export function clearFilmstripHideTimerIfReady() {

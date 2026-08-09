@@ -4,7 +4,7 @@ import { getCategorySlug, motionProjects } from './media-data.js';
 import { slugify, sanitizeHtml, getPhotoAspectRatio } from './utils.js';
 import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfReady, setFilmstripLiftZoneDisplay } from './core.js';
 import { resetZoom } from './lightbox-zoom.js';
-import { updateFilmstrip } from './filmstrip.js';
+import { updateFilmstrip, stopFsSync } from './filmstrip.js';
 import { WebGLBlurRenderer } from './lightbox-blur.js';
 import { resetLightboxMouseNav, startNavAnimationLoop } from './lightbox-nav.js';
 
@@ -751,6 +751,8 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
   let img = domRefs.lightboxImg;
   let activeGen = ++navGen; // invalidates all pending callbacks
+  stopFsSync({ commit: false });
+  window.dispatchEvent(new Event('lightbox-close'));
   lb.classList.remove('open');
   lb.classList.remove('mode-motion');
   if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
@@ -768,7 +770,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   document.body.classList.remove('lightbox-open');
   document.body.style.overflow = '';
   clearFilmstripHideTimerIfReady();
-  hideFilmstripIfReady();
+  hideFilmstripIfReady(true);
   setFilmstripLiftZoneDisplay('none');
   resetLightboxMouseNav();
   // Hard-clear any zoom blur/scale left on the info wrap
@@ -841,9 +843,9 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     blurPreloadTimer = null;
   }
   // Reset hash to category on close
-  if (window.location.hash && !state.isPopState) {
+  if (window.location.hash) {
     let catSlug = getCategorySlug(state.currentCategory);
-    history.pushState(null, '', '#' + catSlug);
+    history.replaceState(null, '', '#' + catSlug);
   }
 
   // Delay DOM teardown until the opacity fade finishes

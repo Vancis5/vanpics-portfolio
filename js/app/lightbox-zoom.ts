@@ -66,6 +66,7 @@ export function updateZoomTransform(img: any, smooth = true) {
     };
     
     // Apply smooth transition when resetting
+    if (lb) lb.classList.remove('zoom-active');
     if (smooth) {
       img.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       zoomTransitionTimeout = setTimeout(() => {
