@@ -392,6 +392,7 @@ body::after {
   overflow: hidden;
   transform: translateZ(0);
   -webkit-tap-highlight-color: transparent;
+  contain: layout style;
 }
 
 .carousel-item::before {
@@ -406,7 +407,7 @@ body::after {
   box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
   opacity: 1;
   transform: scale(1);
-  transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.34s;
   pointer-events: none;
   z-index: 1;
 }
@@ -414,6 +415,8 @@ body::after {
 .carousel-item.photo-loaded::before {
   opacity: 0;
   transform: scale(0.992);
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .carousel-item.no-transition::before,
@@ -439,8 +442,6 @@ body::after {
 }
 
 .carousel-item img {
-  --base-bright: 0.82;
-  --base-sat: 0.88;
   --pulse-bright: 0;
 
   width: 100%;
@@ -448,7 +449,6 @@ body::after {
   object-fit: cover;
   display: block;
   opacity: 0;
-  filter: brightness(calc(var(--base-bright) + var(--pulse-bright))) saturate(var(--base-sat));
   transition:
     opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
     transform 1.4s cubic-bezier(0.16, 1, 0.3, 1),
@@ -457,6 +457,8 @@ body::after {
   -webkit-user-drag: none;
   position: relative;
   z-index: 2;
+  /* GPU-cache the texture — no per-frame filter work */
+  will-change: transform;
 }
 
 .carousel-item.photo-loaded img {
@@ -496,13 +498,16 @@ body::after {
 }
 
 @media (hover: hover) {
+  .carousel-item img {
+    filter: brightness(0.82) saturate(0.88);
+  }
+
   .carousel-item:hover::after {
     border-color: rgba(var(--text-rgb), 0.18);
   }
 
   .carousel-item:hover img {
-    --base-bright: 1;
-    --base-sat: 1;
+    filter: none;
     transform: scale(1.03);
   }
 }

@@ -133,7 +133,7 @@ setStartLoopsCallback(startLoops);
 const heroObs = new IntersectionObserver(function (entries) {
   state.heroVisible = entries[0].isIntersecting;
   startLoops();
-}, { threshold: 0 });
+}, { threshold: 0, rootMargin: '200% 0px' });
 heroObs.observe(domRefs.hero);
 
 document.addEventListener('visibilitychange', function () {

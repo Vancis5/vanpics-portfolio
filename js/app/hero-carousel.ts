@@ -31,6 +31,9 @@ function computeCruiseSpeed(): number {
 let CRUISE_SPEED = computeCruiseSpeed();
 let EASE_FRAMES = CAROUSEL_CONFIG.easeFrames;
 let START_SPEED_MULT = CAROUSEL_CONFIG.startSpeedMultiplier;
+let cachedFriction = state.isMobile
+  ? (CAROUSEL_CONFIG.friction?.mobile ?? 0.985)
+  : (CAROUSEL_CONFIG.friction?.desktop ?? 0.93);
 let carouselReadyCallback = function () { };
 
 export function setCarouselReadyCallback(callback: (() => void) | null) {
@@ -257,10 +260,7 @@ export function tick(timestamp: number) {
 
     let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22];
 
-    let friction = state.isMobile
-      ? (CAROUSEL_CONFIG.friction?.mobile ?? 0.985)
-      : (CAROUSEL_CONFIG.friction?.desktop ?? 0.93);
-    let decayFactor = Math.pow(friction, frameScale);
+    let decayFactor = Math.pow(cachedFriction, frameScale);
 
     rowState.forEach(function (rowSt, ri) {
       if (ri >= rows.length) return;

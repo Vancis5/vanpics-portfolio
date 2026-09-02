@@ -34,6 +34,17 @@ export function initSmoothScroll(options: any = {}) {
   });
   (window as any).lenis = lenis;
 
+  // Keep Lenis scroll limit in sync when lazy images change document height
+  let lenisResizeTimer: any;
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () {
+      clearTimeout(lenisResizeTimer);
+      lenisResizeTimer = setTimeout(function () {
+        lenis.resize();
+      }, smoothScrollConfig.resizeDebounce);
+    }).observe(document.body);
+  }
+
   function syncLenisToReality() {
     const mainLenis = (window as any).lenis;
     if (!mainLenis || window._scrollbarDragging) return;
