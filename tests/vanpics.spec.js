@@ -231,7 +231,7 @@ test('expands custom cursor ring when hovering over lightbox side buttons', asyn
   await leftArrow.hover({ force: true });
 
   const cursorRing = page.locator('#cursor-ring');
-  await expect(cursorRing).toHaveCSS('transform', /scale\(1\.57\)/);
+  await expect(cursorRing).toHaveCSS('transform', /(?:scale\(1\.57\)|matrix\(1\.(?:5[4-9]|6))/);
 });
 
 

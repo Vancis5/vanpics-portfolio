@@ -10,8 +10,8 @@ let targetProximityRight = 0;
 let currentProximityLeft = 0;
 let currentProximityRight = 0;
 
-let targetArrowY = typeof window !== 'undefined' ? window.innerHeight / 2 : 400;
-let currentArrowY = targetArrowY;
+let targetArrowOffsetY = 0;
+let currentArrowOffsetY = 0;
 
 // Restrained click press & release state
 let clickProgressLeft = 0;
@@ -136,12 +136,12 @@ export function initLightboxMouseNav() {
     const cushion = height * 0.07;
 
     if (Math.abs(dy) <= maxTravel) {
-      targetArrowY = midY + dy;
+      targetArrowOffsetY = dy;
     } else {
       const sign = Math.sign(dy);
       const overflow = Math.abs(dy) - maxTravel;
       const dampedOverflow = cushion * Math.tanh(overflow / cushion);
-      targetArrowY = midY + sign * (maxTravel + dampedOverflow);
+      targetArrowOffsetY = sign * (maxTravel + dampedOverflow);
     }
 
     const target = e.target as HTMLElement | null;
@@ -281,7 +281,7 @@ export function startNavAnimationLoop() {
     // Check idle state — if everything settled and target is 0, stop loop
     const isIdle = targetProximityLeft === 0 && targetProximityRight === 0 &&
       currentProximityLeft < 0.005 && currentProximityRight < 0.005 &&
-      Math.abs(currentArrowY - targetArrowY) < 0.5 &&
+      Math.abs(currentArrowOffsetY - targetArrowOffsetY) < 0.5 &&
       clickStageLeft === 0 && clickStageRight === 0;
 
     if (isIdle) {
@@ -321,7 +321,7 @@ export function startNavAnimationLoop() {
 
     currentProximityLeft += (targetProximityLeft - currentProximityLeft) * alphaProx;
     currentProximityRight += (targetProximityRight - currentProximityRight) * alphaProx;
-    currentArrowY += (targetArrowY - currentArrowY) * alphaY;
+    currentArrowOffsetY += (targetArrowOffsetY - currentArrowOffsetY) * alphaY;
 
     // Instant press -> snappy release click interpolation (Left)
     if (clickStageLeft === 1) {
@@ -357,7 +357,7 @@ export function startNavAnimationLoop() {
     if (glowLeft) {
       const glowOpacity = Math.min(1, pLeft + clickProgressLeft * 0.15);
       glowLeft.style.opacity = glowOpacity.toFixed(3);
-      glowLeft.style.setProperty('--glow-y', `${currentArrowY}px`);
+      glowLeft.style.setProperty('--glow-y', `calc(50% + ${currentArrowOffsetY.toFixed(1)}px)`);
     }
 
     if (arrowLeft) {
@@ -374,7 +374,7 @@ export function startNavAnimationLoop() {
         const translateX = (hoverX + clickRecoilX).toFixed(1);
 
         arrowLeft.style.opacity = opacity;
-        arrowLeft.style.transform = `translate3d(0, calc(${currentArrowY}px - 50%), 0) scale(${scale}) translateX(${translateX}px)`;
+        arrowLeft.style.transform = `translate3d(0, calc(-50% + ${currentArrowOffsetY.toFixed(1)}px), 0) scale(${scale}) translateX(${translateX}px)`;
         arrowLeft.style.filter = `blur(${blur}px)`;
 
         const svg = arrowLeft.querySelector('svg');
@@ -392,7 +392,7 @@ export function startNavAnimationLoop() {
     if (glowRight) {
       const glowOpacity = Math.min(1, pRight + clickProgressRight * 0.15);
       glowRight.style.opacity = glowOpacity.toFixed(3);
-      glowRight.style.setProperty('--glow-y', `${currentArrowY}px`);
+      glowRight.style.setProperty('--glow-y', `calc(50% + ${currentArrowOffsetY.toFixed(1)}px)`);
     }
 
     if (arrowRight) {
@@ -409,7 +409,7 @@ export function startNavAnimationLoop() {
         const translateX = (hoverX + clickRecoilX).toFixed(1);
 
         arrowRight.style.opacity = opacity;
-        arrowRight.style.transform = `translate3d(0, calc(${currentArrowY}px - 50%), 0) scale(${scale}) translateX(${translateX}px)`;
+        arrowRight.style.transform = `translate3d(0, calc(-50% + ${currentArrowOffsetY.toFixed(1)}px), 0) scale(${scale}) translateX(${translateX}px)`;
         arrowRight.style.filter = `blur(${blur}px)`;
 
         const svg = arrowRight.querySelector('svg');

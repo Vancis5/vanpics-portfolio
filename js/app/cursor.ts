@@ -108,10 +108,25 @@ if (isMouseDevice) {
     }
   });
   document.addEventListener('mouseout', function (e) {
-    const target = e.target as HTMLElement;
-    if (target && target.closest(interactiveSelector)) {
-      ring.style.transform = 'translate(-50%,-50%) scale(1)'; ring.style.borderColor = 'rgba(221,216,207,0.25)';
+    const target = e.target as HTMLElement | null;
+    const current = target ? target.closest(interactiveSelector) : null;
+    if (!current) return;
+
+    const related = e.relatedTarget as Node | null;
+    if (related && current.contains(related)) {
+      return;
     }
+    if (related instanceof Element && related.closest(interactiveSelector)) {
+      return;
+    }
+
+    const underPoint = document.elementFromPoint(e.clientX, e.clientY);
+    if (underPoint && underPoint.closest(interactiveSelector)) {
+      return;
+    }
+
+    ring.style.transform = 'translate(-50%,-50%) scale(1)';
+    ring.style.borderColor = 'rgba(221,216,207,0.25)';
   });
 
   // reset ring when lightbox opens — hover context is lost when carousel img is covered

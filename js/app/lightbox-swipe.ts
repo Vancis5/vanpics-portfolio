@@ -142,13 +142,22 @@ if (state.isMobile) {
       let slide = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"]') as HTMLElement;
       let w = imgWrap.offsetWidth || window.innerWidth;
       let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (idx * w);
-      imgWrap.scrollLeft = targetLeft;
+      clearTimeout(snapTimer);
+      state.isManuallyNavigating = true;
       if (slide) {
         imgWrap.scrollTo({
           left: targetLeft,
           behavior: smooth ? 'smooth' : 'instant'
         });
+      } else {
+        imgWrap.scrollLeft = targetLeft;
       }
+      snapTimer = setTimeout(function () {
+        if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
+          imgWrap.scrollLeft = targetLeft;
+        }
+        onSnapSettle(idx);
+      }, smooth ? 350 : 50);
     }
     setMobileScrollToSlideCallback(scrollToSlide);
 
@@ -222,18 +231,17 @@ if (state.isMobile) {
     function onSnapSettle(targetIdx?: number) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1 || window.isAutoRapidScrolling) return;
       if (state.isUserTouching && typeof targetIdx === 'undefined') return;
-      state.isManuallyNavigating = false;
       let w = imgWrap.offsetWidth || window.innerWidth;
       if (!w) return;
 
-      // Only force scrollLeft if explicitly opening or programmatically navigating
-      if (typeof targetIdx === 'number' && (!lbEl.classList.contains('open') || state.isManuallyNavigating)) {
+      if (typeof targetIdx === 'number') {
         let expectedLeft = targetIdx * w;
         if (Math.abs(imgWrap.scrollLeft - expectedLeft) > 5) {
           imgWrap.scrollLeft = expectedLeft;
         }
       }
 
+      state.isManuallyNavigating = false;
       let rawNearest = Math.round(imgWrap.scrollLeft / w);
       let idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, state.activePhotos.length - 1));
 
@@ -303,11 +311,13 @@ if (state.isMobile) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
-      if (!state.isManuallyNavigating) onSnapSettle();
+      state.isManuallyNavigating = false;
+      onSnapSettle();
     });
 
     imgWrap.addEventListener('scroll', function () {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
+      if (state.isManuallyNavigating) return;
       clearTimeout(snapTimer);
       snapTimer = setTimeout(onSnapSettle, 150);
       let w = imgWrap.offsetWidth;
