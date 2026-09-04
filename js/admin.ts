@@ -1177,11 +1177,19 @@ function openEditModal(type: string, id: string | number) {
   const placeholderPreview = getDocEl('edit-media-preview-placeholder');
 
   if (type === 'photo') {
+    const photoSrc = item.thumb || item.src;
     if (imgPreview) {
-      imgPreview.src = item.thumb || item.src;
-      imgPreview.style.display = '';
+      if (photoSrc) {
+        imgPreview.src = photoSrc;
+        imgPreview.style.display = '';
+      } else {
+        imgPreview.style.display = 'none';
+      }
     }
-    if (placeholderPreview) placeholderPreview.style.display = 'none';
+    if (placeholderPreview) {
+      placeholderPreview.style.display = photoSrc ? 'none' : '';
+      if (!photoSrc) placeholderPreview.textContent = 'photo preview';
+    }
   } else {
     if (imgPreview) {
       if (item.poster) {
@@ -1192,8 +1200,8 @@ function openEditModal(type: string, id: string | number) {
       }
     }
     if (placeholderPreview) {
-      placeholderPreview.style.display = '';
-      placeholderPreview.textContent = 'video asset';
+      placeholderPreview.style.display = item.poster ? 'none' : '';
+      if (!item.poster) placeholderPreview.textContent = 'video asset';
     }
   }
 

@@ -161,13 +161,21 @@ html.fonts-ready .loader-brand {
   justify-content: center;
 }
 
+.loader-status-text {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 html.fonts-ready .loader-status {
   animation: loaderStatusFade 0.8s ease 2s forwards;
 }
 
 .loader-dots {
+  position: absolute;
+  left: 100%;
   display: inline-flex;
-  margin-left: 1px;
+  margin-left: 2px;
 }
 
 .loader-dots span {

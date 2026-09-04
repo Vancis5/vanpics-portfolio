@@ -1235,13 +1235,13 @@ body::after {
   width: 26px;
   height: 26px;
   color: var(--text);
-  /* Visually center the play triangle using translate instead of margin for better scaling stability */
-  transform: translateX(1px);
+  /* Optical centering for right-pointing play triangle */
+  transform: translateX(2px);
   transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
 }
 
 #motion-player-shell .motion-start-button:hover .motion-start-button__icon {
-  transform: translateX(1px) scale(1.15);
+  transform: translateX(2px) scale(1.15);
 }
 
 #motion-player-shell .motion-player-prime:not(.is-started) .media-controls {
