@@ -240,7 +240,7 @@ test('stretches and shifts cursor ring in direction of filmstrip mouse wheel scr
   await expect(page.locator('#lightbox')).toHaveClass(/open/);
 
   const filmstripWrap = page.locator('#filmstrip-wrap');
-  await filmstripWrap.hover();
+  await filmstripWrap.hover({ force: true });
   await expect(filmstripWrap).toHaveClass(/visible/);
 
   const cursorRing = page.locator('#cursor-ring');
@@ -347,7 +347,8 @@ test('morphs custom cursor into zoom icon when hovering onto picture in lightbox
   await expect(cursorDot).toHaveCSS('opacity', '0');
   await expect(cursorRing).toHaveCSS('border-top-color', /rgba\(0,\s*0,\s*0,\s*0\)|transparent/);
 
-  // SVG path has morphed into zoom icon
+  // SVG path has morphed into zoom icon and stroke-width is consistent
+  await expect(morphSvg).toHaveAttribute('stroke-width', '1.2');
   await expect.poll(async () => {
     return await morphPath.evaluate((el) => {
       const d = el.getAttribute('d') || '';
@@ -366,11 +367,36 @@ test('morphs custom cursor into zoom icon when hovering onto picture in lightbox
     return d.length > 50;
   }, { timeout: 3000 }).toBe(true);
 
+  // Hold Spacebar while zoomed -> morphs into hand/pan icon
+  await page.keyboard.down('Space');
+  await expect(lightboxImg).toHaveClass(/is-panning/);
+  await expect(cursorRing).toHaveClass(/morph-active/);
+  await expect.poll(async () => {
+    const d = await morphPath.evaluate((el) => el.getAttribute('d') || '');
+    return d.length > 50;
+  }, { timeout: 3000 }).toBe(true);
+
+  // Release Spacebar -> returns to zoom-out
+  await page.keyboard.up('Space');
+  await expect(lightboxImg).not.toHaveClass(/is-panning/);
+  await expect(cursorRing).toHaveClass(/morph-active/);
+
   // Move cursor away from the picture onto the close button
   const closeBtn = page.locator('#lightbox-close');
   await closeBtn.hover({ force: true });
 
-  // Cursor morphs back to neutral circle and morph-active class is removed
+  // Cursor morphs back to neutral circle, morph-active class is removed, center dot is restored
   await expect(cursorRing).not.toHaveClass(/morph-active/, { timeout: 3000 });
   await expect(cursorDot).toHaveCSS('opacity', '1');
+  await expect(cursorDot).not.toHaveClass(/morph-hidden/);
+
+  // Re-enter picture and close lightbox via Escape key
+  await lightboxImg.hover({ force: true });
+  await expect(cursorDot).toHaveCSS('opacity', '0');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+
+  // On lightbox close, center dot must be immediately restored
+  await expect(cursorDot).toHaveCSS('opacity', '1');
+  await expect(cursorDot).not.toHaveClass(/morph-hidden/);
 });

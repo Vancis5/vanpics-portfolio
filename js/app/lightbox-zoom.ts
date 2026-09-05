@@ -13,6 +13,8 @@ const LUCIDE_GRABBING = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org
 
 // Continuous Zoom Physics Framework
 let isDraggingZoom = false;
+let isMouseDownOnZoomed = false;
+let isPanningActive = false;
 let lastDragX: number | null = null;
 let lastDragY: number | null = null;
 let lastTapTime = 0;
@@ -22,6 +24,19 @@ let dragDistance = 0;
 let startX = 0;
 let startY = 0;
 let activeRawLoader: HTMLImageElement | null = null;
+
+export function dispatchCursorZoomState() {
+  const isZoomed = state.lbZoomLevel > 1;
+  const isPan = isZoomed && (isSpacePressed || isDraggingZoom || isMouseDownOnZoomed || isPanningActive);
+  const mode = isPan ? 'pan' : (isZoomed ? 'zoom-out' : 'zoom-in');
+  const img = (domRefs.lightboxImg || document.getElementById('lightbox-img')) as HTMLImageElement | null;
+  if (img) {
+    img.classList.toggle('is-panning', isPan);
+  }
+  window.dispatchEvent(new CustomEvent('lightbox-cursor-mode', {
+    detail: { mode, isZoomed, isPan }
+  }));
+}
 
 export function updateZoomTransform(img: any, smooth = true) {
   if (state.currentLightboxIsMotion) return;
@@ -81,6 +96,8 @@ export function updateZoomTransform(img: any, smooth = true) {
     // reset cursor
     img.style.removeProperty('cursor');
     img.classList.remove('zoomed');
+    window.dispatchEvent(new CustomEvent('lightbox-zoom-change', { detail: { isZoomed: false } }));
+    dispatchCursorZoomState();
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = '0';
     let info = domRefs.lightboxInfoWrap;
@@ -158,10 +175,16 @@ export function updateZoomTransform(img: any, smooth = true) {
     } else {
       img.classList.add('zoomed');
     }
+    window.dispatchEvent(new CustomEvent('lightbox-zoom-change', { detail: { isZoomed: true } }));
+    dispatchCursorZoomState();
 
     // zoom cursor
-    if (!state.isMobile) img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
-    if (isDraggingZoom) img.style.setProperty('cursor', LUCIDE_GRABBING, 'important');
+    if (!state.isMobile && !document.documentElement.classList.contains('custom-cursor-enabled')) {
+      img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
+    }
+    if (isDraggingZoom && !document.documentElement.classList.contains('custom-cursor-enabled')) {
+      img.style.setProperty('cursor', LUCIDE_GRABBING, 'important');
+    }
 
     let dark = domRefs.lightboxZoomDarken;
     if (dark) dark.style.opacity = String(Math.min(0.85, 0.25 + (state.lbZoomLevel - 1) * 0.45));
@@ -277,8 +300,6 @@ if (domRefs.lightboxImg) {
 
 // Desktop mouse panning - only when left-click is held OR spacebar is pressed
 let mWrap = domRefs.lightboxImgWrap;
-let isMouseDownOnZoomed = false;
-let isPanningActive = false;
 
 mWrap.addEventListener('mousedown', function (e) {
   if (state.isMobile || state.lbZoomLevel <= 1) return;
@@ -291,6 +312,7 @@ mWrap.addEventListener('mousedown', function (e) {
   startX = e.clientX;
   startY = e.clientY;
   dragDistance = 0;
+  dispatchCursorZoomState();
 });
 
 window.addEventListener('mousemove', function (e) {
@@ -303,9 +325,12 @@ window.addEventListener('mousemove', function (e) {
     lastDragY = null;
     let img = domRefs.lightboxImg;
     if (img && state.lbZoomLevel > 1) {
-      img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
+      if (!document.documentElement.classList.contains('custom-cursor-enabled')) {
+        img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
+      }
       checkAutoZoomOut(img);
     }
+    dispatchCursorZoomState();
   }
 
   if (!isMouseDownOnZoomed || state.lbZoomLevel <= 1) {
@@ -323,7 +348,10 @@ window.addEventListener('mousemove', function (e) {
     isPanningActive = true;
     isDraggingZoom = true;
     let img = domRefs.lightboxImg;
-    if (img) img.style.setProperty('cursor', LUCIDE_GRABBING, 'important');
+    if (img && !document.documentElement.classList.contains('custom-cursor-enabled')) {
+      img.style.setProperty('cursor', LUCIDE_GRABBING, 'important');
+    }
+    dispatchCursorZoomState();
   }
 
   if (!isPanningActive) return;
@@ -355,9 +383,12 @@ window.addEventListener('mouseup', function () {
     lastDragY = null;
     let img = domRefs.lightboxImg;
     if (img && state.lbZoomLevel > 1) {
-      img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
+      if (!document.documentElement.classList.contains('custom-cursor-enabled')) {
+        img.style.setProperty('cursor', isSpacePressed ? LUCIDE_GRAB : LUCIDE_ZOOM_OUT, 'important');
+      }
       checkAutoZoomOut(img);
     }
+    dispatchCursorZoomState();
   }
 });
 
@@ -369,29 +400,35 @@ window.addEventListener('keydown', function (e) {
   );
   if (isTyping) return;
 
-  if (e.code === 'Space' && state.lbZoomLevel > 1) {
+  if ((e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') && state.lbZoomLevel > 1) {
     e.preventDefault();
     if (!isSpacePressed) {
       isSpacePressed = true;
       lastDragX = null;
       lastDragY = null;
       let img = domRefs.lightboxImg;
-      if (img) img.style.setProperty('cursor', LUCIDE_GRAB, 'important');
+      if (img && !document.documentElement.classList.contains('custom-cursor-enabled')) {
+        img.style.setProperty('cursor', LUCIDE_GRAB, 'important');
+      }
+      dispatchCursorZoomState();
     }
   }
-});
+}, { capture: true });
 window.addEventListener('keyup', function (e) {
-  if (e.code === 'Space') {
+  if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
     isSpacePressed = false;
     lastDragX = null;
     lastDragY = null;
     let img = domRefs.lightboxImg;
     if (img && state.lbZoomLevel > 1) {
-      img.style.setProperty('cursor', LUCIDE_ZOOM_OUT, 'important');
+      if (!document.documentElement.classList.contains('custom-cursor-enabled')) {
+        img.style.setProperty('cursor', LUCIDE_ZOOM_OUT, 'important');
+      }
       checkAutoZoomOut(img);
     }
+    dispatchCursorZoomState();
   }
-});
+}, { capture: true });
 
 
 // Desktop: Mouse wheel / Touchpad pinch -> Zoom

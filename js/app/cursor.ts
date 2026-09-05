@@ -1,4 +1,38 @@
 import { domRefs } from './dom.js';
+import { createMorph } from 'morphicons/dom';
+import { SPRING_PRESETS, type IconNode } from 'morphicons';
+
+const circleIcon: IconNode = [
+  ['circle', { cx: 12, cy: 12, r: 10.8 }]
+];
+
+const zoomInIcon: IconNode = [
+  ['circle', { cx: 11, cy: 11, r: 8 }],
+  ['line', { x1: 21, y1: 21, x2: 16.65, y2: 16.65 }],
+  ['line', { x1: 11, y1: 8, x2: 11, y2: 14 }],
+  ['line', { x1: 8, y1: 11, x2: 14, y2: 11 }]
+];
+
+const zoomOutIcon: IconNode = [
+  ['circle', { cx: 11, cy: 11, r: 8 }],
+  ['line', { x1: 21, y1: 21, x2: 16.65, y2: 16.65 }],
+  ['line', { x1: 8, y1: 11, x2: 14, y2: 11 }]
+];
+
+const handIcon: IconNode = [
+  ['path', { d: 'M18 8a2 2 0 0 1 2 2v4a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15' }],
+  ['path', { d: 'M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0' }],
+  ['path', { d: 'M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2' }],
+  ['path', { d: 'M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8' }]
+];
+
+type ZoomMorphMode = 'zoom-in' | 'zoom-out' | 'pan';
+
+function getIconForMode(mode: ZoomMorphMode): IconNode {
+  if (mode === 'pan') return handIcon;
+  if (mode === 'zoom-out') return zoomOutIcon;
+  return zoomInIcon;
+}
 
 // CURSOR - mouse only
 let isMouseDevice = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -11,8 +45,49 @@ if (isMouseDevice) {
   let isDraggingScrollbar = false;
   let ringRafId: number | null = null;
 
+  // Mount morph SVG inside ring
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const morphSvg = document.createElementNS(svgNS, 'svg');
+  morphSvg.setAttribute('id', 'cursor-morph-svg');
+  morphSvg.setAttribute('viewBox', '0 0 24 24');
+  morphSvg.setAttribute('fill', 'none');
+  morphSvg.setAttribute('stroke', 'currentColor');
+  morphSvg.setAttribute('stroke-width', '1.2');
+  morphSvg.setAttribute('stroke-linecap', 'round');
+  morphSvg.setAttribute('stroke-linejoin', 'round');
+
+  const morphPath = document.createElementNS(svgNS, 'path');
+  morphSvg.appendChild(morphPath);
+  ring.appendChild(morphSvg);
+
+  const morph = createMorph(morphPath, circleIcon);
+
   // Fade out when cursor leaves the viewport — use both document and documentElement for cross-browser coverage
   let ringScale = 1;
+  let isMorphActive = false;
+  let morphSettleTimeout: any = null;
+
+  function setZoomMorph(active: boolean, mode: ZoomMorphMode = 'zoom-in') {
+    if (!morph) return;
+    clearTimeout(morphSettleTimeout);
+    if (active) {
+      isMorphActive = true;
+      ring.classList.add('morph-active');
+      cursor.classList.add('morph-hidden');
+      morph.morphTo(getIconForMode(mode), SPRING_PRESETS.snappy);
+    } else {
+      if (!isMorphActive) return;
+      isMorphActive = false;
+      cursor.style.opacity = '1';
+      cursor.classList.remove('morph-hidden');
+      morph.morphTo(circleIcon, SPRING_PRESETS.snappy);
+      morphSettleTimeout = setTimeout(() => {
+        if (!isMorphActive) {
+          ring.classList.remove('morph-active');
+        }
+      }, 280);
+    }
+  }
 
   // Filmstrip wheel stretch physics
   let fsStretchVelocity = 0;
@@ -42,6 +117,7 @@ if (isMouseDevice) {
   }
 
   function onFilmstripWheel(e: WheelEvent) {
+    if (isMorphActive) return;
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (Math.abs(delta) < 0.1) return;
 
@@ -79,9 +155,12 @@ if (isMouseDevice) {
     stopRingAnimation();
   }
   function showCursor() {
+    if (!isMorphActive) {
+      cursor.style.opacity = '1';
+    }
+    ring.style.opacity = '1';
     if (cursorVisible) return;
     cursorVisible = true;
-    cursor.style.opacity = '1'; ring.style.opacity = '1';
     startRingAnimation();
   }
   function animateRing() {
@@ -128,7 +207,9 @@ if (isMouseDevice) {
         ring.style.marginLeft = '';
         ring.style.transform = '';
         ring.style.scale = String(ringScale);
-        ring.style.borderColor = ringScale > 1 ? 'rgba(221,216,207,0.4)' : 'rgba(221,216,207,0.25)';
+        if (!isMorphActive) {
+          ring.style.borderColor = ringScale > 1 ? 'rgba(221,216,207,0.4)' : 'rgba(221,216,207,0.25)';
+        }
         fsCurrentWidth = 28;
         fsCurrentOffset = 0;
       }
@@ -204,10 +285,21 @@ if (isMouseDevice) {
     cursor.style.scale = '0.6';
   });
 
+  const zoomableSelector = '.zoomable, #lightbox-img';
+
   // Delegated hover for cursor ring — works on dynamically added cards, carousel imgs, navbar, etc.
   const interactiveSelector = 'button, a, [role="button"], .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .filmstrip-thumb, .lightbox-nav-arrow';
   document.addEventListener('mouseover', function (e) {
     const target = e.target as HTMLElement;
+    if (target && target.closest(zoomableSelector)) {
+      const img = target.closest(zoomableSelector) as HTMLElement;
+      const lb = document.getElementById('lightbox');
+      const isZoomed = img.classList.contains('zoomed') || (lb?.classList.contains('zoom-active') ?? false);
+      const isPan = isZoomed && img.classList.contains('is-panning');
+      const mode: ZoomMorphMode = isPan ? 'pan' : (isZoomed ? 'zoom-out' : 'zoom-in');
+      setZoomMorph(true, mode);
+      return;
+    }
     if (target && target.closest(interactiveSelector)) {
       ringScale = 1.57;
       ring.style.scale = '1.57';
@@ -217,6 +309,19 @@ if (isMouseDevice) {
 
   document.addEventListener('mouseout', function (e) {
     const target = e.target as HTMLElement | null;
+    const currentZoomable = target ? target.closest(zoomableSelector) : null;
+    if (currentZoomable) {
+      const related = e.relatedTarget as Node | null;
+      if (related && currentZoomable.contains(related)) {
+        return;
+      }
+      if (related instanceof Element && related.closest(zoomableSelector)) {
+        return;
+      }
+      setZoomMorph(false);
+      return;
+    }
+
     const current = target ? target.closest(interactiveSelector) : null;
     if (!current) return;
 
@@ -236,13 +341,38 @@ if (isMouseDevice) {
     ring.style.borderColor = 'rgba(221,216,207,0.25)';
   }, { passive: true });
 
+  window.addEventListener('lightbox-cursor-mode', function (e: any) {
+    if (isMorphActive) {
+      const mode = (e.detail?.mode || 'zoom-in') as ZoomMorphMode;
+      morph.morphTo(getIconForMode(mode), SPRING_PRESETS.snappy);
+    }
+  });
+
+  window.addEventListener('lightbox-zoom-change', function (e: any) {
+    if (isMorphActive) {
+      const isZoomed = !!e.detail?.isZoomed;
+      morph.morphTo(isZoomed ? zoomOutIcon : zoomInIcon, SPRING_PRESETS.snappy);
+    }
+  });
+
   // reset ring when lightbox opens or closes — hover context is lost when carousel img is covered
   window.addEventListener('lightbox-open', function () {
     resetFilmstripStretch();
+    setZoomMorph(false);
+    cursor.style.opacity = '1';
+    cursor.classList.remove('morph-hidden');
     ringScale = 1;
     ring.style.scale = '1';
     ring.style.borderColor = 'rgba(221,216,207,0.25)';
   });
-  window.addEventListener('lightbox-close', resetFilmstripStretch);
+  window.addEventListener('lightbox-close', function () {
+    resetFilmstripStretch();
+    setZoomMorph(false);
+    cursor.style.opacity = '1';
+    cursor.classList.remove('morph-hidden');
+    ringScale = 1;
+    ring.style.scale = '1';
+    ring.style.borderColor = 'rgba(221,216,207,0.25)';
+  });
   window.addEventListener('hide-cursor', hideCursor);
 }
