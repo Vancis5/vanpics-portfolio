@@ -145,18 +145,17 @@ export function initLightboxMouseNav() {
     }
 
     const target = e.target as HTMLElement | null;
-    if (target) {
-      const isArrow = target.closest('.lightbox-nav-arrow');
-      const interactive = target.closest(
-        '#lightbox-img, .zoomable, #lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
-      );
-      if (interactive && !isArrow) {
-        targetProximityLeft = 0;
-        targetProximityRight = 0;
-        clearTimeout(navIdleTimeout);
-        stopHoldRepeat();
-        return;
-      }
+    const isArrow = target ? target.closest('.lightbox-nav-arrow') : null;
+    const interactive = target ? target.closest(
+      '#lightbox-img, .zoomable, #lightbox-close, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
+    ) : null;
+
+    if (interactive && !isArrow) {
+      targetProximityLeft = 0;
+      targetProximityRight = 0;
+      clearTimeout(navIdleTimeout);
+      stopHoldRepeat();
+      return;
     }
 
     const width = window.innerWidth;
@@ -200,14 +199,16 @@ export function initLightboxMouseNav() {
     if (!items || items.length <= 1) return;
     if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) return;
 
+    const infoWrap = domRefs.lightboxInfoWrap;
+    const infoRect = infoWrap ? infoWrap.getBoundingClientRect() : null;
+    const isOverInfoColumn = !!(infoRect && infoRect.width > 0 && e.clientX >= infoRect.left && e.clientX <= infoRect.right);
+
     const target = e.target as HTMLElement | null;
-    if (target) {
-      const isArrow = target.closest('.lightbox-nav-arrow');
-      const interactive = target.closest(
-        '#lightbox-img, .zoomable, #lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
-      );
-      if (interactive && !isArrow) return;
-    }
+    const isArrow = target ? target.closest('.lightbox-nav-arrow') : null;
+    const interactive = target ? target.closest(
+      '#lightbox-img, .zoomable, #lightbox-close, #lightbox-info-wrap, #filmstrip-wrap, #filmstrip-lift-zone, .media-controls, button, a, input, video, media-player, media-controls'
+    ) : null;
+    if ((interactive || isOverInfoColumn) && !isArrow) return;
 
     if (currentProximityLeft > 0.08) {
       e.preventDefault();
