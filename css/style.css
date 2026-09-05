@@ -964,6 +964,10 @@ body::after {
   .photo-card:hover .photo-card-overlay {
     opacity: 1;
   }
+
+  .photo-card:hover .photo-card-overlay::before {
+    opacity: 0;
+  }
 }
 
 @media (hover: none) {
@@ -989,7 +993,22 @@ body::after {
   z-index: 3;
 }
 
+.photo-card-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #555555;
+  mix-blend-mode: color;
+  opacity: 0.18;
+  pointer-events: none;
+  transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
 .photo-card-title {
+  position: relative;
+  z-index: 2;
   font-size: clamp(0.6rem, 2.5vw, 0.8rem);
   font-weight: 400;
   font-style: italic;
@@ -998,6 +1017,8 @@ body::after {
 }
 
 .photo-card-date {
+  position: relative;
+  z-index: 2;
   font-family: 'DM Mono', monospace;
   font-weight: 400;
   font-size: clamp(0.4rem, 1.5vw, 0.5rem);

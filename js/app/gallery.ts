@@ -13,7 +13,7 @@ let gallerySuppressScrollRevealUntil = 0;
 let galleryRevealRepairTimer: any = null;
 let galleryTabSwitchSettleTimer: any = null;
 const GALLERY_REVEAL_CLEANUP_MS = 850;
-const GALLERY_REVEAL_IMAGE_WAIT_MS = 1400;
+const GALLERY_REVEAL_IMAGE_WAIT_MS = 120;
 const GALLERY_TAB_SWITCH_SETTLE_MS = 920;
 
 function clearCardRevealTimers(card: HTMLElement) {
@@ -81,14 +81,12 @@ function playCardScrollReveal(card: HTMLElement) {
 
 function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
-  let viewportBottom = window.innerHeight || document.documentElement.clientHeight || 0;
-  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let threshold = scrollY + viewportBottom + 24;
+  let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
   root.querySelectorAll('.photo-card').forEach(function (cardEl) {
     const card = cardEl as HTMLElement;
-    let cardTop = card.offsetTop;
-    if (cardTop > threshold) {
+    const rect = card.getBoundingClientRect();
+    if (rect.top >= viewportHeight) {
       clearCardRevealTimers(card);
       delete card.dataset.revealPending;
       delete card.dataset.revealCleanupTimer;
@@ -100,11 +98,9 @@ function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
 }
 
 function isCardInViewport(card: HTMLElement) {
-  let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  let rect = card.getBoundingClientRect();
   let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  let cardTop = card.offsetTop;
-  let cardHeight = card.offsetHeight || 300;
-  return (cardTop + cardHeight) > scrollY && cardTop < (scrollY + viewportHeight);
+  return rect.bottom > 0 && rect.top < viewportHeight;
 }
 
 function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {
@@ -154,18 +150,44 @@ let cardObserver = new IntersectionObserver(function (entries) {
       card.classList.remove('revealed');
     }
   });
-}, { rootMargin: '0px 0px -60px 0px' });
+}, { rootMargin: '0px 0px -30px 0px' });
+
+let galleryPreloadObserver = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
+    if (entry.isIntersecting) {
+      let card = entry.target as HTMLElement;
+      let img = card.querySelector<HTMLImageElement>('img');
+      if (img) {
+        if (img.loading !== 'eager') {
+          img.loading = 'eager';
+        }
+        if (!img.complete) {
+          const preloader = new Image();
+          preloader.src = img.src;
+        }
+      }
+      galleryPreloadObserver.unobserve(card);
+    }
+  });
+}, { rootMargin: '1600px 0px 1600px 0px' });
 
 export function revealCards(scope: any, options?: any) {
   options = options || {};
   let root = scope || getActiveGalleryPanel() || document;
+  let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
   root.querySelectorAll('.photo-card').forEach(function (cardEl: any) {
     const card = cardEl as HTMLElement;
-    if (options.immediate) showCardWithoutScrollReveal(card);
+    const rect = card.getBoundingClientRect();
+    if (rect.top < viewportHeight) {
+      showCardWithoutScrollReveal(card);
+    } else {
+      card.classList.add('pending-reveal');
+      card.classList.remove('revealed');
+    }
     cardObserver.observe(card);
+    galleryPreloadObserver.observe(card);
   });
-
-  if (!options.immediate) armCardsBelowViewport(root);
 }
 
 function settleGalleryTabSwitch(panel: HTMLElement | null) {
@@ -590,6 +612,7 @@ export function buildMasonry(category?: string) {
 
   panel.querySelectorAll('.photo-card').forEach(function (card) {
     cardObserver.unobserve(card);
+    galleryPreloadObserver.unobserve(card);
   });
 
   panel.innerHTML = '';
@@ -646,7 +669,10 @@ export function buildMasonry(category?: string) {
 
     imgEl.src = thumbPath;
     imgEl.alt = p.title || "video";
-    imgEl.loading = i < 4 ? 'eager' : 'lazy';
+    imgEl.loading = i < 16 ? 'eager' : 'lazy';
+    if (i < 8) {
+      (imgEl as any).fetchPriority = 'high';
+    }
     imgEl.decoding = 'async';
 
     setupImagePlaceholderFallback(imgEl);
