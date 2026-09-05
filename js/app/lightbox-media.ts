@@ -60,13 +60,17 @@ export function prepareLightboxPhoto(p: Photo) {
   // ── Cache hit: image already decoded, swap instantly with no placeholder ──
   const cached = getImageCacheEntry(p.src);
   if (cached && (cached.decoded || (cached.img && cached.img.complete && cached.img.naturalWidth > 0))) {
-    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded', 'photo-error');
+    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
+    wrap.classList.add('photo-loaded');
     img.removeAttribute('data-loading-photo');
     img.src = p.src;
+    img.style.opacity = '1';
+    img.style.filter = '';
     if (cached.img.naturalWidth && cached.img.naturalHeight) {
       let r = cached.img.naturalWidth / cached.img.naturalHeight;
       wrap.style.setProperty('--lightbox-photo-ratio', String(r));
     }
+    clearLightboxPhotoPlaceholder(token);
     updateMobileImgWrapHeight();
     return;
   }
