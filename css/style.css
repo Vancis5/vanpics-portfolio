@@ -457,8 +457,6 @@ body::after {
   -webkit-user-drag: none;
   position: relative;
   z-index: 2;
-  /* GPU-cache the texture — no per-frame filter work */
-  will-change: transform;
 }
 
 .carousel-item.photo-loaded img {

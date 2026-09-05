@@ -16,18 +16,6 @@ const GALLERY_REVEAL_CLEANUP_MS = 850;
 const GALLERY_REVEAL_IMAGE_WAIT_MS = 1400;
 const GALLERY_TAB_SWITCH_SETTLE_MS = 920;
 
-const cardLayerObserver = new IntersectionObserver(function (entries) {
-  entries.forEach(function (entry) {
-    const img = entry.target.querySelector('.photo-card-img') as HTMLElement | null;
-    if (!img) return;
-    if (entry.isIntersecting) {
-      img.style.willChange = 'transform';
-    } else {
-      img.style.willChange = 'auto';
-    }
-  });
-}, { rootMargin: '200px' });
-
 function clearCardRevealTimers(card: HTMLElement) {
   if (card.dataset.revealCleanupTimer) {
     window.clearTimeout(Number(card.dataset.revealCleanupTimer));
@@ -712,8 +700,6 @@ export function buildMasonry(category?: string) {
     card.appendChild(imgEl);
     card.appendChild(overlay);
 
-    cardLayerObserver.observe(card);
-
     card.dataset.idx = String(i);
     card.dataset.category = category;
 
@@ -795,6 +781,29 @@ if (masonry) {
     if (keyEvt.key === 'Enter' || keyEvt.key === ' ') {
       keyEvt.preventDefault();
       card.click();
+    }
+  });
+
+  // JIT proactive layer promotion: promotes precisely 1 card before animation starts,
+  // cleans up on transitionend or on pointerleave fallback if cursor leaves early.
+  masonry.addEventListener('pointerenter', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card');
+    if (!card) return;
+    const img = card.querySelector('.photo-card-img') as HTMLElement | null;
+    if (img) img.style.willChange = 'transform';
+  }, true);
+
+  masonry.addEventListener('pointerleave', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card');
+    if (!card) return;
+    const img = card.querySelector('.photo-card-img') as HTMLElement | null;
+    if (img) img.style.willChange = 'auto';
+  }, true);
+
+  masonry.addEventListener('transitionend', function (e) {
+    const target = e.target as HTMLElement | null;
+    if (target && target.classList.contains('photo-card-img')) {
+      target.style.willChange = 'auto';
     }
   });
 }

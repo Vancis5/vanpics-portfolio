@@ -131,16 +131,48 @@ export function startLoops() {
 window.addEventListener('app-start-loops', startLoops);
 setStartLoopsCallback(startLoops);
 
-const heroObs = new IntersectionObserver(function (entries) {
-  state.heroVisible = entries[0].isIntersecting;
+// Keep hero carousel running continuously while scrolling to prevent GPU texture eviction/stutter,
+// but halt it when lightbox is open or page is hidden to conserve resources.
+state.heroVisible = true;
+startLoops();
+
+window.addEventListener('lightbox-open', function () {
+  state.heroVisible = false;
+});
+
+window.addEventListener('lightbox-close', function () {
+  state.heroVisible = true;
   startLoops();
-}, { threshold: 0, rootMargin: '200% 0px' });
-heroObs.observe(domRefs.hero);
+});
 
 document.addEventListener('visibilitychange', function () {
   state.pageVisible = !document.hidden;
   startLoops();
 });
+
+// JIT proactive layer promotion for hero carousel hover scale
+if (domRefs.hero) {
+  domRefs.hero.addEventListener('pointerenter', function (e) {
+    const item = (e.target as HTMLElement).closest('.carousel-item');
+    if (!item) return;
+    const img = item.querySelector('img') as HTMLElement | null;
+    if (img) img.style.willChange = 'transform';
+  }, true);
+
+  domRefs.hero.addEventListener('pointerleave', function (e) {
+    const item = (e.target as HTMLElement).closest('.carousel-item');
+    if (!item) return;
+    const img = item.querySelector('img') as HTMLElement | null;
+    if (img) img.style.willChange = 'auto';
+  }, true);
+
+  domRefs.hero.addEventListener('transitionend', function (e) {
+    const target = e.target as HTMLElement | null;
+    if (target && target.tagName === 'IMG' && target.closest('.carousel-item')) {
+      target.style.willChange = 'auto';
+    }
+  });
+}
 
 // Deep Link Initial Load
 let _isInitialDeepLink = true; // true only for the very first checkHash call (from renderUI)
