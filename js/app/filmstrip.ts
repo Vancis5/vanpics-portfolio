@@ -585,14 +585,6 @@ function initFilmstripDrag() {
   }, true);
 }
 
-window.addEventListener('filmstrip-show', () => {
-  showFilmstrip();
-});
-
-window.addEventListener('filmstrip-hide', (e: any) => {
-  hideFilmstrip(e.detail?.force);
-});
-
 setFilmstripVisibilityHandlers({
   show: showFilmstrip,
   hide: hideFilmstrip

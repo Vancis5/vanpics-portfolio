@@ -5,7 +5,15 @@ const _IMG_CACHE_MAX = 30;
 
 export function cacheImage(src: string, eagerDecode: boolean = false) {
   if (!src) return null;
-  if (_imgCache.has(src)) return _imgCache.get(src)!;
+  let cached = _imgCache.get(src);
+  if (cached) {
+    if (eagerDecode && !cached.decoded && cached.img && cached.img.decode) {
+      cached.img.decode().then(() => {
+        if (cached && cached.img.naturalWidth > 0) cached.decoded = true;
+      }).catch(() => {});
+    }
+    return cached;
+  }
   if (_imgCache.size >= _IMG_CACHE_MAX) {
     _imgCache.delete(_imgCache.keys().next().value!); // evict oldest
   }

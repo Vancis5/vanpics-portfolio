@@ -59,20 +59,15 @@ export function prepareLightboxPhoto(p: Photo) {
 
   // ── Cache hit: image already decoded, swap instantly with no placeholder ──
   const cached = getImageCacheEntry(p.src);
-  if (cached && cached.decoded) {
+  if (cached && (cached.decoded || (cached.img && cached.img.complete && cached.img.naturalWidth > 0))) {
     wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded', 'photo-error');
     img.removeAttribute('data-loading-photo');
-    img.style.opacity = '0';
     img.src = p.src;
     if (cached.img.naturalWidth && cached.img.naturalHeight) {
       let r = cached.img.naturalWidth / cached.img.naturalHeight;
       wrap.style.setProperty('--lightbox-photo-ratio', String(r));
     }
     updateMobileImgWrapHeight();
-    setTimeout(() => {
-      if (token !== photoPlaceholderToken) return;
-      img.style.opacity = '1';
-    }, 20);
     return;
   }
 
@@ -82,12 +77,7 @@ export function prepareLightboxPhoto(p: Photo) {
   wrap.classList.add('photo-loading');
   if (previewSrc) {
     img.removeAttribute('data-loading-photo');
-    img.style.opacity = '0';
     img.src = previewSrc;
-    setTimeout(() => {
-      if (token !== photoPlaceholderToken) return;
-      img.style.opacity = '1';
-    }, 20);
   } else {
     wrap.classList.add('photo-placeholder-visible');
     img.dataset.loadingPhoto = 'true';
@@ -95,7 +85,7 @@ export function prepareLightboxPhoto(p: Photo) {
 
   // Load and decode the image entirely off-DOM in the background cache.
   // This prevents the DOM injection from stalling the CSS entrance animations.
-  let cacheEntry = cacheImage(p.src);
+  let cacheEntry = cacheImage(p.src, true);
 
   if (cacheEntry && cacheEntry.decodePromise) {
     cacheEntry.decodePromise.then(() => {

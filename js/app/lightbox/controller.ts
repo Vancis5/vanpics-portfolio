@@ -38,19 +38,25 @@ export function loadSwipeNeighbors() {
   let currentSet = getCurrentLightboxItems();
   let len = currentSet.length;
 
-  // Preload & cache ±2 high-res neighbors (to save bandwidth)
-  [-2, -1, 1, 2].forEach(function (offset) {
+  // Preload & eagerly decode ±1 immediate neighbor off-thread for instant 60fps transitions
+  [-1, 1].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
-    if (p && p.src) cacheImage(p.src);
+    if (p && p.src) cacheImage(p.src, true);
   });
 
-  // Preload & cache ±6 blurred backgrounds (super light)
-  [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].forEach(function (offset) {
+  // Preload & cache ±2 high-res neighbors (standard network cache)
+  [-2, 2].forEach(function (offset) {
+    let p = currentSet[(state.cur + offset + len) % len];
+    if (p && p.src) cacheImage(p.src, false);
+  });
+
+  // Preload & cache ±3 blurred backgrounds (super light, avoids network saturation)
+  [-3, -2, -1, 1, 2, 3].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
     if (p) {
       let bSrc = p.thumb || p.src;
       if (bSrc) {
-        cacheImage(getLightboxBlurPath(bSrc));
+        cacheImage(getLightboxBlurPath(bSrc), false);
       }
     }
   });
@@ -95,6 +101,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (p) {
       setLightboxBlur(p.thumb || p.src);
       setLightboxContent(p);
+      animateInfo(dir);
     }
     updateFilmstrip();
     return;
@@ -129,7 +136,6 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       entered = true;
 
       img.onload = null; img.onerror = null;
-      img.src = '';
       img.style.transition = 'none';
       img.style.transform = '';
       img.style.opacity = '0';
@@ -180,7 +186,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (isMotion) {
       doEnter();
     } else {
-      setTimeout(doEnter, 70);
+      setTimeout(doEnter, 140);
     }
 
   } else {

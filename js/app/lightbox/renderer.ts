@@ -357,35 +357,28 @@ export function animateInfo(dir: number) {
     if (!info || !info.parentNode) return;
   }
 
-  if (state.isMobile) {
-    info.style.animation = 'none';
-    info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
-    info.style.opacity = '1';
-    info.style.filter = '';
-    info.style.transform = '';
-    return;
-  }
-
   let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
   if (hasContent) {
     let ghost = info.cloneNode(true) as HTMLElement;
+    ghost.removeAttribute('id');
+    ghost.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
     ghost.style.position = 'absolute';
     ghost.style.top = info.offsetTop + 'px';
     ghost.style.left = info.offsetLeft + 'px';
     ghost.style.width = info.offsetWidth + 'px';
     ghost.style.pointerEvents = 'none';
     ghost.removeAttribute('onclick');
-    let exitDuration = state.isMobile ? '0.35s' : '0.22s';
+    let exitDuration = state.isMobile ? '0.30s' : '0.22s';
     ghost.style.animation = `lbInfoOut ${exitDuration} ease forwards`;
     ghost.style.willChange = 'filter, opacity';
     ghost.style.zIndex = '1';
     info.parentNode.appendChild(ghost);
-    let removeDelay = state.isMobile ? 380 : 250;
+    let removeDelay = state.isMobile ? 320 : 250;
     setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, removeDelay);
   }
 
-  let fromX = (state.isMobile || dir === 0) ? 0 : (dir > 0 ? 24 : -24);
-  let fromY = (state.isMobile || dir === 0) ? 0 : (dir === 0 ? 16 : 0);
+  let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
+  let fromY = dir === 0 ? 16 : 0;
   let clone = info.cloneNode(true) as HTMLElement;
   clone.style.setProperty('--lb-from-x', fromX + 'px');
   clone.style.setProperty('--lb-from-y', fromY + 'px');
