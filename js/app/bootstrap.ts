@@ -163,13 +163,29 @@ if (domRefs.hero) {
     const item = (e.target as HTMLElement).closest('.carousel-item');
     if (!item) return;
     const img = item.querySelector('img') as HTMLElement | null;
-    if (img) img.style.willChange = 'auto';
+    if (!img) return;
+
+    const timer = window.setTimeout(function () {
+      if (!item.matches(':hover')) {
+        img.style.willChange = 'auto';
+      }
+    }, 1600);
+    item.dataset.unpromoteTimer = String(timer);
   }, true);
 
   domRefs.hero.addEventListener('transitionend', function (e) {
     const target = e.target as HTMLElement | null;
-    if (target && target.tagName === 'IMG' && target.closest('.carousel-item')) {
-      target.style.willChange = 'auto';
+    if (target && target.tagName === 'IMG') {
+      const item = target.closest('.carousel-item') as HTMLElement | null;
+      if (item) {
+        if (item.dataset.unpromoteTimer) {
+          window.clearTimeout(Number(item.dataset.unpromoteTimer));
+          delete item.dataset.unpromoteTimer;
+        }
+        if (!item.matches(':hover')) {
+          target.style.willChange = 'auto';
+        }
+      }
     }
   });
 }

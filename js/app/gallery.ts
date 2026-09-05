@@ -154,8 +154,6 @@ let cardObserver = new IntersectionObserver(function (entries) {
       card.classList.remove('revealed');
     }
   });
-
-  scheduleGalleryRevealRepair(getActiveGalleryPanel(), 60);
 }, { rootMargin: '0px 0px -60px 0px' });
 
 export function revealCards(scope: any, options?: any) {
@@ -289,7 +287,6 @@ function queueGalleryScrollMemory() {
 function handleGalleryScroll() {
   updateGalleryScrollDirection();
   queueGalleryScrollMemory();
-  queueGalleryScrollReveal();
 }
 
 window.addEventListener('scroll', handleGalleryScroll, { passive: true });
@@ -784,8 +781,9 @@ if (masonry) {
     }
   });
 
-  // JIT proactive layer promotion: promotes precisely 1 card before animation starts,
-  // cleans up on transitionend or on pointerleave fallback if cursor leaves early.
+  // JIT proactive layer promotion: stays promoted through the ENTIRE animation lifecycle
+  // (promotes on pointerenter, stays promoted while hovering, and only unpromotes once
+  // the scale-down exit transition has fully finished animating).
   masonry.addEventListener('pointerenter', function (e) {
     const card = (e.target as HTMLElement).closest('.photo-card');
     if (!card) return;
@@ -797,12 +795,30 @@ if (masonry) {
     const card = (e.target as HTMLElement).closest('.photo-card');
     if (!card) return;
     const img = card.querySelector('.photo-card-img') as HTMLElement | null;
-    if (img) img.style.willChange = 'auto';
+    if (!img) return;
+
+    // Safety fallback: if transitionend never fires (e.g. tab switch), clean up after animation duration + buffer
+    const timer = window.setTimeout(function () {
+      if (!card.matches(':hover')) {
+        img.style.willChange = 'auto';
+      }
+    }, 1600);
+    card.dataset.unpromoteTimer = String(timer);
   }, true);
 
   masonry.addEventListener('transitionend', function (e) {
     const target = e.target as HTMLElement | null;
-    if (target && target.classList.contains('photo-card-img')) {
+    if (!target || !target.classList.contains('photo-card-img')) return;
+    const card = target.closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+
+    if (card.dataset.unpromoteTimer) {
+      window.clearTimeout(Number(card.dataset.unpromoteTimer));
+      delete card.dataset.unpromoteTimer;
+    }
+
+    // Only clean up if the cursor is actually off the card (exit transition completed)
+    if (!card.matches(':hover')) {
       target.style.willChange = 'auto';
     }
   });
