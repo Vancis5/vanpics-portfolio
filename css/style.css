@@ -1622,7 +1622,6 @@ body::after {
   z-index: 10;
   will-change: transform, filter;
   backface-visibility: hidden;
-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ZOOM ACTIVE DARKENING & FILMSTRIP HIDING */

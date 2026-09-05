@@ -156,7 +156,7 @@ if (state.isMobile) {
           imgWrap.scrollLeft = targetLeft;
         }
         onSnapSettle(idx);
-      }, smooth ? 350 : 50);
+      }, smooth ? 180 : 30);
     }
     setMobileScrollHandler(scrollToSlide);
     window.addEventListener('lightbox-scroll-to', function (e: any) {
@@ -201,13 +201,13 @@ if (state.isMobile) {
         }, FILMSTRIP_RELEASE_FOLLOW_MS);
 
         // Snap-back: apply spring ease-out to slide imgs immediately on release
-        // so transform settles smoothly alongside native scroll snap physics without filter thrashing
+        // so blur/scale settle smoothly alongside native scroll snap physics
         let slideImgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLElement>;
         slideImgs.forEach(function (s) {
-          s.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+          s.style.transition = 'filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           s.style.filter = '';
           s.style.transform = '';
-          setTimeout(function () { s.style.transition = ''; }, 480);
+          setTimeout(function () { s.style.transition = ''; }, 580);
         });
       }
     }, { passive: true });
@@ -238,14 +238,15 @@ if (state.isMobile) {
       let w = imgWrap.offsetWidth || window.innerWidth;
       if (!w) return;
 
-      if (typeof targetIdx === 'number') {
+      // Only force scrollLeft if explicitly opening or programmatically navigating
+      if (typeof targetIdx === 'number' && (!lbEl.classList.contains('open') || state.isManuallyNavigating)) {
         let expectedLeft = targetIdx * w;
         if (Math.abs(imgWrap.scrollLeft - expectedLeft) > 5) {
           imgWrap.scrollLeft = expectedLeft;
         }
       }
-
       state.isManuallyNavigating = false;
+
       let rawNearest = Math.round(imgWrap.scrollLeft / w);
       let idx = typeof targetIdx === 'number' ? targetIdx : Math.max(0, Math.min(rawNearest, state.activePhotos.length - 1));
 
@@ -256,7 +257,6 @@ if (state.isMobile) {
         if (p) {
           setLightboxBlur(p.thumb || p.src);
           setLightboxContent(p);
-          animateInfo(dir);
         }
         showFilmstripIfReady();
         updateLoading();
@@ -264,6 +264,22 @@ if (state.isMobile) {
       if (typeof finishFilmstripPhotoSync === 'function') finishFilmstripPhotoSync(idx);
 
       updateMobileImgWrapHeight();
+
+      if (!state.isUserTouching) {
+        let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
+        if (info) {
+          info.style.animation = 'none';
+          info.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
+          info.style.opacity = '1';
+          info.style.filter = '';
+          info.style.transform = '';
+          setTimeout(function () {
+            if (!info.parentNode) return;
+            info.style.animation = '';
+            info.style.transition = '';
+          }, 250);
+        }
+      }
 
       let fsWrap = domRefs.filmstripWrap;
       if (fsWrap) {
@@ -278,15 +294,20 @@ if (state.isMobile) {
 
       let imgWrapEl = domRefs.lightboxImgWrap;
       if (imgWrapEl) {
-        imgWrapEl.style.transition = '';
+        imgWrapEl.style.transition = 'filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
         imgWrapEl.style.filter = '';
+        setTimeout(function () {
+          if (!imgWrapEl.parentNode) return;
+          imgWrapEl.style.transition = '';
+        }, 580);
       }
 
       let slideImgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLElement>;
       slideImgs.forEach(function (s) {
-        s.style.transition = '';
+        s.style.transition = 'filter 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
         s.style.filter = '';
         s.style.transform = '';
+        setTimeout(function () { s.style.transition = ''; }, 580);
       });
     }
 
@@ -295,15 +316,14 @@ if (state.isMobile) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
-      state.isManuallyNavigating = false;
-      onSnapSettle();
+      if (!state.isManuallyNavigating) onSnapSettle();
     });
 
     imgWrap.addEventListener('scroll', function () {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (state.isManuallyNavigating) return;
       clearTimeout(snapTimer);
-      snapTimer = setTimeout(onSnapSettle, 150);
+      snapTimer = setTimeout(onSnapSettle, 80);
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;
@@ -331,10 +351,14 @@ if (state.isMobile) {
         return;
       }
 
+      if (nearest !== state.cur && !state.isUserTouching && !state.isManuallyNavigating) {
+        onSnapSettle(nearest);
+      }
+
       let swipeDelta = imgWrap.scrollLeft - state.cur * w;
       let distFromStart = Math.abs(swipeDelta) / w;
 
-      let info = domRefs.lightboxInfo;
+      let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
       if (info) {
         info.style.animation = 'none';
         info.style.transition = 'none';
@@ -593,9 +617,10 @@ if (state.isMobile) {
         let swipeProgress = Math.min(1, Math.max(0, dy / 300));
         let blurVal = Math.pow(swipeProgress, 2.4) * 18;
 
-        let info = domRefs.lightboxInfo;
+        let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
           let txtOpac = Math.max(0, 1 - dy / 180);
+          info.style.animation = 'none';
           info.style.transition = 'none';
           info.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
           info.style.opacity = String(txtOpac);
@@ -666,7 +691,7 @@ if (state.isMobile) {
         content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
         content.style.opacity = '0';
 
-        let info = domRefs.lightboxInfo;
+        let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
           info.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
           info.style.filter = 'blur(18px)';
@@ -702,7 +727,7 @@ if (state.isMobile) {
         content.style.transform = '';
         content.style.opacity = '1';
 
-        let info = domRefs.lightboxInfo;
+        let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
           info.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           info.style.filter = '';

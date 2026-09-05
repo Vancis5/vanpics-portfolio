@@ -357,6 +357,15 @@ export function animateInfo(dir: number) {
     if (!info || !info.parentNode) return;
   }
 
+  if (state.isMobile) {
+    info.style.animation = 'none';
+    info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+    info.style.opacity = '1';
+    info.style.filter = '';
+    info.style.transform = '';
+    return;
+  }
+
   let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
   if (hasContent) {
     let ghost = info.cloneNode(true) as HTMLElement;

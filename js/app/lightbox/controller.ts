@@ -101,7 +101,6 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (p) {
       setLightboxBlur(p.thumb || p.src);
       setLightboxContent(p);
-      animateInfo(dir);
     }
     updateFilmstrip();
     return;
