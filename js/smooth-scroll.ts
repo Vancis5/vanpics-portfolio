@@ -66,10 +66,12 @@ export function initSmoothScroll(options: any = {}) {
   });
 
   const filmstripEl = document.getElementById('filmstrip');
+  const filmstripWrap = document.getElementById('filmstrip-wrap');
   if (filmstripEl) {
     window.fsLenis = new Lenis({
       wrapper: filmstripEl,
       content: filmstripEl,
+      eventsTarget: filmstripWrap || filmstripEl,
       orientation: 'horizontal',
       gestureOrientation: 'both',
       smoothWheel: true,

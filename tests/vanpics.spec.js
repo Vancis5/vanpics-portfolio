@@ -231,8 +231,65 @@ test('expands custom cursor ring when hovering over lightbox side buttons', asyn
   await leftArrow.hover({ force: true });
 
   const cursorRing = page.locator('#cursor-ring');
-  await expect(cursorRing).toHaveCSS('transform', /(?:scale\(1\.57\)|matrix\(1\.(?:5[4-9]|6))/);
+  await expect(cursorRing).toHaveCSS('scale', /(?:1\.57|1\.(?:5[4-9]|6))/);
 });
+
+test('stretches and shifts cursor ring in direction of filmstrip mouse wheel scroll', async ({ page }) => {
+  await waitForGallery(page);
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+  const filmstripWrap = page.locator('#filmstrip-wrap');
+  await filmstripWrap.hover();
+  await expect(filmstripWrap).toHaveClass(/visible/);
+
+  const cursorRing = page.locator('#cursor-ring');
+
+  // Scroll mouse wheel DOWN (opposite direction -> shifts negative/left and stretches width)
+  await page.mouse.wheel(0, 120);
+
+  await expect.poll(async () => {
+    return await cursorRing.evaluate(el => {
+      const w = parseFloat(el.style.width || '28');
+      const match = (el.style.transform || '').match(/translate3d\(-([0-9.]+)px/);
+      if (!match) return false;
+      const x = parseFloat(match[1]);
+      const cs = window.getComputedStyle(el);
+      const uniformBorder = cs.borderTopWidth === cs.borderLeftWidth && cs.borderTopWidth === cs.borderBottomWidth;
+      return w > 32 && x > 2 && uniformBorder;
+    });
+  }, { timeout: 3000 }).toBe(true);
+
+  // Scroll mouse wheel UP (opposite direction -> shifts positive/right and stretches width)
+  await page.mouse.wheel(0, -140);
+
+  await expect.poll(async () => {
+    return await cursorRing.evaluate(el => {
+      const w = parseFloat(el.style.width || '28');
+      const match = (el.style.transform || '').match(/translate3d\(([0-9.]+)px/);
+      if (!match) return false;
+      const x = parseFloat(match[1]);
+      const cs = window.getComputedStyle(el);
+      const uniformBorder = cs.borderTopWidth === cs.borderLeftWidth && cs.borderTopWidth === cs.borderBottomWidth;
+      return w > 32 && x > 2 && uniformBorder;
+    });
+  }, { timeout: 3000 }).toBe(true);
+
+  // Returns smoothly to neutral circular ring when wheel stops
+  await expect.poll(async () => {
+    return await cursorRing.evaluate(el => el.style.transform || '');
+  }, { timeout: 3000 }).toBe('');
+
+  // Programmatic scroll (e.g. filmstrip resetting/drifting back) must NOT stretch the cursor
+  await page.evaluate(() => {
+    const fs = document.getElementById('filmstrip');
+    if (fs) fs.scrollLeft = 200;
+  });
+  await page.waitForTimeout(100);
+  expect(await cursorRing.evaluate(el => el.style.transform || '')).toBe('');
+  expect(await cursorRing.evaluate(el => el.style.width || '')).toBe('');
+});
+
 
 
 

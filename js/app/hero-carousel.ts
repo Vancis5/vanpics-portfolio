@@ -10,7 +10,7 @@ import { getPhotoAspectRatio, setupImagePlaceholderFallback } from './utils.js';
 // CAROUSEL
 let ROW_CONFIG = [{ dir: -1 }, { dir: 1 }, { dir: -1 }];
 
-// Custom horizontal focus points (object-position) for mobile carousel images under the 0.75 ratio clamp.
+// Custom horizontal focus points (object-position) for carousel images.
 // Maps photo filename to an object-position value (e.g. '30% center', 'left center', etc.).
 const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
   'fog-motorcycle.webp': '30% center',
@@ -123,7 +123,7 @@ export function buildCarousel(isRebuild = false) {
         let wrapper = document.createElement('div');
         wrapper.className = 'carousel-item';
         let ratio = getPhotoAspectRatio(p);
-        if (state.isMobile) {
+        if (state.isMobile || window.innerWidth < 640) {
           ratio = Math.min(ratio, 0.75);
         }
         wrapper.style.setProperty('--carousel-photo-ratio', String(ratio));
@@ -132,11 +132,9 @@ export function buildCarousel(isRebuild = false) {
         let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
 
-        if (state.isMobile) {
-          const filename = p.src.split('/').pop() || '';
-          if (CAROUSEL_FOCUS_POINTS[filename]) {
-            img.style.objectPosition = CAROUSEL_FOCUS_POINTS[filename];
-          }
+        const filename = p.src.split('/').pop() || '';
+        if (CAROUSEL_FOCUS_POINTS[filename]) {
+          img.style.objectPosition = CAROUSEL_FOCUS_POINTS[filename];
         }
 
         function reveal() {

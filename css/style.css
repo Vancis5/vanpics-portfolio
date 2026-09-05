@@ -269,10 +269,11 @@ body::after {
     height: 28px;
     margin: -14px 0 0 -14px;
     border: 1px solid rgba(var(--text-rgb), 0.25);
-    border-radius: 50%;
+    border-radius: 9999px;
     pointer-events: none;
     z-index: 9998;
-    will-change: translate;
+    will-change: translate, transform;
+    transform-origin: center center;
     transition: border-color 0.3s, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), scale 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
     outline: none !important;
@@ -390,7 +391,7 @@ body::after {
   display: block;
   height: calc((100svh - 16px) / 3);
   min-height: 120px;
-  aspect-ratio: var(--carousel-photo-ratio);
+  aspect-ratio: 5 / 4;
   border-radius: 3px;
   flex-shrink: 0;
   cursor: grab;
@@ -474,15 +475,23 @@ body::after {
   cursor: grabbing !important;
 }
 
-/* mobile: 3 rows fill screen */
-@media (hover: none) and (max-width: 639px) {
+/* mobile: 3 rows fill screen and keep original photo ratio */
+@media (max-width: 639px) {
   .carousel-item {
+    aspect-ratio: var(--carousel-photo-ratio);
     height: calc((100svh - 12px) / 3);
     min-height: 110px;
   }
 
   #hero {
     gap: 6px;
+  }
+}
+
+/* tablet: square */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .carousel-item {
+    aspect-ratio: 1 / 1;
   }
 }
 
