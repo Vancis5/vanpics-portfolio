@@ -644,7 +644,7 @@ body::after {
 /* GALLERY */
 #gallery-section {
   position: relative;
-  padding: 1.5rem 1.25rem 6rem;
+  padding: 0 1.25rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
@@ -653,13 +653,13 @@ body::after {
 
 @media (min-width: 640px) {
   #gallery-section {
-    padding: 2rem 1.75rem 7rem;
+    padding: 0 1.75rem 7rem;
   }
 }
 
 @media (min-width: 1024px) {
   #gallery-section {
-    padding: 2.25rem 2rem 8rem;
+    padding: 0 2rem 8rem;
   }
 }
 
@@ -711,21 +711,6 @@ body::after {
   }
 }
 
-@media (min-width: 640px) {
-  #gallery-header {
-    padding-top: calc(1.75rem + var(--safe-top, 0px));
-    padding-bottom: 1.75rem;
-  }
-
-  #gallery-header .active,
-  #gallery-header .inactive {
-    padding-top: calc(1.75rem + var(--safe-top, 0px));
-    padding-bottom: 1.75rem;
-    margin-top: calc(-1.75rem - var(--safe-top, 0px));
-    margin-bottom: -1.75rem;
-  }
-}
-
 #gallery-header p {
   font-family: 'DM Mono', monospace;
   font-weight: 400;
@@ -764,6 +749,25 @@ body::after {
   /* Full-height Hitbox */
   padding: 1.5rem 0.8rem;
   margin: -1.5rem -0.8rem;
+}
+
+@media (min-width: 640px) {
+  #gallery-header {
+    padding-top: calc(1.75rem + var(--safe-top, 0px));
+    padding-bottom: 1.75rem;
+  }
+
+  #gallery-header .active,
+  #gallery-header .inactive {
+    padding-top: calc(1.75rem + var(--safe-top, 0px));
+    padding-bottom: 1.75rem;
+    margin-top: calc(-1.75rem - var(--safe-top, 0px));
+    margin-bottom: -1.75rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    margin-left: -0.8rem;
+    margin-right: -0.8rem;
+  }
 }
 
 @media (max-width: 639px) {
@@ -2836,18 +2840,18 @@ body.lightbox-open.gallery-header-stuck #gallery-header {
 
 /* Maintain the vertical gap to prevent page jump underneath */
 body.lightbox-open.gallery-header-stuck #gallery-section {
-  padding-top: calc(1.5rem + 3.1rem + var(--safe-top, 0px)) !important;
+  padding-top: calc(3.1rem + var(--safe-top, 0px)) !important;
 }
 
 @media (min-width: 640px) {
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(2rem + 4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(2.25rem + 4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
@@ -2913,7 +2917,6 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
 
 /* 2.4.11 Focus Not Obscured (Minimum) - Clear sticky elements (header/footer) */
 .photo-card,
-#gallery-header [role="button"],
 .footer-instagram,
 .footer-email,
 #lightbox-close,

@@ -290,6 +290,38 @@ test('stretches and shifts cursor ring in direction of filmstrip mouse wheel scr
   expect(await cursorRing.evaluate(el => el.style.width || '')).toBe('');
 });
 
+test('subnav maintains sticky alignment without shifting on tab click', async ({ page }) => {
+  await waitForGallery(page);
 
+  // Scroll down so gallery is stuck
+  await page.evaluate(() => {
+    const lenis = window.lenis;
+    if (lenis) lenis.scrollTo(1200, { immediate: true });
+    else window.scrollTo(0, 1200);
+  });
+  await page.waitForTimeout(300);
 
+  const getSubnavTop = async () => {
+    return await page.evaluate(() => {
+      const h = document.querySelector('#gallery-header');
+      return h ? h.getBoundingClientRect().top : -1;
+    });
+  };
 
+  expect(Math.abs(await getSubnavTop())).toBeLessThanOrEqual(1);
+
+  // Click figures button
+  await page.locator('#gallery-header .figures-btn').click();
+  await page.waitForTimeout(200);
+  expect(Math.abs(await getSubnavTop())).toBeLessThanOrEqual(1);
+
+  // Click motion button
+  await page.locator('#gallery-header .motion-btn').click();
+  await page.waitForTimeout(200);
+  expect(Math.abs(await getSubnavTop())).toBeLessThanOrEqual(1);
+
+  // Click photographs button
+  await page.locator('#gallery-header .photographs-btn').click();
+  await page.waitForTimeout(200);
+  expect(Math.abs(await getSubnavTop())).toBeLessThanOrEqual(1);
+});
