@@ -345,7 +345,7 @@ function getGalleryStickyStartScrollY() {
 
 function isGalleryHeaderStuck() {
   let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  return scrollY >= getGalleryStickyStartScrollY() - 1;
+  return scrollY >= getGalleryStickyStartScrollY();
 }
 
 function getMaxPageScroll() {
@@ -367,8 +367,7 @@ function getGalleryTargetScroll(category: string, options?: any): number {
   let targetScrollY = (saved !== null && Number.isFinite(saved)) ? saved : getGalleryAnchorScrollY();
 
   if (options.lockToStickyStart) {
-    // Add a 2px buffer to ensure the sticky header is firmly stuck and doesn't shift due to subpixel routing/clamping.
-    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY() + 2);
+    targetScrollY = Math.max(targetScrollY, getGalleryStickyStartScrollY());
   }
 
   return targetScrollY;

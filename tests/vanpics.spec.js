@@ -290,6 +290,87 @@ test('stretches and shifts cursor ring in direction of filmstrip mouse wheel scr
   expect(await cursorRing.evaluate(el => el.style.width || '')).toBe('');
 });
 
+test('subnav maintains sticky alignment without shifting on tab click', async ({ page }) => {
+  await waitForGallery(page);
 
+  // Scroll down so gallery is stuck
+  await page.evaluate(() => {
+    const lenis = window.lenis;
+    if (lenis) lenis.scrollTo(1200, { immediate: true });
+    else window.scrollTo(0, 1200);
+  });
+  await page.waitForTimeout(300);
 
+  const getSubnavTop = async () => {
+    return await page.evaluate(() => {
+      const h = document.querySelector('#gallery-header');
+      return h ? h.getBoundingClientRect().top : -1;
+    });
+  };
 
+  expect(await getSubnavTop()).toBe(0);
+
+  // Click figures button
+  await page.locator('#gallery-header .figures-btn').click();
+  await page.waitForTimeout(200);
+  expect(await getSubnavTop()).toBe(0);
+
+  // Click motion button
+  await page.locator('#gallery-header .motion-btn').click();
+  await page.waitForTimeout(200);
+  expect(await getSubnavTop()).toBe(0);
+
+  // Click photographs button
+  await page.locator('#gallery-header .photographs-btn').click();
+  await page.waitForTimeout(200);
+  expect(await getSubnavTop()).toBe(0);
+});
+
+test('morphs custom cursor into zoom icon when hovering onto picture in lightbox', async ({ page }) => {
+  test.slow();
+  await waitForGallery(page);
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+  const lightboxImg = page.locator('#lightbox-img');
+  await expect(lightboxImg).toBeVisible();
+
+  const cursorDot = page.locator('#cursor');
+  const cursorRing = page.locator('#cursor-ring');
+  const morphSvg = page.locator('#cursor-morph-svg');
+  const morphPath = morphSvg.locator('path');
+
+  // Hover over lightbox image -> morph into zoom-in icon
+  await lightboxImg.hover({ force: true });
+
+  await expect(cursorRing).toHaveClass(/morph-active/);
+  await expect(cursorDot).toHaveCSS('opacity', '0');
+  await expect(cursorRing).toHaveCSS('border-top-color', /rgba\(0,\s*0,\s*0,\s*0\)|transparent/);
+
+  // SVG path has morphed into zoom icon
+  await expect.poll(async () => {
+    return await morphPath.evaluate((el) => {
+      const d = el.getAttribute('d') || '';
+      return d.length > 50;
+    });
+  }, { timeout: 3000 }).toBe(true);
+
+  // Click on picture to toggle zoom -> morphs into zoom-out icon
+  await lightboxImg.click({ force: true });
+  await expect(page.locator('#lightbox')).toHaveClass(/zoom-active/);
+  await expect(cursorRing).toHaveClass(/morph-active/);
+
+  // Path remains active and valid during zoom-out
+  await expect.poll(async () => {
+    const d = await morphPath.evaluate((el) => el.getAttribute('d') || '');
+    return d.length > 50;
+  }, { timeout: 3000 }).toBe(true);
+
+  // Move cursor away from the picture onto the close button
+  const closeBtn = page.locator('#lightbox-close');
+  await closeBtn.hover({ force: true });
+
+  // Cursor morphs back to neutral circle and morph-active class is removed
+  await expect(cursorRing).not.toHaveClass(/morph-active/, { timeout: 3000 });
+  await expect(cursorDot).toHaveCSS('opacity', '1');
+});

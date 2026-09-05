@@ -237,7 +237,7 @@ body::after {
 
   html.custom-cursor-enabled,
   html.custom-cursor-enabled body,
-  html.custom-cursor-enabled body *:not(.zoomable),
+  html.custom-cursor-enabled body *,
   html.custom-cursor-enabled body *::before,
   html.custom-cursor-enabled body *::after {
     cursor: none !important;
@@ -278,39 +278,39 @@ body::after {
     opacity: 0;
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--text-rgb), 0.95);
   }
 
-  body .zoomable:hover {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-4 -4 32 32' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='11' y1='8' x2='11' y2='14'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E") 11 11, zoom-in;
+  #cursor-morph-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.7));
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  body .zoomable.zoomed:hover {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-4 -4 32 32' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E") 11 11, zoom-out;
+  #cursor-ring.morph-active {
+    border-color: transparent !important;
   }
 
-  body .zoomable.zoomed:active,
-  body .zoomable.is-panning {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-4 -4 32 32' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Cpath d='M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0'/%3E%3Cpath d='M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2'/%3E%3Cpath d='M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8'/%3E%3Cpath d='M18 8a2 2 0 0 1 2 2v4a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'/%3E%3C/svg%3E") 11 11, grab;
+  #cursor-ring.morph-active #cursor-morph-svg {
+    opacity: 1;
   }
 
   /* Smooth scale & opacity transition when general cursor enters/exits zoomable area */
-  body:has(.zoomable:hover:not(.zoomed)) #cursor {
+  body:has(.zoomable:hover) #cursor,
+  #cursor.morph-hidden {
     opacity: 0 !important;
     scale: 0.35 !important;
-    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), scale 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  }
-
-  body:has(.zoomable:hover:not(.zoomed)) #cursor-ring {
-    opacity: 0 !important;
-    scale: 0.35 !important;
-    border-color: rgba(var(--text-rgb), 0.5) !important;
-    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), scale 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease !important;
-  }
-
-  body:has(.zoomable.zoomed:hover) #cursor,
-  body:has(.zoomable.zoomed:hover) #cursor-ring {
-    opacity: 0 !important;
-    transition: opacity 0.1s ease !important;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), scale 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 }
 
@@ -644,7 +644,7 @@ body::after {
 /* GALLERY */
 #gallery-section {
   position: relative;
-  padding: 1.5rem 1.25rem 6rem;
+  padding: 0 1.25rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
@@ -653,13 +653,13 @@ body::after {
 
 @media (min-width: 640px) {
   #gallery-section {
-    padding: 2rem 1.75rem 7rem;
+    padding: 0 1.75rem 7rem;
   }
 }
 
 @media (min-width: 1024px) {
   #gallery-section {
-    padding: 2.25rem 2rem 8rem;
+    padding: 0 2rem 8rem;
   }
 }
 
@@ -711,21 +711,6 @@ body::after {
   }
 }
 
-@media (min-width: 640px) {
-  #gallery-header {
-    padding-top: calc(1.75rem + var(--safe-top, 0px));
-    padding-bottom: 1.75rem;
-  }
-
-  #gallery-header .active,
-  #gallery-header .inactive {
-    padding-top: calc(1.75rem + var(--safe-top, 0px));
-    padding-bottom: 1.75rem;
-    margin-top: calc(-1.75rem - var(--safe-top, 0px));
-    margin-bottom: -1.75rem;
-  }
-}
-
 #gallery-header p {
   font-family: 'DM Mono', monospace;
   font-weight: 400;
@@ -764,6 +749,25 @@ body::after {
   /* Full-height Hitbox */
   padding: 1.5rem 0.8rem;
   margin: -1.5rem -0.8rem;
+}
+
+@media (min-width: 640px) {
+  #gallery-header {
+    padding-top: calc(1.75rem + var(--safe-top, 0px));
+    padding-bottom: 1.75rem;
+  }
+
+  #gallery-header .active,
+  #gallery-header .inactive {
+    padding-top: calc(1.75rem + var(--safe-top, 0px));
+    padding-bottom: 1.75rem;
+    margin-top: calc(-1.75rem - var(--safe-top, 0px));
+    margin-bottom: -1.75rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    margin-left: -0.8rem;
+    margin-right: -0.8rem;
+  }
 }
 
 @media (max-width: 639px) {
@@ -2836,18 +2840,18 @@ body.lightbox-open.gallery-header-stuck #gallery-header {
 
 /* Maintain the vertical gap to prevent page jump underneath */
 body.lightbox-open.gallery-header-stuck #gallery-section {
-  padding-top: calc(1.5rem + 3.1rem + var(--safe-top, 0px)) !important;
+  padding-top: calc(3.1rem + var(--safe-top, 0px)) !important;
 }
 
 @media (min-width: 640px) {
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(2rem + 4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(2.25rem + 4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
@@ -2913,7 +2917,6 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
 
 /* 2.4.11 Focus Not Obscured (Minimum) - Clear sticky elements (header/footer) */
 .photo-card,
-#gallery-header [role="button"],
 .footer-instagram,
 .footer-email,
 #lightbox-close,
