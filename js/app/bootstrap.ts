@@ -128,6 +128,7 @@ export function startLoops() {
   }
 }
 
+window.addEventListener('app-start-loops', startLoops);
 setStartLoopsCallback(startLoops);
 
 const heroObs = new IntersectionObserver(function (entries) {

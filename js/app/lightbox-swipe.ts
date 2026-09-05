@@ -1,8 +1,7 @@
 // SWIPE for lightbox
 import { domRefs } from './dom.js';
 import { state } from './state.js';
-import { motionProjects } from './media-data.js';
-import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setLoadSwipeNeighbors, setMobileScrollToSlideCallback, updateMobileImgWrapHeight } from './lightbox.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight } from './lightbox.js';
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
@@ -159,7 +158,12 @@ if (state.isMobile) {
         onSnapSettle(idx);
       }, smooth ? 350 : 50);
     }
-    setMobileScrollToSlideCallback(scrollToSlide);
+    setMobileScrollHandler(scrollToSlide);
+    window.addEventListener('lightbox-scroll-to', function (e: any) {
+      if (e && e.detail) {
+        scrollToSlide(e.detail.index, e.detail.smooth, e.detail.direction);
+      }
+    });
 
     let wrapTouchX = 0;
     let filmstripReleaseFollowUntil = 0;
@@ -449,7 +453,9 @@ if (state.isMobile) {
       clearSlides();
     });
 
-    setLoadSwipeNeighbors(function () { updateLoading(); });
+    window.addEventListener('lightbox-preload-neighbors', function () {
+      updateLoading();
+    });
 
     // Re-align on resize/orientation change
     window.addEventListener('resize', function () {

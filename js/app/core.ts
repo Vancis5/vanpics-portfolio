@@ -17,10 +17,12 @@ export function setStartLoopsCallback(callback: (() => void) | null) {
 
 export function showFilmstripIfReady() {
   if (typeof filmstripVisibilityHandlers.show === 'function') filmstripVisibilityHandlers.show();
+  window.dispatchEvent(new CustomEvent('filmstrip-show'));
 }
 
 export function hideFilmstripIfReady(force?: boolean) {
   if (typeof filmstripVisibilityHandlers.hide === 'function') filmstripVisibilityHandlers.hide(force);
+  window.dispatchEvent(new CustomEvent('filmstrip-hide', { detail: { force } }));
 }
 
 export function clearFilmstripHideTimerIfReady() {
@@ -36,6 +38,7 @@ export function setFilmstripLiftZoneDisplay(display: string) {
 
 export function startLoopsIfReady() {
   if (typeof startLoopsCallback === 'function') startLoopsCallback();
+  window.dispatchEvent(new CustomEvent('app-start-loops'));
 }
 
 // GLOW BALL

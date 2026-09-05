@@ -16,35 +16,31 @@ import {
   parseAspectRatio,
   ALLOWED_CATEGORIES,
 } from './validation.js';
+import {
+  clearApiCache,
+  getMediaObject,
+  putMediaObject,
+  deleteMediaObjects,
+  fetchPhotos,
+  fetchVideos,
+  findPhotoById,
+  findVideoById,
+  deletePhotoRecord,
+  deleteVideoRecord,
+  insertPhotoRecord,
+  insertVideoRecord,
+  updatePhotoRecord,
+  updateVideoRecord,
+  updatePhotoMediaKeys,
+  getAllPhotosForSorting,
+  batchUpdatePhotosCreatedAt,
+  getAllVideosForSorting,
+  batchUpdateVideosCreatedAt,
+} from './media-repository.js';
 
 // 30 MB for images, 100 MB for videos
 const MAX_IMAGE_SIZE = 30 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
-
-async function clearApiCache(request) {
-  let purgedCount = 0;
-  try {
-    const cache = caches.default;
-    const origin = new URL(request.url).origin;
-    const urls = [
-      `${origin}/api/photos`,
-      `${origin}/api/photos?limit=50`,
-      `${origin}/api/photos?limit=100`,
-      `${origin}/api/photos?limit=500`,
-      `${origin}/api/videos`,
-      `${origin}/api/videos?limit=50`,
-      `${origin}/api/videos?limit=100`,
-      `${origin}/api/videos?limit=500`
-    ];
-    for (const url of urls) {
-      const deleted = await cache.delete(new Request(url));
-      if (deleted) purgedCount++;
-    }
-  } catch (err) {
-    console.error('Failed to clear cache:', err);
-  }
-  return purgedCount;
-}
 
 // Reject keys that could traverse R2 bucket structure
 function isValidMediaKey(key) {
@@ -92,22 +88,20 @@ export async function serveMedia(request, env, params, ctx) {
       const startStr = match[1];
       const endStr = match[2];
       if (startStr === '' && endStr !== '') {
-        // suffix range: bytes=-500
         rangeOptions = { suffix: parseInt(endStr, 10) };
       } else {
         const offset = startStr ? parseInt(startStr, 10) : 0;
         if (endStr) {
           rangeOptions = { offset, length: parseInt(endStr, 10) - offset + 1 };
         } else {
-          // open-ended range: bytes=500- (R2 returns offset to end)
           rangeOptions = { offset };
         }
       }
     }
   }
 
-  // 3. Single GET from R2 — object.size gives total size, no HEAD needed
-  const object = await env.MEDIA_BUCKET.get(fileKey, rangeOptions ? { range: rangeOptions } : undefined);
+  // 3. Single GET from R2 via repository
+  const object = await getMediaObject(env, fileKey, rangeOptions);
 
   if (!object) {
     return new Response('Media asset not found', {
@@ -147,20 +141,18 @@ export async function serveMedia(request, env, params, ctx) {
 
   const response = new Response(object.body, { status, headers });
 
-  // 4. Cache full responses at the edge in background (non-blocking)
+  // 4. Cache full responses at the edge in background
   if (!rangeHeader && request.method === 'GET' && totalSize > 0 && cache) {
     const putPromise = cache.put(cacheKey, response.clone());
     if (ctx && ctx.waitUntil) {
       ctx.waitUntil(putPromise);
     }
-    // No ctx? Fire-and-forget — never block the response on a cache write
   }
 
   return response;
 }
 
 export async function listPhotos(request, env, params, ctx) {
-  // Edge cache: serve cached JSON if available
   const cache = caches.default;
   const cacheUrl = new URL(request.url).toString();
   const cacheReq = new Request(cacheUrl, { method: 'GET' });
@@ -169,21 +161,15 @@ export async function listPhotos(request, env, params, ctx) {
 
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
-  const { results } = await env.DB.prepare(
-    `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
-     FROM photos
-     ORDER BY created_at DESC, id DESC
-     LIMIT ? OFFSET ?`
-  ).bind(limit, offset).all();
-  const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM photos').first();
-  const items = results.map((row) => publicPhoto(request, row));
+  const { rows, total } = await fetchPhotos(env, limit, offset);
+  const items = rows.map((row) => publicPhoto(request, row));
 
   const body = JSON.stringify({
     items,
     pagination: {
       limit,
       offset,
-      total: totalRow?.total || 0,
+      total,
       nextOffset: items.length === limit ? offset + limit : null,
     },
   });
@@ -204,7 +190,6 @@ export async function listPhotos(request, env, params, ctx) {
 }
 
 export async function listVideos(request, env, params, ctx) {
-  // Edge cache: serve cached JSON if available
   const cache = caches.default;
   const cacheUrl = new URL(request.url).toString();
   const cacheReq = new Request(cacheUrl, { method: 'GET' });
@@ -213,21 +198,15 @@ export async function listVideos(request, env, params, ctx) {
 
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
-  const { results } = await env.DB.prepare(
-    `SELECT id, title, src, poster, aspect_ratio, location, date, \`desc\`, music, created_at
-     FROM videos
-     ORDER BY created_at DESC, id DESC
-     LIMIT ? OFFSET ?`
-  ).bind(limit, offset).all();
-  const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM videos').first();
-  const items = results.map((row) => publicVideo(request, row));
+  const { rows, total } = await fetchVideos(env, limit, offset);
+  const items = rows.map((row) => publicVideo(request, row));
 
   const body = JSON.stringify({
     items,
     pagination: {
       limit,
       offset,
-      total: totalRow?.total || 0,
+      total,
       nextOffset: items.length === limit ? offset + limit : null,
     },
   });
@@ -253,24 +232,18 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'invalid photo id', 400);
   }
 
-  const photo = await env.DB.prepare('SELECT src, thumb, raw_src FROM photos WHERE id = ?')
-    .bind(photoId)
-    .first();
-
+  const photo = await findPhotoById(env, photoId);
   if (!photo) {
     return errorResponse(request, env, 'photo not found', 404);
   }
 
-  const keysToDelete = [...new Set([
+  await deleteMediaObjects(env, [
     mediaKey(photo.src),
     mediaKey(photo.thumb),
     mediaKey(photo.raw_src)
-  ].filter(Boolean))];
-  if (keysToDelete.length > 0) {
-    await env.MEDIA_BUCKET.delete(keysToDelete);
-  }
+  ]);
 
-  await env.DB.prepare('DELETE FROM photos WHERE id = ?').bind(photoId).run();
+  await deletePhotoRecord(env, photoId);
   await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
@@ -281,20 +254,13 @@ export async function deleteVideo(request, env, params) {
     return errorResponse(request, env, 'invalid video id', 400);
   }
 
-  const video = await env.DB.prepare('SELECT src, poster FROM videos WHERE id = ?')
-    .bind(videoId)
-    .first();
-
+  const video = await findVideoById(env, videoId);
   if (!video) {
     return errorResponse(request, env, 'video not found', 404);
   }
 
-  const keysToDelete = [mediaKey(video.src), mediaKey(video.poster)].filter(Boolean);
-  if (keysToDelete.length > 0) {
-    await env.MEDIA_BUCKET.delete(keysToDelete);
-  }
-
-  await env.DB.prepare('DELETE FROM videos WHERE id = ?').bind(videoId).run();
+  await deleteMediaObjects(env, [mediaKey(video.src), mediaKey(video.poster)]);
+  await deleteVideoRecord(env, videoId);
   await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
@@ -310,7 +276,6 @@ export async function uploadPhoto(request, env) {
     errors.push('missing processed image assets');
   }
 
-  // Enforce file size limits
   if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (rawFile?.size > MAX_IMAGE_SIZE) errors.push(`raw photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
@@ -324,43 +289,34 @@ export async function uploadPhoto(request, env) {
   let rawKey = null;
 
   const puts = [
-    env.MEDIA_BUCKET.put(photoKey, await photoFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
-    env.MEDIA_BUCKET.put(thumbKey, await thumbFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
+    putMediaObject(env, photoKey, await photoFile.arrayBuffer(), { contentType: 'image/webp' }),
+    putMediaObject(env, thumbKey, await thumbFile.arrayBuffer(), { contentType: 'image/webp' }),
   ];
 
   if (rawFile && rawFile.size > 0) {
     const rawExt = extensionForContentType(rawFile.type, 'jpg');
     rawKey = makeMediaKey('photos-raw', rawExt);
     puts.push(
-      env.MEDIA_BUCKET.put(rawKey, await rawFile.arrayBuffer(), {
-        httpMetadata: { contentType: rawFile.type || 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' },
+      putMediaObject(env, rawKey, await rawFile.arrayBuffer(), {
+        contentType: rawFile.type || 'image/jpeg',
       })
     );
   }
 
   await Promise.all(puts);
 
-  const result = await env.DB.prepare(
-    `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  )
-    .bind(
-      data.title,
-      photoKey,
-      thumbKey,
-      rawKey,
-      data.aspectRatio,
-      data.category,
-      data.location,
-      data.date,
-      data.desc,
-      data.heroSlide
-    )
-    .run();
+  const result = await insertPhotoRecord(env, {
+    title: data.title,
+    photoKey,
+    thumbKey,
+    rawKey,
+    aspectRatio: data.aspectRatio,
+    category: data.category,
+    location: data.location,
+    date: data.date,
+    desc: data.desc,
+    heroSlide: data.heroSlide,
+  });
 
   await clearApiCache(request);
 
@@ -396,7 +352,6 @@ export async function uploadVideo(request, env) {
     errors.push('missing poster image asset');
   }
 
-  // Enforce file size limits
   if (videoFile?.size > MAX_VIDEO_SIZE) errors.push(`video exceeds ${MAX_VIDEO_SIZE / 1024 / 1024}MB limit`);
   if (posterFile?.size > MAX_IMAGE_SIZE) errors.push(`poster exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
@@ -409,29 +364,20 @@ export async function uploadVideo(request, env) {
   const posterKey = makeMediaKey('posters', 'webp');
 
   await Promise.all([
-    env.MEDIA_BUCKET.put(videoKey, await videoFile.arrayBuffer(), {
-      httpMetadata: { contentType: videoFile.type || 'video/mp4', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
-    env.MEDIA_BUCKET.put(posterKey, await posterFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
+    putMediaObject(env, videoKey, await videoFile.arrayBuffer(), { contentType: videoFile.type || 'video/mp4' }),
+    putMediaObject(env, posterKey, await posterFile.arrayBuffer(), { contentType: 'image/webp' }),
   ]);
 
-  const result = await env.DB.prepare(
-    `INSERT INTO videos (title, src, poster, aspect_ratio, location, date, \`desc\`, music)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  )
-    .bind(
-      data.title,
-      videoKey,
-      posterKey,
-      data.aspectRatio,
-      data.location,
-      data.date,
-      data.desc,
-      data.music
-    )
-    .run();
+  const result = await insertVideoRecord(env, {
+    title: data.title,
+    videoKey,
+    posterKey,
+    aspectRatio: data.aspectRatio,
+    location: data.location,
+    date: data.date,
+    desc: data.desc,
+    music: data.music,
+  });
 
   await clearApiCache(request);
 
@@ -476,13 +422,15 @@ export async function updatePhoto(request, env, params) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
   }
 
-  const result = await env.DB.prepare(
-    `UPDATE photos 
-     SET title = ?, category = ?, location = ?, date = ?, \`desc\` = ?, aspect_ratio = ?, hero_slide = ?
-     WHERE id = ?`
-  )
-  .bind(title, category, location, date, desc, aspectRatio, heroSlide, photoId)
-  .run();
+  const result = await updatePhotoRecord(env, photoId, {
+    title,
+    category,
+    location,
+    date,
+    desc,
+    aspectRatio,
+    heroSlide,
+  });
 
   if (result.meta.changes === 0) {
     return errorResponse(request, env, 'photo not found', 404);
@@ -512,13 +460,14 @@ export async function updateVideo(request, env, params) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
   }
 
-  const result = await env.DB.prepare(
-    `UPDATE videos 
-     SET title = ?, location = ?, date = ?, \`desc\` = ?, aspect_ratio = ?, music = ?
-     WHERE id = ?`
-  )
-  .bind(title, location, date, desc, aspectRatio, music, videoId)
-  .run();
+  const result = await updateVideoRecord(env, videoId, {
+    title,
+    location,
+    date,
+    desc,
+    aspectRatio,
+    music,
+  });
 
   if (result.meta.changes === 0) {
     return errorResponse(request, env, 'video not found', 404);
@@ -534,11 +483,6 @@ export async function purgeCache(request, env) {
 }
 
 export async function sortDatabase(request, env) {
-  // 1. Sort Photos
-  const { results: photos } = await env.DB.prepare(
-    'SELECT id, date, created_at FROM photos'
-  ).all();
-
   function parsePhotoDate(dateStr) {
     if (!dateStr) return null;
     const cleanStr = dateStr.trim().toLowerCase();
@@ -550,7 +494,9 @@ export async function sortDatabase(request, env) {
     return null;
   }
 
-  // Sort photos newest first
+  // 1. Sort Photos
+  const photos = await getAllPhotosForSorting(env);
+
   photos.sort((a, b) => {
     const dateA = parsePhotoDate(a.date);
     const dateB = parsePhotoDate(b.date);
@@ -561,31 +507,22 @@ export async function sortDatabase(request, env) {
     if (dateA) return -1;
     if (dateB) return 1;
 
-    // Fallback to original created_at
     const timeA = new Date(a.created_at || 0).getTime();
     const timeB = new Date(b.created_at || 0).getTime();
     return timeB - timeA;
   });
 
-  // Batch update photos
   const baseTime = Date.now();
-  const photoStatements = photos.map((photo, index) => {
+  const photoUpdates = photos.map((photo, index) => {
     const itemTime = new Date(baseTime - index * 10000);
     const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
-    
-    return env.DB.prepare(
-      'UPDATE photos SET created_at = ? WHERE id = ?'
-    ).bind(isoString, photo.id);
+    return { id: photo.id, createdAt: isoString };
   });
 
-  if (photoStatements.length > 0) {
-    await env.DB.batch(photoStatements);
-  }
+  await batchUpdatePhotosCreatedAt(env, photoUpdates);
 
   // 2. Sort Videos
-  const { results: videos } = await env.DB.prepare(
-    'SELECT id, date, created_at FROM videos'
-  ).all();
+  const videos = await getAllVideosForSorting(env);
 
   videos.sort((a, b) => {
     const dateA = parsePhotoDate(a.date);
@@ -602,20 +539,14 @@ export async function sortDatabase(request, env) {
     return timeB - timeA;
   });
 
-  const videoStatements = videos.map((video, index) => {
+  const videoUpdates = videos.map((video, index) => {
     const itemTime = new Date(baseTime - index * 10000);
     const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
-    
-    return env.DB.prepare(
-      'UPDATE videos SET created_at = ? WHERE id = ?'
-    ).bind(isoString, video.id);
+    return { id: video.id, createdAt: isoString };
   });
 
-  if (videoStatements.length > 0) {
-    await env.DB.batch(videoStatements);
-  }
+  await batchUpdateVideosCreatedAt(env, videoUpdates);
 
-  // Purge the cache immediately after sorting so order propagates instantly!
   await clearApiCache(request);
 
   return jsonResponse(request, env, { 
@@ -661,65 +592,40 @@ export async function replacePhotoFile(request, env, params) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
   }
 
-  // 1. Get the existing keys from D1
-  const photo = await env.DB.prepare(
-    'SELECT src, thumb, raw_src FROM photos WHERE id = ?'
-  ).bind(photoId).first();
-
+  const photo = await findPhotoById(env, photoId);
   if (!photo) {
     return errorResponse(request, env, 'photo record not found', 404);
   }
 
-  // 2. Generate new keys to bust CDN and browser cache
   const newPhotoKey = makeMediaKey('photos', 'webp');
   const newThumbKey = makeMediaKey('thumbs', 'webp');
   let newRawKey = null;
 
-  // 3. Put the new files in R2 using the new keys
   const puts = [
-    env.MEDIA_BUCKET.put(newPhotoKey, await photoFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
-    env.MEDIA_BUCKET.put(newThumbKey, await thumbFile.arrayBuffer(), {
-      httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
-    }),
+    putMediaObject(env, newPhotoKey, await photoFile.arrayBuffer(), { contentType: 'image/webp' }),
+    putMediaObject(env, newThumbKey, await thumbFile.arrayBuffer(), { contentType: 'image/webp' }),
   ];
 
   if (rawFile && rawFile.size > 0) {
     const rawExt = extensionForContentType(rawFile.type, 'jpg');
     newRawKey = makeMediaKey('photos-raw', rawExt);
     puts.push(
-      env.MEDIA_BUCKET.put(newRawKey, await rawFile.arrayBuffer(), {
-        httpMetadata: { contentType: rawFile.type || 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' },
+      putMediaObject(env, newRawKey, await rawFile.arrayBuffer(), {
+        contentType: rawFile.type || 'image/jpeg',
       })
     );
   }
 
   await Promise.all(puts);
 
-  // 4. Update the aspect_ratio, src, thumb, raw_src in D1
-  if (newRawKey) {
-    await env.DB.prepare(
-      'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = ? WHERE id = ?'
-    ).bind(aspectRatio, newPhotoKey, newThumbKey, newRawKey, photoId).run();
-  } else {
-    // If they replaced the image but did not upload a new raw one, clear the old raw_src reference
-    await env.DB.prepare(
-      'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = NULL WHERE id = ?'
-    ).bind(aspectRatio, newPhotoKey, newThumbKey, photoId).run();
-  }
+  await updatePhotoMediaKeys(env, photoId, {
+    aspectRatio,
+    photoKey: newPhotoKey,
+    thumbKey: newThumbKey,
+    rawKey: newRawKey,
+  });
 
-  // 5. Delete the old files from R2 to clean up
-  const keysToDelete = [photo.src, photo.thumb, photo.raw_src].filter(Boolean);
-  if (keysToDelete.length > 0) {
-    try {
-      await env.MEDIA_BUCKET.delete(keysToDelete);
-    } catch (err) {
-      console.error('Failed to delete old R2 keys:', err);
-    }
-  }
-
-  // 6. Purge the CDN cache for all API feeds instantly!
+  await deleteMediaObjects(env, [photo.src, photo.thumb, photo.raw_src]);
   await clearApiCache(request);
 
   return jsonResponse(request, env, { success: true });
@@ -741,6 +647,3 @@ export async function handleViewCount(request, env) {
   const data = await doRes.json();
   return jsonResponse(request, env, data);
 }
-
-
-

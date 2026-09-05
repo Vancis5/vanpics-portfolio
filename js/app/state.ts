@@ -1,65 +1,55 @@
 import type { Photo } from '../types.js';
-import { photoLibrary, getPhotoLibrary } from './media-data.js';
+import { galleryStore } from './stores/gallery-store.js';
+import { uiStore } from './stores/ui-store.js';
 
-function getInitialCategory() {
-  if (!window.location.hash) return 'all';
-  const initialHash = window.location.hash.substring(1).split('/')[0];
-  if (initialHash === 'figures') return 'figures';
-  if (initialHash === 'motion') return 'motion';
-  return 'all';
+export { galleryStore } from './stores/gallery-store.js';
+export { uiStore } from './stores/ui-store.js';
+
+export function updateActivePhotos(): Photo[] {
+  return galleryStore.updateActivePhotos();
 }
 
-function getCarouselPhotos() {
-  const heroPhotos = photoLibrary.filter(function (photo) {
-    return photo.heroSlide === true && photo.title !== '';
-  });
-  if (heroPhotos.length > 0) return heroPhotos;
-  return photoLibrary.filter(function (photo) { return photo.title !== ''; });
+export interface AppState {
+  pushNextState: boolean;
+  isPopState: boolean;
+  currentCategory: string;
+  activePhotos: Photo[];
+  carouselPhotos: Photo[];
+  cur: number;
+  isMobile: boolean;
+  heroVisible: boolean;
+  pageVisible: boolean;
+  heroRafId: number | null;
+  glowRafId: number | null;
+  heroScrollY: number;
+  currentLightboxIsMotion: boolean;
+  isManuallyNavigating: boolean;
+  isUserTouching: boolean;
+  isTouchingFilmstrip: boolean;
+  fsRaf: number | null;
+  filmstripHideTimer: any;
+  lbZoomLevel: number;
+  lbZoomPanX: number;
+  lbZoomPanY: number;
+  lastInputType: 'pointer' | 'keyboard';
 }
 
-export const state = {
-  pushNextState: false,
-  isPopState: false,
-  currentCategory: getInitialCategory(),
-  activePhotos: [] as Photo[],
-  carouselPhotos: getCarouselPhotos() as Photo[],
-  cur: 0,
-  isMobile: window.matchMedia('(hover: none)').matches,
-  heroVisible: true,
-  pageVisible: true,
-  heroRafId: null as number | null,
-  glowRafId: null as number | null,
-  heroScrollY: 0,
-  currentLightboxIsMotion: false,
-  isManuallyNavigating: false,
-  isUserTouching: false,
-  isTouchingFilmstrip: false,
-  fsRaf: null as number | null,
-  filmstripHideTimer: null as any,
-  lbZoomLevel: 1,
-  lbZoomPanX: 0,
-  lbZoomPanY: 0,
-  lastInputType: 'pointer'
-};
-
-export function updateActivePhotos() {
-  state.activePhotos = getPhotoLibrary(state.currentCategory);
-  return state.activePhotos;
-}
-
-updateActivePhotos();
-
-state.carouselPhotos.slice(0, 6).forEach(function (photo) {
-  const img = new Image();
-  img.src = photo.thumb || photo.src;
+export const state: AppState = new Proxy({} as AppState, {
+  get(_target, prop: string) {
+    if (prop in galleryStore) {
+      return (galleryStore as any)[prop];
+    }
+    if (prop in uiStore) {
+      return (uiStore as any)[prop];
+    }
+    return undefined;
+  },
+  set(_target, prop: string, value: any) {
+    if (prop in galleryStore) {
+      (galleryStore as any)[prop] = value;
+      return true;
+    }
+    (uiStore as any)[prop] = value;
+    return true;
+  }
 });
-
-window.addEventListener('keydown', function () {
-  state.lastInputType = 'keyboard';
-}, { passive: true });
-window.addEventListener('mousedown', function () {
-  state.lastInputType = 'pointer';
-}, { passive: true });
-window.addEventListener('touchstart', function () {
-  state.lastInputType = 'pointer';
-}, { passive: true });
