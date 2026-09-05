@@ -3,7 +3,7 @@ import { saveRatioToCache } from './utils.js';
 const _imgCache = new Map<string, { img: HTMLImageElement; decoded: boolean; decodePromise: Promise<any> | null }>();
 const _IMG_CACHE_MAX = 30;
 
-export function cacheImage(src: string) {
+export function cacheImage(src: string, eagerDecode: boolean = false) {
   if (!src) return null;
   if (_imgCache.has(src)) return _imgCache.get(src)!;
   if (_imgCache.size >= _IMG_CACHE_MAX) {
@@ -24,7 +24,7 @@ export function cacheImage(src: string) {
         }
       };
       entry.decoded = (img.naturalWidth > 0);
-      if (img.decode) {
+      if (eagerDecode && img.decode) {
         img.decode().then(function () {
           entry.decoded = (img.naturalWidth > 0);
           cacheDimensions();

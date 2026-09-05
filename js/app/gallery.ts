@@ -416,8 +416,8 @@ function scheduleGalleryBlurPreload(centerIndex: number, delay?: number) {
 
   galleryBlurPreloadTimer = window.setTimeout(function () {
     galleryBlurPreloadTimer = null;
-    preloadLightboxBlurNeighbors(centerIndex || 0, 6);
-  }, delay || 0);
+    preloadLightboxBlurNeighbors(centerIndex || 0, 1);
+  }, delay ?? 350);
 }
 
 export function getMasonryColumnCount() {
@@ -694,20 +694,13 @@ export function buildMasonry(category?: string) {
 
     if ((p.aspectRatio === undefined || p.aspectRatio === null) && !isRatioCached(basePath)) {
       imgEl.addEventListener('load', function () {
-        const handleDecode = () => {
-          if (imgEl.naturalWidth && imgEl.naturalHeight) {
-            let ratio = imgEl.naturalWidth / imgEl.naturalHeight;
-            saveRatioToCache(basePath, imgEl.naturalWidth, imgEl.naturalHeight);
-            card.style.setProperty('--photo-aspect-ratio', String(ratio.toFixed(4)));
-            imgEl.style.aspectRatio = String(ratio.toFixed(4));
-          }
-        };
-        if (imgEl.decode) {
-          imgEl.decode().then(handleDecode).catch(handleDecode);
-        } else {
-          handleDecode();
+        if (imgEl.naturalWidth && imgEl.naturalHeight) {
+          let ratio = imgEl.naturalWidth / imgEl.naturalHeight;
+          saveRatioToCache(basePath, imgEl.naturalWidth, imgEl.naturalHeight);
+          card.style.setProperty('--photo-aspect-ratio', String(ratio.toFixed(4)));
+          imgEl.style.aspectRatio = String(ratio.toFixed(4));
         }
-      });
+      }, { once: true });
     }
 
     let overlay = document.createElement('div');
@@ -772,7 +765,19 @@ if (masonry) {
 
     if (cardCategory === 'motion') return;
     if (state.currentCategory !== cardCategory) return;
-    scheduleGalleryBlurPreload(idx, 0);
+    scheduleGalleryBlurPreload(idx, 350);
+  });
+
+  masonry.addEventListener('pointerout', function (e) {
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
+    if (!card) return;
+    const related = e.relatedTarget as Node | null;
+    if (related && card.contains(related)) return;
+
+    if (galleryBlurPreloadTimer) {
+      window.clearTimeout(galleryBlurPreloadTimer);
+      galleryBlurPreloadTimer = null;
+    }
   });
 
   masonry.addEventListener('focusin', function (e) {
@@ -783,7 +788,7 @@ if (masonry) {
 
     if (cardCategory === 'motion') return;
     if (state.currentCategory !== cardCategory) return;
-    scheduleGalleryBlurPreload(idx, 0);
+    scheduleGalleryBlurPreload(idx, 200);
   });
 
   masonry.addEventListener('touchstart', function (e) {
@@ -794,7 +799,7 @@ if (masonry) {
 
     if (cardCategory === 'motion') return;
     if (state.currentCategory !== cardCategory) return;
-    scheduleGalleryBlurPreload(idx, 0);
+    scheduleGalleryBlurPreload(idx, 100);
   }, { passive: true });
 
   masonry.addEventListener('keydown', function (e) {

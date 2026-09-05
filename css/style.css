@@ -245,14 +245,17 @@ body::after {
 
   #cursor {
     position: fixed;
+    top: 0;
+    left: 0;
     width: 7px;
     height: 7px;
+    margin: -3.5px 0 0 -3.5px;
     background: rgba(var(--text-rgb), 0.9);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: transform 0.15s ease, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: translate;
+    transition: scale 0.15s ease, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
@@ -260,14 +263,17 @@ body::after {
 
   #cursor-ring {
     position: fixed;
+    top: 0;
+    left: 0;
     width: 28px;
     height: 28px;
+    margin: -14px 0 0 -14px;
     border: 1px solid rgba(var(--text-rgb), 0.25);
     border-radius: 50%;
     pointer-events: none;
     z-index: 9998;
-    transform: translate(-50%, -50%);
-    transition: border-color 0.3s, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: translate;
+    transition: border-color 0.3s, opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), scale 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
@@ -289,15 +295,15 @@ body::after {
   /* Smooth scale & opacity transition when general cursor enters/exits zoomable area */
   body:has(.zoomable:hover:not(.zoomed)) #cursor {
     opacity: 0 !important;
-    transform: translate(-50%, -50%) scale(0.35) !important;
-    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    scale: 0.35 !important;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), scale 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   body:has(.zoomable:hover:not(.zoomed)) #cursor-ring {
     opacity: 0 !important;
-    transform: translate(-50%, -50%) scale(0.35) !important;
+    scale: 0.35 !important;
     border-color: rgba(var(--text-rgb), 0.5) !important;
-    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease !important;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), scale 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease !important;
   }
 
   body:has(.zoomable.zoomed:hover) #cursor,
@@ -2516,17 +2522,19 @@ html.custom-cursor-enabled #lightbox-close::before {
   #footer-glow-ball {
     display: block;
     position: absolute;
+    top: 0;
+    left: 0;
     width: 600px;
     height: 600px;
+    margin: -300px 0 0 -300px;
     border-radius: 50%;
     pointer-events: none;
     z-index: 1;
-    transform: translate(-50%, -50%);
     background: radial-gradient(circle, rgba(100, 100, 100, 0.05) 0%, rgba(100, 100, 100, 0.01) 45%, transparent 70%);
     mix-blend-mode: screen;
     opacity: 0;
     transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: left, top;
+    will-change: translate;
   }
 
   #site-footer:hover #footer-glow-ball {

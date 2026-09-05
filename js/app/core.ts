@@ -103,8 +103,7 @@ function animateFooterGlow() {
   footerGlowX += (footerGlowTargetX - footerGlowX) * 0.08;
   footerGlowY += (footerGlowTargetY - footerGlowY) * 0.08;
   if (footerGlow) {
-    footerGlow.style.left = footerGlowX + 'px';
-    footerGlow.style.top = footerGlowY + 'px';
+    footerGlow.style.translate = `${footerGlowX}px ${footerGlowY}px`;
   }
   footerGlowRafId = requestAnimationFrame(animateFooterGlow);
 }
