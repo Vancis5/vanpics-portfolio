@@ -36,10 +36,30 @@ function liftLoader() {
 
 // Lift loader via direct callback — no MutationObserver (flaky in Firefox)
 let _loaderLifted = false;
-function safeLift() { if (!_loaderLifted) { _loaderLifted = true; liftLoader(); } }
-// Hard fallback: lift after 4s no matter what
+function safeLift() {
+  if (!_loaderLifted) {
+    _loaderLifted = true;
+    liftLoader();
+  }
+}
+
+// Hard fallback: lift after hardFallbackDelay no matter what so site never hangs
 setTimeout(safeLift, LOADER_CONFIG.hardFallbackDelay);
-setCarouselReadyCallback(function () { setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay); });
+
+async function onReadyToLift() {
+  const fontsPromise = (window as any).__fontsReady || (document.fonts ? document.fonts.ready : Promise.resolve());
+  try {
+    // Fonts load first before anything pops up
+    await Promise.race([
+      fontsPromise,
+      new Promise(function (resolve) { setTimeout(resolve, 2500); })
+    ]);
+  } catch (_) {}
+
+  setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay);
+}
+
+setCarouselReadyCallback(onReadyToLift);
 
 function scrollToGallery() {
   const lenis = (window as any).lenis;

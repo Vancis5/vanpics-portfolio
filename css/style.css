@@ -2559,15 +2559,15 @@ html.custom-cursor-enabled #lightbox-close::before {
     top: 0;
     transform: none;
     filter: none;
-    -webkit-mask-image: none;
-    mask-image: none;
-    opacity: 0.35;
-    background: radial-gradient(circle at 50% 50%, rgba(210, 140, 40, 0.08) 0%, rgba(180, 100, 20, 0.02) 40%, transparent 70%);
+    background-color: #24333d;
+    -webkit-mask-image: radial-gradient(ellipse 85% 78% at 50% 45%, black 15%, transparent 75%);
+    mask-image: radial-gradient(ellipse 85% 78% at 50% 45%, black 15%, transparent 75%);
+    opacity: 0.68;
   }
 
   #site-footer:hover .footer-bg-blur {
     filter: none;
-    opacity: 0.35;
+    opacity: 0.68;
   }
 
   .footer-bg-blur-inner {

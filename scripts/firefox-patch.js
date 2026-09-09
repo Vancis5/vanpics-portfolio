@@ -167,12 +167,24 @@ if (typeof document !== 'undefined' && isFirefox) {
         -webkit-backdrop-filter: none !important;
       }
 
-      /* 7. Hover effects: pure opacity only, no scaling, no filter blurs */
+      /* 7. Hover effects: nuke mix-blend-mode, scaling, and 1.4s transition pileups */
+      html.is-firefox .photo-card-overlay::before {
+        display: none !important;
+      }
+      html.is-firefox .photo-card-overlay {
+        transition: opacity 0.15s ease !important;
+      }
+      html.is-firefox .photo-card img {
+        transition: opacity 0.15s ease !important;
+      }
       html.is-firefox .photo-card:hover img,
       html.is-firefox .carousel-item:hover img,
       html.is-firefox .motion-card:hover img {
         transform: none !important;
         filter: none !important;
+      }
+      html.is-firefox .photo-card:hover .photo-card-overlay {
+        opacity: 1 !important;
       }
       html.is-firefox .motion-card:hover .photo-card-title {
         text-shadow: none !important;

@@ -154,6 +154,47 @@ function getFilmstripTrack() {
   return filmstripTrack;
 }
 
+let lastFsHapticTime = 0;
+let wasFsAtStart = false;
+let wasFsAtEnd = false;
+
+function triggerFilmstripHaptic() {
+  const now = performance.now();
+  if (now - lastFsHapticTime < 350) return;
+  lastFsHapticTime = now;
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    try {
+      // 25ms crisp bumper tap on boundary collision
+      navigator.vibrate(25);
+    } catch (_) {}
+  }
+}
+
+function checkFilmstripEdge(pos: number) {
+  // ONLY vibrate if the user is directly swiping / dragging the filmstrip
+  if (!state.isTouchingFilmstrip || !filmstripEl || !domRefs.lightbox?.classList.contains('open')) return;
+  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  if (max < 20) return;
+
+  if (pos <= 0) {
+    if (!wasFsAtStart) {
+      wasFsAtStart = true;
+      triggerFilmstripHaptic();
+    }
+  } else {
+    wasFsAtStart = false;
+  }
+
+  if (pos >= max - 1) {
+    if (!wasFsAtEnd) {
+      wasFsAtEnd = true;
+      triggerFilmstripHaptic();
+    }
+  } else {
+    wasFsAtEnd = false;
+  }
+}
+
 function clampFilmstripScroll(value: number): number {
   let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
   return Math.max(0, Math.min(value, max));
@@ -504,10 +545,23 @@ export function hideFilmstrip(force = false) {
   domRefs.lightbox.classList.remove('filmstrip-visible');
 }
 
+window.addEventListener('lightbox-open', function () {
+  let pos = getFilmstripScroll();
+  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  wasFsAtStart = pos <= 0;
+  wasFsAtEnd = max > 0 && pos >= max - 1;
+});
+
 window.addEventListener('lightbox-close', function () {
   hideFilmstrip(true);
   stopFsSync({ commit: false });
+  wasFsAtStart = false;
+  wasFsAtEnd = false;
 });
+
+filmstripEl.addEventListener('scroll', function () {
+  checkFilmstripEdge(getFilmstripScroll());
+}, { passive: true });
 
 // keep filmstrip visible while hovering it
 filmstripWrap.addEventListener('mouseenter', function () { clearTimeout(state.filmstripHideTimer); });
@@ -515,11 +569,35 @@ filmstripWrap.addEventListener('mouseleave', function () {
   // grace period — prevents flicker and allows cursor to move back in
   state.filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.mouseLeaveDelay);
 });
-filmstripWrap.addEventListener('touchstart', function () {
+let fsTouchStartX = 0;
+filmstripWrap.addEventListener('touchstart', function (e) {
+  if (e.touches && e.touches.length === 1) {
+    fsTouchStartX = e.touches[0].clientX;
+  }
   clearTimeout(state.filmstripHideTimer);
   state.isTouchingFilmstrip = true;
   stopFsSync();
 }, { passive: true });
+
+filmstripWrap.addEventListener('touchmove', function (e) {
+  if (!e.touches || e.touches.length !== 1) return;
+  let pos = getFilmstripScroll();
+  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  if (max < 20) return;
+  let dx = e.touches[0].clientX - fsTouchStartX;
+  if (pos <= 0 && dx > 8) {
+    if (!wasFsAtStart) {
+      wasFsAtStart = true;
+      triggerFilmstripHaptic();
+    }
+  } else if (pos >= max - 1 && dx < -8) {
+    if (!wasFsAtEnd) {
+      wasFsAtEnd = true;
+      triggerFilmstripHaptic();
+    }
+  }
+}, { passive: true });
+
 filmstripWrap.addEventListener('touchend', function () {
   state.filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.touchHideDelay);
   state.isTouchingFilmstrip = false;

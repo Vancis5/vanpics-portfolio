@@ -13,7 +13,30 @@
   </script>
 
   <style>
-    html, body { background: #0d0c0c !important; }
+    html, body {
+      background: #0d0c0c !important;
+      margin: 0;
+      padding: 0;
+    }
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #111010;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      overflow: clip;
+      user-select: none;
+      pointer-events: auto;
+      contain: strict;
+    }
+    #loader.lifting {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
   </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -81,19 +104,77 @@
   <meta name="twitter:image" content="https://vanpics.pages.dev/preview.jpg">
   <link rel="preload" href="/fonts/cormorant-garamond-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/dm-mono-400.woff2" as="font" type="font/woff2" crossorigin>
-  <script>
-    if ('fonts' in document) {
-      Promise.all([
-        document.fonts.load('400 1em "Cormorant Garamond"'),
-        document.fonts.load('400 1em "DM Mono"')
-      ]).then(function() {
-        document.documentElement.classList.add('fonts-ready');
-      }).catch(function() {
-        document.documentElement.classList.add('fonts-ready');
-      });
-    } else {
-      document.documentElement.classList.add('fonts-ready');
+  <link rel="preload" href="/fonts/cormorant-garamond-italic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/dm-mono-300.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    @font-face {
+      font-family: 'Cormorant Garamond';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
     }
+    @font-face {
+      font-family: 'Cormorant Garamond';
+      font-style: italic;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Cormorant Garamond';
+      font-style: normal;
+      font-weight: 300;
+      font-display: swap;
+      src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Cormorant Garamond';
+      font-style: italic;
+      font-weight: 300;
+      font-display: swap;
+      src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'DM Mono';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/fonts/dm-mono-400.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'DM Mono';
+      font-style: normal;
+      font-weight: 300;
+      font-display: swap;
+      src: url('/fonts/dm-mono-300.woff2') format('woff2');
+    }
+  </style>
+  <script>
+    (function() {
+      function markFontsReady() {
+        document.documentElement.classList.add('fonts-ready');
+      }
+
+      if ('fonts' in document) {
+        window.__fontsReady = Promise.all([
+          document.fonts.load('400 1em "Cormorant Garamond"'),
+          document.fonts.load('400 1em "DM Mono"'),
+          document.fonts.load('italic 400 1em "Cormorant Garamond"'),
+          document.fonts.load('300 1em "DM Mono"'),
+          document.fonts.ready
+        ]).then(function() {
+          markFontsReady();
+          return true;
+        }).catch(function() {
+          markFontsReady();
+          return false;
+        });
+      } else {
+        markFontsReady();
+        window.__fontsReady = Promise.resolve(true);
+      }
+    })();
   </script>
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="css/player.css" as="style">
@@ -132,12 +213,7 @@
       <div class="loader-status"><span class="loader-status-text">loading<span class="loader-dots"><span class="dot-1">.</span><span class="dot-2">.</span><span class="dot-3">.</span></span></span></div>
     </div>
   </div>
-  <script>
-    requestAnimationFrame(function() {
-      var l = document.getElementById('loader');
-      if (l) l.classList.add('visible');
-    });
-  </script>
+
   <div id="cursor"></div>
   <div id="cursor-ring"></div>
   <div id="drag-vignette"></div>

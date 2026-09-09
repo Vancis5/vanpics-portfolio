@@ -3,7 +3,75 @@ import { APP_CONFIG } from './app/config.js';
 import { state } from './app/state.js';
 import type { CustomLenis } from './types.js';
 
+function setupEdgeHaptics() {
+  const EDGE_THRESHOLD = 18; // Tight anti-wiggle deadzone: absorbs edge jiggle, arms immediately once moving
+  let lastEdgeHapticTime = 0;
+
+  function triggerEdgeHaptic() {
+    const now = performance.now();
+    if (now - lastEdgeHapticTime < 500) return;
+    lastEdgeHapticTime = now;
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        // 28ms crisp mechanical bumper tap when slamming into top/bottom boundaries
+        navigator.vibrate(28);
+      } catch (_) {}
+    }
+  }
+
+  let topArmed = false;
+  let bottomArmed = false;
+  let gestureStartedNearTop = true;
+  let gestureStartedNearBottom = false;
+
+  function checkEdge(scrollPos: number) {
+    if (document.body.classList.contains('lightbox-open')) return;
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    if (maxScroll < EDGE_THRESHOLD * 2) return;
+
+    if (scrollPos <= 0) {
+      if (topArmed && !gestureStartedNearTop) {
+        topArmed = false;
+        triggerEdgeHaptic();
+      }
+    } else if (scrollPos >= maxScroll - 2) {
+      if (bottomArmed && !gestureStartedNearBottom) {
+        bottomArmed = false;
+        triggerEdgeHaptic();
+      }
+    } else {
+      if (scrollPos >= EDGE_THRESHOLD) {
+        topArmed = true;
+        gestureStartedNearTop = false;
+      } else {
+        topArmed = false;
+      }
+
+      if (scrollPos <= maxScroll - EDGE_THRESHOLD) {
+        bottomArmed = true;
+        gestureStartedNearBottom = false;
+      } else {
+        bottomArmed = false;
+      }
+    }
+  }
+
+  window.addEventListener('touchstart', () => {
+    const scrollPos = window.scrollY || document.documentElement.scrollTop || 0;
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    gestureStartedNearTop = scrollPos < EDGE_THRESHOLD;
+    gestureStartedNearBottom = scrollPos > maxScroll - EDGE_THRESHOLD;
+  }, { passive: true });
+
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY || document.documentElement.scrollTop || 0;
+    checkEdge(scrollPos);
+  }, { passive: true });
+}
+
 export function initSmoothScroll(options: any = {}) {
+  setupEdgeHaptics();
+
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
