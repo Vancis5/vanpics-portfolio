@@ -22,6 +22,20 @@ let dragDistance = 0;
 let startX = 0;
 let startY = 0;
 let activeRawLoader: HTMLImageElement | null = null;
+let wasZoomed = false;
+
+function triggerZoomHaptic(isZoomingIn: boolean) {
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    try {
+      // 45ms punch for zoom in, 30ms sharp tap for zoom out (overcomes motor spin-up inertia)
+      navigator.vibrate(isZoomingIn ? 45 : 30);
+    } catch (_) {}
+  }
+}
+
+window.addEventListener('lightbox-close', () => {
+  wasZoomed = false;
+});
 
 export function updateZoomTransform(img: any, smooth = true) {
   if (state.currentLightboxIsMotion) return;
@@ -47,6 +61,10 @@ export function updateZoomTransform(img: any, smooth = true) {
   }
   
   if (state.lbZoomLevel <= 1) {
+    if (wasZoomed) {
+      wasZoomed = false;
+      triggerZoomHaptic(false);
+    }
     state.lbZoomLevel = 1;
     state.lbZoomPanX = 0;
     state.lbZoomPanY = 0;
@@ -66,7 +84,6 @@ export function updateZoomTransform(img: any, smooth = true) {
     };
     
     // Apply smooth transition when resetting
-    if (lb) lb.classList.remove('zoom-active');
     if (smooth) {
       img.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       zoomTransitionTimeout = setTimeout(() => {
@@ -104,6 +121,10 @@ export function updateZoomTransform(img: any, smooth = true) {
     }
     showFilmstripIfReady();
   } else {
+    if (!wasZoomed && state.lbZoomLevel >= 1.05) {
+      wasZoomed = true;
+      triggerZoomHaptic(true);
+    }
     if (lb) lb.classList.add('zoom-active');
     hideFilmstripIfReady();
 

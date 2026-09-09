@@ -17,12 +17,14 @@ import './filmstrip.js';
 import './easter-eggs.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
+import { updateHeroOverlay } from './hero-carousel.js';
 import './bootstrap.js';
 import '../browser-fixes.js';
+import '../../scripts/firefox-patch.js';
 
 async function bootstrapApp() {
   const { initSmoothScroll } = await import('../smooth-scroll.js');
-  initSmoothScroll({ updateStickyHeaderSurface, updateCustomScrollbar });
+  initSmoothScroll({ updateStickyHeaderSurface, updateCustomScrollbar, updateHeroOverlay });
 }
 
 bootstrapApp().catch(function (error) {

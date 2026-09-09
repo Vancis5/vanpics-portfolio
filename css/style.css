@@ -373,6 +373,34 @@ body::after {
   }
 }
 
+#hero-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg);
+  z-index: 6;
+  pointer-events: none;
+  opacity: var(--hero-overlay-opacity, 0);
+  will-change: opacity;
+  transform: translateZ(0);
+}
+
+@supports (animation-timeline: scroll()) {
+  #hero-overlay {
+    animation: hero-overlay-fade linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 75vh;
+  }
+
+  @keyframes hero-overlay-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
 .carousel-row {
   display: flex;
   gap: 8px;
@@ -528,6 +556,26 @@ body::after {
   opacity: 0;
   transform: translateY(6px);
   animation: fadeup 0.9s ease 1.2s forwards;
+  will-change: opacity, transform;
+}
+
+@supports (animation-timeline: scroll()) {
+  #hero-identity {
+    animation: fadeup 0.9s ease 1.2s forwards, hero-identity-scroll-fade linear both;
+    animation-timeline: auto, scroll(root block);
+    animation-range: normal, 0px 55vh;
+  }
+
+  @keyframes hero-identity-scroll-fade {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+  }
 }
 
 #hero-identity::before {
@@ -680,9 +728,9 @@ body::after {
   padding-left: calc(50vw - 50%);
   padding-right: calc(50vw - 50%);
 
-  background: rgba(13, 12, 12, 0.96);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  background: rgba(13, 12, 12, 0.85);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   padding-top: calc(1.5rem + var(--safe-top, 0px));
   padding-bottom: 1.5rem;
   margin-bottom: 0rem;
@@ -700,15 +748,6 @@ body::after {
   background: rgba(13, 12, 12, 0.85);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-}
-
-/* Disable expensive backdrop-filter on mobile/touch devices for buttery smooth scrolling */
-@media (hover: none) {
-  #gallery-header {
-    background: rgba(13, 12, 12, 0.96);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 
 #gallery-header p {
@@ -995,7 +1034,11 @@ body::after {
   }
 
   .photo-card img {
-    filter: brightness(0.76) saturate(0.85);
+    filter: none;
+  }
+
+  .photo-card img.media-loaded {
+    opacity: 1;
   }
 }
 
@@ -1085,11 +1128,11 @@ body::after {
   .motion-card .photo-card-overlay {
     display: flex !important;
     opacity: 1;
-    background: rgba(17, 16, 16, 0.45);
+    background: rgba(17, 16, 16, 0.35);
   }
 
   .motion-card img {
-    filter: brightness(0.72) saturate(0.85) blur(3px) !important;
+    filter: brightness(0.92) saturate(1) !important;
   }
 }
 
@@ -2206,6 +2249,10 @@ html.custom-cursor-enabled #lightbox-close::before {
   #lightbox.zoom-active:not(.mode-motion) #lightbox-info-wrap {
     z-index: 1 !important;
     pointer-events: none;
+  }
+
+  #lightbox-zoom-darken {
+    z-index: 1 !important;
   }
 
   #lightbox.zoom-active #lightbox-zoom-darken {

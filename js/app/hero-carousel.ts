@@ -285,8 +285,13 @@ export function tick(timestamp: number) {
         while (rowSt.offset < -rowSt.setWidth) rowSt.offset += rowSt.setWidth;
         while (rowSt.offset > 0) rowSt.offset -= rowSt.setWidth;
       }
-      rows[ri].style.transform = 'translate3d(' + (rowSt.offset + px[ri]) + 'px, 0, 0)';
+      const finalX = Math.round((rowSt.offset + px[ri]) * 100) / 100;
+      rows[ri].style.transform = 'translate3d(' + finalX + 'px, 0, 0)';
     });
+
+    if (state.heroScrollY !== lastHeroScroll) {
+      updateHeroOverlay(state.heroScrollY);
+    }
   } catch (error) {
     console.error('Error in hero carousel tick loop:', error);
     state.heroRafId = null;
@@ -295,6 +300,30 @@ export function tick(timestamp: number) {
 
   state.heroRafId = requestAnimationFrame(tick);
 }
+
+let lastHeroScroll = -1;
+
+export function updateHeroOverlay(scrollPos?: number) {
+  const currentScroll = typeof scrollPos === 'number' ? scrollPos : state.heroScrollY;
+  if (currentScroll === lastHeroScroll) return;
+  lastHeroScroll = currentScroll;
+  const fadeRange = window.innerHeight * 0.75;
+  const progress = Math.min(1, Math.max(0, currentScroll / fadeRange));
+  if (domRefs.heroOverlay) {
+    domRefs.heroOverlay.style.setProperty('--hero-overlay-opacity', progress.toFixed(3));
+  }
+
+  const heroIdentity = document.getElementById('hero-identity');
+  if (heroIdentity) {
+    const textFadeRange = window.innerHeight * 0.55;
+    const textProgress = Math.min(1, Math.max(0, currentScroll / textFadeRange));
+    heroIdentity.style.opacity = (1 - textProgress).toFixed(3);
+  }
+}
+
+window.addEventListener('resize', function () {
+  updateHeroOverlay();
+}, { passive: true });
 
 // Window listeners for moving/releasing drag
 window.addEventListener('mousemove', function (e) {

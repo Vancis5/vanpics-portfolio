@@ -29,10 +29,10 @@ VANPICS — PORTFOLIO UTILITY COMMANDS
      (Generates thumbnails for the gallery, filmstrip, and lightbox blur)
 
 
-3. BROWSER UTILS
-   ─────────────
-   - node scripts/firefox.js
-     (Utility for Firefox-specific optimizations/testing)
+3. BROWSER UTILS & PATCHES
+   ────────────────────────
+   - scripts/firefox-patch.js
+     (Integrated Firefox performance patch: kills WebGL blur overhead, pauses hero/glow loops, thumbnail hand-off)
 
 
 ─────────────────────────────────────────────────────────────────────────────

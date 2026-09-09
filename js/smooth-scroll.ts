@@ -8,10 +8,12 @@ export function initSmoothScroll(options: any = {}) {
 
   const updateStickyHeaderSurface = options.updateStickyHeaderSurface || function () {};
   const updateCustomScrollbar = options.updateCustomScrollbar || function () {};
+  const updateHeroOverlay = options.updateHeroOverlay || function () {};
 
   function updateScrollDrivenUi(scroll?: number) {
     const scrollPos = (typeof scroll === 'number') ? scroll : (window.scrollY || 0);
     state.heroScrollY = scrollPos;
+    updateHeroOverlay(scrollPos);
     updateStickyHeaderSurface();
     updateCustomScrollbar();
   }

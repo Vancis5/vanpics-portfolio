@@ -8,6 +8,7 @@ export const domRefs = {
   customScrollbar: getRequiredElement('custom-scrollbar'),
   customScrollbarThumb: getRequiredElement('custom-scrollbar-thumb'),
   hero: getRequiredElement('hero'),
+  heroOverlay: getRequiredElement('hero-overlay'),
   glowBall: getRequiredElement('glow-ball'),
   heroRows: [
     getRequiredElement('row-0'),

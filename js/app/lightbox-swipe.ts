@@ -363,6 +363,7 @@ if (state.isMobile) {
         info.style.animation = 'none';
         info.style.transition = 'none';
 
+        const isFF = document.documentElement.classList.contains('is-firefox');
         if (distFromStart === 0) {
           info.style.opacity = '1';
           info.style.filter = '';
@@ -370,7 +371,7 @@ if (state.isMobile) {
         } else {
           // 1:1 physical mapping relative to active slide — fades out by 16% drag distance and stays at 0 while dragging away
           let op = Math.max(0, 1 - distFromStart * 6.25);
-          let bl = Math.min(10, distFromStart * 40);
+          let bl = isFF ? 0 : Math.min(10, distFromStart * 40);
           let tx = swipeDelta > 0 ? Math.max(-20, -distFromStart * 80) : Math.min(20, distFromStart * 80);
 
           info.style.opacity = op.toString();
@@ -383,6 +384,7 @@ if (state.isMobile) {
       // Outgoing photo zooms IN slightly (1.0 -> 1.08), blurs, and darkens (1.0 -> 0.65 brightness) as it exits.
       // Incoming photo starts 1.08 zoomed, blurred, and darker (0.65 brightness), then brightens (0.65 -> 1.0), sharpens, and fits exact scale as user commits.
       if (state.isMobile && !state.currentLightboxIsMotion) {
+        const isFF = document.documentElement.classList.contains('is-firefox');
         let slides = imgWrap.querySelectorAll('.snap-slide');
         let targetIdx = swipeDelta > 0 ? state.cur + 1 : state.cur - 1;
 
@@ -395,20 +397,20 @@ if (state.isMobile) {
               if (sIdx === state.cur && distFromStart > 0.01) {
                 // Smooth ease-in-out factor for depth response
                 let easeFactor = 0.5 - 0.5 * Math.cos(Math.min(1, distFromStart) * Math.PI);
-                let curBlur = easeFactor * 14;
+                let curBlur = isFF ? 0 : easeFactor * 14;
                 let curScale = 1.0 + easeFactor * 0.22; // dramatic 22% zoom expansion inside grid
                 let curBright = 1.0 - easeFactor * 0.35; // darkens down to 0.65
                 img.style.transition = 'none';
-                img.style.filter = `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
+                img.style.filter = isFF ? (curBright < 0.99 ? `brightness(${curBright.toFixed(2)})` : '') : `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
                 img.style.transform = `scale(${curScale.toFixed(3)})`;
               } else if (sIdx === targetIdx && distFromStart > 0.01) {
                 // Incoming photo starts 1.22 zoomed & blurred, dramatically scales down to 1.0 & sharpens as user commits
                 let easeFactor = 0.5 - 0.5 * Math.cos((1 - Math.min(1, distFromStart)) * Math.PI);
-                let peekBlur = easeFactor * 14;
+                let peekBlur = isFF ? 0 : easeFactor * 14;
                 let peekScale = 1.0 + easeFactor * 0.22;
                 let peekBright = 1.0 - easeFactor * 0.35; // brightens up to 1.0
                 img.style.transition = 'none';
-                img.style.filter = `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
+                img.style.filter = isFF ? (peekBright < 0.99 ? `brightness(${peekBright.toFixed(2)})` : '') : `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
                 img.style.transform = `scale(${peekScale.toFixed(3)})`;
               } else {
                 img.style.transition = 'none';
@@ -570,7 +572,7 @@ if (state.isMobile) {
 
         let mWrap = domRefs.lightboxImgWrap;
         let img = mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img');
-        if (img) updateZoomTransform(img);
+        if (img) updateZoomTransform(img, false);
         return;
       }
 
@@ -584,7 +586,7 @@ if (state.isMobile) {
         dStartY = e.touches[0].clientY;
         let mWrap = domRefs.lightboxImgWrap;
         let img = mWrap.querySelector('.snap-slide[data-idx="' + state.cur + '"] img');
-        if (img) updateZoomTransform(img);
+        if (img) updateZoomTransform(img, false);
         return;
       }
 
@@ -614,8 +616,9 @@ if (state.isMobile) {
         content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
         content.style.opacity = String(Math.max(0.15, 1 - dy / 400));
 
+        let isFF = document.documentElement.classList.contains('is-firefox');
         let swipeProgress = Math.min(1, Math.max(0, dy / 300));
-        let blurVal = Math.pow(swipeProgress, 2.4) * 18;
+        let blurVal = isFF ? 0 : Math.pow(swipeProgress, 2.4) * 18;
 
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
@@ -691,17 +694,18 @@ if (state.isMobile) {
         content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
         content.style.opacity = '0';
 
+        let isFF = document.documentElement.classList.contains('is-firefox');
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
-          info.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
-          info.style.filter = 'blur(18px)';
+          info.style.transition = isFF ? 'opacity 0.2s ease' : 'opacity 0.2s ease, filter 0.2s ease';
+          info.style.filter = isFF ? '' : 'blur(18px)';
           info.style.opacity = '0';
         }
 
         let imgWrapEl = domRefs.lightboxImgWrap;
         if (imgWrapEl) {
-          imgWrapEl.style.transition = 'filter 0.2s ease';
-          imgWrapEl.style.filter = 'blur(18px)';
+          imgWrapEl.style.transition = isFF ? 'none' : 'filter 0.2s ease';
+          imgWrapEl.style.filter = isFF ? '' : 'blur(18px)';
         }
 
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
@@ -713,8 +717,8 @@ if (state.isMobile) {
 
         let fsWrap = domRefs.filmstripWrap;
         if (fsWrap) {
-          fsWrap.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
-          fsWrap.style.filter = 'blur(18px)';
+          fsWrap.style.transition = isFF ? 'opacity 0.2s ease' : 'opacity 0.2s ease, filter 0.2s ease';
+          fsWrap.style.filter = isFF ? '' : 'blur(18px)';
           fsWrap.style.opacity = '0';
         }
 

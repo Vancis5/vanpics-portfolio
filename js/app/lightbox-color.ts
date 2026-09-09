@@ -38,6 +38,7 @@ export function resetDynamicTextColor() {
     lbEl.style.removeProperty('--dynamic-text-color');
     lbEl.style.removeProperty('--dynamic-text-muted');
     lbEl.style.removeProperty('--dynamic-text-faint');
+    lbEl.style.removeProperty('--lightbox-ambient-bg');
   }
 }
 
@@ -105,6 +106,7 @@ export function updateDynamicTextColor(p: Photo) {
           lbEl.style.setProperty('--dynamic-text-color', `hsl(${hsl.h}, ${s}%, ${l}%)`);
           lbEl.style.setProperty('--dynamic-text-muted', `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`);
           lbEl.style.setProperty('--dynamic-text-faint', `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`);
+          lbEl.style.setProperty('--lightbox-ambient-bg', `hsl(${hsl.h}, ${Math.min(Math.max(hsl.s, 28), 50)}%, 13.5%)`);
         }
       } else {
         resetDynamicTextColor();

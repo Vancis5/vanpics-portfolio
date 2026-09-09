@@ -32,6 +32,7 @@
     "noEmit": true
   },
   "include": [
-    "js/**/*"
+    "js/**/*",
+    "scripts/firefox-patch.js"
   ]
 }
