@@ -41,6 +41,7 @@ export class WebGLBlurRenderer {
   animating: boolean;
   mixFactor: number;
   transitionSpeed: number;
+  lastFrameTime: number;
   animationId: number | null;
   dirPrev: number;
   dirCurr: number;
@@ -88,6 +89,7 @@ export class WebGLBlurRenderer {
     this.canvas.height = this.height;
 
     this.startTime = performance.now();
+    this.lastFrameTime = this.startTime;
     this.animating = false;
     this.mixFactor = 1.0;
     this.transitionSpeed = 0.012;
@@ -478,6 +480,7 @@ export class WebGLBlurRenderer {
     this.textures.current = this.createWebGLTexture(img);
     this.dirCurr = Math.random() > 0.5 ? 1.0 : -1.0;
     this.mixFactor = 0.0;
+    this.lastFrameTime = performance.now();
     this.startAnimation();
   }
 
@@ -499,12 +502,14 @@ export class WebGLBlurRenderer {
     this.textures.current = this.dummyTexture;
     this.dirCurr = 1.0;
     this.mixFactor = 0.0;
+    this.lastFrameTime = performance.now();
     this.startAnimation();
   }
 
   startAnimation() {
     if (this.animating) return;
     this.animating = true;
+    this.lastFrameTime = performance.now();
     this.render();
   }
 
@@ -521,9 +526,13 @@ export class WebGLBlurRenderer {
     let gl = this.gl;
     const loc = this.locLiquid;
 
-    let elapsedSeconds = (performance.now() - this.startTime) / 1000.0;
+    const now = performance.now();
+    const dt = Math.min((now - (this.lastFrameTime || now)) / (1000 / 60), 3);
+    this.lastFrameTime = now;
+
+    let elapsedSeconds = (now - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
-      this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed);
+      this.mixFactor = Math.min(1.0, this.mixFactor + this.transitionSpeed * dt);
     }
 
     let easedMix = easeOutExpoLike(this.mixFactor);
