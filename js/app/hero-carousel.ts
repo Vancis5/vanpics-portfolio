@@ -321,8 +321,10 @@ export function updateHeroOverlay(scrollPos?: number) {
   }
 }
 
+let heroResizeTimer: any;
 window.addEventListener('resize', function () {
-  updateHeroOverlay();
+  clearTimeout(heroResizeTimer);
+  heroResizeTimer = setTimeout(updateHeroOverlay, 150);
 }, { passive: true });
 
 // Window listeners for moving/releasing drag

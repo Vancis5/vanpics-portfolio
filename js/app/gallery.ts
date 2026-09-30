@@ -83,17 +83,21 @@ function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
   let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
-  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
-    const card = cardEl as HTMLElement;
-    const rect = card.getBoundingClientRect();
-    if (rect.top >= viewportHeight) {
-      clearCardRevealTimers(card);
-      delete card.dataset.revealPending;
-      delete card.dataset.revealCleanupTimer;
-      delete card.dataset.revealFallbackTimer;
-      card.classList.add('pending-reveal');
-      card.classList.remove('revealed');
-    }
+  let cards = Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[];
+
+  // Phase 1: Read DOM
+  let outOfBoundsCards = cards.filter(card => {
+    return card.getBoundingClientRect().top >= viewportHeight;
+  });
+
+  // Phase 2: Write DOM
+  outOfBoundsCards.forEach(card => {
+    clearCardRevealTimers(card);
+    delete card.dataset.revealPending;
+    delete card.dataset.revealCleanupTimer;
+    delete card.dataset.revealFallbackTimer;
+    card.classList.add('pending-reveal');
+    card.classList.remove('revealed');
   });
 }
 
@@ -105,20 +109,24 @@ function isCardInViewport(card: HTMLElement) {
 
 function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
+  let cards = Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[];
 
-  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
-    const card = cardEl as HTMLElement;
-    if (isCardInViewport(card)) showCardWithoutScrollReveal(card);
-  });
+  // Phase 1: Read
+  let visibleCards = cards.filter(card => isCardInViewport(card));
+
+  // Phase 2: Write
+  visibleCards.forEach(card => showCardWithoutScrollReveal(card));
 }
 
 function repairVisiblePendingCards(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
+  let cards = Array.from(root.querySelectorAll('.photo-card.pending-reveal')) as HTMLElement[];
 
-  root.querySelectorAll('.photo-card.pending-reveal').forEach(function (cardEl) {
-    const card = cardEl as HTMLElement;
-    if (!isCardInViewport(card)) return;
+  // Phase 1: Read
+  let visibleCards = cards.filter(card => isCardInViewport(card));
 
+  // Phase 2: Write
+  visibleCards.forEach(card => {
     if (galleryScrollDirection === 'down') {
       playCardScrollReveal(card);
     } else {
@@ -176,10 +184,19 @@ export function revealCards(scope: any, options?: any) {
   let root = scope || getActiveGalleryPanel() || document;
   let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
-  root.querySelectorAll('.photo-card').forEach(function (cardEl: any) {
-    const card = cardEl as HTMLElement;
-    const rect = card.getBoundingClientRect();
-    if (rect.top < viewportHeight) {
+  let cards = Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[];
+
+  // Phase 1: Read DOM
+  let cardMeasurements = cards.map(card => {
+    return {
+      card,
+      inView: card.getBoundingClientRect().top < viewportHeight
+    };
+  });
+
+  // Phase 2: Write DOM
+  cardMeasurements.forEach(({ card, inView }) => {
+    if (inView) {
       showCardWithoutScrollReveal(card);
     } else {
       card.classList.add('pending-reveal');
