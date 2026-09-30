@@ -53,12 +53,22 @@ export let animateGlow: (() => void) | null = null;
 
 if (glowBall && domRefs.hero) {
   const hero = domRefs.hero;
-  hero.addEventListener('mouseenter', function () { mouseInHero = true; startLoopsIfReady(); });
+  // ⚡ Bolt: Cache hero offset to avoid synchronous layout reads on mousemove
+  let heroOffsetX = 0;
+  let heroOffsetY = 0;
+
+  hero.addEventListener('mouseenter', function () {
+    mouseInHero = true;
+    const rect = hero.getBoundingClientRect();
+    heroOffsetX = rect.left + window.scrollX;
+    heroOffsetY = rect.top + window.scrollY;
+    startLoopsIfReady();
+  });
   hero.addEventListener('mouseleave', function () { mouseInHero = false; });
   hero.addEventListener('mousemove', function (e) {
-    const rect = hero.getBoundingClientRect();
-    glowTargetX = e.clientX - rect.left;
-    glowTargetY = e.clientY - rect.top;
+    // ⚡ Bolt: Use e.pageX/Y and cached offsets to avoid layout thrashing
+    glowTargetX = e.pageX - heroOffsetX;
+    glowTargetY = e.pageY - heroOffsetY;
   });
   animateGlow = function () {
     try {
@@ -109,8 +119,16 @@ function animateFooterGlow() {
 }
 
 if (footerGlow && siteFooter) {
+  // ⚡ Bolt: Cache footer offset to avoid synchronous layout reads on mousemove
+  let footerOffsetX = 0;
+  let footerOffsetY = 0;
+
   siteFooter.addEventListener('mouseenter', function () {
     mouseInFooter = true;
+    const rect = siteFooter.getBoundingClientRect();
+    footerOffsetX = rect.left + window.scrollX;
+    footerOffsetY = rect.top + window.scrollY;
+
     if (!footerGlowRafId) {
       footerGlowRafId = requestAnimationFrame(animateFooterGlow);
     }
@@ -119,8 +137,8 @@ if (footerGlow && siteFooter) {
     mouseInFooter = false;
   });
   siteFooter.addEventListener('mousemove', function (e) {
-    const rect = siteFooter.getBoundingClientRect();
-    footerGlowTargetX = e.clientX - rect.left;
-    footerGlowTargetY = e.clientY - rect.top;
+    // ⚡ Bolt: Use e.pageX/Y and cached offsets to avoid layout thrashing
+    footerGlowTargetX = e.pageX - footerOffsetX;
+    footerGlowTargetY = e.pageY - footerOffsetY;
   });
 }
