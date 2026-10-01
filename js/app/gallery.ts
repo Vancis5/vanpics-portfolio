@@ -623,6 +623,11 @@ export function buildMasonry(category?: string) {
   let colHeights: number[] = [];
   let numCols = getMasonryColumnCount();
 
+  // ⚡ Bolt Optimization: Use DocumentFragment to batch DOM insertions.
+  // This prevents layout thrashing by building the entire masonry layout off-DOM
+  // rather than appending thousands of nodes directly to the live document layout one by one.
+  let fragment = document.createDocumentFragment();
+
   items.forEach(function (p, i) {
     let currentYear = p.date ? (p.date.match(/\d{4}/) || ["undated"])[0] : "undated";
 
@@ -651,7 +656,7 @@ export function buildMasonry(category?: string) {
         }
       }
 
-      panel.appendChild(yearSection);
+      fragment.appendChild(yearSection);
       lastYear = currentYear;
     }
 
@@ -738,6 +743,9 @@ export function buildMasonry(category?: string) {
       }
     }
   });
+
+  // Append all batched nodes in a single operation
+  panel.appendChild(fragment);
 
   if (category === state.currentCategory) setTimeout(function () { revealCards(panel); }, 150);
 }
