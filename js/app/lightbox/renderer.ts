@@ -326,6 +326,7 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
 
   if (btn) {
     btn.classList.add('no-desc');
+    btn.setAttribute('aria-expanded', 'false');
   }
 
   updateLightboxDescPreview();
@@ -336,7 +337,10 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
       startInfoRect: state.isMobile ? preSwapInfoRect : null,
       applyLayoutChange: function () {
         content.classList.remove('desc-open');
-        if (btn) btn.textContent = 'read more';
+        if (btn) {
+          btn.textContent = 'read more';
+          btn.setAttribute('aria-expanded', 'false');
+        }
         updateLightboxDescPreview();
         updateMobileImgWrapHeight();
       },
@@ -344,6 +348,7 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
     });
   } else if (btn) {
     btn.textContent = 'read more';
+    btn.setAttribute('aria-expanded', 'false');
     updateLightboxDescPreview();
     if (!options.skipHeightUpdate) updateMobileImgWrapHeight();
   }
@@ -457,6 +462,7 @@ export function toggleLightboxDesc() {
     applyLayoutChange: function () {
       content.classList.toggle('desc-open', opening);
       btn.textContent = opening ? 'read less' : 'read more';
+      btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
       updateLightboxDescPreview();
       updateMobileImgWrapHeight();
       if (opening) hideFilmstripIfReady();
@@ -472,7 +478,10 @@ export function resetDescToggle() {
   let info = domRefs.lightboxInfo;
   let btn = domRefs.lightboxDescToggle;
   if (info) info.classList.remove('desc-open');
-  if (btn) btn.textContent = 'read more';
+  if (btn) {
+    btn.textContent = 'read more';
+    btn.setAttribute('aria-expanded', 'false');
+  }
 }
 
 window.addEventListener('resize', function () {
