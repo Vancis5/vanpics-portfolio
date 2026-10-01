@@ -243,8 +243,13 @@ function invalidateFilmstripMetrics() {
   filmstripMetrics = null;
 }
 
-window.addEventListener('resize', invalidateFilmstripMetrics, { passive: true });
-window.addEventListener('orientationchange', invalidateFilmstripMetrics, { passive: true });
+let filmstripResizeTimer: any;
+function debouncedInvalidateFilmstrip() {
+  clearTimeout(filmstripResizeTimer);
+  filmstripResizeTimer = setTimeout(invalidateFilmstripMetrics, 150);
+}
+window.addEventListener('resize', debouncedInvalidateFilmstrip, { passive: true });
+window.addEventListener('orientationchange', debouncedInvalidateFilmstrip, { passive: true });
 window.addEventListener('lightbox-open', invalidateFilmstripMetrics, { passive: true });
 
 function getFilmstripMetrics() {

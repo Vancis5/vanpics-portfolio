@@ -4,6 +4,15 @@ import { state } from './state.js';
 
 export let updateCustomScrollbar = function () {};
 
+function debounce(func: Function, wait: number) {
+  let timeout: any;
+  return function(...args: any[]) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+
 // ADVANCED CUSTOM SCROLLBAR CONTROLLER
 (function initCustomScrollbar() {
   let track = domRefs.customScrollbar;
@@ -217,11 +226,12 @@ export let updateCustomScrollbar = function () {};
     updateThumb();
   }
 
-  window.addEventListener('resize', invalidateSizeCache);
+  const debouncedInvalidate = debounce(invalidateSizeCache, 150);
+  window.addEventListener('resize', debouncedInvalidate);
   window.addEventListener('load', invalidateSizeCache);
 
   if (window.ResizeObserver) {
-    new ResizeObserver(invalidateSizeCache).observe(document.body);
+    new ResizeObserver(debouncedInvalidate).observe(document.body);
   }
 
   updateCustomScrollbar = updateThumb;

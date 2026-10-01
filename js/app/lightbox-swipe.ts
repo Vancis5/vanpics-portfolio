@@ -460,10 +460,14 @@ if (state.isMobile) {
     });
 
     // Re-align on resize/orientation change
+    let resizeTimer: any;
     window.addEventListener('resize', function () {
-      if (lbEl.classList.contains('open')) {
-        scrollToSlide(state.cur, false);
-      }
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        if (lbEl.classList.contains('open')) {
+          scrollToSlide(state.cur, false);
+        }
+      }, 150);
     });
 
     // ─── SWIPE DOWN TO DISMISS & PINCH TO ZOOM ───

@@ -484,6 +484,11 @@ export function resetDescToggle() {
   }
 }
 
+
+let rendererResizeTimer: any;
 window.addEventListener('resize', function () {
-  if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
+  clearTimeout(rendererResizeTimer);
+  rendererResizeTimer = setTimeout(function() {
+    if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
+  }, 150);
 }, { passive: true });

@@ -258,7 +258,16 @@ function invalidateArrowRects() {
   cachedRightRect = null;
 }
 
-window.addEventListener('resize', invalidateArrowRects, { passive: true });
+
+function debounceNav(func: Function, wait: number) {
+  let timeout: any;
+  return function(...args: any[]) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+window.addEventListener('resize', debounceNav(invalidateArrowRects, 150), { passive: true });
+
 
 export function startNavAnimationLoop() {
   if (isNavActive) return;
