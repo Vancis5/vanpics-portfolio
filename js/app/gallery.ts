@@ -55,49 +55,25 @@ function finishCardScrollReveal(card: HTMLElement) {
 
 function playCardScrollReveal(card: HTMLElement) {
   if (!card.classList.contains('pending-reveal')) return;
-  if (card.dataset.revealPending === 'true') return;
-  card.dataset.revealPending = 'true';
-
-  let img = card.querySelector('img');
-  let reveal = function () {
-    if (card.dataset.revealFallbackTimer) {
-      window.clearTimeout(Number(card.dataset.revealFallbackTimer));
-      delete card.dataset.revealFallbackTimer;
-    }
-    finishCardScrollReveal(card);
-  };
-
-  if (img && img.complete && img.naturalHeight !== 0) {
-    reveal();
-  } else if (img) {
-    img.addEventListener('load', reveal, { once: true });
-    img.addEventListener('error', reveal, { once: true });
-    let fallbackTimer = window.setTimeout(reveal, GALLERY_REVEAL_IMAGE_WAIT_MS);
-    card.dataset.revealFallbackTimer = String(fallbackTimer);
-  } else {
-    reveal();
-  }
+  finishCardScrollReveal(card);
 }
 
 function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
   let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
-  let cards = Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[];
-
-  // Phase 1: Read DOM
-  let outOfBoundsCards = cards.filter(card => {
-    return card.getBoundingClientRect().top >= viewportHeight;
-  });
-
-  // Phase 2: Write DOM
-  outOfBoundsCards.forEach(card => {
-    clearCardRevealTimers(card);
-    delete card.dataset.revealPending;
-    delete card.dataset.revealCleanupTimer;
-    delete card.dataset.revealFallbackTimer;
-    card.classList.add('pending-reveal');
-    card.classList.remove('revealed');
+  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
+    if (card.classList.contains('revealed') || !card.classList.contains('pending-reveal')) return;
+    const rect = card.getBoundingClientRect();
+    if (rect.top >= viewportHeight) {
+      clearCardRevealTimers(card);
+      delete card.dataset.revealPending;
+      delete card.dataset.revealCleanupTimer;
+      delete card.dataset.revealFallbackTimer;
+      card.classList.add('pending-reveal');
+      card.classList.remove('revealed');
+    }
   });
 }
 
@@ -109,29 +85,20 @@ function isCardInViewport(card: HTMLElement) {
 
 function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
-  let cards = Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[];
 
-  // Phase 1: Read
-  let visibleCards = cards.filter(card => isCardInViewport(card));
-
-  // Phase 2: Write
-  visibleCards.forEach(card => showCardWithoutScrollReveal(card));
+  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
+    if (isCardInViewport(card)) showCardWithoutScrollReveal(card);
+  });
 }
 
 function repairVisiblePendingCards(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
-  let cards = Array.from(root.querySelectorAll('.photo-card.pending-reveal')) as HTMLElement[];
 
-  // Phase 1: Read
-  let visibleCards = cards.filter(card => isCardInViewport(card));
-
-  // Phase 2: Write
-  visibleCards.forEach(card => {
-    if (galleryScrollDirection === 'down') {
-      playCardScrollReveal(card);
-    } else {
-      showCardWithoutScrollReveal(card);
-    }
+  root.querySelectorAll('.photo-card.pending-reveal').forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
+    if (!isCardInViewport(card)) return;
+    playCardScrollReveal(card);
   });
 }
 
@@ -147,18 +114,12 @@ function scheduleGalleryRevealRepair(scope: HTMLElement | Document | null, delay
 let cardObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {
     let card = entry.target as HTMLElement;
-    let suppressReveal = performance.now() < gallerySuppressScrollRevealUntil;
-
-    if (entry.isIntersecting && galleryScrollDirection === 'down' && !suppressReveal) {
+    if (entry.isIntersecting) {
       playCardScrollReveal(card);
-    } else if (entry.isIntersecting && galleryScrollDirection === 'up') {
-      showCardWithoutScrollReveal(card);
-    } else if (!entry.isIntersecting && galleryScrollDirection === 'up' && entry.boundingClientRect.top > window.innerHeight) {
-      card.classList.add('pending-reveal');
-      card.classList.remove('revealed');
+      cardObserver.unobserve(card);
     }
   });
-}, { rootMargin: '0px 0px -30px 0px' });
+}, { rootMargin: '0px 0px 50px 0px' });
 
 let galleryPreloadObserver = new IntersectionObserver(function (entries) {
   entries.forEach(function (entry) {
@@ -184,25 +145,16 @@ export function revealCards(scope: any, options?: any) {
   let root = scope || getActiveGalleryPanel() || document;
   let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
-  let cards = Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[];
-
-  // Phase 1: Read DOM
-  let cardMeasurements = cards.map(card => {
-    return {
-      card,
-      inView: card.getBoundingClientRect().top < viewportHeight
-    };
-  });
-
-  // Phase 2: Write DOM
-  cardMeasurements.forEach(({ card, inView }) => {
-    if (inView) {
+  root.querySelectorAll('.photo-card').forEach(function (cardEl: any) {
+    const card = cardEl as HTMLElement;
+    const rect = card.getBoundingClientRect();
+    if (rect.top < viewportHeight) {
       showCardWithoutScrollReveal(card);
-    } else {
+      cardObserver.unobserve(card);
+    } else if (!card.classList.contains('revealed')) {
       card.classList.add('pending-reveal');
-      card.classList.remove('revealed');
+      cardObserver.observe(card);
     }
-    cardObserver.observe(card);
     galleryPreloadObserver.observe(card);
   });
 }
@@ -640,11 +592,6 @@ export function buildMasonry(category?: string) {
   let colHeights: number[] = [];
   let numCols = getMasonryColumnCount();
 
-  // ⚡ Bolt Optimization: Use DocumentFragment to batch DOM insertions.
-  // This prevents layout thrashing by building the entire masonry layout off-DOM
-  // rather than appending thousands of nodes directly to the live document layout one by one.
-  let fragment = document.createDocumentFragment();
-
   items.forEach(function (p, i) {
     let currentYear = p.date ? (p.date.match(/\d{4}/) || ["undated"])[0] : "undated";
 
@@ -673,7 +620,7 @@ export function buildMasonry(category?: string) {
         }
       }
 
-      fragment.appendChild(yearSection);
+      panel.appendChild(yearSection);
       lastYear = currentYear;
     }
 
@@ -761,9 +708,6 @@ export function buildMasonry(category?: string) {
     }
   });
 
-  // Append all batched nodes in a single operation
-  panel.appendChild(fragment);
-
   if (category === state.currentCategory) setTimeout(function () { revealCards(panel); }, 150);
 }
 
@@ -847,7 +791,7 @@ if (masonry) {
   }, true);
 
   masonry.addEventListener('pointerleave', function (e) {
-    const card = (e.target as HTMLElement).closest('.photo-card');
+    const card = (e.target as HTMLElement).closest('.photo-card') as HTMLElement | null;
     if (!card) return;
     const img = card.querySelector('.photo-card-img') as HTMLElement | null;
     if (!img) return;

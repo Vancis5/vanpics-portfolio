@@ -97,9 +97,7 @@ export function setLightboxBlur(src: string) {
         requestAnimationFrame(function () {
           if (token !== blurToken) return;
           if (domRefs.blurCanvas) {
-            domRefs.blurCanvas.classList.add('ready');
-            void domRefs.blurCanvas.offsetHeight;
-            domRefs.blurCanvas.classList.add('active');
+            domRefs.blurCanvas.classList.add('ready', 'active');
           }
         });
       });
@@ -116,9 +114,7 @@ export function setLightboxBlur(src: string) {
         requestAnimationFrame(function () {
           if (token !== blurToken) return;
           if (domRefs.blurCanvas) {
-            domRefs.blurCanvas.classList.add('ready');
-            void domRefs.blurCanvas.offsetHeight;
-            domRefs.blurCanvas.classList.add('active');
+            domRefs.blurCanvas.classList.add('ready', 'active');
           }
         });
       });
@@ -148,62 +144,82 @@ export function setLightboxBlur(src: string) {
   }
 }
 
-export function runDescFlipTransition(options: DescFlipOptions) {
+let flipTimer: any = null;
+
+export function getMobileInfoBaseOffset(): number {
+  const imgWrap = domRefs.lightboxImgWrap;
+  if (!imgWrap) return 0;
+  const containerH = imgWrap.clientHeight;
+  if (!containerH) return 0;
+
+  let photoDisplayedH = containerH;
+  if (state.currentLightboxIsMotion) {
+    const shell = domRefs.motionPlayerShell;
+    const items = getCurrentLightboxItems();
+    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : (16 / 9);
+    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
+    const shellRect = shell ? shell.getBoundingClientRect() : null;
+    photoDisplayedH = shellRect && shellRect.height > 0 ? shellRect.height : Math.min(containerH, (viewportWidth - 32) / fallbackRatio);
+  } else {
+    const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
+    const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
+    const items = getCurrentLightboxItems();
+    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
+    const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
+    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
+    photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
+  }
+
+  const topShift = window.innerHeight * 0.04;
+  return -Math.max(0, (containerH - photoDisplayedH) / 2) - topShift;
+}
+
+export function getDescExpansionDiff(): number {
+  let desc = domRefs.lightboxDesc;
+  if (!desc || !state.isMobile) return 0;
+  let prevTransition = desc.style.transition;
+  let prevMaxH = desc.style.maxHeight;
+
+  desc.style.transition = 'none';
+  desc.style.maxHeight = '3.5em';
+  let collapsedH = desc.offsetHeight;
+
+  desc.style.maxHeight = 'none';
+  let expandedH = desc.offsetHeight;
+
+  desc.style.maxHeight = prevMaxH;
+  desc.style.transition = prevTransition;
+
+  return Math.max(0, expandedH - collapsedH);
+}
+
+export function cancelDescFlipTransition() {
+  if (flipTimer) {
+    clearTimeout(flipTimer);
+    flipTimer = null;
+  }
   let imgWrap = domRefs.lightboxImgWrap;
   let infoWrap = domRefs.lightboxInfoWrap;
-  let applyLayoutChange = options.applyLayoutChange;
-  let cleanup = options.cleanup;
-
-  if (!imgWrap || !infoWrap) {
-    applyLayoutChange();
-    if (cleanup) cleanup();
-    return;
+  let photoVisual = state.currentLightboxIsMotion
+    ? domRefs.motionPlayerShell
+    : (imgWrap?.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
+  if (photoVisual) {
+    photoVisual.style.transition = '';
+    photoVisual.style.transform = '';
   }
-
-  let photoVisual = state.isMobile ? (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement) : imgWrap;
-  if (!photoVisual) photoVisual = imgWrap;
-  let startImg = options.startImgRect || photoVisual.getBoundingClientRect();
-  let startInfo = options.startInfoRect || infoWrap.getBoundingClientRect();
-
-  applyLayoutChange();
-
-  let targetTransform = state.isMobile ? (infoWrap.style.transform || '') : '';
-  let endImg = photoVisual.getBoundingClientRect();
-  let endInfo = infoWrap.getBoundingClientRect();
-  let dImg = startImg.top - endImg.top;
-  let dInfo = startInfo.top - endInfo.top;
-
-  const moveImg = Math.abs(dImg) >= 1;
-
-  if (moveImg) {
-    photoVisual.style.transition = 'none';
-    photoVisual.style.transform = 'translateY(' + dImg + 'px)';
+  if (infoWrap) {
+    infoWrap.style.transition = '';
   }
-  infoWrap.style.transition = 'none';
-  void infoWrap.offsetHeight;
+  let desc = domRefs.lightboxDesc;
+  if (desc) {
+    desc.style.transition = '';
+    desc.style.maxHeight = '';
+  }
+}
 
-  infoWrap.style.transform = targetTransform ? (targetTransform + ' translateY(' + dInfo + 'px)') : ('translateY(' + dInfo + 'px)');
-  if (options.afterInvert) options.afterInvert();
-
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () {
-      if (moveImg) {
-        photoVisual.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-        photoVisual.style.transform = '';
-      }
-      infoWrap.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      infoWrap.style.transform = targetTransform;
-      setTimeout(function () {
-        if (moveImg) {
-          photoVisual.style.transition = '';
-          photoVisual.style.transform = '';
-        }
-        infoWrap.style.transition = '';
-        if (!state.isMobile) infoWrap.style.transform = '';
-        if (cleanup) cleanup();
-      }, 450);
-    });
-  });
+export function runDescFlipTransition(options: DescFlipOptions) {
+  options.applyLayoutChange();
+  if (options.cleanup) options.cleanup();
 }
 
 function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
@@ -224,6 +240,7 @@ export function updateLightboxDescPreview() {
   if (!cleanText) {
     desc.classList.remove('desc-overflow');
     btn.classList.add('no-desc');
+    btn.setAttribute('aria-expanded', 'false');
     return;
   }
 
@@ -269,18 +286,16 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
   }
   let btn = domRefs.lightboxDescToggle;
   let descEl = domRefs.lightboxDesc;
-  let isCollapsingOpenDesc = content && content.classList.contains('desc-open');
-  let preSwapImgRect = null;
-  let preSwapInfoRect = null;
 
-  if (isCollapsingOpenDesc && state.isMobile) {
-    let preSwapImgWrap = domRefs.lightboxImgWrap;
-    let preSwapInfoWrap = domRefs.lightboxInfoWrap;
-    if (preSwapImgWrap && preSwapInfoWrap) {
-      preSwapImgRect = preSwapImgWrap.getBoundingClientRect();
-      preSwapInfoRect = preSwapInfoWrap.getBoundingClientRect();
+  cancelDescFlipTransition();
+
+  if (content && content.classList.contains('desc-open')) {
+    content.classList.remove('desc-open');
+    if (descEl) {
+      descEl.style.maxHeight = '';
+      descEl.style.transition = '';
     }
-    if (descEl) descEl.style.transition = 'none';
+    showFilmstripIfReady();
   }
 
   if (domRefs.lightboxTitle) domRefs.lightboxTitle.textContent = safeTitle;
@@ -325,33 +340,13 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
   }
 
   if (btn) {
+    btn.textContent = 'read more';
     btn.classList.add('no-desc');
     btn.setAttribute('aria-expanded', 'false');
   }
 
   updateLightboxDescPreview();
-
-  if (content && content.classList.contains('desc-open')) {
-    runDescFlipTransition({
-      startImgRect: state.isMobile ? preSwapImgRect : null,
-      startInfoRect: state.isMobile ? preSwapInfoRect : null,
-      applyLayoutChange: function () {
-        content.classList.remove('desc-open');
-        if (btn) {
-          btn.textContent = 'read more';
-          btn.setAttribute('aria-expanded', 'false');
-        }
-        updateLightboxDescPreview();
-        updateMobileImgWrapHeight();
-      },
-      cleanup: state.isMobile && descEl ? function () { descEl.style.transition = ''; } : null
-    });
-  } else if (btn) {
-    btn.textContent = 'read more';
-    btn.setAttribute('aria-expanded', 'false');
-    updateLightboxDescPreview();
-    if (!options.skipHeightUpdate) updateMobileImgWrapHeight();
-  }
+  if (!options.skipHeightUpdate) updateMobileImgWrapHeight();
 }
 
 export function animateInfo(dir: number) {
@@ -364,90 +359,56 @@ export function animateInfo(dir: number) {
 
   if (state.isMobile) {
     info.style.animation = 'none';
-    info.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+    info.style.transition = 'opacity 0.28s ease';
     info.style.opacity = '1';
     info.style.filter = '';
     info.style.transform = '';
     return;
   }
 
-  let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
-  if (hasContent) {
-    let ghost = info.cloneNode(true) as HTMLElement;
-    ghost.removeAttribute('id');
-    ghost.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
-    ghost.style.position = 'absolute';
-    ghost.style.top = info.offsetTop + 'px';
-    ghost.style.left = info.offsetLeft + 'px';
-    ghost.style.width = info.offsetWidth + 'px';
-    ghost.style.pointerEvents = 'none';
-    ghost.removeAttribute('onclick');
-    let exitDuration = state.isMobile ? '0.30s' : '0.22s';
-    ghost.style.animation = `lbInfoOut ${exitDuration} ease forwards`;
-    ghost.style.willChange = 'filter, opacity';
-    ghost.style.zIndex = '1';
-    info.parentNode.appendChild(ghost);
-    let removeDelay = state.isMobile ? 320 : 250;
-    setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, removeDelay);
-  }
+  let fromX = dir === 0 ? 0 : (dir > 0 ? 18 : -18);
+  let fromY = dir === 0 ? 10 : 0;
+  info.style.animation = 'none';
+  info.style.transition = 'none';
+  info.style.opacity = '0';
+  info.style.filter = '';
+  info.style.transform = `translate3d(${fromX}px, ${fromY}px, 0)`;
 
-  let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
-  let fromY = dir === 0 ? 16 : 0;
-  let clone = info.cloneNode(true) as HTMLElement;
-  clone.style.setProperty('--lb-from-x', fromX + 'px');
-  clone.style.setProperty('--lb-from-y', fromY + 'px');
-  let duration = state.isMobile ? '0.45s' : '0.55s';
-  clone.style.animation = `lbInfoIn ${duration} cubic-bezier(0.22,1,0.36,1) forwards`;
-  clone.style.willChange = 'filter, opacity, transform';
-  clone.style.transition = '';
-  clone.style.filter = '';
-  clone.style.opacity = '';
-  clone.style.transform = '';
-  info.parentNode.replaceChild(clone, info);
-  domRefs.lightboxInfo = clone;
-  refreshLightboxInfoRefs();
+  requestAnimationFrame(function () {
+    if (!info) return;
+    info.style.transition = 'opacity 0.24s ease, transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
+    info.style.opacity = '1';
+    info.style.transform = 'translate3d(0, 0, 0)';
+  });
 }
 
-export function updateMobileImgWrapHeight() {
+export function updateMobileImgWrapHeight(force?: boolean) {
   if (!state.isMobile) {
     domRefs.lightboxImgWrap?.style.removeProperty('height');
     domRefs.lightboxContent?.style.removeProperty('--lightbox-img-wrap-height');
     domRefs.lightboxInfoWrap?.style.removeProperty('transform');
     return;
   }
-  if (state.isUserTouching) return;
+  if (state.isUserTouching && !force) return;
   const imgWrap = domRefs.lightboxImgWrap;
   const infoWrap = domRefs.lightboxInfoWrap;
   if (!imgWrap || !infoWrap) return;
 
-  const containerH = imgWrap.clientHeight;
-  if (!containerH) return;
+  const baseOffset = getMobileInfoBaseOffset();
+  const isDescOpen = domRefs.lightboxContent?.classList.contains('desc-open');
+  const shift = isDescOpen ? Math.round(getDescExpansionDiff() / 2) : 0;
 
-  let ratio = 1;
-  let photoDisplayedH = containerH;
+  let photoVisual = state.currentLightboxIsMotion
+    ? domRefs.motionPlayerShell
+    : (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
 
-  if (state.currentLightboxIsMotion) {
-    const shell = domRefs.motionPlayerShell;
-    const items = getCurrentLightboxItems();
-    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : (16 / 9);
-    ratio = fallbackRatio;
-    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-    const shellRect = shell ? shell.getBoundingClientRect() : null;
-    photoDisplayedH = shellRect && shellRect.height > 0 ? shellRect.height : Math.min(containerH, (viewportWidth - 32) / ratio);
-  } else {
-    const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
-    const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
-    const items = getCurrentLightboxItems();
-    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
-    ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
-    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-    photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
+  if (photoVisual) {
+    photoVisual.style.transform = shift > 0 ? `translateY(calc(-4dvh - ${shift}px))` : '';
   }
 
-  const topShift = window.innerHeight * 0.04;
-  const offset = -Math.max(0, (containerH - photoDisplayedH) / 2) - topShift;
-
-  infoWrap.style.transform = `translateY(${offset}px)`;
+  infoWrap.style.transform = shift > 0
+    ? `translateY(calc(${baseOffset}px - ${shift}px))`
+    : `translateY(${baseOffset}px)`;
 }
 
 export function toggleLightboxDesc() {
@@ -455,40 +416,132 @@ export function toggleLightboxDesc() {
   let btn = domRefs.lightboxDescToggle;
   if (!content || !btn || btn.classList.contains('no-desc')) return;
 
+  let imgWrap = domRefs.lightboxImgWrap;
+  let infoWrap = domRefs.lightboxInfoWrap;
   let desc = domRefs.lightboxDesc;
+  if (!imgWrap || !infoWrap || !desc) return;
+
+  let photoVisual = state.currentLightboxIsMotion
+    ? domRefs.motionPlayerShell
+    : (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
+  if (!photoVisual) photoVisual = imgWrap;
+
   let opening = !content.classList.contains('desc-open');
 
-  runDescFlipTransition({
-    applyLayoutChange: function () {
-      content.classList.toggle('desc-open', opening);
-      btn.textContent = opening ? 'read less' : 'read more';
-      btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
-      updateLightboxDescPreview();
-      updateMobileImgWrapHeight();
-      if (opening) hideFilmstripIfReady();
-      else showFilmstripIfReady();
-    },
-    afterInvert: function () {
-      if (desc) void desc.offsetHeight;
-    }
+  if (flipTimer) {
+    clearTimeout(flipTimer);
+    flipTimer = null;
+  }
+
+  // 1. FIRST: measure exact dynamic current positions (including in-flight)
+  photoVisual.style.transition = 'none';
+  infoWrap.style.transition = 'none';
+  desc.style.transition = 'none';
+
+  let startPhotoRect = photoVisual.getBoundingClientRect();
+  let startInfoRect = infoWrap.getBoundingClientRect();
+  let startDescH = desc.offsetHeight;
+
+  // Measure dynamic collapsed vs expanded heights for this specific text & photo
+  let prevMaxH = desc.style.maxHeight;
+  desc.style.maxHeight = '3.5em';
+  let collapsedDescH = desc.offsetHeight;
+  desc.style.maxHeight = 'none';
+  let expandedDescH = desc.offsetHeight;
+  desc.style.maxHeight = prevMaxH;
+
+  let diff = Math.max(0, expandedDescH - collapsedDescH);
+  let shift = Math.round(diff / 2);
+  let baseOffset = getMobileInfoBaseOffset();
+
+  // 2. LAST: set target layout in DOM
+  content.classList.toggle('desc-open', opening);
+  btn.textContent = opening ? 'read less' : 'read more';
+  btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+  updateLightboxDescPreview();
+
+  if (opening) hideFilmstripIfReady();
+  else showFilmstripIfReady();
+
+  let targetShift = opening ? shift : 0;
+  let targetPhotoTransform = targetShift > 0 ? `translateY(calc(-4dvh - ${targetShift}px))` : '';
+  let targetInfoTransform = targetShift > 0 ? `translateY(calc(${baseOffset}px - ${targetShift}px))` : `translateY(${baseOffset}px)`;
+  let targetDescH = opening ? expandedDescH : collapsedDescH;
+
+  photoVisual.style.transform = targetPhotoTransform;
+  infoWrap.style.transform = targetInfoTransform;
+  desc.style.maxHeight = targetDescH + 'px';
+
+  let endPhotoRect = photoVisual.getBoundingClientRect();
+  let endInfoRect = infoWrap.getBoundingClientRect();
+  let endDescH = desc.offsetHeight;
+
+  // 3. INVERT: calculate exact delta from dynamic start to end
+  let dPhoto = startPhotoRect.top - endPhotoRect.top;
+  let dInfo = startInfoRect.top - endInfoRect.top;
+
+  let invertPhotoTransform = targetPhotoTransform
+    ? `${targetPhotoTransform} translateY(${dPhoto}px)`
+    : `translateY(calc(-4dvh + ${dPhoto}px))`;
+  let invertInfoTransform = targetInfoTransform
+    ? `${targetInfoTransform} translateY(${dInfo}px)`
+    : `translateY(calc(${baseOffset}px + ${dInfo}px))`;
+
+  photoVisual.style.transform = invertPhotoTransform;
+  infoWrap.style.transform = invertInfoTransform;
+  desc.style.maxHeight = startDescH + 'px';
+
+  // Force reflow
+  void infoWrap.offsetHeight;
+
+  // 4. PLAY: animate smoothly to target positions
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      const dur = '0.38s';
+
+      photoVisual.style.transition = `transform ${dur} ${ease}`;
+      photoVisual.style.transform = targetPhotoTransform;
+
+      infoWrap.style.transition = `transform ${dur} ${ease}`;
+      infoWrap.style.transform = targetInfoTransform;
+
+      desc.style.transition = `max-height ${dur} ${ease}, opacity ${dur} ease`;
+      desc.style.maxHeight = endDescH + 'px';
+
+      flipTimer = setTimeout(function () {
+        photoVisual.style.transition = '';
+        infoWrap.style.transition = '';
+        desc.style.transition = '';
+        if (opening) {
+          desc.style.maxHeight = 'none';
+        } else {
+          desc.style.maxHeight = '';
+        }
+        flipTimer = null;
+      }, 400);
+    });
   });
 }
 
 export function resetDescToggle() {
+  cancelDescFlipTransition();
+  let content = domRefs.lightboxContent;
   let info = domRefs.lightboxInfo;
   let btn = domRefs.lightboxDescToggle;
+  let desc = domRefs.lightboxDesc;
+  if (content) content.classList.remove('desc-open');
   if (info) info.classList.remove('desc-open');
   if (btn) {
     btn.textContent = 'read more';
     btn.setAttribute('aria-expanded', 'false');
   }
+  if (desc) {
+    desc.style.maxHeight = '';
+    desc.style.transition = '';
+  }
 }
 
-
-let rendererResizeTimer: any;
 window.addEventListener('resize', function () {
-  clearTimeout(rendererResizeTimer);
-  rendererResizeTimer = setTimeout(function() {
-    if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
-  }, 150);
+  if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
 }, { passive: true });

@@ -51,7 +51,6 @@
       font-family: 'DM Mono', monospace;
       font-size: 0.82rem;
       min-height: 100vh;
-      overflow-x: clip;
       position: relative;
     }
 
@@ -154,12 +153,20 @@
     body::after {
       content: '';
       position: fixed;
-      inset: -150px;
+      top: -240px;
+      left: -240px;
+      width: calc(100vw + 480px);
+      height: calc(100vh + 480px);
+      height: calc(100lvh + 480px);
+      min-width: calc(100% + 480px);
+      min-height: calc(100% + 480px);
       z-index: 9990;
       pointer-events: none;
       opacity: 0.045;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
       background-size: 256px 256px;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
 
     /* Header styling */

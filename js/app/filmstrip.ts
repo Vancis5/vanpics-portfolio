@@ -39,6 +39,14 @@ window.addEventListener('category-change', function () {
 });
 let liftZone = domRefs.filmstripLiftZone;
 
+if (typeof window.requestIdleCallback === 'function') {
+  window.requestIdleCallback(function () {
+    if (!filmstripBuilt && !state.currentLightboxIsMotion && state.activePhotos && state.activePhotos.length > 0) {
+      buildFilmstrip();
+    }
+  });
+}
+
 export function buildFilmstrip() {
   if (filmstripBuilt) return;
   filmstripBuilt = true;

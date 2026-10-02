@@ -269,18 +269,19 @@ html.fonts-ready .loader-status {
 /* Vertical lift for standard scrolling */
 .photo-card {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate3d(0, 0, 0);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .photo-card.pending-reveal {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translate3d(0, 24px, 0);
+  will-change: transform, opacity;
 }
 
 .photo-card.pending-reveal.revealed {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
 /* Horizontal slide for subnav category switching */
@@ -344,13 +345,11 @@ html.fonts-ready .loader-status {
 @keyframes lbInfoIn {
   from {
     opacity: 0;
-    filter: blur(6px);
     transform: translateX(var(--lb-from-x)) translateY(var(--lb-from-y));
   }
 
   to {
     opacity: 1;
-    filter: blur(0px);
     transform: translateX(0) translateY(0);
   }
 }
@@ -358,18 +357,16 @@ html.fonts-ready .loader-status {
 @keyframes lbInfoOut {
   from {
     opacity: 1;
-    filter: blur(0px);
   }
 
   to {
     opacity: 0;
-    filter: blur(6px);
   }
 }
 
 #lightbox-info.animating {
   animation: lbInfoIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  will-change: filter, opacity, transform;
+  will-change: opacity, transform;
 }
 
 /* Hide scrollbar during loader curtain */

@@ -112,13 +112,11 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     let enterX = dir > 0 ? '6%' : '-6%';
     let gen = ++navGen;
 
-    img.style.transition = 'opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease';
+    img.style.transition = 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)';
     img.style.opacity = '0';
     img.style.transform = 'translateX(' + exitX + ') scale(0.992)';
-    img.style.filter = 'blur(10px)';
-    playerShell.style.transition = 'opacity 0.15s ease, filter 0.15s ease';
+    playerShell.style.transition = 'opacity 0.16s ease';
     playerShell.style.opacity = '0';
-    playerShell.style.filter = 'blur(10px)';
 
     let infoEl = domRefs.lightboxInfo;
     if (infoEl) {
@@ -138,18 +136,15 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       img.style.transition = 'none';
       img.style.transform = '';
       img.style.opacity = '0';
-      img.style.filter = 'blur(10px)';
       imgWrap.style.transition = 'none';
       imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.992)';
       imgWrap.style.opacity = '0';
-      imgWrap.style.filter = 'blur(10px)';
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
-      playerShell.style.filter = 'blur(10px)';
 
       let bSrc = isMotion ? (p.thumb || '') : (p.thumb || p.src || '');
       setLightboxBlur(bSrc);
-      setLightboxContent(p);
+      setLightboxContent(p, { deferDynamicTextColor: true });
       if (!isMotion) {
         prepareLightboxPhoto(p as Photo);
         loadSwipeNeighbors();
@@ -158,26 +153,20 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       requestAnimationFrame(function () {
         if (gen !== navGen) return;
         animateInfo(dir);
-        void img.offsetWidth;
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
-          playerShell.style.transition = 'opacity 0.35s ease, filter 0.35s ease';
+          playerShell.style.transition = 'opacity 0.3s ease';
           playerShell.style.opacity = '1';
-          playerShell.style.filter = 'blur(0px)';
-          imgWrap.style.transition = 'opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease';
+          imgWrap.style.transition = 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
           imgWrap.style.opacity = '1';
           imgWrap.style.transform = 'translateX(0) scale(1)';
-          imgWrap.style.filter = 'blur(0px)';
-          img.style.filter = 'blur(0px)';
         } else {
-          imgWrap.style.transition = 'opacity 0.24s ease, transform 0.34s cubic-bezier(0.16,1,0.3,1), filter 0.34s cubic-bezier(0.16,1,0.3,1)';
+          imgWrap.style.transition = 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
           imgWrap.style.opacity = '1';
           imgWrap.style.transform = 'translateX(0) scale(1)';
-          imgWrap.style.filter = 'blur(0px)';
-          img.style.transition = 'opacity 0.24s ease, filter 0.24s ease';
+          img.style.transition = 'opacity 0.22s ease';
           img.style.opacity = '1';
-          img.style.filter = 'blur(0px)';
         }
       });
     }
@@ -185,7 +174,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (isMotion) {
       doEnter();
     } else {
-      setTimeout(doEnter, 140);
+      setTimeout(doEnter, 100);
     }
 
   } else {
@@ -214,9 +203,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     }
 
     let header = domRefs.galleryHeader;
-    let masonry = domRefs.masonry;
     let headerRect = header ? header.getBoundingClientRect() : null;
-    let masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
     lb.classList.add('open');
     startNavAnimationLoop();
@@ -235,7 +222,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     lb.scrollTop = 0;
     document.body.style.overflow = 'hidden';
 
-    // FLIP: Invert
+    // FLIP: Invert header only
     if (header && headerRect) {
       let last = header.getBoundingClientRect();
       let dX = headerRect.left - last.left;
@@ -243,23 +230,12 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       header.style.transition = 'none';
       header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
     }
-    if (masonry && masonryRect) {
-      let lastM = masonry.getBoundingClientRect();
-      let dXm = masonryRect.left - lastM.left;
-      let dYm = masonryRect.top - lastM.top;
-      masonry.style.transition = 'none';
-      masonry.style.transform = 'translate(' + dXm + 'px, ' + dYm + 'px)';
-    }
 
     requestAnimationFrame(function () {
       let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
       if (header) {
         header.style.transition = ease;
         header.style.transform = '';
-      }
-      if (masonry) {
-        masonry.style.transition = ease;
-        masonry.style.transform = '';
       }
     });
 
@@ -294,17 +270,13 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
-          playerShell.style.transition = 'opacity 0.45s ease, filter 0.45s ease';
+          playerShell.style.transition = 'opacity 0.35s ease';
           playerShell.style.opacity = '1';
-          playerShell.style.filter = 'blur(0px)';
-          imgWrap.style.transition = 'opacity 0.45s ease, filter 0.45s ease';
+          imgWrap.style.transition = 'opacity 0.35s ease';
           imgWrap.style.opacity = '1';
-          imgWrap.style.filter = 'blur(0px)';
         } else {
-          img.style.transition = 'opacity 0.45s ease, filter 0.45s ease';
+          img.style.transition = 'opacity 0.28s ease';
           img.style.opacity = '1';
-          img.style.filter = 'blur(0px)';
-          imgWrap.style.filter = 'blur(0px)';
         }
       });
     }
@@ -334,9 +306,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   lb.classList.remove('window-blurred');
 
   let header = domRefs.galleryHeader;
-  let masonry = domRefs.masonry;
   let headerRect = header ? header.getBoundingClientRect() : null;
-  let masonryRect = masonry ? masonry.getBoundingClientRect() : null;
 
   let img = domRefs.lightboxImg;
   let activeGen = ++navGen;
@@ -384,23 +354,12 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     header.style.transition = 'none';
     header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
   }
-  if (masonry && masonryRect) {
-    let lastM = masonry.getBoundingClientRect();
-    let dXm = masonryRect.left - lastM.left;
-    let dYm = masonryRect.top - lastM.top;
-    masonry.style.transition = 'none';
-    masonry.style.transform = 'translate(' + dXm + 'px, ' + dYm + 'px)';
-  }
 
   requestAnimationFrame(function () {
     let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
     if (header) {
       header.style.transition = ease;
       header.style.transform = '';
-    }
-    if (masonry) {
-      masonry.style.transition = ease;
-      masonry.style.transform = '';
     }
 
     setTimeout(function () {

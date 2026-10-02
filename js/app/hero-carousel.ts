@@ -131,6 +131,7 @@ export function buildCarousel(isRebuild = false) {
         let img = document.createElement('img');
         let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
+        img.decoding = 'async';
 
         const filename = p.src.split('/').pop() || '';
         if (CAROUSEL_FOCUS_POINTS[filename]) {

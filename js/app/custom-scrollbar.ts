@@ -1,16 +1,9 @@
 import { APP_CONFIG } from './config.js';
 import { domRefs } from './dom.js';
 import { state } from './state.js';
+import { debounce } from './utils.js';
 
 export let updateCustomScrollbar = function () {};
-
-function debounce(func: Function, wait: number) {
-  let timeout: any;
-  return function(...args: any[]) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
 
 
 // ADVANCED CUSTOM SCROLLBAR CONTROLLER

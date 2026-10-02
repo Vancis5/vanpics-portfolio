@@ -1,3 +1,11 @@
+export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: any;
+  return function(...args: Parameters<T>) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
 export function escapeHtml(text: string | null | undefined): string {
   return String(text == null ? '' : text)
     .replace(/&/g, '&amp;')

@@ -17,6 +17,8 @@ import {
   scheduleLightboxBlurNeighborPreload,
   toggleLightboxDesc,
   resetDescToggle,
+  cancelDescFlipTransition,
+  updateLightboxDescPreview,
   refreshLightboxInfoRefs
 } from './renderer.js';
 
@@ -54,6 +56,8 @@ export {
   scheduleLightboxBlurNeighborPreload,
   toggleLightboxDesc,
   resetDescToggle,
+  cancelDescFlipTransition,
+  updateLightboxDescPreview,
   refreshLightboxInfoRefs,
   prepareLightboxPhoto,
   renderVideoInLightbox,
@@ -64,8 +68,4 @@ export {
 // Backward-compatible stubs for legacy circular setter bridges (now no-ops)
 export function setMobileScrollToSlideCallback(callback: ((i: number, immediate: boolean, dir: number) => void) | null) {
   setMobileScrollHandler(callback);
-}
-
-export function setLoadSwipeNeighbors(_fn: (() => void) | null) {
-  // Deprecated: swipe preload now coordinates via Event-Driven architecture
 }

@@ -27,11 +27,13 @@ function liftLoader() {
   }
   triggerExposurePulse();
   setTimeout(function () { if (loader) loader.style.display = 'none'; }, LOADER_CONFIG.liftDuration);
-  if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(initBlurRenderer);
-  } else {
-    setTimeout(initBlurRenderer, 1500);
-  }
+  setTimeout(function () {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(initBlurRenderer);
+    } else {
+      initBlurRenderer();
+    }
+  }, LOADER_CONFIG.liftDuration + 1500);
 }
 
 // Lift loader via direct callback — no MutationObserver (flaky in Firefox)
@@ -151,8 +153,23 @@ export function startLoops() {
 window.addEventListener('app-start-loops', startLoops);
 setStartLoopsCallback(startLoops);
 
-// Keep hero carousel running continuously while scrolling to prevent GPU texture eviction/stutter,
-// but halt it when lightbox is open or page is hidden to conserve resources.
+// Pause hero carousel when scrolled out of view to save GPU/CPU for masonry scrolling.
+// Resume immediately when hero enters viewport.
+if (domRefs.hero) {
+  const heroObserver = new IntersectionObserver(function (entries) {
+    const isIntersecting = entries[0].isIntersecting;
+    if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
+      state.heroVisible = false;
+      return;
+    }
+    state.heroVisible = isIntersecting;
+    if (isIntersecting) {
+      startLoops();
+    }
+  }, { rootMargin: '150px 0px 150px 0px' });
+  heroObserver.observe(domRefs.hero);
+}
+
 state.heroVisible = true;
 startLoops();
 
@@ -161,14 +178,23 @@ window.addEventListener('lightbox-open', function () {
 });
 
 window.addEventListener('lightbox-close', function () {
-  state.heroVisible = true;
-  startLoops();
+  const heroRect = domRefs.hero ? domRefs.hero.getBoundingClientRect() : null;
+  state.heroVisible = !heroRect || heroRect.bottom > -50;
+  if (state.heroVisible) startLoops();
 });
 
 document.addEventListener('visibilitychange', function () {
   state.pageVisible = !document.hidden;
   startLoops();
 });
+
+// Pre-warm blur renderer on first card hover so lightbox opens instantly
+document.addEventListener('pointerenter', function (e) {
+  const target = e.target as HTMLElement;
+  if (target && target.closest && target.closest('.photo-card, .carousel-item')) {
+    initBlurRenderer();
+  }
+}, { capture: true, once: true });
 
 // JIT proactive layer promotion for hero carousel hover scale
 if (domRefs.hero) {
@@ -180,7 +206,7 @@ if (domRefs.hero) {
   }, true);
 
   domRefs.hero.addEventListener('pointerleave', function (e) {
-    const item = (e.target as HTMLElement).closest('.carousel-item');
+    const item = (e.target as HTMLElement).closest('.carousel-item') as HTMLElement | null;
     if (!item) return;
     const img = item.querySelector('img') as HTMLElement | null;
     if (!img) return;

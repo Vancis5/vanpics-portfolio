@@ -1,6 +1,8 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { navigateLightbox, getCurrentLightboxItems } from './lightbox.js';
+import { debounce } from './utils.js';
+
 
 let mouseX = -1000;
 let mouseY = -1000;
@@ -259,14 +261,8 @@ function invalidateArrowRects() {
 }
 
 
-function debounceNav(func: Function, wait: number) {
-  let timeout: any;
-  return function(...args: any[]) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-window.addEventListener('resize', debounceNav(invalidateArrowRects, 150), { passive: true });
+
+window.addEventListener('resize', debounce(invalidateArrowRects, 150), { passive: true });
 
 
 export function startNavAnimationLoop() {

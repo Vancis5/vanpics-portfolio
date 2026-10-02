@@ -1,12 +1,13 @@
 // SWIPE for lightbox
 import { domRefs } from './dom.js';
 import { state } from './state.js';
-import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight } from './lightbox.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight, cancelDescFlipTransition, updateLightboxDescPreview } from './lightbox.js';
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
+import { motionProjects } from './media-data.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -161,7 +162,7 @@ if (state.isMobile) {
     setMobileScrollHandler(scrollToSlide);
     window.addEventListener('lightbox-scroll-to', function (e: any) {
       if (e && e.detail) {
-        scrollToSlide(e.detail.index, e.detail.smooth, e.detail.direction);
+        scrollToSlide(e.detail.index, e.detail.smooth);
       }
     });
 
@@ -171,9 +172,25 @@ if (state.isMobile) {
 
     imgWrap.addEventListener('touchstart', function (e) {
       if (state.currentLightboxIsMotion) return;
-      state.isUserTouching = true;
       filmstripReleaseFollowUntil = 0;
       if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
+
+      let content = domRefs.lightboxContent;
+      if (content && content.classList.contains('desc-open')) {
+        cancelDescFlipTransition();
+        content.classList.remove('desc-open');
+        let btn = domRefs.lightboxDescToggle;
+        if (btn) btn.textContent = 'read more';
+        let desc = domRefs.lightboxDesc;
+        if (desc) {
+          desc.style.maxHeight = '';
+          desc.style.transition = '';
+        }
+        updateLightboxDescPreview();
+        updateMobileImgWrapHeight(true);
+        showFilmstripIfReady();
+      }
+      state.isUserTouching = true;
     }, { passive: true });
 
     imgWrap.addEventListener('touchend', function (e) {

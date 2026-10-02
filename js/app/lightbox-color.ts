@@ -42,6 +42,30 @@ export function resetDynamicTextColor() {
   }
 }
 
+interface DynamicColorPalette {
+  color: string;
+  muted: string;
+  faint: string;
+  ambient: string;
+}
+
+const colorCache = new Map<string, DynamicColorPalette>();
+let sharedCanvas: HTMLCanvasElement | null = null;
+let sharedCtx: CanvasRenderingContext2D | null = null;
+
+function applyColorPalette(palette: DynamicColorPalette | null) {
+  const lbEl = domRefs.lightbox;
+  if (!lbEl) return;
+  if (!palette) {
+    resetDynamicTextColor();
+    return;
+  }
+  lbEl.style.setProperty('--dynamic-text-color', palette.color);
+  lbEl.style.setProperty('--dynamic-text-muted', palette.muted);
+  lbEl.style.setProperty('--dynamic-text-faint', palette.faint);
+  lbEl.style.setProperty('--lightbox-ambient-bg', palette.ambient);
+}
+
 export function updateDynamicTextColor(p: Photo) {
   if (state.currentLightboxIsMotion) {
     resetDynamicTextColor();
@@ -54,6 +78,11 @@ export function updateDynamicTextColor(p: Photo) {
     return;
   }
 
+  if (colorCache.has(thumbSrc)) {
+    applyColorPalette(colorCache.get(thumbSrc)!);
+    return;
+  }
+
   const cached = cacheImage(thumbSrc);
   if (!cached) {
     resetDynamicTextColor();
@@ -61,18 +90,24 @@ export function updateDynamicTextColor(p: Photo) {
   }
 
   function processColor() {
-    // Verify that we are still displaying the same photo
     const currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
     if (!currentSet || currentSet[state.cur] !== p) return;
 
+    if (colorCache.has(thumbSrc)) {
+      applyColorPalette(colorCache.get(thumbSrc)!);
+      return;
+    }
+
     try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 10;
-      canvas.height = 10;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(cached!.img, 0, 0, 10, 10);
-      const imgData = ctx.getImageData(0, 0, 10, 10).data;
+      if (!sharedCanvas) {
+        sharedCanvas = document.createElement('canvas');
+        sharedCanvas.width = 10;
+        sharedCanvas.height = 10;
+        sharedCtx = sharedCanvas.getContext('2d', { willReadFrequently: true });
+      }
+      if (!sharedCtx) return;
+      sharedCtx.drawImage(cached!.img, 0, 0, 10, 10);
+      const imgData = sharedCtx.getImageData(0, 0, 10, 10).data;
 
       let rSum = 0, gSum = 0, bSum = 0, count = 0;
       for (let i = 0; i < imgData.length; i += 4) {
@@ -94,20 +129,17 @@ export function updateDynamicTextColor(p: Photo) {
         const b = Math.round(bSum / count);
 
         const hsl = rgbToHsl(r, g, b);
-
-        // Mute saturation to a beautiful elegant range (18% - 35%)
         const s = Math.min(Math.max(hsl.s * 0.75, 18), 35);
-
-        // Lightness kept high and highly readable (82% - 85%) to guarantee contrast
         const l = Math.min(Math.max(hsl.l, 82), 85);
 
-        const lbEl = domRefs.lightbox;
-        if (lbEl) {
-          lbEl.style.setProperty('--dynamic-text-color', `hsl(${hsl.h}, ${s}%, ${l}%)`);
-          lbEl.style.setProperty('--dynamic-text-muted', `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`);
-          lbEl.style.setProperty('--dynamic-text-faint', `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`);
-          lbEl.style.setProperty('--lightbox-ambient-bg', `hsl(${hsl.h}, ${Math.min(Math.max(hsl.s, 28), 50)}%, 13.5%)`);
-        }
+        const palette: DynamicColorPalette = {
+          color: `hsl(${hsl.h}, ${s}%, ${l}%)`,
+          muted: `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`,
+          faint: `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`,
+          ambient: `hsl(${hsl.h}, ${Math.min(Math.max(hsl.s, 28), 50)}%, 13.5%)`
+        };
+        colorCache.set(thumbSrc, palette);
+        applyColorPalette(palette);
       } else {
         resetDynamicTextColor();
       }
@@ -117,14 +149,22 @@ export function updateDynamicTextColor(p: Photo) {
     }
   }
 
+  const scheduleProcess = () => {
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(processColor);
+    } else {
+      setTimeout(processColor, 30);
+    }
+  };
+
   if (cached.decoded) {
-    processColor();
+    scheduleProcess();
   } else if (cached.decodePromise) {
-    cached.decodePromise.then(processColor);
+    cached.decodePromise.then(scheduleProcess);
   } else {
     cached.img.addEventListener('load', function onLoad() {
       cached.img.removeEventListener('load', onLoad);
-      processColor();
+      scheduleProcess();
     });
     cached.img.addEventListener('error', function onError() {
       cached.img.removeEventListener('error', onError);
