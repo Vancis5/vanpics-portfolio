@@ -83,7 +83,8 @@ export function sanitizeHtml(html: string): string {
           const attr = el.attributes[i];
           if (attrs.has(attr.name.toLowerCase())) {
             if (attr.name.toLowerCase() === 'href') {
-              const val = attr.value.trim().toLowerCase();
+              // Strip all control characters and spaces to prevent bypasses like jav\tascript:
+              const val = attr.value.replace(/[\x00-\x20]+/g, '').toLowerCase();
               if (val.startsWith('javascript:') || val.startsWith('data:') || val.startsWith('vbscript:')) {
                 continue;
               }
