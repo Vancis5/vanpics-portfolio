@@ -358,7 +358,7 @@ window.addEventListener('mousemove', function (e) {
   dragHistory = dragHistory.filter(item => now - item.time <= 100);
 });
 
-window.addEventListener('touchmove', function (e) {
+function onTouchMove(e: TouchEvent) {
   if ((!isDragging && !isPendingDrag) || dragRowIndex === -1 || !e.touches || e.touches.length === 0) return;
   let clientX = e.touches[0].clientX;
   let clientY = e.touches[0].clientY;
@@ -373,9 +373,7 @@ window.addEventListener('touchmove', function (e) {
     if (absDx < 6 && absDy < 6) return;
 
     if (absDy > absDx) {
-      isPendingDrag = false;
-      isDragging = false;
-      dragRowIndex = -1;
+      endDrag();
       return;
     } else {
       isPendingDrag = false;
@@ -406,9 +404,10 @@ window.addEventListener('touchmove', function (e) {
     dragHistory.push({ x: clientX, time: now });
     dragHistory = dragHistory.filter(item => now - item.time <= 100);
   }
-}, { passive: false });
+}
 
 function endDrag() {
+  window.removeEventListener('touchmove', onTouchMove);
   if (isDragging && dragRowIndex !== -1) {
     let ri = dragRowIndex;
     if (globalHasDragged) {
@@ -508,6 +507,7 @@ domRefs.heroRows.forEach(function (row, ri) {
       dragWrapAdjust = 0;
       globalHasDragged = false;
       dragHistory = [{ x: e.touches[0].clientX, time: performance.now() }];
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
     }
   }, { passive: true });
 });
