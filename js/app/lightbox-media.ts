@@ -4,6 +4,7 @@ import { cacheImage, getImageCacheEntry } from './lightbox-cache.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
 import { Photo, Video } from '../types.js';
 import { updateMobileImgWrapHeight } from './lightbox/renderer.js';
+import { loadVideoPlayer } from './video-player-loader.js';
 
 let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;
@@ -182,6 +183,7 @@ export function prepareLightboxPhoto(p: Photo) {
 export function renderVideoInLightbox(p: Video) {
   let shell = domRefs.motionPlayerShell;
   if (!shell) return;
+  void loadVideoPlayer();
   let ratio = p.aspectRatio || (16 / 9);
   shell.style.aspectRatio = String(ratio);
   

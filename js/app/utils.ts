@@ -51,19 +51,38 @@ export function setupImagePlaceholderFallback(img: HTMLImageElement, onFallback?
   return handleLoadError;
 }
 
-export async function fadeInWhenReady(img: HTMLImageElement): Promise<void> {
+export async function fadeInWhenReady(img: HTMLImageElement, ms = 600): Promise<void> {
   img.style.opacity = '0';
-  const ready = (img.decode ? img.decode() : Promise.resolve()).catch(() => {
-    if (img.complete && img.naturalWidth > 0) return;
-    return new Promise<void>(resolve => {
-      img.addEventListener('load', () => resolve(), { once: true });
-      img.addEventListener('error', () => resolve(), { once: true });
-    });
+  try {
+    if (img.decode) await img.decode();
+  } catch {
+    if (!(img.complete && img.naturalWidth > 0)) {
+      await new Promise<void>(resolve => {
+        img.addEventListener('load', () => resolve(), { once: true });
+        img.addEventListener('error', () => resolve(), { once: true });
+      });
+    }
+  }
+
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || typeof img.animate !== 'function') {
+    img.style.opacity = '1';
+    return;
+  }
+
+  // CSS transitions outrank animations in the cascade, so park the element's own
+  // opacity transition while the fade runs, then hand it back untouched.
+  const prevTransition = img.style.transition;
+  img.style.transition = 'none';
+  img.style.opacity = '1'; // resting state; beats base `opacity: 0` rules (e.g. .filmstrip-thumb img)
+  const anim = img.animate([{ opacity: 0 }, { opacity: 1 }], {
+    duration: ms,
+    easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
   });
-  await ready;
-  requestAnimationFrame(() => {
-    img.classList.add('fx-in');
-  });
+  const restore = () => {
+    if (img.style.transition === 'none') img.style.transition = prevTransition;
+  };
+  anim.finished.then(restore, restore);
 }
 
 export function getRequiredElement<T extends HTMLElement = HTMLElement>(id: string): T {

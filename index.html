@@ -5,19 +5,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-  <link rel="preconnect" href="https://www.googletagmanager.com">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
   <link rel="preconnect" href="https://vanpics-cms-api.lorzanofrancisevan.workers.dev" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9M9YVFSC07" crossorigin="anonymous"></script>
+  <!-- Google tag (gtag.js): command queue is set up now, the library itself loads after first
+       interaction or ~4s after window load, so it stays off the critical path / TBT window. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-9M9YVFSC07');
+
+    (function () {
+      var loaded = false;
+      var evts = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+      function load() {
+        if (loaded) return;
+        loaded = true;
+        evts.forEach(function (t) { removeEventListener(t, load, true); });
+        var s = document.createElement('script');
+        s.async = true;
+        s.crossOrigin = 'anonymous';
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-9M9YVFSC07';
+        document.head.appendChild(s);
+      }
+      function idle() {
+        if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 2000 });
+        else load();
+      }
+      evts.forEach(function (t) { addEventListener(t, load, { capture: true, passive: true }); });
+      if (document.readyState === 'complete') setTimeout(idle, 4000);
+      else addEventListener('load', function () { setTimeout(idle, 4000); });
+    })();
   </script>
 
   <style>
@@ -146,9 +166,6 @@
   <link rel="preload" href="css/player.css" as="style">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/player.css">
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js"
-    integrity="sha384-xvwA3Pz3/jXep9mMlx56tEboXqea6AuWRXb8i6/j1Pxw8EBdyZtfLxg4wZAkE2Lp" crossorigin="anonymous"
-    onerror="import('/vendor/video-minimal-ui.js')"></script>
   <link rel="stylesheet" href="css/motion-section.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="css/motion-section.css"></noscript>
   <!-- video.js -->

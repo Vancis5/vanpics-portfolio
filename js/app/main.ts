@@ -21,6 +21,9 @@ import { updateHeroOverlay } from './hero-carousel.js';
 import './bootstrap.js';
 import '../browser-fixes.js';
 import '../../scripts/firefox-patch.js';
+import { warmVideoPlayer } from './video-player-loader.js';
+
+warmVideoPlayer();
 
 async function bootstrapApp() {
   const { initSmoothScroll } = await import('../smooth-scroll.js');

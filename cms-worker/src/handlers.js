@@ -363,7 +363,7 @@ export async function uploadVideo(request, env) {
   const posterKey = makeMediaKey('posters', 'webp');
 
   await Promise.all([
-    putMediaObject(env, videoKey, videoFile.stream(), { contentType: videoFile.type || 'video/mp4' }),
+    putMediaObject(env, videoKey, videoFile, { contentType: videoFile.type || 'video/mp4' }),
     putMediaObject(env, posterKey, await posterFile.arrayBuffer(), { contentType: 'image/webp' }),
   ]);
 

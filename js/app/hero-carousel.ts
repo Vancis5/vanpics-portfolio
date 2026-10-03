@@ -126,9 +126,14 @@ export function buildCarousel(isRebuild = false) {
       group.forEach(function (p: any, pi: number) {
         let wrapper = document.createElement('div');
         wrapper.className = 'carousel-item';
-        wrapper.setAttribute('role', 'button');
-        wrapper.setAttribute('tabindex', '0');
-        wrapper.setAttribute('aria-label', p.title ? `View ${p.title}` : 'View photo');
+        if (c === 0) {
+          wrapper.setAttribute('role', 'button');
+          wrapper.setAttribute('tabindex', '0');
+          wrapper.setAttribute('aria-label', p.title ? `View ${p.title}` : 'View photo');
+        } else {
+          // Loop clones are visual only: keep them out of the tab order and the a11y tree.
+          wrapper.setAttribute('aria-hidden', 'true');
+        }
         let ratio = getPhotoAspectRatio(p);
         if (state.isMobile || window.innerWidth < 640) {
           ratio = Math.min(ratio, 0.75);
@@ -527,8 +532,10 @@ domRefs.heroRows.forEach(function (row, ri) {
 });
 
 if (domRefs.hero) {
-  domRefs.hero.addEventListener('mouseenter', () => { isHeroPaused = true; });
-  domRefs.hero.addEventListener('mouseleave', () => { isHeroPaused = false; });
+  // Mouse only: touch emulates mouseenter on tap and never fires mouseleave,
+  // which used to leave the carousel frozen after opening/closing the lightbox.
+  domRefs.hero.addEventListener('pointerenter', (e: PointerEvent) => { if (e.pointerType === 'mouse') isHeroPaused = true; });
+  domRefs.hero.addEventListener('pointerleave', (e: PointerEvent) => { if (e.pointerType === 'mouse') isHeroPaused = false; });
   domRefs.hero.addEventListener('focusin', () => { isHeroPaused = true; });
   domRefs.hero.addEventListener('focusout', (e: FocusEvent) => {
     if (!domRefs.hero.contains(e.relatedTarget as Node | null)) {
