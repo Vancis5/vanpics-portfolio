@@ -10,27 +10,31 @@ export function getAllowedOrigins(env) {
 export function isOriginAllowed(origin, env) {
   if (!origin) return false;
 
-  try {
-    const url = new URL(origin);
-    const { hostname, protocol } = url;
-    if (protocol === 'http:' || protocol === 'https:') {
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname.endsWith('.local') ||
-        /^192\.168\.\d+\.\d+$/.test(hostname) ||
-        /^10\.\d+\.\d+\.\d+$/.test(hostname) ||
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+$/.test(hostname)
-      ) {
-        return true;
+  const allowed = getAllowedOrigins(env);
+  if (allowed.has(origin)) return true;
+
+  if (env.ENVIRONMENT !== 'production') {
+    try {
+      const url = new URL(origin);
+      const { hostname, protocol } = url;
+      if (protocol === 'http:' || protocol === 'https:') {
+        if (
+          hostname === 'localhost' ||
+          hostname === '127.0.0.1' ||
+          hostname.endsWith('.local') ||
+          /^192\.168\.\d+\.\d+$/.test(hostname) ||
+          /^10\.\d+\.\d+\.\d+$/.test(hostname) ||
+          /^172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+$/.test(hostname)
+        ) {
+          return true;
+        }
       }
+    } catch {
+      return false;
     }
-  } catch {
-    return false;
   }
 
-  const allowed = getAllowedOrigins(env);
-  return allowed.has(origin);
+  return false;
 }
 
 export function corsHeaders(request, env) {

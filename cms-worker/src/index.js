@@ -76,7 +76,10 @@ export default {
     try {
       return await route.handler(request, env, params, ctx);
     } catch (err) {
-      return errorResponse(request, env, err.message || 'internal server error', 500);
+      console.error('Unhandled route error:', err);
+      const isDev = env.ENVIRONMENT !== 'production';
+      const message = isDev ? (err.message || 'internal server error') : 'internal server error';
+      return errorResponse(request, env, message, 500);
     }
   },
 };

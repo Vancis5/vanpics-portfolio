@@ -237,13 +237,12 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'photo not found', 404);
   }
 
+  await deletePhotoRecord(env, photoId);
   await deleteMediaObjects(env, [
     mediaKey(photo.src),
     mediaKey(photo.thumb),
     mediaKey(photo.raw_src)
   ]);
-
-  await deletePhotoRecord(env, photoId);
   await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
@@ -259,8 +258,8 @@ export async function deleteVideo(request, env, params) {
     return errorResponse(request, env, 'video not found', 404);
   }
 
-  await deleteMediaObjects(env, [mediaKey(video.src), mediaKey(video.poster)]);
   await deleteVideoRecord(env, videoId);
+  await deleteMediaObjects(env, [mediaKey(video.src), mediaKey(video.poster)]);
   await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
@@ -364,7 +363,7 @@ export async function uploadVideo(request, env) {
   const posterKey = makeMediaKey('posters', 'webp');
 
   await Promise.all([
-    putMediaObject(env, videoKey, await videoFile.arrayBuffer(), { contentType: videoFile.type || 'video/mp4' }),
+    putMediaObject(env, videoKey, videoFile.stream(), { contentType: videoFile.type || 'video/mp4' }),
     putMediaObject(env, posterKey, await posterFile.arrayBuffer(), { contentType: 'image/webp' }),
   ]);
 
@@ -625,7 +624,11 @@ export async function replacePhotoFile(request, env, params) {
     rawKey: newRawKey,
   });
 
-  await deleteMediaObjects(env, [photo.src, photo.thumb, photo.raw_src]);
+  await deleteMediaObjects(env, [
+    mediaKey(photo.src),
+    mediaKey(photo.thumb),
+    mediaKey(photo.raw_src),
+  ]);
   await clearApiCache(request);
 
   return jsonResponse(request, env, { success: true });

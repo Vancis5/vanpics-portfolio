@@ -48,32 +48,36 @@ export async function deleteMediaObjects(env, keys) {
 // ── D1 SQL Operations ──
 
 export async function fetchPhotos(env, limit, offset) {
-  const { results } = await env.DB.prepare(
-    `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
-     FROM photos
-     ORDER BY created_at DESC, id DESC
-     LIMIT ? OFFSET ?`
-  ).bind(limit, offset).all();
+  const [listResult, countResult] = await env.DB.batch([
+    env.DB.prepare(
+      `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
+       FROM photos
+       ORDER BY created_at DESC, id DESC
+       LIMIT ? OFFSET ?`
+    ).bind(limit, offset),
+    env.DB.prepare('SELECT COUNT(*) AS total FROM photos')
+  ]);
 
-  const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM photos').first();
   return {
-    rows: results,
-    total: totalRow?.total || 0,
+    rows: listResult.results || [],
+    total: countResult.results?.[0]?.total || 0,
   };
 }
 
 export async function fetchVideos(env, limit, offset) {
-  const { results } = await env.DB.prepare(
-    `SELECT id, title, src, poster, aspect_ratio, location, date, \`desc\`, music, created_at
-     FROM videos
-     ORDER BY created_at DESC, id DESC
-     LIMIT ? OFFSET ?`
-  ).bind(limit, offset).all();
+  const [listResult, countResult] = await env.DB.batch([
+    env.DB.prepare(
+      `SELECT id, title, src, poster, aspect_ratio, location, date, \`desc\`, music, created_at
+       FROM videos
+       ORDER BY created_at DESC, id DESC
+       LIMIT ? OFFSET ?`
+    ).bind(limit, offset),
+    env.DB.prepare('SELECT COUNT(*) AS total FROM videos')
+  ]);
 
-  const totalRow = await env.DB.prepare('SELECT COUNT(*) AS total FROM videos').first();
   return {
-    rows: results,
-    total: totalRow?.total || 0,
+    rows: listResult.results || [],
+    total: countResult.results?.[0]?.total || 0,
   };
 }
 
