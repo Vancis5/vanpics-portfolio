@@ -223,13 +223,9 @@ body {
 body::after {
   content: '';
   position: fixed;
-  top: calc(-1 * var(--liquid-edge-bleed));
-  left: calc(-1 * var(--liquid-edge-bleed));
-  width: calc(100vw + 2 * var(--liquid-edge-bleed));
-  height: calc(100vh + 2 * var(--liquid-edge-bleed));
-  height: calc(100lvh + 2 * var(--liquid-edge-bleed));
-  min-width: calc(100% + 2 * var(--liquid-edge-bleed));
-  min-height: calc(100% + 2 * var(--liquid-edge-bleed));
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 9990;
   pointer-events: none;
   opacity: 0.045;
@@ -1378,15 +1374,6 @@ body::after {
   background: #0d0c0c;
 }
 
-#lightbox::before {
-  content: '';
-  position: fixed;
-  inset: calc(-1 * var(--liquid-edge-bleed));
-  z-index: -3;
-  background: #0d0c0c;
-  pointer-events: none;
-}
-
 #lightbox-blur-canvas {
   display: none;
   /* Hidden by default to prevent compositor/loading flashes */
@@ -1538,8 +1525,11 @@ body::after {
   }
 }
 
-/* Mobile: hide close btn on all touch devices — hardware/gesture back handles dismiss */
 @media (hover: none) or (max-width: 768px) {
+  :root {
+    --liquid-edge-bleed: 40px;
+  }
+
   #lightbox-close {
     display: none !important;
   }
