@@ -96,15 +96,23 @@ export function sanitizeHtml(html: string): string {
         const attrs = allowedAttrs[tagName] || new Set();
         for (let i = 0; i < el.attributes.length; i++) {
           const attr = el.attributes[i];
-          if (attrs.has(attr.name.toLowerCase())) {
-            if (attr.name.toLowerCase() === 'href') {
-              const val = attr.value.trim().toLowerCase();
-              if (val.startsWith('javascript:') || val.startsWith('data:') || val.startsWith('vbscript:')) {
+          const attrName = attr.name.toLowerCase();
+          if (attrs.has(attrName)) {
+            if (attrName === 'href') {
+              const normalized = attr.value.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+              if (
+                normalized.startsWith('javascript:') ||
+                normalized.startsWith('data:') ||
+                normalized.startsWith('vbscript:')
+              ) {
                 continue;
               }
             }
             cleanEl.setAttribute(attr.name, attr.value);
           }
+        }
+        if (tagName === 'A') {
+          cleanEl.setAttribute('rel', 'noopener noreferrer');
         }
         for (let i = 0; i < el.childNodes.length; i++) {
           cleanEl.appendChild(sanitize(el.childNodes[i]));
