@@ -19,7 +19,8 @@ import {
   animateInfo,
   scheduleLightboxBlurNeighborPreload,
   clearBlurPreloadTimer,
-  getBlurRenderer
+  getBlurRenderer,
+  cancelPendingHashUpdate
 } from './renderer.js';
 import type { Photo, Video } from '../../types.js';
 
@@ -406,6 +407,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     blurRenderer.stopAnimation();
   }
   clearBlurPreloadTimer();
+  cancelPendingHashUpdate();
 
   if (window.location.hash) {
     let catSlug = getCategorySlug(state.currentCategory);

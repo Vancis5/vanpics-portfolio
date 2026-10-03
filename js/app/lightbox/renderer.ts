@@ -12,6 +12,14 @@ import type { LightboxMediaItem, LightboxContentOptions, DescFlipOptions } from 
 let blurToken = 0;
 let blurPreloadTimer: any = null;
 let blurRenderer: WebGLBlurRenderer | null = null;
+let hashTimer: any = null;
+
+export function cancelPendingHashUpdate() {
+  if (hashTimer !== null) {
+    clearTimeout(hashTimer);
+    hashTimer = null;
+  }
+}
 
 export function getBlurRenderer(): WebGLBlurRenderer | null {
   return blurRenderer;
@@ -330,12 +338,20 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
   let newHash = '#' + catSlug + '/' + slug;
   if (slug && window.location.hash !== newHash) {
     if (state.isPopState) {
+      cancelPendingHashUpdate();
       history.replaceState(null, '', newHash);
     } else if (state.pushNextState) {
+      cancelPendingHashUpdate();
       history.pushState(null, '', newHash);
       state.pushNextState = false;
     } else {
-      history.replaceState(null, '', newHash);
+      cancelPendingHashUpdate();
+      hashTimer = setTimeout(() => {
+        hashTimer = null;
+        if (domRefs.lightbox?.classList.contains('open') && window.location.hash !== newHash) {
+          history.replaceState(null, '', newHash);
+        }
+      }, 150);
     }
   }
 
