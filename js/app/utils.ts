@@ -84,7 +84,10 @@ export function sanitizeHtml(html: string): string {
           if (attrs.has(attr.name.toLowerCase())) {
             if (attr.name.toLowerCase() === 'href') {
               const val = attr.value.trim().toLowerCase();
-              if (val.startsWith('javascript:') || val.startsWith('data:') || val.startsWith('vbscript:')) {
+              // Remove control characters (like tab, newline, carriage return, etc.)
+              // which can be used to bypass prefix checks for malicious payloads like "java\x09script:"
+              const noCtrl = val.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+              if (noCtrl.startsWith('javascript:') || noCtrl.startsWith('data:') || noCtrl.startsWith('vbscript:')) {
                 continue;
               }
             }
