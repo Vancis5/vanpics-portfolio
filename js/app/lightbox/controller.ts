@@ -511,6 +511,31 @@ document.addEventListener('keydown', function (e) {
     closeLightbox(true);
     return;
   }
+
+  if (e.key === 'Tab') {
+    const focusable = Array.from(domRefs.lightbox.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(el => el.offsetParent !== null || el === domRefs.lightboxClose);
+
+    if (focusable.length > 0) {
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first || !domRefs.lightbox.contains(document.activeElement)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !domRefs.lightbox.contains(document.activeElement)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    } else {
+      e.preventDefault();
+    }
+    return;
+  }
   
   if (e.key === ' ' || e.code === 'Space') {
     if (state.currentLightboxIsMotion) {

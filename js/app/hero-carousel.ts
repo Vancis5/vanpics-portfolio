@@ -20,6 +20,9 @@ const CAROUSEL_FOCUS_POINTS: Record<string, string> = {
 let CAROUSEL_CONFIG = APP_CONFIG.carousel;
 
 function computeCruiseSpeed(): number {
+  if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return 0;
+  }
   return state.isMobile
     ? CAROUSEL_CONFIG.cruiseSpeed.mobile
     : (window.innerWidth < CAROUSEL_CONFIG.desktopBreakpoint
@@ -90,6 +93,7 @@ let dragStartOffset = 0;
 let dragWrapAdjust = 0; // cumulative setWidth corrections during a drag
 let globalHasDragged = false;
 let dragHistory: { x: number; time: number }[] = [];
+let isHeroPaused = false;
 
 export function buildCarousel(isRebuild = false) {
   let rows = domRefs.heroRows;
@@ -122,6 +126,9 @@ export function buildCarousel(isRebuild = false) {
       group.forEach(function (p, pi) {
         let wrapper = document.createElement('div');
         wrapper.className = 'carousel-item';
+        wrapper.setAttribute('role', 'button');
+        wrapper.setAttribute('tabindex', '0');
+        wrapper.setAttribute('aria-label', p.title ? `View ${p.title}` : 'View photo');
         let ratio = getPhotoAspectRatio(p);
         if (state.isMobile || window.innerWidth < 640) {
           ratio = Math.min(ratio, 0.75);
@@ -183,6 +190,13 @@ export function buildCarousel(isRebuild = false) {
                 if (idx >= 0) openLightbox(idx);
               }
             });
+          }
+        });
+
+        wrapper.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            wrapper.click();
           }
         });
 
@@ -262,8 +276,8 @@ export function tick(timestamp: number) {
     let rows = domRefs.heroRows;
 
     const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
-    let targetSpeed = isLifting ? getCurrentSpeed(easeFrame) : 0;
-    if (isLifting && easeFrame < EASE_FRAMES + 10) easeFrame += frameScale;
+    let targetSpeed = (isLifting && !isHeroPaused) ? getCurrentSpeed(easeFrame) : 0;
+    if (isLifting && !isHeroPaused && easeFrame < EASE_FRAMES + 10) easeFrame += frameScale;
 
     let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22];
 
@@ -511,6 +525,27 @@ domRefs.heroRows.forEach(function (row, ri) {
     }
   }, { passive: true });
 });
+
+if (domRefs.hero) {
+  domRefs.hero.addEventListener('mouseenter', () => { isHeroPaused = true; });
+  domRefs.hero.addEventListener('mouseleave', () => { isHeroPaused = false; });
+  domRefs.hero.addEventListener('focusin', () => { isHeroPaused = true; });
+  domRefs.hero.addEventListener('focusout', (e: FocusEvent) => {
+    if (!domRefs.hero.contains(e.relatedTarget as Node | null)) {
+      isHeroPaused = false;
+    }
+  });
+}
+
+if (typeof window !== 'undefined' && window.matchMedia) {
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const updateMotion = () => { CRUISE_SPEED = computeCruiseSpeed(); };
+  if (motionQuery.addEventListener) {
+    motionQuery.addEventListener('change', updateMotion);
+  } else if ('addListener' in motionQuery) {
+    (motionQuery as any).addListener(updateMotion);
+  }
+}
 
 /* 
  * SAVED EXPOSURE PULSE IMPLEMENTATION (For future reuse):
