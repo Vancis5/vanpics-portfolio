@@ -409,13 +409,24 @@ function updateFooterStats(photos: Photo[], videos: Video[]) {
 }
 
 function renderUI(photos: Photo[], videos: Video[]) {
+  const t0 = performance.now();
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
   applyCarouselPhotos(photos);
+
+  const tCar = performance.now();
   buildCarousel();
+  const durCar = (performance.now() - tCar).toFixed(1);
+
+  const tMas = performance.now();
   buildMasonry();
+  const durMas = (performance.now() - tMas).toFixed(1);
+
   initFilters();
   updateFooterStats(photos, videos);
+
+  const durTotal = (performance.now() - t0).toFixed(1);
+  console.log(`[vanpics-perf] renderUI: ${durTotal}ms (carousel: ${durCar}ms, masonry: ${durMas}ms)`);
 
   setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 }
