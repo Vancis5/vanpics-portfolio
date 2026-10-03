@@ -1595,6 +1595,7 @@ body::after {
   opacity: 0;
 }
 
+.photo-placeholder-visible:not(.photo-loaded) #lightbox-img,
 #lightbox-img-wrap.photo-loading.photo-placeholder-visible:not(.photo-loaded) #lightbox-img {
   opacity: 0 !important;
 }
