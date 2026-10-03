@@ -49,6 +49,8 @@ export function prepareLightboxPhoto(p: Photo) {
   let wrap = domRefs.lightboxImgWrap;
   if (!img || !wrap || !p) return;
 
+  wrap.querySelectorAll('.lightbox-hires-layer').forEach(el => el.remove());
+
   let ratio = getPhotoAspectRatio(p);
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
@@ -75,108 +77,105 @@ export function prepareLightboxPhoto(p: Photo) {
     return;
   }
 
-  // ── Cache miss: show placeholder while loading ──
+  // ── Cache miss: show preview immediately without blank gap ──
   let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
   wrap.classList.remove('photo-loaded', 'photo-error');
   wrap.classList.add('photo-loading', 'photo-placeholder-visible');
   img.removeAttribute('data-loading-photo');
-  img.style.opacity = '0';
-  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
 
   if (previewSrc) {
-    const thumbImg = new Image();
-    thumbImg.crossOrigin = 'anonymous';
-    thumbImg.onload = function () {
-      if (token !== photoPlaceholderToken) return;
-      if (wrap.classList.contains('photo-loading') && !wrap.classList.contains('photo-loaded')) {
-        img.src = previewSrc;
-        wrap.classList.remove('photo-placeholder-visible');
-        img.style.opacity = '1';
-        updateMobileImgWrapHeight();
-      }
-    };
-    thumbImg.src = previewSrc;
-    if (thumbImg.complete && thumbImg.naturalWidth > 0) {
-      thumbImg.onload(new Event('load'));
-    }
+    img.src = previewSrc;
+    img.style.opacity = '1';
+    img.style.filter = 'blur(4px)';
+    updateMobileImgWrapHeight();
   } else {
+    img.style.opacity = '0';
     img.dataset.loadingPhoto = 'true';
   }
 
-  // Load and decode the image entirely off-DOM in the background cache.
-  // This prevents the DOM injection from stalling the CSS entrance animations.
+  function promoteHiRes(calcRatio?: number) {
+    if (token !== photoPlaceholderToken) return;
+    if (calcRatio) wrap.style.setProperty('--lightbox-photo-ratio', String(calcRatio));
+
+    const hiRes = document.createElement('img');
+    hiRes.className = 'lightbox-hires-layer';
+    hiRes.crossOrigin = 'anonymous';
+    hiRes.alt = p.title || '';
+    hiRes.draggable = false;
+    hiRes.src = p.src;
+    hiRes.style.position = 'absolute';
+    hiRes.style.inset = '0';
+    hiRes.style.width = '100%';
+    hiRes.style.height = '100%';
+    hiRes.style.objectFit = 'contain';
+    hiRes.style.borderRadius = '3px';
+    hiRes.style.opacity = '0';
+    hiRes.style.transition = 'opacity 0.28s ease';
+    hiRes.style.pointerEvents = 'none';
+    wrap.appendChild(hiRes);
+
+    requestAnimationFrame(() => {
+      if (token !== photoPlaceholderToken) {
+        hiRes.remove();
+        return;
+      }
+      hiRes.style.opacity = '1';
+      setTimeout(() => {
+        if (token !== photoPlaceholderToken) {
+          hiRes.remove();
+          return;
+        }
+        img.src = p.src;
+        img.style.filter = '';
+        hiRes.remove();
+        clearLightboxPhotoPlaceholder(token);
+        updateMobileImgWrapHeight();
+      }, 290);
+    });
+  }
+
+  // Load and decode the image entirely off-DOM in the background cache
   let cacheEntry = cacheImage(p.src, true);
 
   if (cacheEntry && cacheEntry.decodePromise) {
     cacheEntry.decodePromise.then(() => {
       if (token !== photoPlaceholderToken) return;
-      
-      if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
-        let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
-        wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-        img.src = p.src;
-        clearLightboxPhotoPlaceholder(token);
-        img.style.opacity = '1';
-        updateMobileImgWrapHeight();
-      } else {
-        img.src = p.src;
-        if (img.complete && img.naturalWidth > 0) {
-          clearLightboxPhotoPlaceholder(token);
-          img.style.opacity = '1';
-          updateMobileImgWrapHeight();
-        } else {
-          img.onload = function () {
-            if (token !== photoPlaceholderToken) return;
-            clearLightboxPhotoPlaceholder(token);
-            img.style.opacity = '1';
-            updateMobileImgWrapHeight();
-          };
-          img.onerror = function () {
-            if (token !== photoPlaceholderToken) return;
-            showLightboxPhotoError(token);
-          };
-        }
-      }
+      let r = (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight)
+        ? (cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight)
+        : undefined;
+      promoteHiRes(r);
     }).catch(() => {
-      // decode rejected (hardware timeout etc.) — just load the image directly
       if (token !== photoPlaceholderToken) return;
-      img.src = p.src;
-      img.onload = function () {
+      const fallbackImg = new Image();
+      fallbackImg.crossOrigin = 'anonymous';
+      fallbackImg.onload = () => {
         if (token !== photoPlaceholderToken) return;
-        clearLightboxPhotoPlaceholder(token);
-        img.style.opacity = '1';
-        updateMobileImgWrapHeight();
+        let r = (fallbackImg.naturalWidth && fallbackImg.naturalHeight)
+          ? (fallbackImg.naturalWidth / fallbackImg.naturalHeight)
+          : undefined;
+        promoteHiRes(r);
       };
-      img.onerror = function () {
+      fallbackImg.onerror = () => {
         if (token !== photoPlaceholderToken) return;
         showLightboxPhotoError(token);
       };
+      fallbackImg.src = p.src;
     });
   } else {
-    // Fallback just in case
-    img.src = p.src;
-    img.onload = function () {
+    const fallbackImg = new Image();
+    fallbackImg.crossOrigin = 'anonymous';
+    fallbackImg.onload = () => {
       if (token !== photoPlaceholderToken) return;
-      const handleFallbackDecode = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          let r = img.naturalWidth / img.naturalHeight;
-          wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-        }
-        clearLightboxPhotoPlaceholder(token);
-        img.style.opacity = '1';
-        updateMobileImgWrapHeight();
-      };
-      if (img.decode) {
-        img.decode().then(handleFallbackDecode).catch(handleFallbackDecode);
-      } else {
-        handleFallbackDecode();
-      }
+      let r = (fallbackImg.naturalWidth && fallbackImg.naturalHeight)
+        ? (fallbackImg.naturalWidth / fallbackImg.naturalHeight)
+        : undefined;
+      promoteHiRes(r);
     };
-    img.onerror = function () {
+    fallbackImg.onerror = () => {
       if (token !== photoPlaceholderToken) return;
       showLightboxPhotoError(token);
     };
+    fallbackImg.src = p.src;
   }
 }
 

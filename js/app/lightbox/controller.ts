@@ -198,7 +198,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (isMotion) {
       doEnter();
     } else {
-      setTimeout(doEnter, 100);
+      setTimeout(doEnter, 30);
     }
 
   } else {
