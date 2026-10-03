@@ -532,10 +532,6 @@ domRefs.heroRows.forEach(function (row, ri) {
 });
 
 if (domRefs.hero) {
-  // Mouse only: touch emulates mouseenter on tap and never fires mouseleave,
-  // which used to leave the carousel frozen after opening/closing the lightbox.
-  domRefs.hero.addEventListener('pointerenter', (e: PointerEvent) => { if (e.pointerType === 'mouse') isHeroPaused = true; });
-  domRefs.hero.addEventListener('pointerleave', (e: PointerEvent) => { if (e.pointerType === 'mouse') isHeroPaused = false; });
   domRefs.hero.addEventListener('focusin', () => { isHeroPaused = true; });
   domRefs.hero.addEventListener('focusout', (e: FocusEvent) => {
     if (!domRefs.hero.contains(e.relatedTarget as Node | null)) {
