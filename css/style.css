@@ -1875,14 +1875,10 @@ body::after {
   #lightbox-img-wrap {
     flex: 0 1 auto;
     width: auto;
-    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    max-width: 100%;
     display: flex;
     align-items: center;
-  }
-
-  #lightbox-img-wrap.photo-loading {
-    width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
-    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    justify-content: center;
   }
 
   /* Ensure video container fills available row space on desktop */
@@ -1894,6 +1890,7 @@ body::after {
 
   #lightbox-img {
     width: auto;
+    height: auto;
     max-width: 100%;
     max-height: 72svh;
   }
@@ -1940,12 +1937,7 @@ body::after {
   }
 
   #lightbox-img-wrap {
-    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
-  }
-
-  #lightbox-img-wrap.photo-loading {
-    width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
-    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    max-width: 100%;
   }
 
   #lightbox-img {

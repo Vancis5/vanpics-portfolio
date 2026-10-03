@@ -365,9 +365,11 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   }
   let infoInner = domRefs.lightboxInfo;
   if (infoInner) {
-    infoInner.style.transition = '';
-    infoInner.style.transform = '';
-    infoInner.style.transformOrigin = '';
+    infoInner.style.animation = 'none';
+    infoInner.style.transition = 'opacity 0.36s ease, filter 0.36s ease, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1)';
+    infoInner.style.opacity = '0';
+    infoInner.style.filter = 'blur(6px)';
+    infoInner.style.transform = 'translateY(10px)';
   }
 
   if (header && headerRect) {
@@ -395,17 +397,6 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     }, 400);
   });
 
-  let playerShell = domRefs.motionPlayerShell;
-  if (playerShell) playerShell.innerHTML = '';
-
-  if (domRefs.blurCanvas) {
-    domRefs.blurCanvas.classList.remove('active');
-    domRefs.blurCanvas.classList.remove('ready');
-  }
-  let blurRenderer = getBlurRenderer();
-  if (blurRenderer) {
-    blurRenderer.stopAnimation();
-  }
   clearBlurPreloadTimer();
   cancelPendingHashUpdate();
 
@@ -416,6 +407,19 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
   setTimeout(function () {
     if (activeGen !== navGen) return;
+
+    let playerShell = domRefs.motionPlayerShell;
+    if (playerShell) playerShell.innerHTML = '';
+
+    if (domRefs.blurCanvas) {
+      domRefs.blurCanvas.classList.remove('active');
+      domRefs.blurCanvas.classList.remove('ready');
+    }
+    let blurRenderer = getBlurRenderer();
+    if (blurRenderer) {
+      blurRenderer.stopAnimation();
+    }
+
     if (img) {
       img.onload = null;
       img.onerror = null;
