@@ -113,7 +113,7 @@ export function buildCarousel(isRebuild = false) {
 
   let groups: any[][] = [];
   for (let g = 0; g < activeRowCount; g++) groups.push([]);
-  state.carouselPhotos.forEach(function (p, i) { groups[i % activeRowCount].push(p); });
+  state.carouselPhotos.forEach(function (p: any, i: number) { groups[i % activeRowCount].push(p); });
 
   let eagerImgs: HTMLImageElement[] = [];
   let criticalImgs: HTMLImageElement[] = [];
@@ -123,7 +123,7 @@ export function buildCarousel(isRebuild = false) {
     let copies = Math.max(2, Math.ceil((window.innerWidth * 1.5) / 220 / group.length));
 
     for (let c = 0; c < copies * 2; c++) {
-      group.forEach(function (p, pi) {
+      group.forEach(function (p: any, pi: number) {
         let wrapper = document.createElement('div');
         wrapper.className = 'carousel-item';
         wrapper.setAttribute('role', 'button');
@@ -181,12 +181,12 @@ export function buildCarousel(isRebuild = false) {
           if (globalHasDragged) return;
           let targetCat = (p.category === 'figures') ? 'figures' : 'all';
           if (state.currentCategory === targetCat) {
-            let idx = state.activePhotos.findIndex(item => (item.id && item.id === p.id) || item.src === p.src);
+            let idx = state.activePhotos.findIndex((item: any) => (item.id && item.id === p.id) || item.src === p.src);
             if (idx >= 0) openLightbox(idx);
           } else {
             rebuildGallery(targetCat, {
               onReady: function () {
-                let idx = state.activePhotos.findIndex(item => (item.id && item.id === p.id) || item.src === p.src);
+                let idx = state.activePhotos.findIndex((item: any) => (item.id && item.id === p.id) || item.src === p.src);
                 if (idx >= 0) openLightbox(idx);
               }
             });

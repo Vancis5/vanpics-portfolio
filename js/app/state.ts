@@ -1,5 +1,6 @@
 import { galleryStore } from './stores/gallery-store.js';
 import { uiStore } from './stores/ui-store.js';
+import type { Photo } from '../types.js';
 
 export { galleryStore } from './stores/gallery-store.js';
 export { uiStore } from './stores/ui-store.js';

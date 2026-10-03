@@ -3,7 +3,7 @@ import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 import { cacheImage, getImageCacheEntry } from './lightbox-cache.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
 import { Photo, Video } from '../types.js';
-import { updateMobileImgWrapHeight } from './lightbox.js';
+import { updateMobileImgWrapHeight } from './lightbox/renderer.js';
 
 let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;

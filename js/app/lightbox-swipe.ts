@@ -73,7 +73,7 @@ if (state.isMobile) {
       // Remove old #lightbox-img from flow (CSS hides it, but clear src too)
       let mainImg = domRefs.lightboxImg;
       if (mainImg) { mainImg.removeAttribute('src'); }
-      state.activePhotos.forEach(function (p, i) {
+      state.activePhotos.forEach(function (p: any, i: number) {
         let slide = document.createElement('div');
         slide.className = 'snap-slide';
         slide.dataset.idx = String(i);

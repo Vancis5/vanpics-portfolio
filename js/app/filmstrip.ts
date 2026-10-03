@@ -78,7 +78,7 @@ export function buildFilmstrip() {
   track.style.paddingRight = pad + 'px';
   track.innerHTML = '';
 
-  currentSet.forEach(function (p, i) {
+  currentSet.forEach(function (p: any, i: number) {
     let thumb = document.createElement('div');
     thumb.className = 'filmstrip-thumb';
     if (state.currentLightboxIsMotion) thumb.classList.add('mode-motion');
