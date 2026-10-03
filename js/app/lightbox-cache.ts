@@ -1,7 +1,7 @@
 import { saveRatioToCache } from './utils.js';
 
 const _imgCache = new Map<string, { img: HTMLImageElement; decoded: boolean; decodePromise: Promise<any> | null }>();
-const _IMG_CACHE_MAX = 30;
+const _IMG_CACHE_MAX = 10;
 
 export function cacheImage(src: string, eagerDecode: boolean = false) {
   if (!src) return null;

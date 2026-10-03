@@ -2,6 +2,11 @@
 <html lang="en" style="background: #0d0c0c;">
 
 <head>
+  <link rel="preconnect" href="https://www.googletagmanager.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://vanpics-cms-api.lorzanofrancisevan.workers.dev" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-9M9YVFSC07" crossorigin="anonymous"></script>
   <script>
@@ -183,9 +188,11 @@
   <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js"
     integrity="sha384-xvwA3Pz3/jXep9mMlx56tEboXqea6AuWRXb8i6/j1Pxw8EBdyZtfLxg4wZAkE2Lp" crossorigin="anonymous"
     onerror="import('/vendor/video-minimal-ui.js')"></script>
-  <link rel="stylesheet" href="css/motion-section.css">
+  <link rel="stylesheet" href="css/motion-section.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="css/motion-section.css"></noscript>
   <!-- video.js -->
-  <link rel="stylesheet" href="css/runtime-effects.css">
+  <link rel="stylesheet" href="css/runtime-effects.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="css/runtime-effects.css"></noscript>
 </head>
 
 <body>
@@ -271,7 +278,7 @@
     <div id="lightbox-content" data-lenis-prevent>
       <div id="lightbox-zoom-darken"></div>
       <div id="lightbox-img-wrap">
-        <img id="lightbox-img" class="zoomable" crossorigin="anonymous" src="" alt="" draggable="false">
+        <img id="lightbox-img" class="zoomable" crossorigin="anonymous" src="" alt="" draggable="false" width="1600" height="1200">
         <div id="lightbox-photo-error" role="status" aria-live="polite">image failed to load</div>
         <div id="motion-player-shell"></div>
       </div>

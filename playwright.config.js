@@ -1,6 +1,10 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
+if (!process.env.PLAYWRIGHT_HOST_PLATFORM_OVERRIDE) {
+  process.env.PLAYWRIGHT_HOST_PLATFORM_OVERRIDE = 'ubuntu24.04-x64';
+}
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv

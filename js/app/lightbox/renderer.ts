@@ -366,20 +366,41 @@ export function animateInfo(dir: number) {
     return;
   }
 
-  let fromX = dir === 0 ? 0 : (dir > 0 ? 18 : -18);
-  let fromY = dir === 0 ? 10 : 0;
-  info.style.animation = 'none';
-  info.style.transition = 'none';
-  info.style.opacity = '0';
-  info.style.filter = '';
-  info.style.transform = `translate3d(${fromX}px, ${fromY}px, 0)`;
+  let hasContent = info && parseFloat(window.getComputedStyle(info).opacity) > 0.05;
+  if (hasContent) {
+    let ghost = info.cloneNode(true) as HTMLElement;
+    ghost.removeAttribute('id');
+    ghost.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+    ghost.style.position = 'absolute';
+    ghost.style.top = info.offsetTop + 'px';
+    ghost.style.left = info.offsetLeft + 'px';
+    ghost.style.width = info.offsetWidth + 'px';
+    ghost.style.pointerEvents = 'none';
+    ghost.removeAttribute('onclick');
+    let exitDuration = '0.22s';
+    ghost.style.animation = `lbInfoOut ${exitDuration} ease forwards`;
+    ghost.style.willChange = 'filter, opacity';
+    ghost.style.zIndex = '1';
+    info.parentNode.appendChild(ghost);
+    let removeDelay = 250;
+    setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, removeDelay);
+  }
 
-  requestAnimationFrame(function () {
-    if (!info) return;
-    info.style.transition = 'opacity 0.24s ease, transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
-    info.style.opacity = '1';
-    info.style.transform = 'translate3d(0, 0, 0)';
-  });
+  let fromX = dir === 0 ? 0 : (dir > 0 ? 24 : -24);
+  let fromY = dir === 0 ? 16 : 0;
+  let clone = info.cloneNode(true) as HTMLElement;
+  clone.style.setProperty('--lb-from-x', fromX + 'px');
+  clone.style.setProperty('--lb-from-y', fromY + 'px');
+  let duration = '0.55s';
+  clone.style.animation = `lbInfoIn ${duration} cubic-bezier(0.22,1,0.36,1) forwards`;
+  clone.style.willChange = 'filter, opacity, transform';
+  clone.style.transition = '';
+  clone.style.filter = '';
+  clone.style.opacity = '';
+  clone.style.transform = '';
+  info.parentNode.replaceChild(clone, info);
+  domRefs.lightboxInfo = clone;
+  refreshLightboxInfoRefs();
 }
 
 export function updateMobileImgWrapHeight(force?: boolean) {

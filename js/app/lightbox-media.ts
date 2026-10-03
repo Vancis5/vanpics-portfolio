@@ -22,14 +22,14 @@ export function clearLightboxPhotoPlaceholder(expectedToken?: number) {
   let wrap = domRefs.lightboxImgWrap;
   let img = domRefs.lightboxImg;
   if (!wrap) return;
-  wrap.classList.remove('photo-error');
+  wrap.classList.remove('photo-error', 'photo-placeholder-visible');
   wrap.classList.add('photo-loaded');
   if (img) img.removeAttribute('data-loading-photo');
   if (img) img.style.opacity = '1';
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
   clearTimeout(photoPlaceholderTimer);
   photoPlaceholderTimer = setTimeout(function () {
-    wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-loaded');
+    wrap.classList.remove('photo-loading', 'photo-loaded');
   }, 260);
 }
 
@@ -77,13 +77,29 @@ export function prepareLightboxPhoto(p: Photo) {
 
   // ── Cache miss: show placeholder while loading ──
   let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
-  wrap.classList.remove('photo-placeholder-visible', 'photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading');
+  wrap.classList.remove('photo-loaded', 'photo-error');
+  wrap.classList.add('photo-loading', 'photo-placeholder-visible');
+  img.removeAttribute('data-loading-photo');
+  img.style.opacity = '0';
+  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
+
   if (previewSrc) {
-    img.removeAttribute('data-loading-photo');
-    img.src = previewSrc;
+    const thumbImg = new Image();
+    thumbImg.crossOrigin = 'anonymous';
+    thumbImg.onload = function () {
+      if (token !== photoPlaceholderToken) return;
+      if (wrap.classList.contains('photo-loading') && !wrap.classList.contains('photo-loaded')) {
+        img.src = previewSrc;
+        wrap.classList.remove('photo-placeholder-visible');
+        img.style.opacity = '1';
+        updateMobileImgWrapHeight();
+      }
+    };
+    thumbImg.src = previewSrc;
+    if (thumbImg.complete && thumbImg.naturalWidth > 0) {
+      thumbImg.onload(new Event('load'));
+    }
   } else {
-    wrap.classList.add('photo-placeholder-visible');
     img.dataset.loadingPhoto = 'true';
   }
 

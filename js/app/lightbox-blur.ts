@@ -573,10 +573,7 @@ export class WebGLBlurRenderer {
       this.runBlurPass(this.locUp, this.fbos[5].texture, 128, 128, null, 1.0);
     }
 
-    if (this.mixFactor >= 1.0) {
-      this.animating = false;
-      this.animationId = null;
-    } else if (this.animating) {
+    if (this.animating) {
       this.animationId = requestAnimationFrame(() => this.render());
     }
   }

@@ -1609,6 +1609,10 @@ body::after {
   opacity: 0;
 }
 
+#lightbox-img-wrap.photo-loading.photo-placeholder-visible:not(.photo-loaded) #lightbox-img {
+  opacity: 0 !important;
+}
+
 #lightbox-img-wrap.photo-loading #lightbox-img {
   width: 100%;
   height: 100%;
@@ -2162,6 +2166,7 @@ html.custom-cursor-enabled #lightbox-close::before {
     justify-content: center;
     touch-action: pan-x;
     transition: opacity 0.15s ease;
+    pointer-events: none;
   }
 
   .snap-slide img {
@@ -2189,6 +2194,7 @@ html.custom-cursor-enabled #lightbox-close::before {
     overflow: hidden;
     clip-path: inset(0 round 3px);
     transform: translateY(-4dvh);
+    pointer-events: auto;
   }
 
   .snap-slide-inner.photo-loading::before {
@@ -2216,7 +2222,7 @@ html.custom-cursor-enabled #lightbox-close::before {
     opacity: 0;
   }
 
-  .snap-slide-inner.photo-loading.photo-placeholder-visible img {
+  .snap-slide-inner.photo-loading.photo-placeholder-visible:not(.photo-loaded) img {
     opacity: 0 !important;
   }
 
@@ -2224,9 +2230,10 @@ html.custom-cursor-enabled #lightbox-close::before {
     opacity: 1;
   }
 
+  #lightbox #lightbox-info-wrap,
   #lightbox:not(.mode-motion) #lightbox-info-wrap {
     position: relative;
-    z-index: 3;
+    z-index: 1;
     pointer-events: none;
   }
 

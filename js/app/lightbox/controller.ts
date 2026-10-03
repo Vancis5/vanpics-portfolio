@@ -166,7 +166,6 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
           imgWrap.style.opacity = '1';
           imgWrap.style.transform = 'translateX(0) scale(1)';
           img.style.transition = 'opacity 0.22s ease';
-          img.style.opacity = '1';
         }
       });
     }
@@ -276,7 +275,6 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
           imgWrap.style.opacity = '1';
         } else {
           img.style.transition = 'opacity 0.28s ease';
-          img.style.opacity = '1';
         }
       });
     }

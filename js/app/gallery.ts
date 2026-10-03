@@ -168,16 +168,7 @@ function settleGalleryTabSwitch(panel: HTMLElement | null) {
   }
 
   revealCards(panel, { immediate: true });
-  showVisibleCardsWithoutScrollReveal(panel);
-  armCardsBelowViewport(panel);
   refreshGalleryScrollMetrics();
-
-  galleryTabSwitchSettleTimer = window.setTimeout(function () {
-    galleryTabSwitchSettleTimer = null;
-    showVisibleCardsWithoutScrollReveal(panel);
-    armCardsBelowViewport(panel);
-    refreshGalleryScrollMetrics();
-  }, GALLERY_TAB_SWITCH_SETTLE_MS);
 }
 
 // Masonry: scroll reveal handles fade-in.
@@ -207,6 +198,7 @@ let GALLERY_CATEGORIES = ['all', 'figures', 'motion'];
 let GALLERY_SCROLL_MEMORY_KEY = 'van_gallery_scroll_v2';
 let galleryScrollPositions: Record<string, number | null> = { all: null, figures: null, motion: null };
 let galleryPanelsBuilt = false;
+let builtCategories = new Set<string>();
 let galleryBlurPreloadTimer: any = null;
 
 try {
@@ -243,22 +235,6 @@ function updateGalleryScrollDirection() {
     galleryScrollDirection = scrollY > galleryLastScrollY ? 'down' : 'up';
     galleryLastScrollY = scrollY;
   }
-}
-
-let galleryScrollRevealTimer: any = null;
-function queueGalleryScrollReveal() {
-  if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) return;
-  if (performance.now() < gallerySuppressScrollRevealUntil) return;
-
-  if (galleryScrollRevealTimer) {
-    window.clearTimeout(galleryScrollRevealTimer);
-  }
-
-  galleryScrollRevealTimer = window.setTimeout(function () {
-    galleryScrollRevealTimer = null;
-    armCardsBelowViewport(getActiveGalleryPanel());
-    repairVisiblePendingCards(getActiveGalleryPanel());
-  }, 100);
 }
 
 let galleryScrollSaveTimer: any = null;
@@ -428,6 +404,10 @@ function setActiveGalleryPanel(category: string, options?: any) {
   options = options || {};
   category = normalizeGalleryCategory(category);
 
+  if (!builtCategories.has(category)) {
+    buildMasonry(category);
+  }
+
   let masonry = domRefs.masonry;
   let gallerySec = domRefs.gallerySection;
   if (!masonry) return null;
@@ -474,6 +454,7 @@ export function rebuildGallery(newCategory: string, options?: any) {
   newCategory = normalizeGalleryCategory(newCategory);
 
   if (!galleryPanelsBuilt) buildMasonry();
+  if (!builtCategories.has(newCategory)) buildMasonry(newCategory);
 
   let previousCategory = normalizeGalleryCategory(state.currentCategory);
   let tabDirection = getCategoryIndex(newCategory) > getCategoryIndex(previousCategory) ? -1 : 1;
@@ -556,7 +537,11 @@ export function buildMasonry(category?: string) {
     let shouldRestoreScroll = galleryPanelsBuilt;
     if (shouldRestoreScroll) rememberGalleryScroll(state.currentCategory);
 
-    GALLERY_CATEGORIES.forEach(function (cat) {
+    const categoriesToBuild = builtCategories.size === 0
+      ? [normalizeGalleryCategory(state.currentCategory)]
+      : Array.from(builtCategories);
+
+    categoriesToBuild.forEach(function (cat) {
       buildMasonry(cat);
     });
 
@@ -575,6 +560,7 @@ export function buildMasonry(category?: string) {
   }
 
   const normalizedCategory = normalizeGalleryCategory(category);
+  builtCategories.add(normalizedCategory);
   let panel = getGalleryPanel(normalizedCategory);
   if (!panel) return;
 
@@ -635,10 +621,11 @@ export function buildMasonry(category?: string) {
     let basePath = isMotion ? (p.thumb || "") : (p.src || "");
     let thumbPath = p.thumb || (basePath.includes('thumbs/') ? basePath : basePath.replace('photos/', 'photos/thumbs/'));
 
+    let r = getPhotoAspectRatio(p, isMotion);
     imgEl.src = thumbPath;
     imgEl.alt = p.title || "video";
-    imgEl.loading = i < 16 ? 'eager' : 'lazy';
-    if (i < 8) {
+    imgEl.loading = i < 8 ? 'eager' : 'lazy';
+    if (i < 4) {
       (imgEl as any).fetchPriority = 'high';
     }
     imgEl.decoding = 'async';
@@ -656,7 +643,6 @@ export function buildMasonry(category?: string) {
       revealImageOnLoad(imgEl);
     }
 
-    let r = getPhotoAspectRatio(p, isMotion);
     card.style.setProperty('--photo-aspect-ratio', String(r));
     imgEl.style.aspectRatio = String(r);
 

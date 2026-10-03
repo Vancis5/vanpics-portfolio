@@ -204,8 +204,16 @@ export function buildCarousel(isRebuild = false) {
         for (let i = 0; i < halfCount; i++) {
           w += (items[i].offsetWidth || 220) + 8;
         }
-        rowState[ri].setWidth = w > 0 ? w : halfCount * 230;
-        rowState[ri].offset = ROW_CONFIG[ri].dir === 1 ? -rowState[ri].setWidth : 0;
+        let oldSetWidth = rowState[ri].setWidth;
+        let newSetWidth = w > 0 ? w : halfCount * 228;
+        rowState[ri].setWidth = newSetWidth;
+
+        if (isRebuild && oldSetWidth > 0 && newSetWidth > 0) {
+          let pct = rowState[ri].offset / oldSetWidth;
+          rowState[ri].offset = pct * newSetWidth;
+        } else if (!isRebuild) {
+          rowState[ri].offset = ROW_CONFIG[ri].dir === 1 ? -newSetWidth : 0;
+        }
       });
       rowState.forEach(function (st, idx) {
         if (idx >= activeRowCount) {
@@ -439,15 +447,15 @@ export function recalculateCarouselLayout() {
   let activeRowCount = activeRows.length;
 
   activeRows.forEach(function (row, ri) {
-    let imgs = Array.from(row.querySelectorAll('img'));
-    if (imgs.length === 0) return;
+    let items = Array.from(row.querySelectorAll('.carousel-item')) as HTMLElement[];
+    if (items.length === 0) return;
 
-    let halfCount = Math.floor(imgs.length / 2);
+    let halfCount = Math.floor(items.length / 2);
     let w = 0;
-    for (let i = 0; i < halfCount; i++) w += (imgs[i].offsetWidth || 220) + 10;
+    for (let i = 0; i < halfCount; i++) w += (items[i].offsetWidth || 220) + 8;
 
     let oldSetWidth = rowState[ri].setWidth;
-    let newSetWidth = w > 0 ? w : halfCount * 230;
+    let newSetWidth = w > 0 ? w : halfCount * 228;
 
     rowState[ri].setWidth = newSetWidth;
 
