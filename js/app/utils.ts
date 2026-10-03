@@ -51,6 +51,21 @@ export function setupImagePlaceholderFallback(img: HTMLImageElement, onFallback?
   return handleLoadError;
 }
 
+export async function fadeInWhenReady(img: HTMLImageElement): Promise<void> {
+  img.style.opacity = '0';
+  const ready = (img.decode ? img.decode() : Promise.resolve()).catch(() => {
+    if (img.complete && img.naturalWidth > 0) return;
+    return new Promise<void>(resolve => {
+      img.addEventListener('load', () => resolve(), { once: true });
+      img.addEventListener('error', () => resolve(), { once: true });
+    });
+  });
+  await ready;
+  requestAnimationFrame(() => {
+    img.classList.add('fx-in');
+  });
+}
+
 export function getRequiredElement<T extends HTMLElement = HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) {

@@ -5,7 +5,7 @@ import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightbox
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
-import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml, fadeInWhenReady } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
 
@@ -88,48 +88,24 @@ if (state.isMobile) {
         img.alt = p.title || '';
         img.draggable = false;
         img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
-        
-        img.onload = function () {
-          const handleSwipeDecode = () => {
-            if (img.naturalWidth && img.naturalHeight) {
-              let r = img.naturalWidth / img.naturalHeight;
-              inner.style.setProperty('--lightbox-photo-ratio', String(r));
-              saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-            }
-            if (inner.classList.contains('photo-loaded')) return;
-            inner.classList.add('photo-loaded');
-            inner.classList.remove('photo-placeholder-visible');
-            setTimeout(function () {
-              inner.classList.remove('photo-loading', 'photo-loaded');
-            }, 260);
-          };
-          if (img.decode) {
-            img.decode().then(handleSwipeDecode).catch(handleSwipeDecode);
-          } else {
-            handleSwipeDecode();
-          }
-        };
-        img.onerror = function () {
-          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-          inner.classList.add('photo-error');
-        };
         img.src = p.src;
         img.classList.add('zoomable');
         img.addEventListener('click', toggleImageZoom);
 
-        if (img.complete && img.naturalWidth > 0) {
+        fadeInWhenReady(img).then(() => {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
           inner.classList.add('photo-loaded');
-          let r = img.naturalWidth / img.naturalHeight;
-          inner.style.setProperty('--lightbox-photo-ratio', String(r));
-          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-        } else {
-          requestAnimationFrame(function () {
-            if (!inner.classList.contains('photo-loaded') && !inner.classList.contains('photo-error')) {
-              inner.classList.add('photo-placeholder-visible');
-            }
-          });
-        }
+          if (img.naturalWidth && img.naturalHeight) {
+            let r = img.naturalWidth / img.naturalHeight;
+            inner.style.setProperty('--lightbox-photo-ratio', String(r));
+            saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+          }
+        });
+
+        img.onerror = function () {
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+          inner.classList.add('photo-error');
+        };
 
         inner.appendChild(img);
         slide.appendChild(inner);

@@ -4,7 +4,7 @@ import { state } from './state.js';
 import { motionProjects } from './media-data.js';
 import { openLightbox } from './lightbox.js';
 import { setFilmstripVisibilityHandlers } from './core.js';
-import { setupImagePlaceholderFallback } from './utils.js';
+import { setupImagePlaceholderFallback, fadeInWhenReady } from './utils.js';
 
 // FILMSTRIP
 let filmstripWrap = domRefs.filmstripWrap;
@@ -95,26 +95,8 @@ export function buildFilmstrip() {
     img.loading = 'eager';
     img.decoding = 'async';
     img.fetchPriority = Math.abs(i - state.cur) <= 8 ? 'high' : 'auto';
-      let loaded = false;
-      let timer = setTimeout(function () {
-        if (!loaded) {
-          img.classList.add('fade-in-on-load');
-        }
-      }, 50);
-      function onReveal() {
-        loaded = true;
-        clearTimeout(timer);
-        img.classList.add('media-loaded');
-      }
-
-      setupImagePlaceholderFallback(img, onReveal);
-
-      if (galleryAlreadyHasThumb(thumbPath, loadedThumbs) || (img.complete && img.naturalWidth > 0)) {
-        onReveal();
-      } else {
-        img.addEventListener('load', onReveal, { once: true });
-        img.addEventListener('error', onReveal, { once: true });
-      }
+    setupImagePlaceholderFallback(img);
+    fadeInWhenReady(img);
     thumb.appendChild(img);
     thumb.addEventListener('click', (function (idx) {
       return function () {

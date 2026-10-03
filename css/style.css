@@ -3086,3 +3086,9 @@ img.placeholder-fallback {
 .carousel-item img.placeholder-fallback {
   padding: 16px !important;
 }
+
+.fx-in {
+  opacity: 1 !important;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
