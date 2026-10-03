@@ -42,6 +42,7 @@ export class WebGLBlurRenderer {
   mixFactor: number;
   transitionSpeed: number;
   lastFrameTime: number;
+  lastRenderTime: number = 0;
   animationId: number | null;
   dirPrev: number;
   dirCurr: number;
@@ -510,6 +511,7 @@ export class WebGLBlurRenderer {
     if (this.animating) return;
     this.animating = true;
     this.lastFrameTime = performance.now();
+    this.lastRenderTime = 0;
     this.render();
   }
 
@@ -523,12 +525,22 @@ export class WebGLBlurRenderer {
 
   render() {
     if (!this.gl || !this.progLiquid || !this.progDown || !this.progUp || !this.locLiquid || !this.locDown || !this.locUp) return;
+
+    const now = performance.now();
+    const minInterval = (this.mixFactor < 1.0) ? 25 : 50;
+    if (this.lastRenderTime && (now - this.lastRenderTime) < minInterval) {
+      if (this.animating) {
+        this.animationId = requestAnimationFrame(() => this.render());
+      }
+      return;
+    }
+
     let gl = this.gl;
     const loc = this.locLiquid;
 
-    const now = performance.now();
     const dt = Math.min((now - (this.lastFrameTime || now)) / (1000 / 60), 3);
     this.lastFrameTime = now;
+    this.lastRenderTime = now;
 
     let elapsedSeconds = (now - this.startTime) / 1000.0;
     if (this.mixFactor < 1.0) {
