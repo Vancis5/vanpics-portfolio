@@ -87,20 +87,23 @@ if (state.isMobile) {
         img.crossOrigin = 'anonymous';
         img.alt = p.title || '';
         img.draggable = false;
-        img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
-        img.src = p.src;
+        let shouldLoad = (Math.abs(i - state.cur) <= 2);
+        img.loading = shouldLoad ? 'eager' : 'lazy';
         img.classList.add('zoomable');
         img.addEventListener('click', toggleImageZoom);
 
-        fadeInWhenReady(img).then(() => {
-          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-          inner.classList.add('photo-loaded');
-          if (img.naturalWidth && img.naturalHeight) {
-            let r = img.naturalWidth / img.naturalHeight;
-            inner.style.setProperty('--lightbox-photo-ratio', String(r));
-            saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-          }
-        });
+        if (shouldLoad) {
+          img.src = p.src;
+          fadeInWhenReady(img).then(() => {
+            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+            inner.classList.add('photo-loaded');
+            if (img.naturalWidth && img.naturalHeight) {
+              let r = img.naturalWidth / img.naturalHeight;
+              inner.style.setProperty('--lightbox-photo-ratio', String(r));
+              saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+            }
+          });
+        }
 
         img.onerror = function () {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
@@ -209,17 +212,43 @@ if (state.isMobile) {
       state.isUserTouching = false;
     }, { passive: true });
 
-    // ── Eager-load nearby slides ──
+    // ── Eager-load nearby slides with windowed loading ──
     function updateLoading() {
       if (state.currentLightboxIsMotion) return;
-      let imgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLImageElement>;
-      for (let i = 0; i < imgs.length; i++) {
+      let slides = imgWrap.querySelectorAll('.snap-slide');
+      for (let i = 0; i < slides.length; i++) {
         let shouldEager = (Math.abs(i - state.cur) <= 2);
-        imgs[i].loading = shouldEager ? 'eager' : 'lazy';
-        if (shouldEager && typeof imgs[i].decode === 'function' && !imgs[i].dataset.decoded) {
-          (function (img) {
+        let img = slides[i].querySelector('img') as HTMLImageElement | null;
+        if (!img) continue;
+        let p = state.activePhotos[i];
+        if (shouldEager) {
+          if (!img.getAttribute('src') && p) {
+            img.src = p.src;
+            let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
+            fadeInWhenReady(img).then(() => {
+              if (inner) {
+                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+                inner.classList.add('photo-loaded');
+                if (img.naturalWidth && img.naturalHeight) {
+                  let r = img.naturalWidth / img.naturalHeight;
+                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
+                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+                }
+              }
+            });
+          }
+          img.loading = 'eager';
+          if (typeof img.decode === 'function' && !img.dataset.decoded && img.complete) {
             img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
-          })(imgs[i]);
+          }
+        } else if (Math.abs(i - state.cur) > 4 && img.getAttribute('src')) {
+          img.removeAttribute('src');
+          img.removeAttribute('data-decoded');
+          let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
+          if (inner) {
+            inner.classList.remove('photo-loaded');
+            inner.classList.add('photo-loading');
+          }
         }
       }
     }
