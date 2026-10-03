@@ -364,55 +364,49 @@ if (state.isMobile) {
         } else {
           // 1:1 physical mapping relative to active slide — fades out by 16% drag distance and stays at 0 while dragging away
           let op = Math.max(0, 1 - distFromStart * 6.25);
-          let bl = isFF ? 0 : Math.min(10, distFromStart * 40);
           let tx = swipeDelta > 0 ? Math.max(-20, -distFromStart * 80) : Math.min(20, distFromStart * 80);
 
           info.style.opacity = op.toString();
-          info.style.filter = bl > 0.1 ? `blur(${bl.toFixed(1)}px)` : '';
+          info.style.filter = '';
           info.style.transform = `translateX(${tx.toFixed(1)}px)`;
         }
       }
 
-      // Mobile photo swipe depth effect:
-      // Outgoing photo zooms IN slightly (1.0 -> 1.08), blurs, and darkens (1.0 -> 0.65 brightness) as it exits.
-      // Incoming photo starts 1.08 zoomed, blurred, and darker (0.65 brightness), then brightens (0.65 -> 1.0), sharpens, and fits exact scale as user commits.
+      // Mobile photo swipe depth effect: scale and brightness only (no GPU blur passes on full-res textures)
       if (state.isMobile && !state.currentLightboxIsMotion) {
-        const isFF = document.documentElement.classList.contains('is-firefox');
-        let slides = imgWrap.querySelectorAll('.snap-slide');
+        let curSlide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] img`) as HTMLElement | null;
         let targetIdx = swipeDelta > 0 ? state.cur + 1 : state.cur - 1;
+        let targetSlide = (targetIdx >= 0 && targetIdx < state.activePhotos.length)
+          ? (imgWrap.querySelector(`.snap-slide[data-idx="${targetIdx}"] img`) as HTMLElement | null)
+          : null;
 
-        slides.forEach(function (slideEl) {
-          let sIdxStr = (slideEl as HTMLElement).dataset.idx;
-          if (sIdxStr !== undefined) {
-            let sIdx = parseInt(sIdxStr, 10);
-            let img = slideEl.querySelector('img') as HTMLElement;
-            if (img) {
-              if (sIdx === state.cur && distFromStart > 0.01) {
-                // Smooth ease-in-out factor for depth response
-                let easeFactor = 0.5 - 0.5 * Math.cos(Math.min(1, distFromStart) * Math.PI);
-                let curBlur = isFF ? 0 : easeFactor * 14;
-                let curScale = 1.0 + easeFactor * 0.22; // dramatic 22% zoom expansion inside grid
-                let curBright = 1.0 - easeFactor * 0.35; // darkens down to 0.65
-                img.style.transition = 'none';
-                img.style.filter = isFF ? (curBright < 0.99 ? `brightness(${curBright.toFixed(2)})` : '') : `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
-                img.style.transform = `scale(${curScale.toFixed(3)})`;
-              } else if (sIdx === targetIdx && distFromStart > 0.01) {
-                // Incoming photo starts 1.22 zoomed & blurred, dramatically scales down to 1.0 & sharpens as user commits
-                let easeFactor = 0.5 - 0.5 * Math.cos((1 - Math.min(1, distFromStart)) * Math.PI);
-                let peekBlur = isFF ? 0 : easeFactor * 14;
-                let peekScale = 1.0 + easeFactor * 0.22;
-                let peekBright = 1.0 - easeFactor * 0.35; // brightens up to 1.0
-                img.style.transition = 'none';
-                img.style.filter = isFF ? (peekBright < 0.99 ? `brightness(${peekBright.toFixed(2)})` : '') : `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
-                img.style.transform = `scale(${peekScale.toFixed(3)})`;
-              } else {
-                img.style.transition = 'none';
-                img.style.filter = '';
-                img.style.transform = '';
-              }
-            }
+        if (distFromStart > 0.01) {
+          let easeFactor = 0.5 - 0.5 * Math.cos(Math.min(1, distFromStart) * Math.PI);
+          let curScale = 1.0 + easeFactor * 0.12;
+          let curBright = 1.0 - easeFactor * 0.35;
+          if (curSlide) {
+            curSlide.style.transition = 'none';
+            curSlide.style.filter = curBright < 0.99 ? `brightness(${curBright.toFixed(2)})` : '';
+            curSlide.style.transform = `scale(${curScale.toFixed(3)})`;
           }
-        });
+          if (targetSlide) {
+            let peekEase = 0.5 - 0.5 * Math.cos((1 - Math.min(1, distFromStart)) * Math.PI);
+            let peekScale = 1.0 + peekEase * 0.12;
+            let peekBright = 1.0 - peekEase * 0.35;
+            targetSlide.style.transition = 'none';
+            targetSlide.style.filter = peekBright < 0.99 ? `brightness(${peekBright.toFixed(2)})` : '';
+            targetSlide.style.transform = `scale(${peekScale.toFixed(3)})`;
+          }
+        } else {
+          if (curSlide) {
+            curSlide.style.filter = '';
+            curSlide.style.transform = '';
+          }
+          if (targetSlide) {
+            targetSlide.style.filter = '';
+            targetSlide.style.transform = '';
+          }
+        }
       }
     }, { passive: true });
 
