@@ -345,13 +345,11 @@ html.fonts-ready .loader-status {
 @keyframes lbInfoIn {
   from {
     opacity: 0;
-    filter: blur(6px);
     transform: translateX(var(--lb-from-x)) translateY(var(--lb-from-y));
   }
 
   to {
     opacity: 1;
-    filter: blur(0px);
     transform: translateX(0) translateY(0);
   }
 }
@@ -359,12 +357,10 @@ html.fonts-ready .loader-status {
 @keyframes lbInfoOut {
   from {
     opacity: 1;
-    filter: blur(0px);
   }
 
   to {
     opacity: 0;
-    filter: blur(6px);
   }
 }
 

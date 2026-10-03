@@ -395,7 +395,7 @@ export function animateInfo(dir: number) {
     ghost.removeAttribute('onclick');
     let exitDuration = '0.22s';
     ghost.style.animation = `lbInfoOut ${exitDuration} ease forwards`;
-    ghost.style.willChange = 'filter, opacity';
+    ghost.style.willChange = 'opacity, transform';
     ghost.style.zIndex = '1';
     info.parentNode.appendChild(ghost);
     let removeDelay = 250;
@@ -409,7 +409,7 @@ export function animateInfo(dir: number) {
   clone.style.setProperty('--lb-from-y', fromY + 'px');
   let duration = '0.55s';
   clone.style.animation = `lbInfoIn ${duration} cubic-bezier(0.22,1,0.36,1) forwards`;
-  clone.style.willChange = 'filter, opacity, transform';
+  clone.style.willChange = 'opacity, transform';
   clone.style.transition = '';
   clone.style.filter = '';
   clone.style.opacity = '';
