@@ -36,6 +36,7 @@ test-artifacts/
 # local one off tools
 Antigravity_Conversation_Fix.exe
 firefox.js
+scripts/devtools-perf-trace.mjs
 
 # playwright
 /test-results/
