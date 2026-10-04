@@ -212,6 +212,16 @@ if (state.isMobile) {
       state.isUserTouching = false;
     }, { passive: true });
 
+    // Slides currently holding a will-change layer; released together once the
+    // swipe is at rest so reversals / multi-slide flicks can't strand one.
+    const fxLayerSlides = new Set<HTMLElement>();
+    function releaseFxLayers() {
+      fxLayerSlides.forEach(function (el) {
+        el.style.willChange = '';
+      });
+      fxLayerSlides.clear();
+    }
+
     // ── Eager-load nearby slides with windowed loading ──
     function updateLoading() {
       if (state.currentLightboxIsMotion) return;
@@ -331,6 +341,7 @@ if (state.isMobile) {
         s.style.transform = '';
         setTimeout(function () { s.style.transition = ''; }, 580);
       });
+      releaseFxLayers();
     }
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
@@ -420,6 +431,7 @@ if (state.isMobile) {
           let curBright = 1.0 - easeFactor * 0.35;
           if (curSlide) {
             curSlide.style.willChange = 'transform, filter';
+            fxLayerSlides.add(curSlide);
             curSlide.style.transition = 'none';
             curSlide.style.filter = isFF ? (curBright < 0.99 ? `brightness(${curBright.toFixed(2)})` : '') : `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
             curSlide.style.transform = `scale(${curScale.toFixed(3)})`;
@@ -430,6 +442,7 @@ if (state.isMobile) {
             let peekScale = 1.0 + peekEase * 0.22;
             let peekBright = 1.0 - peekEase * 0.35;
             targetSlide.style.willChange = 'transform, filter';
+            fxLayerSlides.add(targetSlide);
             targetSlide.style.transition = 'none';
             targetSlide.style.filter = isFF ? (peekBright < 0.99 ? `brightness(${peekBright.toFixed(2)})` : '') : `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
             targetSlide.style.transform = `scale(${peekScale.toFixed(3)})`;
@@ -438,13 +451,12 @@ if (state.isMobile) {
           if (curSlide) {
             curSlide.style.filter = '';
             curSlide.style.transform = '';
-            curSlide.style.willChange = '';
           }
           if (targetSlide) {
             targetSlide.style.filter = '';
             targetSlide.style.transform = '';
-            targetSlide.style.willChange = '';
           }
+          releaseFxLayers();
         }
       }
     }, { passive: true });
