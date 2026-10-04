@@ -20,6 +20,7 @@ export { CounterDO };
 
 const ROUTES = [
   { method: 'GET', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
+  { method: 'HEAD', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
   { method: 'GET', pattern: /^\/api\/photos$/, handler: listPhotos, public: true },
   { method: 'GET', pattern: /^\/api\/videos$/, handler: listVideos, public: true },
   { method: 'POST', pattern: /^\/api\/views$/, handler: handleViewCount, public: true },
