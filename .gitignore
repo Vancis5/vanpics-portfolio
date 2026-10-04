@@ -27,6 +27,7 @@ diff.txt
 # raw media and archives
 photos
 photos-raw/
+backfill-output/
 *.
 
 # local one off tools
