@@ -22,6 +22,7 @@
     "lint": "eslint .",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "vite build",
+    "preview": "vite preview",
     "sort": "node scripts/sort-photos.js",
     "add-ratios": "node scripts/add-ratios.js",
     "generate-photos": "node scripts/generate-photos.js",
