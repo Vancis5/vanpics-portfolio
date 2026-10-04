@@ -41,38 +41,7 @@
   </script>
 
   <style>
-    html, body {
-      background: #0d0c0c !important;
-      margin: 0;
-      padding: 0;
-    }
-    #loader {
-      position: fixed;
-      inset: 0;
-      background: #111010;
-      z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 1;
-      overflow: clip;
-      user-select: none;
-      pointer-events: auto;
-      contain: strict;
-    }
-    #loader.lifting {
-      opacity: 0 !important;
-      pointer-events: none !important;
-      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    }
-    .loader-brand {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(1.2rem, 3vw, 1.6rem);
-      letter-spacing: 0.04em;
-      color: #ddd8cf;
-      margin: 0;
-      opacity: 0.9;
-    }
+    html, body { background: #0d0c0c !important; }
   </style>
 
   <title>vanpics</title>
@@ -164,13 +133,11 @@
   </script>
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="css/player.css" as="style">
+  <link rel="preload" href="css/runtime-effects.css" as="style">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/player.css">
-  <link rel="stylesheet" href="css/motion-section.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="css/motion-section.css"></noscript>
-  <!-- video.js -->
-  <link rel="stylesheet" href="css/runtime-effects.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="css/runtime-effects.css"></noscript>
+  <link rel="stylesheet" href="css/motion-section.css">
+  <link rel="stylesheet" href="css/runtime-effects.css">
 </head>
 
 <body>
