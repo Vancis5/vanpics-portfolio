@@ -481,6 +481,20 @@ document.addEventListener('keydown', function (e) {
     target.matches && target.matches('input, textarea, select, [contenteditable="true"]')
   );
   if (isTyping || !domRefs.lightbox.classList.contains('open')) return;
+
+  if (e.key === 'Enter' || e.key === ' ') {
+    if (target.id === 'lightbox-nav-arrow-left') {
+      e.preventDefault();
+      navigateLightbox(-1);
+      return;
+    }
+    if (target.id === 'lightbox-nav-arrow-right') {
+      e.preventDefault();
+      navigateLightbox(1);
+      return;
+    }
+  }
+
   if (e.key === 'Escape') {
     closeLightbox(true);
     return;

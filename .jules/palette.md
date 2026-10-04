@@ -1,0 +1,3 @@
+## 2024-10-18 - Missing Keyboard Interactions on Custom ARIA Buttons
+**Learning:** Icon-only navigation arrows (`div` elements with `role="button"`) were given `aria-label` but lacked `tabindex="0"`, making them unreachable via keyboard. Furthermore, since they were not native `<button>` elements, they did not automatically trigger on `Enter` or `Space` key presses, requiring manual keydown event listeners to function.
+**Action:** Always ensure that custom elements with `role="button"` not only have `tabindex="0"` to be focusable, but also have corresponding JavaScript event listeners for `Enter` and `Space` to replicate native button activation behavior.
