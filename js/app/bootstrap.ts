@@ -9,6 +9,7 @@ import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tic
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 import { initLightboxMouseNav } from './lightbox-nav.js';
+import { perfMark, perfMeasure } from './perf.js';
 import type { Photo, Video } from '../types.js';
 
 const MEDIA_CACHE_KEY = 'vanpics_media_cache_v1';
@@ -409,24 +410,26 @@ function updateFooterStats(photos: Photo[], videos: Video[]) {
 }
 
 function renderUI(photos: Photo[], videos: Video[]) {
-  const t0 = performance.now();
+  perfMark('renderUI-start');
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
   applyCarouselPhotos(photos);
 
-  const tCar = performance.now();
+  perfMark('carousel-start');
   buildCarousel();
-  const durCar = (performance.now() - tCar).toFixed(1);
+  perfMark('carousel-end');
+  perfMeasure('renderUI: buildCarousel', 'carousel-start', 'carousel-end');
 
-  const tMas = performance.now();
+  perfMark('masonry-start');
   buildMasonry();
-  const durMas = (performance.now() - tMas).toFixed(1);
+  perfMark('masonry-end');
+  perfMeasure('renderUI: buildMasonry', 'masonry-start', 'masonry-end');
 
   initFilters();
   updateFooterStats(photos, videos);
 
-  const durTotal = (performance.now() - t0).toFixed(1);
-  console.log(`[vanpics-perf] renderUI: ${durTotal}ms (carousel: ${durCar}ms, masonry: ${durMas}ms)`);
+  perfMark('renderUI-end');
+  perfMeasure('renderUI: total', 'renderUI-start', 'renderUI-end');
 
   setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 }

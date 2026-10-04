@@ -1,5 +1,4 @@
-const tAppStart = performance.now();
-
+import { perfMark, perfMeasure } from './perf.js'; // keep FIRST
 import './config.js';
 import './utils.js';
 import './dom.js';
@@ -25,17 +24,19 @@ import '../browser-fixes.js';
 import '../../scripts/firefox-patch.js';
 import { warmVideoPlayer } from './video-player-loader.js';
 
+perfMark('imports-done');
+perfMeasure('module-eval (all static imports)', 'main-start', 'imports-done');
+
 warmVideoPlayer();
 
 async function bootstrapApp() {
-  const tSmooth = performance.now();
+  perfMark('smooth-start');
   const { initSmoothScroll } = await import('../smooth-scroll.js');
   initSmoothScroll({ updateStickyHeaderSurface, updateCustomScrollbar, updateHeroOverlay });
-  console.log(`[vanpics-perf] smooth-scroll: ${(performance.now() - tSmooth).toFixed(1)}ms`);
+  perfMark('smooth-end');
+  perfMeasure('smooth-scroll import+init', 'smooth-start', 'smooth-end');
 }
 
-bootstrapApp().then(() => {
-  console.log(`[vanpics-perf] total main init: ${(performance.now() - tAppStart).toFixed(1)}ms`);
-}).catch(function (error) {
+bootstrapApp().catch(function (error) {
   console.error(error);
 });
