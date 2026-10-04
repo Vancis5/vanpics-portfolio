@@ -90,6 +90,37 @@ html.fonts-ready .loader-brand {
   z-index: 3;
 }
 
+.loader-shimmer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 220%;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform;
+  transform: translateZ(0);
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.02) 55%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  animation: loaderShimmer 4.2s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+
+@keyframes loaderShimmer {
+  0% {
+    transform: translateX(-80%);
+  }
+  60%, 100% {
+    transform: translateX(80%);
+  }
+}
+
 .loader-track {
   display: flex;
   gap: 16px;
@@ -115,48 +146,6 @@ html.fonts-ready .loader-brand {
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.018);
   border: 1px solid rgba(221, 216, 207, 0.05);
-  position: relative;
-  overflow: hidden;
-  clip-path: inset(0 round 4px);
-}
-
-.loader-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    115deg,
-    rgba(255, 255, 255, 0) 10%,
-    rgba(255, 255, 255, 0.02) 40%,
-    rgba(255, 255, 255, 0.07) 50%,
-    rgba(255, 255, 255, 0.02) 60%,
-    rgba(255, 255, 255, 0) 90%
-  );
-  animation: loaderCardShimmer 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
-}
-
-.loader-card:nth-child(1)::after { animation-delay: 0s; }
-.loader-card:nth-child(2)::after { animation-delay: 0.12s; }
-.loader-card:nth-child(3)::after { animation-delay: 0.24s; }
-.loader-card:nth-child(4)::after { animation-delay: 0.36s; }
-.loader-card:nth-child(5)::after { animation-delay: 0.48s; }
-.loader-card:nth-child(6)::after { animation-delay: 0.60s; }
-.loader-card:nth-child(7)::after { animation-delay: 0.72s; }
-.loader-card:nth-child(8)::after { animation-delay: 0.84s; }
-.loader-card:nth-child(9)::after { animation-delay: 0.96s; }
-.loader-card:nth-child(10)::after { animation-delay: 1.08s; }
-.loader-card:nth-child(11)::after { animation-delay: 1.20s; }
-.loader-card:nth-child(12)::after { animation-delay: 1.32s; }
-
-@keyframes loaderCardShimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  38%, 100% {
-    transform: translateX(100%);
-  }
 }
 
 .loader-status {

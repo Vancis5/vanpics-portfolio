@@ -159,11 +159,11 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
       img.onload = null; img.onerror = null;
       img.style.transition = 'none';
-      img.style.transform = '';
+      img.style.transform = 'translateX(' + enterX + ') scale(0.992)';
       img.style.opacity = '0';
       imgWrap.style.transition = 'none';
-      imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.992)';
-      imgWrap.style.opacity = '0';
+      imgWrap.style.transform = '';
+      imgWrap.style.opacity = '';
       playerShell.innerHTML = '';
       playerShell.style.opacity = '0';
 
@@ -187,10 +187,9 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
           imgWrap.style.opacity = '1';
           imgWrap.style.transform = 'translateX(0) scale(1)';
         } else {
-          imgWrap.style.transition = 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-          imgWrap.style.opacity = '1';
-          imgWrap.style.transform = 'translateX(0) scale(1)';
-          img.style.transition = 'opacity 0.22s ease';
+          img.style.transition = 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+          img.style.opacity = '1';
+          img.style.transform = 'translateX(0) scale(1)';
         }
       });
     }
@@ -366,10 +365,10 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   let infoInner = domRefs.lightboxInfo;
   if (infoInner) {
     infoInner.style.animation = 'none';
-    infoInner.style.transition = 'opacity 0.36s ease, filter 0.36s ease, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1)';
+    infoInner.style.transition = 'opacity 0.3s ease';
     infoInner.style.opacity = '0';
-    infoInner.style.filter = 'blur(6px)';
-    infoInner.style.transform = 'translateY(10px)';
+    infoInner.style.filter = '';
+    infoInner.style.transform = '';
   }
 
   if (header && headerRect) {
