@@ -50,7 +50,7 @@ export async function deleteMediaObjects(env, keys) {
 export async function fetchPhotos(env, limit, offset) {
   const [listResult, countResult] = await env.DB.batch([
     env.DB.prepare(
-      `SELECT id, title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
+      `SELECT id, title, src, thumb, raw_src, lb_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
        FROM photos
        ORDER BY created_at DESC, id DESC
        LIMIT ? OFFSET ?`
@@ -82,7 +82,7 @@ export async function fetchVideos(env, limit, offset) {
 }
 
 export async function findPhotoById(env, photoId) {
-  return env.DB.prepare('SELECT src, thumb, raw_src FROM photos WHERE id = ?')
+  return env.DB.prepare('SELECT src, thumb, raw_src, lb_src FROM photos WHERE id = ?')
     .bind(photoId)
     .first();
 }
@@ -103,13 +103,14 @@ export async function deleteVideoRecord(env, videoId) {
 
 export async function insertPhotoRecord(env, photoData) {
   return env.DB.prepare(
-    `INSERT INTO photos (title, src, thumb, raw_src, aspect_ratio, category, location, date, \`desc\`, hero_slide)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO photos (title, src, thumb, raw_src, lb_src, aspect_ratio, category, location, date, \`desc\`, hero_slide)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     photoData.title,
     photoData.photoKey,
     photoData.thumbKey,
     photoData.rawKey,
+    photoData.lbKey ?? null,
     photoData.aspectRatio,
     photoData.category,
     photoData.location,
@@ -168,15 +169,17 @@ export async function updateVideoRecord(env, videoId, videoData) {
   ).run();
 }
 
-export async function updatePhotoMediaKeys(env, photoId, { aspectRatio, photoKey, thumbKey, rawKey }) {
+// lbKey is always written (NULL when the edit carried no lightbox tier) so a stale lb_src
+// can never keep pointing at the previous image.
+export async function updatePhotoMediaKeys(env, photoId, { aspectRatio, photoKey, thumbKey, rawKey, lbKey }) {
   if (rawKey) {
     return env.DB.prepare(
-      'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = ? WHERE id = ?'
-    ).bind(aspectRatio, photoKey, thumbKey, rawKey, photoId).run();
+      'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = ?, lb_src = ? WHERE id = ?'
+    ).bind(aspectRatio, photoKey, thumbKey, rawKey, lbKey ?? null, photoId).run();
   }
   return env.DB.prepare(
-    'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = NULL WHERE id = ?'
-  ).bind(aspectRatio, photoKey, thumbKey, photoId).run();
+    'UPDATE photos SET aspect_ratio = ?, src = ?, thumb = ?, raw_src = NULL, lb_src = ? WHERE id = ?'
+  ).bind(aspectRatio, photoKey, thumbKey, lbKey ?? null, photoId).run();
 }
 
 export async function getAllPhotosForSorting(env) {
