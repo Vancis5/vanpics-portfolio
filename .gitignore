@@ -28,6 +28,9 @@ diff.txt
 photos
 photos-raw/
 backfill-output/
+archive/
+recent-batch.diff
+test-artifacts/
 *.
 
 # local one off tools
