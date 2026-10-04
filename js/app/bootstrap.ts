@@ -318,7 +318,8 @@ function processPhotos(raw: any[]) {
     ...p,
     aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : undefined),
     heroSlide: p.hero_slide === 1 || p.hero_slide === true,
-    rawSrc: p.raw_src || null
+    rawSrc: p.raw_src || null,
+    lbSrc: p.lb_src || null
   }));
 }
 
@@ -521,7 +522,7 @@ function renderUI(photos: Photo[], videos: Video[]) {
 
       // Prune orphaned aspect ratio cache entries
       const allSrcs = [
-        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb].filter((s): s is string => Boolean(s))),
+        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb, p.lbSrc].filter((s): s is string => Boolean(s))),
         ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter((s): s is string => Boolean(s)))
       ];
       pruneRatioCache(allSrcs);

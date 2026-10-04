@@ -5,7 +5,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfRe
 import { resetZoom } from '../lightbox-zoom.js';
 import { updateFilmstrip, stopFsSync } from '../filmstrip.js';
 import { resetLightboxMouseNav, startNavAnimationLoop, hideLightboxNavImmediately } from '../lightbox-nav.js';
-import { cacheImage, getLightboxBlurPath } from '../lightbox-cache.js';
+import { cacheImage, getLightboxBlurPath, lightboxSrc } from '../lightbox-cache.js';
 import {
   prepareLightboxPhoto,
   renderVideoInLightbox,
@@ -59,13 +59,13 @@ export function loadSwipeNeighbors() {
     // Preload & eagerly decode ±1 immediate neighbor off-thread for instant 60fps transitions
     [-1, 1].forEach(function (offset) {
       let p = currentSet[(state.cur + offset + len) % len];
-      if (p && p.src) cacheImage(p.src, true);
+      if (p && p.src) cacheImage(lightboxSrc(p), true);
     });
 
     // Preload & cache ±2 high-res neighbors (standard network cache)
     [-2, 2].forEach(function (offset) {
       let p = currentSet[(state.cur + offset + len) % len];
-      if (p && p.src) cacheImage(p.src, false);
+      if (p && p.src) cacheImage(lightboxSrc(p), false);
     });
 
     // Preload & cache ±3 blurred backgrounds (super light, avoids network saturation)

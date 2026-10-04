@@ -10,6 +10,13 @@ const _full = new Map<string, CacheEntry>();
 const _thumb = new Map<string, CacheEntry>();
 const MAX = { full: 6, thumb: 24 };
 
+// URL the lightbox should load for the main photo: the 1600px tier when the record has one,
+// otherwise the original `src` (old records, or a stale cached payload). `src` stays the item's
+// identity everywhere else (ratio cache keys, hero lookup, signatures).
+export function lightboxSrc(p: { src: string; lbSrc?: string | null }): string {
+  return p.lbSrc || p.src;
+}
+
 export function cacheImage(src: string, eagerDecode: boolean = false) {
   if (!src) return null;
   const isThumb = src.includes('/thumbs/') || src.includes('-thumb.');

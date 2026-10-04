@@ -8,6 +8,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml, fadeInWhenReady } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
+import { lightboxSrc } from './lightbox-cache.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -93,7 +94,7 @@ if (state.isMobile) {
         img.addEventListener('click', toggleImageZoom);
 
         if (shouldLoad) {
-          img.src = p.src;
+          img.src = lightboxSrc(p);
           fadeInWhenReady(img).then(() => {
             inner.classList.remove('photo-loading', 'photo-placeholder-visible');
             inner.classList.add('photo-loaded');
@@ -233,7 +234,7 @@ if (state.isMobile) {
         let p = state.activePhotos[i];
         if (shouldEager) {
           if (!img.getAttribute('src') && p) {
-            img.src = p.src;
+            img.src = lightboxSrc(p);
             let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
             fadeInWhenReady(img).then(() => {
               if (inner) {
