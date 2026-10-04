@@ -1,9 +1,10 @@
 import { domRefs } from './dom.js';
 import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
-import { cacheImage, getImageCacheEntry } from './lightbox-cache.js';
+import { cacheImage, getImageCacheEntry, lightboxSrc } from './lightbox-cache.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
 import { Photo, Video } from '../types.js';
-import { updateMobileImgWrapHeight } from './lightbox.js';
+import { updateMobileImgWrapHeight } from './lightbox/renderer.js';
+import { loadVideoPlayer } from './video-player-loader.js';
 
 let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;
@@ -17,8 +18,7 @@ export function setPhotoPlaceholderToken(val: number) {
 }
 
 export function clearLightboxPhotoPlaceholder(expectedToken?: number) {
-  if (expectedToken && expectedToken !== photoPlaceholderToken) return;
-  if (!expectedToken) photoPlaceholderToken++;
+  if (expectedToken !== undefined && expectedToken !== photoPlaceholderToken) return;
   let wrap = domRefs.lightboxImgWrap;
   let img = domRefs.lightboxImg;
   if (!wrap) return;
@@ -50,6 +50,7 @@ export function prepareLightboxPhoto(p: Photo) {
   if (!img || !wrap || !p) return;
 
   let ratio = getPhotoAspectRatio(p);
+  const fullSrc = lightboxSrc(p);
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
   wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
@@ -58,12 +59,12 @@ export function prepareLightboxPhoto(p: Photo) {
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = '';
 
   // ── Cache hit: image already decoded, swap instantly with no placeholder ──
-  const cached = getImageCacheEntry(p.src);
+  const cached = getImageCacheEntry(fullSrc);
   if (cached && (cached.decoded || (cached.img && cached.img.complete && cached.img.naturalWidth > 0))) {
     wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
     wrap.classList.add('photo-loaded');
     img.removeAttribute('data-loading-photo');
-    img.src = p.src;
+    img.src = fullSrc;
     img.style.opacity = '1';
     img.style.filter = '';
     if (cached.img.naturalWidth && cached.img.naturalHeight) {
@@ -105,21 +106,21 @@ export function prepareLightboxPhoto(p: Photo) {
 
   // Load and decode the image entirely off-DOM in the background cache.
   // This prevents the DOM injection from stalling the CSS entrance animations.
-  let cacheEntry = cacheImage(p.src, true);
+  let cacheEntry = cacheImage(fullSrc, true);
 
   if (cacheEntry && cacheEntry.decodePromise) {
     cacheEntry.decodePromise.then(() => {
       if (token !== photoPlaceholderToken) return;
-      
+
       if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
         let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
         wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-        img.src = p.src;
+        img.src = fullSrc;
         clearLightboxPhotoPlaceholder(token);
         img.style.opacity = '1';
         updateMobileImgWrapHeight();
       } else {
-        img.src = p.src;
+        img.src = fullSrc;
         if (img.complete && img.naturalWidth > 0) {
           clearLightboxPhotoPlaceholder(token);
           img.style.opacity = '1';
@@ -138,9 +139,8 @@ export function prepareLightboxPhoto(p: Photo) {
         }
       }
     }).catch(() => {
-      // decode rejected (hardware timeout etc.) — just load the image directly
       if (token !== photoPlaceholderToken) return;
-      img.src = p.src;
+      img.src = fullSrc;
       img.onload = function () {
         if (token !== photoPlaceholderToken) return;
         clearLightboxPhotoPlaceholder(token);
@@ -153,8 +153,7 @@ export function prepareLightboxPhoto(p: Photo) {
       };
     });
   } else {
-    // Fallback just in case
-    img.src = p.src;
+    img.src = fullSrc;
     img.onload = function () {
       if (token !== photoPlaceholderToken) return;
       const handleFallbackDecode = () => {
@@ -183,6 +182,7 @@ export function prepareLightboxPhoto(p: Photo) {
 export function renderVideoInLightbox(p: Video) {
   let shell = domRefs.motionPlayerShell;
   if (!shell) return;
+  void loadVideoPlayer();
   let ratio = p.aspectRatio || (16 / 9);
   shell.style.aspectRatio = String(ratio);
   

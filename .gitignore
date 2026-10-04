@@ -27,11 +27,16 @@ diff.txt
 # raw media and archives
 photos
 photos-raw/
+backfill-output/
+archive/
+recent-batch.diff
+test-artifacts/
 *.
 
 # local one off tools
 Antigravity_Conversation_Fix.exe
 firefox.js
+scripts/devtools-perf-trace.mjs
 
 # playwright
 /test-results/

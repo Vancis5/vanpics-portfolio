@@ -19,7 +19,8 @@ import {
   resetDescToggle,
   cancelDescFlipTransition,
   updateLightboxDescPreview,
-  refreshLightboxInfoRefs
+  refreshLightboxInfoRefs,
+  cancelPendingHashUpdate
 } from './renderer.js';
 
 import {
@@ -59,6 +60,7 @@ export {
   cancelDescFlipTransition,
   updateLightboxDescPreview,
   refreshLightboxInfoRefs,
+  cancelPendingHashUpdate,
   prepareLightboxPhoto,
   renderVideoInLightbox,
   startUnifiedMotionPlayer,

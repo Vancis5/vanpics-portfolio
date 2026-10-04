@@ -2,49 +2,47 @@
 <html lang="en" style="background: #0d0c0c;">
 
 <head>
-  <link rel="preconnect" href="https://www.googletagmanager.com">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
   <link rel="preconnect" href="https://vanpics-cms-api.lorzanofrancisevan.workers.dev" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9M9YVFSC07" crossorigin="anonymous"></script>
+  <!-- Google tag (gtag.js): command queue is set up now, the library itself loads after first
+       interaction or ~4s after window load, so it stays off the critical path / TBT window. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-9M9YVFSC07');
+
+    (function () {
+      var loaded = false;
+      var evts = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+      function load() {
+        if (loaded) return;
+        loaded = true;
+        evts.forEach(function (t) { removeEventListener(t, load, true); });
+        var s = document.createElement('script');
+        s.async = true;
+        s.crossOrigin = 'anonymous';
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-9M9YVFSC07';
+        document.head.appendChild(s);
+      }
+      function idle() {
+        if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 2000 });
+        else load();
+      }
+      evts.forEach(function (t) { addEventListener(t, load, { capture: true, passive: true }); });
+      if (document.readyState === 'complete') setTimeout(idle, 4000);
+      else addEventListener('load', function () { setTimeout(idle, 4000); });
+    })();
   </script>
 
   <style>
-    html, body {
-      background: #0d0c0c !important;
-      margin: 0;
-      padding: 0;
-    }
-    #loader {
-      position: fixed;
-      inset: 0;
-      background: #111010;
-      z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 1;
-      overflow: clip;
-      user-select: none;
-      pointer-events: auto;
-      contain: strict;
-    }
-    #loader.lifting {
-      opacity: 0 !important;
-      pointer-events: none !important;
-      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    }
+    html, body { background: #0d0c0c !important; }
   </style>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
   <title>vanpics</title>
   <meta name="description" content="Official photography and videography portfolio by Francis Evan. Explore curated photo collections, portraits, figures, and video works.">
@@ -109,52 +107,6 @@
   <meta name="twitter:image" content="https://vanpics.pages.dev/preview.jpg">
   <link rel="preload" href="/fonts/cormorant-garamond-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/dm-mono-400.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/cormorant-garamond-italic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/dm-mono-300.woff2" as="font" type="font/woff2" crossorigin>
-  <style>
-    @font-face {
-      font-family: 'Cormorant Garamond';
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
-    }
-    @font-face {
-      font-family: 'Cormorant Garamond';
-      font-style: italic;
-      font-weight: 400;
-      font-display: swap;
-      src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
-    }
-    @font-face {
-      font-family: 'Cormorant Garamond';
-      font-style: normal;
-      font-weight: 300;
-      font-display: swap;
-      src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
-    }
-    @font-face {
-      font-family: 'Cormorant Garamond';
-      font-style: italic;
-      font-weight: 300;
-      font-display: swap;
-      src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
-    }
-    @font-face {
-      font-family: 'DM Mono';
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-      src: url('/fonts/dm-mono-400.woff2') format('woff2');
-    }
-    @font-face {
-      font-family: 'DM Mono';
-      font-style: normal;
-      font-weight: 300;
-      font-display: swap;
-      src: url('/fonts/dm-mono-300.woff2') format('woff2');
-    }
-  </style>
   <script>
     (function() {
       function markFontsReady() {
@@ -165,8 +117,6 @@
         window.__fontsReady = Promise.all([
           document.fonts.load('400 1em "Cormorant Garamond"'),
           document.fonts.load('400 1em "DM Mono"'),
-          document.fonts.load('italic 400 1em "Cormorant Garamond"'),
-          document.fonts.load('300 1em "DM Mono"'),
           document.fonts.ready
         ]).then(function() {
           markFontsReady();
@@ -183,16 +133,11 @@
   </script>
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="css/player.css" as="style">
+  <link rel="preload" href="css/runtime-effects.css" as="style">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/player.css">
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js"
-    integrity="sha384-xvwA3Pz3/jXep9mMlx56tEboXqea6AuWRXb8i6/j1Pxw8EBdyZtfLxg4wZAkE2Lp" crossorigin="anonymous"
-    onerror="import('/vendor/video-minimal-ui.js')"></script>
-  <link rel="stylesheet" href="css/motion-section.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="css/motion-section.css"></noscript>
-  <!-- video.js -->
-  <link rel="stylesheet" href="css/runtime-effects.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="css/runtime-effects.css"></noscript>
+  <link rel="stylesheet" href="css/motion-section.css">
+  <link rel="stylesheet" href="css/runtime-effects.css">
 </head>
 
 <body>
@@ -278,7 +223,7 @@
     <div id="lightbox-content" data-lenis-prevent>
       <div id="lightbox-zoom-darken"></div>
       <div id="lightbox-img-wrap">
-        <img id="lightbox-img" class="zoomable" crossorigin="anonymous" src="" alt="" draggable="false" width="1600" height="1200">
+        <img id="lightbox-img" class="zoomable" crossorigin="anonymous" src="" alt="" draggable="false">
         <div id="lightbox-photo-error" role="status" aria-live="polite">image failed to load</div>
         <div id="motion-player-shell"></div>
       </div>

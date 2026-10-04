@@ -1,3 +1,4 @@
+import { perfMark, perfMeasure } from './perf.js'; // keep FIRST
 import './config.js';
 import './utils.js';
 import './dom.js';
@@ -21,10 +22,19 @@ import { updateHeroOverlay } from './hero-carousel.js';
 import './bootstrap.js';
 import '../browser-fixes.js';
 import '../../scripts/firefox-patch.js';
+import { warmVideoPlayer } from './video-player-loader.js';
+
+perfMark('imports-done');
+perfMeasure('module-eval (all static imports)', 'main-start', 'imports-done');
+
+warmVideoPlayer();
 
 async function bootstrapApp() {
+  perfMark('smooth-start');
   const { initSmoothScroll } = await import('../smooth-scroll.js');
   initSmoothScroll({ updateStickyHeaderSurface, updateCustomScrollbar, updateHeroOverlay });
+  perfMark('smooth-end');
+  perfMeasure('smooth-scroll import+init', 'smooth-start', 'smooth-end');
 }
 
 bootstrapApp().catch(function (error) {

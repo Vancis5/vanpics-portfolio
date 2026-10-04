@@ -20,6 +20,7 @@ export { CounterDO };
 
 const ROUTES = [
   { method: 'GET', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
+  { method: 'HEAD', pattern: /^\/media\/(?<key>.+)$/, handler: serveMedia, public: true },
   { method: 'GET', pattern: /^\/api\/photos$/, handler: listPhotos, public: true },
   { method: 'GET', pattern: /^\/api\/videos$/, handler: listVideos, public: true },
   { method: 'POST', pattern: /^\/api\/views$/, handler: handleViewCount, public: true },
@@ -76,7 +77,10 @@ export default {
     try {
       return await route.handler(request, env, params, ctx);
     } catch (err) {
-      return errorResponse(request, env, err.message || 'internal server error', 500);
+      console.error('Unhandled route error:', err);
+      const isDev = env.ENVIRONMENT !== 'production';
+      const message = isDev ? (err.message || 'internal server error') : 'internal server error';
+      return errorResponse(request, env, message, 500);
     }
   },
 };

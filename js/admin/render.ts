@@ -10,7 +10,7 @@ export function renderSingleCardHtml(p: any) {
   return `
     <div class="asset-card" data-id="${p.id}" data-type="${p.type}" style="cursor: pointer;">
       <div class="card-preview-wrapper">
-        <img class="card-preview-media" src="${thumbSrc}" alt="${escapeHtml(p.title || 'untitled')}" onerror="this.onerror=null;this.src='${PLACEHOLDER_SRC}'">
+        <img class="card-preview-media" src="${escapeHtml(thumbSrc || PLACEHOLDER_SRC)}" alt="${escapeHtml(p.title || 'untitled')}">
         ${isVideo ? `
           <div class="video-play-indicator">
             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -48,6 +48,16 @@ export function renderArchivesList(
   groupVal: string
 ) {
   if (!itemsContainer) return;
+
+  if (!itemsContainer.dataset.errorBound) {
+    itemsContainer.dataset.errorBound = 'true';
+    itemsContainer.addEventListener('error', (e: Event) => {
+      const target = e.target as HTMLImageElement;
+      if (target && target.tagName === 'IMG' && target.classList.contains('card-preview-media')) {
+        target.src = PLACEHOLDER_SRC;
+      }
+    }, true);
+  }
 
   const filtered = list.filter((item: any) => {
     // Filter by category segment dropdown option

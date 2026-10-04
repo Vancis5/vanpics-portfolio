@@ -1,12 +1,30 @@
 import { saveRatioToCache } from './utils.js';
 
-const _imgCache = new Map<string, { img: HTMLImageElement; decoded: boolean; decodePromise: Promise<any> | null }>();
-const _IMG_CACHE_MAX = 10;
+interface CacheEntry {
+  img: HTMLImageElement;
+  decoded: boolean;
+  decodePromise: Promise<any> | null;
+}
+
+const _full = new Map<string, CacheEntry>();
+const _thumb = new Map<string, CacheEntry>();
+const MAX = { full: 6, thumb: 24 };
+
+// URL the lightbox should load for the main photo: the 1600px tier when the record has one,
+// otherwise the original `src` (old records, or a stale cached payload). `src` stays the item's
+// identity everywhere else (ratio cache keys, hero lookup, signatures).
+export function lightboxSrc(p: { src: string; lbSrc?: string | null }): string {
+  return p.lbSrc || p.src;
+}
 
 export function cacheImage(src: string, eagerDecode: boolean = false) {
   if (!src) return null;
-  let cached = _imgCache.get(src);
+  const isThumb = src.includes('/thumbs/') || src.includes('-thumb.');
+  const bucket = isThumb ? _thumb : _full;
+  let cached = bucket.get(src);
   if (cached) {
+    bucket.delete(src);
+    bucket.set(src, cached);
     if (eagerDecode && !cached.decoded && cached.img && cached.img.decode) {
       cached.img.decode().then(() => {
         if (cached && cached.img.naturalWidth > 0) cached.decoded = true;
@@ -14,8 +32,8 @@ export function cacheImage(src: string, eagerDecode: boolean = false) {
     }
     return cached;
   }
-  if (_imgCache.size >= _IMG_CACHE_MAX) {
-    _imgCache.delete(_imgCache.keys().next().value!); // evict oldest
+  if (bucket.size >= (isThumb ? MAX.thumb : MAX.full)) {
+    bucket.delete(bucket.keys().next().value!);
   }
   const img = new Image();
   img.crossOrigin = 'anonymous';
@@ -53,7 +71,7 @@ export function cacheImage(src: string, eagerDecode: boolean = false) {
     img.src = src;
     if (img.complete && img.naturalWidth > 0) markDecoded();
   });
-  _imgCache.set(src, entry);
+  bucket.set(src, entry);
   return entry;
 }
 
@@ -73,5 +91,5 @@ export function getCachedImageDecode(src: string) {
 }
 
 export function getImageCacheEntry(src: string) {
-  return _imgCache.get(src);
+  return _thumb.get(src) || _full.get(src);
 }

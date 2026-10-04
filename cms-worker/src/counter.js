@@ -5,7 +5,11 @@ export class CounterDO {
 
   async fetch(request) {
     const url = new URL(request.url);
-    const path = url.searchParams.get('path') || '/';
+    let rawPath = url.searchParams.get('path') || '/';
+    let path = rawPath.trim().slice(0, 128);
+    if (!/^\/[a-zA-Z0-9_.\-\/]*$/.test(path)) {
+      path = '/';
+    }
 
     if (request.method === 'POST') {
       let total = (await this.state.storage.get('total')) || 0;

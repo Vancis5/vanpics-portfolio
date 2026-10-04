@@ -17,6 +17,8 @@ export interface Photo {
   thumb?: string;
   raw_src?: string;
   rawSrc?: string;
+  lb_src?: string | null;
+  lbSrc?: string | null;
   title: string;
   desc?: string;
   date?: string;

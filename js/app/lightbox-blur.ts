@@ -521,12 +521,23 @@ export class WebGLBlurRenderer {
     }
   }
 
+  lastRestFrameTime: number = 0;
+
   render() {
     if (!this.gl || !this.progLiquid || !this.progDown || !this.progUp || !this.locLiquid || !this.locDown || !this.locUp) return;
+
     let gl = this.gl;
     const loc = this.locLiquid;
 
     const now = performance.now();
+    if (this.mixFactor >= 1.0 && this.lastRestFrameTime && (now - this.lastRestFrameTime) < 33) {
+      if (this.animating) {
+        this.animationId = requestAnimationFrame(() => this.render());
+      }
+      return;
+    }
+    this.lastRestFrameTime = now;
+
     const dt = Math.min((now - (this.lastFrameTime || now)) / (1000 / 60), 3);
     this.lastFrameTime = now;
 

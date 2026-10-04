@@ -9,6 +9,7 @@ import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tic
 import { animateGlow, setStartLoopsCallback } from './core.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 import { initLightboxMouseNav } from './lightbox-nav.js';
+import { perfMark, perfMeasure } from './perf.js';
 import type { Photo, Video } from '../types.js';
 
 const MEDIA_CACHE_KEY = 'vanpics_media_cache_v1';
@@ -317,7 +318,8 @@ function processPhotos(raw: any[]) {
     ...p,
     aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : undefined),
     heroSlide: p.hero_slide === 1 || p.hero_slide === true,
-    rawSrc: p.raw_src || null
+    rawSrc: p.raw_src || null,
+    lbSrc: p.lb_src || null
   }));
 }
 
@@ -409,13 +411,26 @@ function updateFooterStats(photos: Photo[], videos: Video[]) {
 }
 
 function renderUI(photos: Photo[], videos: Video[]) {
+  perfMark('renderUI-start');
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
   applyCarouselPhotos(photos);
+
+  perfMark('carousel-start');
   buildCarousel();
+  perfMark('carousel-end');
+  perfMeasure('renderUI: buildCarousel', 'carousel-start', 'carousel-end');
+
+  perfMark('masonry-start');
   buildMasonry();
+  perfMark('masonry-end');
+  perfMeasure('renderUI: buildMasonry', 'masonry-start', 'masonry-end');
+
   initFilters();
   updateFooterStats(photos, videos);
+
+  perfMark('renderUI-end');
+  perfMeasure('renderUI: total', 'renderUI-start', 'renderUI-end');
 
   setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
 }
@@ -507,7 +522,7 @@ function renderUI(photos: Photo[], videos: Video[]) {
 
       // Prune orphaned aspect ratio cache entries
       const allSrcs = [
-        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb].filter((s): s is string => Boolean(s))),
+        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb, p.lbSrc].filter((s): s is string => Boolean(s))),
         ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter((s): s is string => Boolean(s)))
       ];
       pruneRatioCache(allSrcs);

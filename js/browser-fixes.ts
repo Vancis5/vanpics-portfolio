@@ -49,11 +49,5 @@ if (window.matchMedia('(hover: none)').matches) {
       e.preventDefault();
     }, { passive: false });
   });
-
-  document.addEventListener('touchstart', (e: TouchEvent) => {
-    if (e.touches.length > 1) {
-      e.preventDefault();
-    }
-  }, { passive: false });
 }
 

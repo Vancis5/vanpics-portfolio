@@ -128,9 +128,9 @@ export function updateZoomTransform(img: any, smooth = true) {
     if (lb) lb.classList.add('zoom-active');
     hideFilmstripIfReady();
 
-    // Load full-resolution photo in the background when zooming in >= 1.3x
+    // Load full-resolution photo in the background when zooming in >= 1.3x (desktop only)
     const currentItem = state.currentLightboxIsMotion ? null : state.activePhotos[state.cur];
-    if (state.lbZoomLevel >= 1.3 && currentItem && currentItem.rawSrc && img.src !== currentItem.rawSrc && !img.dataset.loadingRaw) {
+    if (!state.isMobile && state.lbZoomLevel >= 1.3 && currentItem && currentItem.rawSrc && img.src !== currentItem.rawSrc && !img.dataset.loadingRaw) {
       img.dataset.loadingRaw = 'true';
       let wrap = domRefs.lightboxImgWrap;
       if (wrap) wrap.classList.add('raw-loading');

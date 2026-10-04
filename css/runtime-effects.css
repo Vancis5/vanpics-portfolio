@@ -102,13 +102,23 @@ html.fonts-ready .loader-brand {
   transform: translateZ(0);
   background: linear-gradient(
     115deg,
-    rgba(255, 255, 255, 0) 25%,
-    rgba(255, 255, 255, 0.015) 45%,
-    rgba(255, 255, 255, 0.045) 50%,
-    rgba(255, 255, 255, 0.015) 55%,
-    rgba(255, 255, 255, 0) 75%
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.02) 55%,
+    rgba(255, 255, 255, 0) 70%
   );
   animation: loaderShimmer 4.2s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+
+@keyframes loaderShimmer {
+  0% {
+    transform: translateX(-80%);
+  }
+  60%, 100% {
+    transform: translateX(80%);
+  }
 }
 
 .loader-track {
@@ -136,15 +146,6 @@ html.fonts-ready .loader-brand {
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.018);
   border: 1px solid rgba(221, 216, 207, 0.05);
-}
-
-@keyframes loaderShimmer {
-  0% {
-    transform: translateX(-80%);
-  }
-  60%, 100% {
-    transform: translateX(80%);
-  }
 }
 
 .loader-status {
@@ -307,11 +308,8 @@ html.fonts-ready .loader-status {
 
 /* lightbox image — transitions handled via inline JS for directional control */
 #lightbox-img {
-  transition: opacity 0.28s ease, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
-  min-height: 160px;
-  background: rgba(221, 216, 207, 0.04);
   border-radius: 3px;
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 /* skeleton pulse while image is loading (opacity 0 = still loading) */
@@ -370,7 +368,7 @@ html.fonts-ready .loader-status {
 
 #lightbox-info.animating {
   animation: lbInfoIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  will-change: opacity, transform;
+  will-change: filter, opacity, transform;
 }
 
 /* Hide scrollbar during loader curtain */

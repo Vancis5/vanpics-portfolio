@@ -5,9 +5,10 @@ import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightbox
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
-import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml, fadeInWhenReady } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
+import { lightboxSrc } from './lightbox-cache.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -73,7 +74,7 @@ if (state.isMobile) {
       // Remove old #lightbox-img from flow (CSS hides it, but clear src too)
       let mainImg = domRefs.lightboxImg;
       if (mainImg) { mainImg.removeAttribute('src'); }
-      state.activePhotos.forEach(function (p, i) {
+      state.activePhotos.forEach(function (p: any, i: number) {
         let slide = document.createElement('div');
         slide.className = 'snap-slide';
         slide.dataset.idx = String(i);
@@ -87,49 +88,28 @@ if (state.isMobile) {
         img.crossOrigin = 'anonymous';
         img.alt = p.title || '';
         img.draggable = false;
-        img.loading = (Math.abs(i - state.cur) <= 2) ? 'eager' : 'lazy';
-        
-        img.onload = function () {
-          const handleSwipeDecode = () => {
+        let shouldLoad = (Math.abs(i - state.cur) <= 2);
+        img.loading = shouldLoad ? 'eager' : 'lazy';
+        img.classList.add('zoomable');
+        img.addEventListener('click', toggleImageZoom);
+
+        if (shouldLoad) {
+          img.src = lightboxSrc(p);
+          fadeInWhenReady(img).then(() => {
+            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+            inner.classList.add('photo-loaded');
             if (img.naturalWidth && img.naturalHeight) {
               let r = img.naturalWidth / img.naturalHeight;
               inner.style.setProperty('--lightbox-photo-ratio', String(r));
               saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
             }
-            if (inner.classList.contains('photo-loaded')) return;
-            inner.classList.add('photo-loaded');
-            inner.classList.remove('photo-placeholder-visible');
-            setTimeout(function () {
-              inner.classList.remove('photo-loading', 'photo-loaded');
-            }, 260);
-          };
-          if (img.decode) {
-            img.decode().then(handleSwipeDecode).catch(handleSwipeDecode);
-          } else {
-            handleSwipeDecode();
-          }
-        };
+          });
+        }
+
         img.onerror = function () {
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
           inner.classList.add('photo-error');
         };
-        img.src = p.src;
-        img.classList.add('zoomable');
-        img.addEventListener('click', toggleImageZoom);
-
-        if (img.complete && img.naturalWidth > 0) {
-          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-          inner.classList.add('photo-loaded');
-          let r = img.naturalWidth / img.naturalHeight;
-          inner.style.setProperty('--lightbox-photo-ratio', String(r));
-          saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-        } else {
-          requestAnimationFrame(function () {
-            if (!inner.classList.contains('photo-loaded') && !inner.classList.contains('photo-error')) {
-              inner.classList.add('photo-placeholder-visible');
-            }
-          });
-        }
 
         inner.appendChild(img);
         slide.appendChild(inner);
@@ -233,17 +213,53 @@ if (state.isMobile) {
       state.isUserTouching = false;
     }, { passive: true });
 
-    // ── Eager-load nearby slides ──
+    // Slides currently holding a will-change layer; released together once the
+    // swipe is at rest so reversals / multi-slide flicks can't strand one.
+    const fxLayerSlides = new Set<HTMLElement>();
+    function releaseFxLayers() {
+      fxLayerSlides.forEach(function (el) {
+        el.style.willChange = '';
+      });
+      fxLayerSlides.clear();
+    }
+
+    // ── Eager-load nearby slides with windowed loading ──
     function updateLoading() {
       if (state.currentLightboxIsMotion) return;
-      let imgs = imgWrap.querySelectorAll('.snap-slide img') as NodeListOf<HTMLImageElement>;
-      for (let i = 0; i < imgs.length; i++) {
+      let slides = imgWrap.querySelectorAll('.snap-slide');
+      for (let i = 0; i < slides.length; i++) {
         let shouldEager = (Math.abs(i - state.cur) <= 2);
-        imgs[i].loading = shouldEager ? 'eager' : 'lazy';
-        if (shouldEager && typeof imgs[i].decode === 'function' && !imgs[i].dataset.decoded) {
-          (function (img) {
+        let img = slides[i].querySelector('img') as HTMLImageElement | null;
+        if (!img) continue;
+        let p = state.activePhotos[i];
+        if (shouldEager) {
+          if (!img.getAttribute('src') && p) {
+            img.src = lightboxSrc(p);
+            let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
+            fadeInWhenReady(img).then(() => {
+              if (inner) {
+                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+                inner.classList.add('photo-loaded');
+                if (img.naturalWidth && img.naturalHeight) {
+                  let r = img.naturalWidth / img.naturalHeight;
+                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
+                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+                }
+              }
+            });
+          }
+          img.loading = 'eager';
+          if (typeof img.decode === 'function' && !img.dataset.decoded && img.complete) {
             img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
-          })(imgs[i]);
+          }
+        } else if (Math.abs(i - state.cur) > 4 && img.getAttribute('src')) {
+          img.removeAttribute('src');
+          img.removeAttribute('data-decoded');
+          let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
+          if (inner) {
+            inner.classList.remove('photo-loaded');
+            inner.classList.add('photo-loading');
+          }
         }
       }
     }
@@ -326,6 +342,7 @@ if (state.isMobile) {
         s.style.transform = '';
         setTimeout(function () { s.style.transition = ''; }, 580);
       });
+      releaseFxLayers();
     }
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
@@ -398,45 +415,50 @@ if (state.isMobile) {
       }
 
       // Mobile photo swipe depth effect:
-      // Outgoing photo zooms IN slightly (1.0 -> 1.08), blurs, and darkens (1.0 -> 0.65 brightness) as it exits.
-      // Incoming photo starts 1.08 zoomed, blurred, and darker (0.65 brightness), then brightens (0.65 -> 1.0), sharpens, and fits exact scale as user commits.
+      // Outgoing photo zooms IN slightly (1.0 -> 1.22), blurs, and darkens (1.0 -> 0.65 brightness) as it exits.
+      // Incoming photo starts 1.22 zoomed, blurred, and darker (0.65 brightness), then brightens (0.65 -> 1.0), sharpens, and fits exact scale as user commits.
       if (state.isMobile && !state.currentLightboxIsMotion) {
         const isFF = document.documentElement.classList.contains('is-firefox');
-        let slides = imgWrap.querySelectorAll('.snap-slide');
+        let curSlide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] img`) as HTMLElement | null;
         let targetIdx = swipeDelta > 0 ? state.cur + 1 : state.cur - 1;
+        let targetSlide = (targetIdx >= 0 && targetIdx < state.activePhotos.length)
+          ? (imgWrap.querySelector(`.snap-slide[data-idx="${targetIdx}"] img`) as HTMLElement | null)
+          : null;
 
-        slides.forEach(function (slideEl) {
-          let sIdxStr = (slideEl as HTMLElement).dataset.idx;
-          if (sIdxStr !== undefined) {
-            let sIdx = parseInt(sIdxStr, 10);
-            let img = slideEl.querySelector('img') as HTMLElement;
-            if (img) {
-              if (sIdx === state.cur && distFromStart > 0.01) {
-                // Smooth ease-in-out factor for depth response
-                let easeFactor = 0.5 - 0.5 * Math.cos(Math.min(1, distFromStart) * Math.PI);
-                let curBlur = isFF ? 0 : easeFactor * 14;
-                let curScale = 1.0 + easeFactor * 0.22; // dramatic 22% zoom expansion inside grid
-                let curBright = 1.0 - easeFactor * 0.35; // darkens down to 0.65
-                img.style.transition = 'none';
-                img.style.filter = isFF ? (curBright < 0.99 ? `brightness(${curBright.toFixed(2)})` : '') : `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
-                img.style.transform = `scale(${curScale.toFixed(3)})`;
-              } else if (sIdx === targetIdx && distFromStart > 0.01) {
-                // Incoming photo starts 1.22 zoomed & blurred, dramatically scales down to 1.0 & sharpens as user commits
-                let easeFactor = 0.5 - 0.5 * Math.cos((1 - Math.min(1, distFromStart)) * Math.PI);
-                let peekBlur = isFF ? 0 : easeFactor * 14;
-                let peekScale = 1.0 + easeFactor * 0.22;
-                let peekBright = 1.0 - easeFactor * 0.35; // brightens up to 1.0
-                img.style.transition = 'none';
-                img.style.filter = isFF ? (peekBright < 0.99 ? `brightness(${peekBright.toFixed(2)})` : '') : `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
-                img.style.transform = `scale(${peekScale.toFixed(3)})`;
-              } else {
-                img.style.transition = 'none';
-                img.style.filter = '';
-                img.style.transform = '';
-              }
-            }
+        if (distFromStart > 0.01) {
+          let easeFactor = 0.5 - 0.5 * Math.cos(Math.min(1, distFromStart) * Math.PI);
+          let curBlur = isFF ? 0 : easeFactor * 14;
+          let curScale = 1.0 + easeFactor * 0.22;
+          let curBright = 1.0 - easeFactor * 0.35;
+          if (curSlide) {
+            curSlide.style.willChange = 'transform, filter';
+            fxLayerSlides.add(curSlide);
+            curSlide.style.transition = 'none';
+            curSlide.style.filter = isFF ? (curBright < 0.99 ? `brightness(${curBright.toFixed(2)})` : '') : `blur(${curBlur.toFixed(1)}px) brightness(${curBright.toFixed(2)})`;
+            curSlide.style.transform = `scale(${curScale.toFixed(3)})`;
           }
-        });
+          if (targetSlide) {
+            let peekEase = 0.5 - 0.5 * Math.cos((1 - Math.min(1, distFromStart)) * Math.PI);
+            let peekBlur = isFF ? 0 : peekEase * 14;
+            let peekScale = 1.0 + peekEase * 0.22;
+            let peekBright = 1.0 - peekEase * 0.35;
+            targetSlide.style.willChange = 'transform, filter';
+            fxLayerSlides.add(targetSlide);
+            targetSlide.style.transition = 'none';
+            targetSlide.style.filter = isFF ? (peekBright < 0.99 ? `brightness(${peekBright.toFixed(2)})` : '') : `blur(${peekBlur.toFixed(1)}px) brightness(${peekBright.toFixed(2)})`;
+            targetSlide.style.transform = `scale(${peekScale.toFixed(3)})`;
+          }
+        } else {
+          if (curSlide) {
+            curSlide.style.filter = '';
+            curSlide.style.transform = '';
+          }
+          if (targetSlide) {
+            targetSlide.style.filter = '';
+            targetSlide.style.transform = '';
+          }
+          releaseFxLayers();
+        }
       }
     }, { passive: true });
 

@@ -237,13 +237,13 @@ export async function deletePhoto(request, env, params) {
     return errorResponse(request, env, 'photo not found', 404);
   }
 
+  await deletePhotoRecord(env, photoId);
   await deleteMediaObjects(env, [
     mediaKey(photo.src),
     mediaKey(photo.thumb),
-    mediaKey(photo.raw_src)
+    mediaKey(photo.raw_src),
+    mediaKey(photo.lb_src)
   ]);
-
-  await deletePhotoRecord(env, photoId);
   await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
@@ -259,8 +259,8 @@ export async function deleteVideo(request, env, params) {
     return errorResponse(request, env, 'video not found', 404);
   }
 
-  await deleteMediaObjects(env, [mediaKey(video.src), mediaKey(video.poster)]);
   await deleteVideoRecord(env, videoId);
+  await deleteMediaObjects(env, [mediaKey(video.src), mediaKey(video.poster)]);
   await clearApiCache(request);
   return jsonResponse(request, env, { success: true });
 }
@@ -270,15 +270,18 @@ export async function uploadPhoto(request, env) {
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
   const rawFile = formData.get('raw');
+  const lbFile = formData.get('lb');
   const { data, errors } = validatePhotoFields(formData);
 
   if (!isFileLike(photoFile, 'image/') || !isFileLike(thumbFile, 'image/')) {
     errors.push('missing processed image assets');
   }
 
+  if (lbFile && !isFileLike(lbFile, 'image/')) errors.push('lb field must be a valid image file');
   if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
   if (rawFile?.size > MAX_IMAGE_SIZE) errors.push(`raw photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (lbFile?.size > MAX_IMAGE_SIZE) errors.push(`lightbox photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });
@@ -287,6 +290,7 @@ export async function uploadPhoto(request, env) {
   const photoKey = makeMediaKey('photos', 'webp');
   const thumbKey = makeMediaKey('thumbs', 'webp');
   let rawKey = null;
+  let lbKey = null;
 
   const puts = [
     putMediaObject(env, photoKey, await photoFile.arrayBuffer(), { contentType: 'image/webp' }),
@@ -303,6 +307,11 @@ export async function uploadPhoto(request, env) {
     );
   }
 
+  if (lbFile && lbFile.size > 0) {
+    lbKey = makeMediaKey('photos-lb', 'webp');
+    puts.push(putMediaObject(env, lbKey, await lbFile.arrayBuffer(), { contentType: 'image/webp' }));
+  }
+
   await Promise.all(puts);
 
   const result = await insertPhotoRecord(env, {
@@ -310,6 +319,7 @@ export async function uploadPhoto(request, env) {
     photoKey,
     thumbKey,
     rawKey,
+    lbKey,
     aspectRatio: data.aspectRatio,
     category: data.category,
     location: data.location,
@@ -328,6 +338,7 @@ export async function uploadPhoto(request, env) {
       src: photoKey,
       thumb: thumbKey,
       raw_src: rawKey,
+      lb_src: lbKey,
       aspect_ratio: data.aspectRatio,
       category: data.category,
       location: data.location,
@@ -364,7 +375,7 @@ export async function uploadVideo(request, env) {
   const posterKey = makeMediaKey('posters', 'webp');
 
   await Promise.all([
-    putMediaObject(env, videoKey, await videoFile.arrayBuffer(), { contentType: videoFile.type || 'video/mp4' }),
+    putMediaObject(env, videoKey, videoFile, { contentType: videoFile.type || 'video/mp4' }),
     putMediaObject(env, posterKey, await posterFile.arrayBuffer(), { contentType: 'image/webp' }),
   ]);
 
@@ -566,6 +577,7 @@ export async function replacePhotoFile(request, env, params) {
   const photoFile = formData.get('photo');
   const thumbFile = formData.get('thumb');
   const rawFile = formData.get('raw');
+  const lbFile = formData.get('lb');
   const aspectRatio = parseFloat(formData.get('aspectRatio'));
 
   const errors = [];
@@ -584,6 +596,10 @@ export async function replacePhotoFile(request, env, params) {
     errors.push('raw field must be a valid image file');
   }
 
+  if (lbFile && !isFileLike(lbFile, 'image/')) {
+    errors.push('lb field must be a valid image file');
+  }
+
   if (isNaN(aspectRatio)) {
     errors.push('invalid aspect ratio');
   }
@@ -600,6 +616,7 @@ export async function replacePhotoFile(request, env, params) {
   const newPhotoKey = makeMediaKey('photos', 'webp');
   const newThumbKey = makeMediaKey('thumbs', 'webp');
   let newRawKey = null;
+  let newLbKey = null;
 
   const puts = [
     putMediaObject(env, newPhotoKey, await photoFile.arrayBuffer(), { contentType: 'image/webp' }),
@@ -616,6 +633,11 @@ export async function replacePhotoFile(request, env, params) {
     );
   }
 
+  if (lbFile && lbFile.size > 0) {
+    newLbKey = makeMediaKey('photos-lb', 'webp');
+    puts.push(putMediaObject(env, newLbKey, await lbFile.arrayBuffer(), { contentType: 'image/webp' }));
+  }
+
   await Promise.all(puts);
 
   await updatePhotoMediaKeys(env, photoId, {
@@ -623,9 +645,15 @@ export async function replacePhotoFile(request, env, params) {
     photoKey: newPhotoKey,
     thumbKey: newThumbKey,
     rawKey: newRawKey,
+    lbKey: newLbKey,
   });
 
-  await deleteMediaObjects(env, [photo.src, photo.thumb, photo.raw_src]);
+  await deleteMediaObjects(env, [
+    mediaKey(photo.src),
+    mediaKey(photo.thumb),
+    mediaKey(photo.raw_src),
+    mediaKey(photo.lb_src),
+  ]);
   await clearApiCache(request);
 
   return jsonResponse(request, env, { success: true });

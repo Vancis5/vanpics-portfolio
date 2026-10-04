@@ -1,6 +1,6 @@
 export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
   let timeout: any;
-  return function(...args: Parameters<T>) {
+  return function(this: any, ...args: Parameters<T>) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(this, args), wait);
   };
@@ -51,6 +51,40 @@ export function setupImagePlaceholderFallback(img: HTMLImageElement, onFallback?
   return handleLoadError;
 }
 
+export async function fadeInWhenReady(img: HTMLImageElement, ms = 600): Promise<void> {
+  img.style.opacity = '0';
+  try {
+    if (img.decode) await img.decode();
+  } catch {
+    if (!(img.complete && img.naturalWidth > 0)) {
+      await new Promise<void>(resolve => {
+        img.addEventListener('load', () => resolve(), { once: true });
+        img.addEventListener('error', () => resolve(), { once: true });
+      });
+    }
+  }
+
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || typeof img.animate !== 'function') {
+    img.style.opacity = '1';
+    return;
+  }
+
+  // CSS transitions outrank animations in the cascade, so park the element's own
+  // opacity transition while the fade runs, then hand it back untouched.
+  const prevTransition = img.style.transition;
+  img.style.transition = 'none';
+  img.style.opacity = '1'; // resting state; beats base `opacity: 0` rules (e.g. .filmstrip-thumb img)
+  const anim = img.animate([{ opacity: 0 }, { opacity: 1 }], {
+    duration: ms,
+    easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  });
+  const restore = () => {
+    if (img.style.transition === 'none') img.style.transition = prevTransition;
+  };
+  anim.finished.then(restore, restore);
+}
+
 export function getRequiredElement<T extends HTMLElement = HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) {
@@ -81,15 +115,23 @@ export function sanitizeHtml(html: string): string {
         const attrs = allowedAttrs[tagName] || new Set();
         for (let i = 0; i < el.attributes.length; i++) {
           const attr = el.attributes[i];
-          if (attrs.has(attr.name.toLowerCase())) {
-            if (attr.name.toLowerCase() === 'href') {
-              const val = attr.value.trim().toLowerCase();
-              if (val.startsWith('javascript:') || val.startsWith('data:') || val.startsWith('vbscript:')) {
+          const attrName = attr.name.toLowerCase();
+          if (attrs.has(attrName)) {
+            if (attrName === 'href') {
+              const normalized = attr.value.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+              if (
+                normalized.startsWith('javascript:') ||
+                normalized.startsWith('data:') ||
+                normalized.startsWith('vbscript:')
+              ) {
                 continue;
               }
             }
             cleanEl.setAttribute(attr.name, attr.value);
           }
+        }
+        if (tagName === 'A') {
+          cleanEl.setAttribute('rel', 'noopener noreferrer');
         }
         for (let i = 0; i < el.childNodes.length; i++) {
           cleanEl.appendChild(sanitize(el.childNodes[i]));

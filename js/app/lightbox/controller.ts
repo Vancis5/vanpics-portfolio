@@ -5,7 +5,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady, clearFilmstripHideTimerIfRe
 import { resetZoom } from '../lightbox-zoom.js';
 import { updateFilmstrip, stopFsSync } from '../filmstrip.js';
 import { resetLightboxMouseNav, startNavAnimationLoop, hideLightboxNavImmediately } from '../lightbox-nav.js';
-import { cacheImage, getLightboxBlurPath } from '../lightbox-cache.js';
+import { cacheImage, getLightboxBlurPath, lightboxSrc } from '../lightbox-cache.js';
 import {
   prepareLightboxPhoto,
   renderVideoInLightbox,
@@ -19,7 +19,8 @@ import {
   animateInfo,
   scheduleLightboxBlurNeighborPreload,
   clearBlurPreloadTimer,
-  getBlurRenderer
+  getBlurRenderer,
+  cancelPendingHashUpdate
 } from './renderer.js';
 import type { Photo, Video } from '../../types.js';
 
@@ -33,35 +34,59 @@ export function setMobileScrollHandler(fn: MobileScrollHandler | null) {
   mobileScrollHandler = fn;
 }
 
+let preloadTimer: any = null;
+let preloadIdleId: any = null;
+
 export function loadSwipeNeighbors() {
   if (state.currentLightboxIsMotion) return;
-  let currentSet = getCurrentLightboxItems();
-  let len = currentSet.length;
 
-  // Preload & eagerly decode ±1 immediate neighbor off-thread for instant 60fps transitions
-  [-1, 1].forEach(function (offset) {
-    let p = currentSet[(state.cur + offset + len) % len];
-    if (p && p.src) cacheImage(p.src, true);
-  });
+  if (typeof cancelIdleCallback === 'function' && preloadIdleId !== null) {
+    cancelIdleCallback(preloadIdleId);
+    preloadIdleId = null;
+  }
+  if (preloadTimer !== null) {
+    clearTimeout(preloadTimer);
+    preloadTimer = null;
+  }
 
-  // Preload & cache ±2 high-res neighbors (standard network cache)
-  [-2, 2].forEach(function (offset) {
-    let p = currentSet[(state.cur + offset + len) % len];
-    if (p && p.src) cacheImage(p.src, false);
-  });
+  const run = () => {
+    preloadIdleId = null;
+    preloadTimer = null;
+    let currentSet = getCurrentLightboxItems();
+    let len = currentSet.length;
+    if (!len) return;
 
-  // Preload & cache ±3 blurred backgrounds (super light, avoids network saturation)
-  [-3, -2, -1, 1, 2, 3].forEach(function (offset) {
-    let p = currentSet[(state.cur + offset + len) % len];
-    if (p) {
-      let bSrc = p.thumb || p.src;
-      if (bSrc) {
-        cacheImage(getLightboxBlurPath(bSrc), false);
+    // Preload & eagerly decode ±1 immediate neighbor off-thread for instant 60fps transitions
+    [-1, 1].forEach(function (offset) {
+      let p = currentSet[(state.cur + offset + len) % len];
+      if (p && p.src) cacheImage(lightboxSrc(p), true);
+    });
+
+    // Preload & cache ±2 high-res neighbors (standard network cache)
+    [-2, 2].forEach(function (offset) {
+      let p = currentSet[(state.cur + offset + len) % len];
+      if (p && p.src) cacheImage(lightboxSrc(p), false);
+    });
+
+    // Preload & cache ±3 blurred backgrounds (super light, avoids network saturation)
+    [-3, -2, -1, 1, 2, 3].forEach(function (offset) {
+      let p = currentSet[(state.cur + offset + len) % len];
+      if (p) {
+        let bSrc = p.thumb || p.src;
+        if (bSrc) {
+          cacheImage(getLightboxBlurPath(bSrc), false);
+        }
       }
-    }
-  });
+    });
 
-  window.dispatchEvent(new Event('lightbox-preload-neighbors'));
+    window.dispatchEvent(new Event('lightbox-preload-neighbors'));
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    preloadIdleId = requestIdleCallback(run, { timeout: 700 });
+  } else {
+    preloadTimer = setTimeout(run, 380);
+  }
 }
 
 export function openLightbox(i: number, direction?: number, isMotion?: boolean) {
@@ -340,9 +365,11 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   }
   let infoInner = domRefs.lightboxInfo;
   if (infoInner) {
-    infoInner.style.transition = '';
+    infoInner.style.animation = 'none';
+    infoInner.style.transition = 'opacity 0.3s ease';
+    infoInner.style.opacity = '0';
+    infoInner.style.filter = '';
     infoInner.style.transform = '';
-    infoInner.style.transformOrigin = '';
   }
 
   if (header && headerRect) {
@@ -370,18 +397,8 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     }, 400);
   });
 
-  let playerShell = domRefs.motionPlayerShell;
-  if (playerShell) playerShell.innerHTML = '';
-
-  if (domRefs.blurCanvas) {
-    domRefs.blurCanvas.classList.remove('active');
-    domRefs.blurCanvas.classList.remove('ready');
-  }
-  let blurRenderer = getBlurRenderer();
-  if (blurRenderer) {
-    blurRenderer.stopAnimation();
-  }
   clearBlurPreloadTimer();
+  cancelPendingHashUpdate();
 
   if (window.location.hash) {
     let catSlug = getCategorySlug(state.currentCategory);
@@ -390,6 +407,19 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
   setTimeout(function () {
     if (activeGen !== navGen) return;
+
+    let playerShell = domRefs.motionPlayerShell;
+    if (playerShell) playerShell.innerHTML = '';
+
+    if (domRefs.blurCanvas) {
+      domRefs.blurCanvas.classList.remove('active');
+      domRefs.blurCanvas.classList.remove('ready');
+    }
+    let blurRenderer = getBlurRenderer();
+    if (blurRenderer) {
+      blurRenderer.stopAnimation();
+    }
+
     if (img) {
       img.onload = null;
       img.onerror = null;
@@ -483,6 +513,31 @@ document.addEventListener('keydown', function (e) {
   if (isTyping || !domRefs.lightbox.classList.contains('open')) return;
   if (e.key === 'Escape') {
     closeLightbox(true);
+    return;
+  }
+
+  if (e.key === 'Tab') {
+    const focusable = Array.from(domRefs.lightbox.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(el => el.offsetParent !== null || el === domRefs.lightboxClose);
+
+    if (focusable.length > 0) {
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first || !domRefs.lightbox.contains(document.activeElement)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !domRefs.lightbox.contains(document.activeElement)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    } else {
+      e.preventDefault();
+    }
     return;
   }
   
