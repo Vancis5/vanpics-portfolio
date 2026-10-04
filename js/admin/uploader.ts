@@ -19,6 +19,7 @@ let computedAspectRatio = 1.0;
 let processedPhotoBlob: Blob | null = null;
 let processedThumbBlob: Blob | null = null;
 let processedRawBlob: Blob | null = null;
+let processedLbBlob: Blob | null = null;
 let processedVideoBlob: Blob | null = null;
 let processedPosterBlob: Blob | null = null;
 
@@ -37,6 +38,7 @@ export function resetFileSelection() {
   processedPhotoBlob = null;
   processedThumbBlob = null;
   processedRawBlob = null;
+  processedLbBlob = null;
   processedVideoBlob = null;
   processedPosterBlob = null;
 
@@ -108,6 +110,7 @@ function resetSpecificFile(
     processedPhotoBlob = null;
     processedThumbBlob = null;
     processedRawBlob = null;
+    processedLbBlob = null;
   }
   checkFormState();
   const pipelineStatus = document.getElementById('pipeline-status');
@@ -185,6 +188,7 @@ async function processImagePipeline(imgSrc: string) {
     <div class="pipeline-step" id="step-dimensions">checking dimensions & aspect ratio</div>
     <div class="pipeline-step" id="step-compress">compressing standard photo (2500px, webp)</div>
     <div class="pipeline-step" id="step-raw">compressing high-res raw photo (4000px, webp)</div>
+    <div class="pipeline-step" id="step-lb">compressing lightbox photo (1600px, webp)</div>
     <div class="pipeline-step" id="step-thumbnail">compiling 600px thumbnail</div>
   `;
   
@@ -208,6 +212,11 @@ async function processImagePipeline(imgSrc: string) {
   setStepState('raw', 'active');
   processedRawBlob = await resizeImage(img, 4000, 0.95);
   setStepState('raw', 'success');
+
+  // Lightbox tier is cut from the original (not from the 2500px q75 blob) to avoid double compression.
+  setStepState('lb', 'active');
+  processedLbBlob = await resizeImage(img, 1600, 0.8);
+  setStepState('lb', 'success');
 
   setStepState('thumbnail', 'active');
   processedThumbBlob = await resizeImage(img, 600, 0.75);
@@ -447,6 +456,7 @@ export function initUploader(options: { onUploadSuccess: () => void }) {
       const photoBlob = processedPhotoBlob;
       const thumbBlob = processedThumbBlob;
       const rawBlob = processedRawBlob;
+      const lbBlob = processedLbBlob;
       const videoBlob = processedVideoBlob;
       const posterBlob = processedPosterBlob;
 
@@ -487,6 +497,9 @@ export function initUploader(options: { onUploadSuccess: () => void }) {
         if (thumbBlob) formData.append('thumb', thumbBlob);
         if (rawBlob) {
           formData.append('raw', rawBlob, 'raw.webp');
+        }
+        if (lbBlob) {
+          formData.append('lb', lbBlob, 'lb.webp');
         }
         formData.append('category', catEl?.value || '');
         formData.append('heroSlide', String(!!heroEl?.checked));

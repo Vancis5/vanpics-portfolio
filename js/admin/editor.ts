@@ -13,6 +13,7 @@ let currentlyEditingItem: any = null;
 let processedEditPhotoBlob: Blob | null = null;
 let processedEditThumbBlob: Blob | null = null;
 let processedEditRawBlob: Blob | null = null;
+let processedEditLbBlob: Blob | null = null;
 let computedEditAspectRatio: number | null = null;
 
 function setStepState(step: string, state: 'active' | 'success' | 'failed' | string) {
@@ -47,6 +48,7 @@ async function processEditImagePipeline(imgSrc: string) {
     <div class="pipeline-step" id="step-edit-dimensions">checking dimensions & aspect ratio</div>
     <div class="pipeline-step" id="step-edit-compress">compressing standard photo (2500px, webp)</div>
     <div class="pipeline-step" id="step-edit-raw">compressing high-res raw photo (4000px, webp)</div>
+    <div class="pipeline-step" id="step-edit-lb">compressing lightbox photo (1600px, webp)</div>
     <div class="pipeline-step" id="step-edit-thumbnail">compiling 600px thumbnail</div>
   `;
   
@@ -75,6 +77,11 @@ async function processEditImagePipeline(imgSrc: string) {
   setStepState('edit-raw', 'active');
   processedEditRawBlob = await resizeImage(img, 4000, 0.95);
   setStepState('edit-raw', 'success');
+
+  // Lightbox tier is cut from the original (not from the 2500px q75 blob) to avoid double compression.
+  setStepState('edit-lb', 'active');
+  processedEditLbBlob = await resizeImage(img, 1600, 0.8);
+  setStepState('edit-lb', 'success');
 
   setStepState('edit-thumbnail', 'active');
   processedEditThumbBlob = await resizeImage(img, 600, 0.75);
@@ -134,6 +141,7 @@ export function openEditModal(type: string, id: string | number, itemsList: any[
   processedEditPhotoBlob = null;
   processedEditThumbBlob = null;
   processedEditRawBlob = null;
+  processedEditLbBlob = null;
   computedEditAspectRatio = null;
   
   const editFileStatus = document.getElementById('edit-photo-file-status');
@@ -398,6 +406,7 @@ export function initEditor(options: {
         const editPhotoBlob = processedEditPhotoBlob;
         const editThumbBlob = processedEditThumbBlob;
         const editRawBlob = processedEditRawBlob;
+        const editLbBlob = processedEditLbBlob;
         const editAspectRatio = computedEditAspectRatio;
 
         if (type === 'photo' && editPhotoBlob && editThumbBlob && editRawBlob) {
@@ -408,6 +417,9 @@ export function initEditor(options: {
           fileFormData.append('aspectRatio', String(editAspectRatio));
           if (editRawBlob) {
             fileFormData.append('raw', editRawBlob, 'raw.webp');
+          }
+          if (editLbBlob) {
+            fileFormData.append('lb', editLbBlob, 'lb.webp');
           }
 
           const fileRes = await replacePhotoItem(id, fileFormData, token);
