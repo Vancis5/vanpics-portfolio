@@ -1548,24 +1548,26 @@ body::after {
 }
 
 #lightbox-img-wrap {
-  --lightbox-photo-ratio: 1.5;
-  width: min(100%, calc(44svh * var(--lightbox-photo-ratio)));
-  max-width: 100%;
-  max-height: 44svh;
-  aspect-ratio: var(--lightbox-photo-ratio);
+  --lightbox-photo-ratio: 1;
+  width: 100%;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
   position: relative;
-  border-radius: 3px;
-  box-sizing: border-box;
   z-index: 50;
   /* Sits above darken layer */
 }
 
 #lightbox-img-wrap.raw-loading #lightbox-img {
   cursor: wait !important;
+}
+
+#lightbox-img-wrap.photo-loading {
+  width: min(100%, calc(44svh * var(--lightbox-photo-ratio)));
+  max-width: 100%;
+  aspect-ratio: var(--lightbox-photo-ratio);
+  align-self: center;
+  border-radius: 3px;
 }
 
 #lightbox-img-wrap.photo-loading::before {
@@ -1591,6 +1593,18 @@ body::after {
 
 #lightbox-img-wrap.photo-loading.photo-loaded::before {
   opacity: 0;
+}
+
+#lightbox-img-wrap.photo-loading.photo-placeholder-visible:not(.photo-loaded) #lightbox-img {
+  opacity: 0 !important;
+}
+
+#lightbox-img-wrap.photo-loading #lightbox-img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 #lightbox-photo-error {
@@ -1621,17 +1635,17 @@ body::after {
 
 #lightbox-img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  /* don't force full width — portrait images get no side borders */
   max-width: 100%;
-  max-height: 100%;
+  max-height: 44svh;
   object-fit: contain;
   border-radius: 3px;
   border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   clip-path: inset(0 round 3px);
   overflow: hidden;
-  box-sizing: border-box;
-  transition: opacity 0.22s ease-out;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out, filter 0.25s ease-out;
+  will-change: transform, opacity, filter;
 }
 
 .zoomed {
@@ -1675,6 +1689,10 @@ body::after {
   clip-path: none;
   border-color: transparent;
   z-index: 50 !important;
+}
+
+#lightbox.zoom-active #lightbox-img-wrap::before {
+  display: none !important;
 }
 
 #lightbox.zoom-active #filmstrip-wrap,
@@ -1909,13 +1927,15 @@ body::after {
 
   #lightbox-img-wrap {
     flex: 0 1 auto;
-    width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    width: auto;
     max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
-    max-height: 72svh;
-    aspect-ratio: var(--lightbox-photo-ratio);
     display: flex;
     align-items: center;
-    justify-content: center;
+  }
+
+  #lightbox-img-wrap.photo-loading {
+    width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
   }
 
   /* Ensure video container fills available row space on desktop */
@@ -1923,19 +1943,12 @@ body::after {
     flex: 1;
     height: auto;
     min-height: 0;
-    max-width: none;
-    max-height: none;
-    border: none;
-    clip-path: none;
-    aspect-ratio: auto;
   }
 
   #lightbox-img {
-    width: 100%;
-    height: 100%;
+    width: auto;
     max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    max-height: 72svh;
   }
 
   #lightbox-info-wrap {
@@ -1980,18 +1993,17 @@ body::after {
   }
 
   #lightbox-img-wrap {
+    max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
+  }
+
+  #lightbox-img-wrap.photo-loading {
     width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
     max-width: min(72vw, calc(72svh * var(--lightbox-photo-ratio)));
-    max-height: 72svh;
-    aspect-ratio: var(--lightbox-photo-ratio);
   }
 
   #lightbox-img {
-    width: 100%;
-    height: 100%;
     max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    max-height: 72svh;
   }
 
   #lightbox-info-wrap {
