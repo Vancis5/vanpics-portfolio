@@ -21,6 +21,7 @@ export default {
     emptyOutDir: true,
     copyPublicDir: true,
     target: 'es2022',
+    sourcemap: true,
     // Never inline CSS as data: URIs. The CSP has no `data:` in style-src, so Vite's default
     // inlining of small stylesheets (css/motion-section.css) was blocked on the live site.
     assetsInlineLimit: (file) => (file.endsWith('.css') ? false : undefined),
