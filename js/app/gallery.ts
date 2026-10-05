@@ -58,48 +58,58 @@ function playCardScrollReveal(card: HTMLElement) {
   finishCardScrollReveal(card);
 }
 
+// The loops below keep layout READS (getBoundingClientRect / innerHeight) and class WRITES in
+// separate passes. Interleaving them forces a fresh style/layout flush for every card; the first
+// animation frame at startup spent ~100ms (6x CPU throttle) doing exactly that. The reveal classes
+// only change opacity/transform/will-change, which never move other cards, so reading every rect
+// up front yields the same values the interleaved loops saw.
+function getViewportHeight() {
+  return window.innerHeight || document.documentElement.clientHeight || 0;
+}
+
 function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
-  let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  let viewportHeight = getViewportHeight();
 
+  const toArm: HTMLElement[] = [];
   root.querySelectorAll('.photo-card').forEach(function (cardEl) {
     const card = cardEl as HTMLElement;
     if (card.classList.contains('revealed') || !card.classList.contains('pending-reveal')) return;
-    const rect = card.getBoundingClientRect();
-    if (rect.top >= viewportHeight) {
-      clearCardRevealTimers(card);
-      delete card.dataset.revealPending;
-      delete card.dataset.revealCleanupTimer;
-      delete card.dataset.revealFallbackTimer;
-      card.classList.add('pending-reveal');
-      card.classList.remove('revealed');
-    }
+    if (card.getBoundingClientRect().top >= viewportHeight) toArm.push(card);
+  });
+
+  toArm.forEach(function (card) {
+    clearCardRevealTimers(card);
+    delete card.dataset.revealPending;
+    delete card.dataset.revealCleanupTimer;
+    delete card.dataset.revealFallbackTimer;
+    card.classList.add('pending-reveal');
+    card.classList.remove('revealed');
   });
 }
 
-function isCardInViewport(card: HTMLElement) {
-  let rect = card.getBoundingClientRect();
-  let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  return rect.bottom > 0 && rect.top < viewportHeight;
+// Read pass: returns the cards of `root` matching `selector` that intersect the viewport.
+function collectCardsInViewport(root: HTMLElement | Document, selector: string) {
+  const viewportHeight = getViewportHeight();
+  const visible: HTMLElement[] = [];
+  root.querySelectorAll(selector).forEach(function (cardEl) {
+    const card = cardEl as HTMLElement;
+    const rect = card.getBoundingClientRect();
+    if (rect.bottom > 0 && rect.top < viewportHeight) visible.push(card);
+  });
+  return visible;
 }
 
 function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
 
-  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
-    const card = cardEl as HTMLElement;
-    if (isCardInViewport(card)) showCardWithoutScrollReveal(card);
-  });
+  collectCardsInViewport(root, '.photo-card').forEach(showCardWithoutScrollReveal);
 }
 
 function repairVisiblePendingCards(scope?: HTMLElement | Document | null) {
   let root = scope || getActiveGalleryPanel() || document;
 
-  root.querySelectorAll('.photo-card.pending-reveal').forEach(function (cardEl) {
-    const card = cardEl as HTMLElement;
-    if (!isCardInViewport(card)) return;
-    playCardScrollReveal(card);
-  });
+  collectCardsInViewport(root, '.photo-card.pending-reveal').forEach(playCardScrollReveal);
 }
 
 function scheduleGalleryRevealRepair(scope: HTMLElement | Document | null, delay?: number) {
@@ -143,12 +153,16 @@ let galleryPreloadObserver = new IntersectionObserver(function (entries) {
 export function revealCards(scope: any, options?: any) {
   options = options || {};
   let root = scope || getActiveGalleryPanel() || document;
-  let viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  let viewportHeight = getViewportHeight();
 
-  root.querySelectorAll('.photo-card').forEach(function (cardEl: any) {
-    const card = cardEl as HTMLElement;
-    const rect = card.getBoundingClientRect();
-    if (rect.top < viewportHeight) {
+  // Read pass first, then apply (see the note above armCardsBelowViewport).
+  const measured = (Array.from(root.querySelectorAll('.photo-card')) as HTMLElement[]).map(function (card) {
+    return { card: card, top: card.getBoundingClientRect().top };
+  });
+
+  measured.forEach(function (entry) {
+    const card = entry.card;
+    if (entry.top < viewportHeight) {
       showCardWithoutScrollReveal(card);
       cardObserver.unobserve(card);
     } else if (!card.classList.contains('revealed')) {
