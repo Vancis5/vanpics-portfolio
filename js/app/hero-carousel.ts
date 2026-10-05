@@ -331,11 +331,17 @@ export function tick(timestamp: number) {
 
 let lastHeroScroll = -1;
 
+// Reading window.innerHeight right after DOM writes forces a synchronous layout, and
+// updateHeroOverlay runs inside the first animation frame, right after the carousel and masonry
+// are built. Read it once while the DOM is still small and only re-read after a real resize.
+let heroViewportH = window.innerHeight;
+
 export function updateHeroOverlay(scrollPos?: number) {
   const currentScroll = typeof scrollPos === 'number' ? scrollPos : state.heroScrollY;
   if (currentScroll === lastHeroScroll) return;
   lastHeroScroll = currentScroll;
-  const fadeRange = window.innerHeight * 0.75;
+  const viewportH = heroViewportH || (heroViewportH = window.innerHeight);
+  const fadeRange = viewportH * 0.75;
   const progress = Math.min(1, Math.max(0, currentScroll / fadeRange));
   if (domRefs.heroOverlay) {
     domRefs.heroOverlay.style.setProperty('--hero-overlay-opacity', progress.toFixed(3));
@@ -343,7 +349,7 @@ export function updateHeroOverlay(scrollPos?: number) {
 
   const heroIdentity = document.getElementById('hero-identity');
   if (heroIdentity) {
-    const textFadeRange = window.innerHeight * 0.55;
+    const textFadeRange = viewportH * 0.55;
     const textProgress = Math.min(1, Math.max(0, currentScroll / textFadeRange));
     heroIdentity.style.opacity = (1 - textProgress).toFixed(3);
   }
@@ -351,6 +357,7 @@ export function updateHeroOverlay(scrollPos?: number) {
 
 let heroResizeTimer: any;
 window.addEventListener('resize', function () {
+  heroViewportH = 0; // invalidate now, re-read lazily on the next overlay update
   clearTimeout(heroResizeTimer);
   heroResizeTimer = setTimeout(updateHeroOverlay, 150);
 }, { passive: true });
