@@ -353,13 +353,80 @@ export class WebGLBlurRenderer {
       }
     `;
 
-    this.progLiquid = this.createProgram(VS_SOURCE, FS_LIQUID);
-    this.progDown = this.createProgram(VS_SOURCE, FS_DOWN);
-    this.progUp = this.createProgram(VS_SOURCE, FS_UP);
-    this.cacheLocations();
+    const gl = this.gl;
+    const ext = gl.getExtension('KHR_parallel_shader_compile');
+    const COMPLETION_STATUS = ext ? (ext as any).COMPLETION_STATUS_KHR : null;
+
+    const vs = this.compileShader(VS_SOURCE, gl.VERTEX_SHADER);
+    const fsLiquid = this.compileShader(FS_LIQUID, gl.FRAGMENT_SHADER);
+    const fsDown = this.compileShader(FS_DOWN, gl.FRAGMENT_SHADER);
+    const fsUp = this.compileShader(FS_UP, gl.FRAGMENT_SHADER);
+
+    if (!vs || !fsLiquid || !fsDown || !fsUp) return;
+
+    const pLiquid = gl.createProgram();
+    if (pLiquid) {
+      gl.attachShader(pLiquid, vs);
+      gl.attachShader(pLiquid, fsLiquid);
+      gl.linkProgram(pLiquid);
+    }
+
+    const pDown = gl.createProgram();
+    if (pDown) {
+      gl.attachShader(pDown, vs);
+      gl.attachShader(pDown, fsDown);
+      gl.linkProgram(pDown);
+    }
+
+    const pUp = gl.createProgram();
+    if (pUp) {
+      gl.attachShader(pUp, vs);
+      gl.attachShader(pUp, fsUp);
+      gl.linkProgram(pUp);
+    }
+
+    const finalize = () => {
+      if (!this.gl || !pLiquid || !pDown || !pUp) return;
+      if (!gl.getProgramParameter(pLiquid, gl.LINK_STATUS)) {
+        console.error('Liquid link error:', gl.getProgramInfoLog(pLiquid));
+        return;
+      }
+      if (!gl.getProgramParameter(pDown, gl.LINK_STATUS)) {
+        console.error('Down link error:', gl.getProgramInfoLog(pDown));
+        return;
+      }
+      if (!gl.getProgramParameter(pUp, gl.LINK_STATUS)) {
+        console.error('Up link error:', gl.getProgramInfoLog(pUp));
+        return;
+      }
+      this.progLiquid = pLiquid;
+      this.progDown = pDown;
+      this.progUp = pUp;
+      this.cacheLocations();
+      if (this.animating || this.mixFactor < 1.0) {
+        this.render();
+      }
+    };
+
+    if (COMPLETION_STATUS && pLiquid && pDown && pUp) {
+      const poll = () => {
+        if (!this.gl) return;
+        const ready = gl.getProgramParameter(pLiquid, COMPLETION_STATUS) &&
+                      gl.getProgramParameter(pDown, COMPLETION_STATUS) &&
+                      gl.getProgramParameter(pUp, COMPLETION_STATUS);
+        if (ready) {
+          finalize();
+        } else {
+          requestAnimationFrame(poll);
+        }
+      };
+      requestAnimationFrame(poll);
+    } else {
+      requestAnimationFrame(finalize);
+    }
   }
 
-  compileShader(source: string, type: number) {
+  compileShader(source: string, type: number): WebGLShader | null {
     let gl = this.gl;
     let shader = gl.createShader(type);
     if (!shader) {
@@ -368,31 +435,7 @@ export class WebGLBlurRenderer {
     }
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('Shader compile log:', gl.getShaderInfoLog(shader));
-      gl.deleteShader(shader);
-      return null;
-    }
     return shader;
-  }
-
-  createProgram(vsSource: string, fsSource: string) {
-    let gl = this.gl;
-    let vs = this.compileShader(vsSource, gl.VERTEX_SHADER);
-    let fs = this.compileShader(fsSource, gl.FRAGMENT_SHADER);
-    if (!vs || !fs) return null;
-
-    let program = gl.createProgram();
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program));
-      gl.deleteProgram(program);
-      return null;
-    }
-    return program;
   }
 
   initBuffers() {
