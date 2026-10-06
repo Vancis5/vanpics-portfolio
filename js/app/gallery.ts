@@ -288,18 +288,30 @@ function getGalleryAnchorScrollY() {
   return getElementDocumentTop(section);
 }
 
+// ⚡ Bolt: Cache computed styles to avoid layout thrashing on scroll
+let cachedSectionPaddingTop: number | null = null;
+let cachedStickyTop: number | null = null;
+
+window.addEventListener('resize', () => {
+  cachedSectionPaddingTop = null;
+  cachedStickyTop = null;
+}, { passive: true });
+
 function getGalleryStickyStartScrollY() {
   let section = domRefs.gallerySection;
   let header = document.querySelector('#gallery-header') as HTMLElement;
   if (!section || !header) return getGalleryAnchorScrollY();
 
   let sectionTop = getElementDocumentTop(section);
-  let sectionStyles = window.getComputedStyle(section);
-  let headerStyles = window.getComputedStyle(header);
-  let sectionPaddingTop = parseFloat(sectionStyles.paddingTop) || 0;
-  let stickyTop = parseFloat(headerStyles.top) || 0;
 
-  return Math.max(0, sectionTop + sectionPaddingTop - stickyTop);
+  if (cachedSectionPaddingTop === null) {
+    cachedSectionPaddingTop = parseFloat(window.getComputedStyle(section).paddingTop) || 0;
+  }
+  if (cachedStickyTop === null) {
+    cachedStickyTop = parseFloat(window.getComputedStyle(header).top) || 0;
+  }
+
+  return Math.max(0, sectionTop + cachedSectionPaddingTop - cachedStickyTop);
 }
 
 function isGalleryHeaderStuck() {
