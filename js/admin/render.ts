@@ -145,7 +145,7 @@ export function renderArchivesList(
       return `
         <div class="group-section" style="grid-column: 1 / -1; margin-bottom: 2.5rem; width: 100%;">
           <div class="group-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-            <h3 style="font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); white-space: nowrap;">${groupKey}</h3>
+            <h3 style="font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); white-space: nowrap;">${escapeHtml(groupKey)}</h3>
             <div style="flex-grow: 1; height: 1px; background: var(--border);"></div>
             <span style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-faint); letter-spacing: 0.05em;">${groupItems.length} item${groupItems.length > 1 ? 's' : ''}</span>
           </div>
