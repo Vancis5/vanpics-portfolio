@@ -1,3 +1,4 @@
-## 2024-05-14 - Avoiding Layout Thrashing on mousemove
-**Learning:** Calling `getBoundingClientRect()` inside high-frequency events like `mousemove` causes forced synchronous layout (layout thrashing) which blocks the main thread. This app uses glowing cursor trackers that follow the mouse, but they were reading layout on every tick.
-**Action:** Always cache the element's position on `mouseenter` (as document-relative coordinates) and use `e.pageX/pageY` (which are document-relative) instead of `e.clientX/clientY` to compute relative mouse positions. This completely eliminates synchronous layout reads from the critical animation path.
+## 2024-05-18 - Throttling Scroll Events
+
+**Learning:** Implementing a naive leading-edge-only `throttle` utility for continuous events like 'scroll' drops final state updates and causes functional regressions in scroll-driven logic (e.g. failing to detect end-of-scroll).
+**Action:** Always ensure throttle utilities execute on the trailing edge (using timers and timestamps) to guarantee the final state is captured accurately for events like scroll and resize.

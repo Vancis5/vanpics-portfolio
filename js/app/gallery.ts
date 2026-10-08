@@ -5,7 +5,7 @@ import { getMotionThumbnailMarkup } from './motion-markup.js';
 import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
-import { getPhotoAspectRatio, saveRatioToCache, isRatioCached, setupImagePlaceholderFallback } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, isRatioCached, setupImagePlaceholderFallback, throttle } from './utils.js';
 
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 let galleryScrollDirection = 'down';
@@ -265,10 +265,10 @@ function queueGalleryScrollMemory() {
   }, 150);
 }
 
-function handleGalleryScroll() {
+const handleGalleryScroll = throttle(function () {
   updateGalleryScrollDirection();
   queueGalleryScrollMemory();
-}
+}, 50);
 
 window.addEventListener('scroll', handleGalleryScroll, { passive: true });
 

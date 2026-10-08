@@ -1,6 +1,7 @@
 import Lenis from 'lenis';
 import { APP_CONFIG } from './app/config.js';
 import { state } from './app/state.js';
+import { throttle } from './app/utils.js';
 import type { CustomLenis } from './types.js';
 
 function setupEdgeHaptics() {
@@ -63,10 +64,10 @@ function setupEdgeHaptics() {
     gestureStartedNearBottom = scrollPos > maxScroll - EDGE_THRESHOLD;
   }, { passive: true });
 
-  window.addEventListener('scroll', () => {
+  window.addEventListener('scroll', throttle(() => {
     const scrollPos = window.scrollY || document.documentElement.scrollTop || 0;
     checkEdge(scrollPos);
-  }, { passive: true });
+  }, 50), { passive: true });
 }
 
 export function initSmoothScroll(options: any = {}) {
@@ -86,9 +87,17 @@ export function initSmoothScroll(options: any = {}) {
     updateCustomScrollbar();
   }
 
+  let ticking = false;
+
   if (window.matchMedia('(hover: none)').matches) {
     window.addEventListener('scroll', function () {
-      updateScrollDrivenUi();
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateScrollDrivenUi();
+          ticking = false;
+        });
+        ticking = true;
+      }
     }, { passive: true });
     updateScrollDrivenUi();
     return;
@@ -159,7 +168,13 @@ export function initSmoothScroll(options: any = {}) {
   }
 
   window.addEventListener('scroll', function () {
-    updateScrollDrivenUi();
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        updateScrollDrivenUi();
+        ticking = false;
+      });
+      ticking = true;
+    }
   }, { passive: true });
 
   let rafId: number | null = null;
