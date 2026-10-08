@@ -95,6 +95,8 @@ if (savedToken) {
         // Loading state
         loginBtnSubmit.disabled = true;
         loginErrorMsg.innerText = '';
+        loginBtnText.style.display = 'none';
+        loginBtnSpinner.style.display = 'block';
 
         try {
           const res = await fetch(`${API_BASE_URL}/api/admin/verify`, {
@@ -129,6 +131,8 @@ if (savedToken) {
           loginErrorMsg.innerText = 'server connection failed';
         } finally {
           loginBtnSubmit.disabled = false;
+          loginBtnText.style.display = 'block';
+          loginBtnSpinner.style.display = 'none';
         }
       });
     }
