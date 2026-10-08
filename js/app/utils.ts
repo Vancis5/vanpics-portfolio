@@ -207,3 +207,20 @@ export function getPhotoAspectRatio(p: any, isMotion = false): number {
   return isMotion ? 1.777 : 1;
 }
 
+
+export function throttle<T extends (...args: any[]) => any>(func: T, limit: number): (...args: Parameters<T>) => void {
+  let lastFunc: any;
+  let lastRan: number;
+  return function(this: any, ...args: Parameters<T>) {
+    if (!lastRan) {
+      func.apply(this, args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(() => {
+        func.apply(this, args);
+        lastRan = Date.now();
+      }, limit - (Date.now() - lastRan));
+    }
+  };
+}
