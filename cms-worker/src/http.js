@@ -48,6 +48,10 @@ export function corsHeaders(request, env) {
     // Override Cloudflare's injected Permissions-Policy to suppress browser warnings
     // about unrecognized privacy sandbox / ad-auction features
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    // Security headers (Defense in Depth)
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none';",
   };
 
   if (origin && isOriginAllowed(origin, env)) {
