@@ -118,9 +118,12 @@ export function buildCarousel(isRebuild = false) {
   let eagerImgs: HTMLImageElement[] = [];
   let criticalImgs: HTMLImageElement[] = [];
 
+  const viewportW = window.innerWidth;
+  const narrowViewport = state.isMobile || viewportW < 640;
+
   activeRows.forEach(function (row, ri) {
     let group = groups[ri].length > 0 ? groups[ri] : state.carouselPhotos;
-    let copies = Math.max(2, Math.ceil((window.innerWidth * 1.5) / 220 / group.length));
+    let copies = Math.max(2, Math.ceil((viewportW * 1.5) / 220 / group.length));
 
     for (let c = 0; c < copies * 2; c++) {
       group.forEach(function (p: any, pi: number) {
@@ -135,7 +138,7 @@ export function buildCarousel(isRebuild = false) {
           wrapper.setAttribute('aria-hidden', 'true');
         }
         let ratio = getPhotoAspectRatio(p);
-        if (state.isMobile || window.innerWidth < 640) {
+        if (narrowViewport) {
           ratio = Math.min(ratio, 0.75);
         }
         wrapper.style.setProperty('--carousel-photo-ratio', String(ratio));
