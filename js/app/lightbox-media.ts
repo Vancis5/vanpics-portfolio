@@ -111,6 +111,9 @@ export function prepareLightboxPhoto(p: Photo) {
     thumbImg.onload = function () {
       if (token !== photoPlaceholderToken) return;
       if (wrap.classList.contains('photo-loading') && !wrap.classList.contains('photo-loaded')) {
+        if (thumbImg.naturalWidth && thumbImg.naturalHeight) {
+          wrap.style.setProperty('--lightbox-photo-ratio', String(thumbImg.naturalWidth / thumbImg.naturalHeight));
+        }
         img.src = previewSrc;
         thumbShown = true;
         const commitThumb = () => {

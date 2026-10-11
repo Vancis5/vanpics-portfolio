@@ -79,12 +79,11 @@ export function crossfadeToFull(
       if (interrupted) anim.cancel(); else { try { anim.finish(); } catch (e) { /* already finished */ } }
     }
     if (!live()) { overlay.remove(); return; }
-    img.src = fullSrc;
     if (interrupted) {
       overlay.remove();
-      onSwapped();
       return;
     }
+    img.src = fullSrc;
     const done = function () {
       overlay.remove();
       if (live()) onSwapped();

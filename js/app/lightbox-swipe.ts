@@ -150,12 +150,15 @@ if (state.isMobile) {
       } else {
         imgWrap.scrollLeft = targetLeft;
       }
+      let dist = Math.abs(idx - state.cur);
+      let settleDelay = smooth ? Math.min(450, Math.max(180, dist * 60)) : 30;
+      updateLoading(idx);
       snapTimer = setTimeout(function () {
         if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
           imgWrap.scrollLeft = targetLeft;
         }
         onSnapSettle(idx);
-      }, smooth ? 180 : 30);
+      }, settleDelay);
     }
     setMobileScrollHandler(scrollToSlide);
     window.addEventListener('lightbox-scroll-to', function (e: any) {
@@ -242,11 +245,11 @@ if (state.isMobile) {
     }
 
     // ── Eager-load nearby slides with windowed loading ──
-    function updateLoading() {
+    function updateLoading(targetIdx: number = state.cur) {
       if (state.currentLightboxIsMotion) return;
       let slides = imgWrap.querySelectorAll('.snap-slide');
       for (let i = 0; i < slides.length; i++) {
-        let shouldEager = (Math.abs(i - state.cur) <= 2);
+        let shouldEager = (Math.abs(i - targetIdx) <= 2);
         let img = slides[i].querySelector('img') as HTMLImageElement | null;
         if (!img) continue;
         let p = state.activePhotos[i];
