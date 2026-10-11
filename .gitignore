@@ -31,7 +31,6 @@ backfill-output/
 archive/
 recent-batch.diff
 test-artifacts/
-*.
 
 # local one off tools
 Antigravity_Conversation_Fix.exe
@@ -45,7 +44,10 @@ scripts/devtools-perf-trace.mjs
 /playwright/.cache/
 /playwright/.auth/
 vanpics-portfolio.zip
-C:\*
-C:\\*
+C:/**
+"C:/"*
 *.diff
 lighthouse-*.json
+desktop.json
+mobile.json
+repomix-output.xml
