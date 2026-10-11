@@ -222,6 +222,7 @@ export function cancelDescFlipTransition() {
   if (desc) {
     desc.style.transition = '';
     desc.style.maxHeight = '';
+    desc.style.clipPath = '';
   }
 }
 
@@ -427,7 +428,7 @@ export function updateMobileImgWrapHeight(force?: boolean) {
     domRefs.lightboxInfoWrap?.style.removeProperty('transform');
     return;
   }
-  if (state.isUserTouching && !force) return;
+  if ((state.isUserTouching || flipTimer !== null) && !force) return;
   const imgWrap = domRefs.lightboxImgWrap;
   const infoWrap = domRefs.lightboxInfoWrap;
   if (!imgWrap || !infoWrap) return;
@@ -453,6 +454,7 @@ export function toggleLightboxDesc() {
   let content = domRefs.lightboxContent;
   let btn = domRefs.lightboxDescToggle;
   if (!content || !btn || btn.classList.contains('no-desc')) return;
+  if (flipTimer !== null) return;
 
   let imgWrap = domRefs.lightboxImgWrap;
   let infoWrap = domRefs.lightboxInfoWrap;
@@ -466,100 +468,112 @@ export function toggleLightboxDesc() {
 
   let opening = !content.classList.contains('desc-open');
 
-  if (flipTimer) {
-    clearTimeout(flipTimer);
-    flipTimer = null;
-  }
-
-  // 1. FIRST: measure exact dynamic current positions (including in-flight)
-  photoVisual.style.transition = 'none';
-  infoWrap.style.transition = 'none';
-  desc.style.transition = 'none';
-
-  let startPhotoRect = photoVisual.getBoundingClientRect();
-  let startInfoRect = infoWrap.getBoundingClientRect();
-  let startDescH = desc.offsetHeight;
-
-  // Measure dynamic collapsed vs expanded heights for this specific text & photo
+  // Measure dynamic collapsed vs expanded heights
   let prevMaxH = desc.style.maxHeight;
+  let prevTransition = desc.style.transition;
+  desc.style.transition = 'none';
   desc.style.maxHeight = '3.5em';
   let collapsedDescH = desc.offsetHeight;
   desc.style.maxHeight = 'none';
   let expandedDescH = desc.offsetHeight;
   desc.style.maxHeight = prevMaxH;
+  desc.style.transition = prevTransition;
 
   let diff = Math.max(0, expandedDescH - collapsedDescH);
+  if (diff === 0) return;
   let shift = Math.round(diff / 2);
   let baseOffset = getMobileInfoBaseOffset();
 
-  // 2. LAST: set target layout in DOM
-  content.classList.toggle('desc-open', opening);
-  btn.textContent = opening ? 'read less' : 'read more';
-  btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
-  updateLightboxDescPreview();
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const dur = '0.34s';
 
-  if (opening) hideFilmstripIfReady();
-  else showFilmstripIfReady();
+  if (opening) {
+    // 1. FIRST: read current rects before changing layout
+    let startPhotoRect = photoVisual.getBoundingClientRect();
+    let startInfoRect = infoWrap.getBoundingClientRect();
 
-  let targetShift = opening ? shift : 0;
-  let targetPhotoTransform = targetShift > 0 ? `translateY(calc(-4dvh - ${targetShift}px))` : '';
-  let targetInfoTransform = targetShift > 0 ? `translateY(calc(${baseOffset}px - ${targetShift}px))` : `translateY(${baseOffset}px)`;
-  let targetDescH = opening ? expandedDescH : collapsedDescH;
+    // 2. Commit target layout immediately
+    content.classList.add('desc-open');
+    btn.textContent = 'read less';
+    btn.setAttribute('aria-expanded', 'true');
+    updateLightboxDescPreview();
+    hideFilmstripIfReady();
 
-  photoVisual.style.transform = targetPhotoTransform;
-  infoWrap.style.transform = targetInfoTransform;
-  desc.style.maxHeight = targetDescH + 'px';
+    let targetPhotoTransform = shift > 0 ? `translateY(calc(-4dvh - ${shift}px))` : '';
+    let targetInfoTransform = shift > 0 ? `translateY(calc(${baseOffset}px - ${shift}px))` : `translateY(${baseOffset}px)`;
+    photoVisual.style.transform = targetPhotoTransform;
+    infoWrap.style.transform = targetInfoTransform;
 
-  let endPhotoRect = photoVisual.getBoundingClientRect();
-  let endInfoRect = infoWrap.getBoundingClientRect();
-  let endDescH = desc.offsetHeight;
+    // Read end rects after layout commit
+    let endPhotoRect = photoVisual.getBoundingClientRect();
+    let endInfoRect = infoWrap.getBoundingClientRect();
 
-  // 3. INVERT: calculate exact delta from dynamic start to end
-  let dPhoto = startPhotoRect.top - endPhotoRect.top;
-  let dInfo = startInfoRect.top - endInfoRect.top;
+    // 3. INVERT: counteract layout shift using transforms
+    let dPhoto = startPhotoRect.top - endPhotoRect.top;
+    let dInfo = startInfoRect.top - endInfoRect.top;
 
-  let invertPhotoTransform = targetPhotoTransform
-    ? `${targetPhotoTransform} translateY(${dPhoto}px)`
-    : `translateY(calc(-4dvh + ${dPhoto}px))`;
-  let invertInfoTransform = targetInfoTransform
-    ? `${targetInfoTransform} translateY(${dInfo}px)`
-    : `translateY(calc(${baseOffset}px + ${dInfo}px))`;
+    photoVisual.style.transform = targetPhotoTransform
+      ? `${targetPhotoTransform} translateY(${dPhoto}px)`
+      : `translateY(calc(-4dvh + ${dPhoto}px))`;
+    infoWrap.style.transform = targetInfoTransform
+      ? `${targetInfoTransform} translateY(${dInfo}px)`
+      : `translateY(calc(${baseOffset}px + ${dInfo}px))`;
 
-  photoVisual.style.transform = invertPhotoTransform;
-  infoWrap.style.transform = invertInfoTransform;
-  desc.style.maxHeight = startDescH + 'px';
+    // Invert desc: clip off the expanded lines so only collapsed height shows
+    desc.style.clipPath = `inset(0 0 ${diff}px 0)`;
 
-  // Force reflow
-  void infoWrap.offsetHeight;
+    // Force reflow
+    void infoWrap.offsetHeight;
 
-  // 4. PLAY: animate smoothly to target positions
-  requestAnimationFrame(function () {
+    // 4. PLAY: animate transform and clip-path smoothly without touching layout
     requestAnimationFrame(function () {
-      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
-      const dur = '0.38s';
-
       photoVisual.style.transition = `transform ${dur} ${ease}`;
       photoVisual.style.transform = targetPhotoTransform;
 
       infoWrap.style.transition = `transform ${dur} ${ease}`;
       infoWrap.style.transform = targetInfoTransform;
 
-      desc.style.transition = `max-height ${dur} ${ease}, opacity ${dur} ease`;
-      desc.style.maxHeight = endDescH + 'px';
+      desc.style.transition = `clip-path ${dur} ${ease}`;
+      desc.style.clipPath = 'inset(0 0 0 0)';
 
       flipTimer = setTimeout(function () {
         photoVisual.style.transition = '';
         infoWrap.style.transition = '';
         desc.style.transition = '';
-        if (opening) {
-          desc.style.maxHeight = 'none';
-        } else {
-          desc.style.maxHeight = '';
-        }
+        desc.style.clipPath = '';
         flipTimer = null;
-      }, 400);
+      }, 360);
     });
-  });
+  } else {
+    // CLOSING:
+    let targetPhotoTransform = '';
+    let targetInfoTransform = `translateY(${baseOffset}px)`;
+
+    photoVisual.style.transition = `transform ${dur} ${ease}`;
+    photoVisual.style.transform = targetPhotoTransform;
+
+    infoWrap.style.transition = `transform ${dur} ${ease}`;
+    infoWrap.style.transform = targetInfoTransform;
+
+    desc.style.transition = `clip-path ${dur} ${ease}`;
+    desc.style.clipPath = `inset(0 0 ${diff}px 0)`;
+
+    btn.textContent = 'read more';
+    btn.setAttribute('aria-expanded', 'false');
+    showFilmstripIfReady();
+
+    flipTimer = setTimeout(function () {
+      content.classList.remove('desc-open');
+      photoVisual.style.transition = '';
+      photoVisual.style.transform = targetPhotoTransform;
+      infoWrap.style.transition = '';
+      infoWrap.style.transform = targetInfoTransform;
+      desc.style.transition = '';
+      desc.style.clipPath = '';
+      updateLightboxDescPreview();
+      flipTimer = null;
+    }, 360);
+  }
 }
 
 export function resetDescToggle() {
@@ -576,6 +590,7 @@ export function resetDescToggle() {
   }
   if (desc) {
     desc.style.maxHeight = '';
+    desc.style.clipPath = '';
     desc.style.transition = '';
   }
 }
