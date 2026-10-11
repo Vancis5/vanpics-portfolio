@@ -2526,89 +2526,31 @@ html.custom-cursor-enabled #lightbox-close::before {
   z-index: 2;
 }
 
-/* FOOTER LIQUID BACKGROUND */
-.footer-bg-blur {
-  display: none; /* Hide when off-screen to optimize performance */
+/* FOOTER VIGNETTE BACKGROUND */
+.footer-vignette {
   position: absolute;
-  width: 15%;
-  height: 60%;
-  left: 42.5%;
-  top: 20%;
+  inset: 0;
   z-index: 0;
-  transform: scale(7.47) translate3d(0, 0, 0);
-  opacity: 0.75;
   pointer-events: none;
-  filter: blur(10px) brightness(0.24) saturate(1.8);
-  will-change: opacity, transform;
+  background-color: #1B1F26;
+  -webkit-mask-image: radial-gradient(ellipse 60% 200% at 50% 50%, black 25%, transparent 75%);
+  mask-image: radial-gradient(ellipse 60% 200% at 50% 50%, black 25%, transparent 75%);
+  opacity: 0.75;
   transition:
-    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-mask-image: radial-gradient(circle, black 25%, transparent 70%);
-  mask-image: radial-gradient(circle, black 25%, transparent 70%);
+    background-color 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-#site-footer.is-visible .footer-bg-blur,
-#site-footer:hover .footer-bg-blur {
-  display: block;
-}
-
-#site-footer:hover .footer-bg-blur {
+#site-footer:hover .footer-vignette {
+  background-color: #1A1C1F;
   opacity: 0.55;
-  filter: blur(10px) brightness(0.2) saturate(1.5);
 }
 
-.footer-bg-blur-inner {
-  position: absolute;
-  inset: -60%;
-  background-size: cover;
-  background-position: center;
-  will-change: transform;
-  background-image: url('../footer-bg.webp');
-}
-
-/* Optimize footer blur background on mobile/touch devices */
-@media (hover: none) {
-  .footer-bg-blur {
-    width: 100%;
-    height: 100%;
-    left: 0;
-    top: 0;
-    transform: none;
-    filter: none;
-    background-color: #24333d;
-    -webkit-mask-image: radial-gradient(ellipse 85% 78% at 50% 45%, black 15%, transparent 75%);
-    mask-image: radial-gradient(ellipse 85% 78% at 50% 45%, black 15%, transparent 75%);
-    opacity: 0.68;
+@media (max-width: 819px) {
+  .footer-vignette {
+    -webkit-mask-image: radial-gradient(ellipse 100% 150% at 50% 50%, black 35%, transparent 85%);
+    mask-image: radial-gradient(ellipse 100% 150% at 50% 50%, black 35%, transparent 85%);
   }
-
-  #site-footer:hover .footer-bg-blur {
-    filter: none;
-    opacity: 0.68;
-  }
-
-  .footer-bg-blur-inner {
-    display: none !important;
-  }
-}
-
-.footer-bg-blur-inner.base {
-  opacity: 1;
-  animation: liquid-base 45s linear infinite;
-  animation-direction: var(--blur-dir, normal);
-}
-
-.footer-bg-blur-inner.twist-1 {
-  opacity: 0.45;
-  mix-blend-mode: screen;
-  animation: liquid-twist-1 32s ease-in-out infinite alternate;
-  animation-direction: var(--blur-dir, normal);
-}
-
-.footer-bg-blur-inner.twist-2 {
-  opacity: 0.35;
-  mix-blend-mode: overlay;
-  animation: liquid-twist-2 24s ease-in-out infinite alternate-reverse;
-  animation-direction: var(--blur-dir, normal);
 }
 
 /* FOOTER MOUSE GLOW */

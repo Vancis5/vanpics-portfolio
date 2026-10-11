@@ -189,9 +189,6 @@ if (typeof document !== 'undefined' && isFirefox) {
       html.is-firefox .motion-card:hover .photo-card-title {
         text-shadow: none !important;
       }
-      html.is-firefox #site-footer:hover .footer-bg-blur {
-        filter: none !important;
-      }
 
       /* 8. Hero Carousel performance in Firefox: nuke blur30, layer promotion, transform churn */
       html.is-firefox #hero-identity::before {

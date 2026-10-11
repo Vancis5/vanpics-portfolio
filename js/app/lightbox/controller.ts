@@ -172,7 +172,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       let bSrc = isMotion ? (p.thumb || '') : (p.thumb || p.src || '');
       setLightboxBlur(bSrc);
       setLightboxContent(p, { deferDynamicTextColor: true });
-      if (!isMotion) {
+      if (!isMotion && !state.isMobile) {
         prepareLightboxPhoto(p as Photo);
         loadSwipeNeighbors();
       }
@@ -310,7 +310,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       if (isMotion) {
         afterOpenLoad();
       } else {
-        prepareLightboxPhoto(p as Photo);
+        if (!state.isMobile) prepareLightboxPhoto(p as Photo);
         afterOpenLoad();
       }
     });
