@@ -48,6 +48,7 @@ vanpics-portfolio.zip
 *.patch
 
 # reports & audit dumps
+audit/
 lighthouse-*.json
 desktop.json
 mobile.json

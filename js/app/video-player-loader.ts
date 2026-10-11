@@ -9,7 +9,7 @@ let pending: Promise<void> | null = null;
 
 export function loadVideoPlayer(): Promise<void> {
   if (pending) return pending;
-  pending = new Promise<void>((resolve) => {
+  pending = new Promise<void>((resolve, reject) => {
     const s = document.createElement('script');
     s.type = 'module';
     s.src = CDN_SRC;
@@ -17,11 +17,16 @@ export function loadVideoPlayer(): Promise<void> {
     s.crossOrigin = 'anonymous';
     s.onload = () => resolve();
     s.onerror = () => {
+      s.remove();
       const fallback = document.createElement('script');
       fallback.type = 'module';
       fallback.src = LOCAL_FALLBACK;
       fallback.onload = () => resolve();
-      fallback.onerror = () => resolve();
+      fallback.onerror = () => {
+        fallback.remove();
+        pending = null;
+        reject(new Error(`Failed to load video player from CDN and fallback: ${LOCAL_FALLBACK}`));
+      };
       document.head.appendChild(fallback);
     };
     document.head.appendChild(s);
