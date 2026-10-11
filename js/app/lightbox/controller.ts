@@ -40,6 +40,16 @@ let preloadIdleId: any = null;
 export function loadSwipeNeighbors() {
   if (state.currentLightboxIsMotion) return;
 
+  let currentSet = getCurrentLightboxItems();
+  let len = currentSet.length;
+  if (!len) return;
+
+  // Immediately preload & eagerly decode ±1 immediate neighbor off-thread for instant transitions
+  [-1, 1].forEach(function (offset) {
+    let p = currentSet[(state.cur + offset + len) % len];
+    if (p && p.src) cacheImage(lightboxSrc(p), true);
+  });
+
   if (typeof cancelIdleCallback === 'function' && preloadIdleId !== null) {
     cancelIdleCallback(preloadIdleId);
     preloadIdleId = null;
@@ -49,18 +59,9 @@ export function loadSwipeNeighbors() {
     preloadTimer = null;
   }
 
-  const run = () => {
+  const runIdle = () => {
     preloadIdleId = null;
     preloadTimer = null;
-    let currentSet = getCurrentLightboxItems();
-    let len = currentSet.length;
-    if (!len) return;
-
-    // Preload & eagerly decode ±1 immediate neighbor off-thread for instant 60fps transitions
-    [-1, 1].forEach(function (offset) {
-      let p = currentSet[(state.cur + offset + len) % len];
-      if (p && p.src) cacheImage(lightboxSrc(p), true);
-    });
 
     // Preload & cache ±2 high-res neighbors (standard network cache)
     [-2, 2].forEach(function (offset) {
@@ -83,9 +84,9 @@ export function loadSwipeNeighbors() {
   };
 
   if (typeof requestIdleCallback === 'function') {
-    preloadIdleId = requestIdleCallback(run, { timeout: 700 });
+    preloadIdleId = requestIdleCallback(runIdle, { timeout: 700 });
   } else {
-    preloadTimer = setTimeout(run, 380);
+    preloadTimer = setTimeout(runIdle, 380);
   }
 }
 
@@ -338,8 +339,14 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   window.dispatchEvent(new Event('lightbox-close'));
   lb.classList.remove('open');
   lb.classList.remove('mode-motion');
-  if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
-    let el = previouslyFocusedElement;
+  let targetToFocus = previouslyFocusedElement;
+  if (!targetToFocus || !document.body.contains(targetToFocus)) {
+    const currentCard = document.querySelector(`.photo-card[data-idx="${state.cur}"]`) as HTMLElement | null;
+    if (currentCard) targetToFocus = currentCard;
+  }
+
+  if (targetToFocus && typeof targetToFocus.focus === 'function') {
+    let el = targetToFocus;
     if (!(isKeyboard || state.lastInputType === 'keyboard')) {
       el.classList.add('prevent-focus-ring');
       el.addEventListener('blur', function removePFR() {

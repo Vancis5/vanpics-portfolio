@@ -238,6 +238,21 @@ export function initLightboxMouseNav() {
     }
   });
 
+  [
+    { el: domRefs.lightboxArrowLeft, dir: -1, side: 'left' as const },
+    { el: domRefs.lightboxArrowRight, dir: 1, side: 'right' as const }
+  ].forEach(({ el, dir, side }) => {
+    if (!el) return;
+    el.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        lastNavTime = Date.now();
+        triggerArrowPulse(side);
+        navigateLightbox(dir);
+      }
+    });
+  });
+
   startNavAnimationLoop();
 }
 
