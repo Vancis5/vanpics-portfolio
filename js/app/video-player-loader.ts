@@ -17,7 +17,12 @@ export function loadVideoPlayer(): Promise<void> {
     s.crossOrigin = 'anonymous';
     s.onload = () => resolve();
     s.onerror = () => {
-      import(/* @vite-ignore */ LOCAL_FALLBACK).then(() => resolve(), () => resolve());
+      const fallback = document.createElement('script');
+      fallback.type = 'module';
+      fallback.src = LOCAL_FALLBACK;
+      fallback.onload = () => resolve();
+      fallback.onerror = () => resolve();
+      document.head.appendChild(fallback);
     };
     document.head.appendChild(s);
   });

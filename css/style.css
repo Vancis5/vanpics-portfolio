@@ -2240,7 +2240,7 @@ html.custom-cursor-enabled #lightbox-close::before {
   #lightbox #lightbox-info-wrap,
   #lightbox:not(.mode-motion) #lightbox-info-wrap {
     position: relative;
-    z-index: 1;
+    z-index: 3;
     pointer-events: none;
   }
 
