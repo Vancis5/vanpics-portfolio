@@ -66,15 +66,24 @@ export function prepareLightboxPhoto(p: Photo) {
     wrap.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
     wrap.classList.add('photo-loaded');
     img.removeAttribute('data-loading-photo');
-    img.src = fullSrc;
-    img.style.opacity = '1';
-    img.style.filter = '';
+    let r = ratio;
     if (cached.img.naturalWidth && cached.img.naturalHeight) {
-      let r = cached.img.naturalWidth / cached.img.naturalHeight;
-      wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+      r = cached.img.naturalWidth / cached.img.naturalHeight;
     }
-    clearLightboxPhotoPlaceholder(token);
-    updateMobileImgWrapHeight();
+    wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+    img.src = fullSrc;
+    img.style.filter = '';
+    const commitCacheHit = () => {
+      if (token !== photoPlaceholderToken) return;
+      img.style.opacity = '1';
+      clearLightboxPhotoPlaceholder(token);
+      updateMobileImgWrapHeight();
+    };
+    if (img.decode) {
+      img.decode().then(commitCacheHit).catch(commitCacheHit);
+    } else {
+      commitCacheHit();
+    }
     return;
   }
 
@@ -95,9 +104,17 @@ export function prepareLightboxPhoto(p: Photo) {
       if (wrap.classList.contains('photo-loading') && !wrap.classList.contains('photo-loaded')) {
         img.src = previewSrc;
         thumbShown = true;
-        wrap.classList.remove('photo-placeholder-visible');
-        img.style.opacity = '1';
-        updateMobileImgWrapHeight();
+        const commitThumb = () => {
+          if (token !== photoPlaceholderToken) return;
+          wrap.classList.remove('photo-placeholder-visible');
+          img.style.opacity = '1';
+          updateMobileImgWrapHeight();
+        };
+        if (img.decode) {
+          img.decode().then(commitThumb).catch(commitThumb);
+        } else {
+          commitThumb();
+        }
       }
     };
     thumbImg.src = previewSrc;

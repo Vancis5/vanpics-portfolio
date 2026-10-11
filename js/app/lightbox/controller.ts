@@ -161,6 +161,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       img.style.transition = 'none';
       img.style.transform = '';
       img.style.opacity = '0';
+      img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
       imgWrap.style.transition = 'none';
       imgWrap.style.transform = 'translateX(' + enterX + ') scale(0.992)';
       imgWrap.style.opacity = '0';
