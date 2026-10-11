@@ -37,17 +37,28 @@ Antigravity_Conversation_Fix.exe
 firefox.js
 scripts/devtools-perf-trace.mjs
 
-# playwright
+# playwright & test outputs
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
 vanpics-portfolio.zip
-C:/**
-"C:/"*
 *.diff
+*.patch
+
+# reports & audit dumps
 lighthouse-*.json
 desktop.json
 mobile.json
-repomix-output.xml
+*-desktop.json
+*-mobile.json
+repomix*
+*.xml
+
+# OS & temp artifacts
+.DS_Store
+Thumbs.db
+C:/**
+"C:/"*
+lighthouse.*
