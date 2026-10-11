@@ -1628,6 +1628,21 @@ body::after {
   display: block;
 }
 
+/* Decoded full-res copy that fades in over the thumb (js/app/lightbox-swap.ts). Mirrors the
+   photo-loading #lightbox-img box so the two line up pixel for pixel. */
+.lightbox-swap-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 3px;
+  border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
+  clip-path: inset(0 round 3px);
+  pointer-events: none;
+  z-index: 1;
+}
+
 #lightbox-img[data-loading-photo="true"] {
   opacity: 0 !important;
 }

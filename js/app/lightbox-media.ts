@@ -5,6 +5,7 @@ import { getVideoPlayerMarkup } from './motion-markup.js';
 import { Photo, Video } from '../types.js';
 import { updateMobileImgWrapHeight } from './lightbox/renderer.js';
 import { loadVideoPlayer } from './video-player-loader.js';
+import { clearSwapOverlay, crossfadeToFull } from './lightbox-swap.js';
 
 let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;
@@ -53,6 +54,7 @@ export function prepareLightboxPhoto(p: Photo) {
   const fullSrc = lightboxSrc(p);
   let token = ++photoPlaceholderToken;
   clearTimeout(photoPlaceholderTimer);
+  clearSwapOverlay(wrap);
   wrap.style.setProperty('--lightbox-photo-ratio', String(ratio));
   img.alt = p.title || '';
   img.removeAttribute('title');
@@ -78,6 +80,7 @@ export function prepareLightboxPhoto(p: Photo) {
 
   // ── Cache miss: show placeholder while loading ──
   let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
+  let thumbShown = false;
   wrap.classList.remove('photo-loaded', 'photo-error');
   wrap.classList.add('photo-loading', 'photo-placeholder-visible');
   img.removeAttribute('data-loading-photo');
@@ -91,6 +94,7 @@ export function prepareLightboxPhoto(p: Photo) {
       if (token !== photoPlaceholderToken) return;
       if (wrap.classList.contains('photo-loading') && !wrap.classList.contains('photo-loaded')) {
         img.src = previewSrc;
+        thumbShown = true;
         wrap.classList.remove('photo-placeholder-visible');
         img.style.opacity = '1';
         updateMobileImgWrapHeight();
@@ -115,7 +119,13 @@ export function prepareLightboxPhoto(p: Photo) {
       if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
         let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
         wrap.style.setProperty('--lightbox-photo-ratio', String(r));
-        img.src = fullSrc;
+        // Thumb is on screen: fade the full photo in over it instead of hard-cutting the src.
+        const fading = thumbShown && crossfadeToFull(
+          wrap, img, fullSrc,
+          function () { return token === photoPlaceholderToken; },
+          updateMobileImgWrapHeight
+        );
+        if (!fading) img.src = fullSrc;
         clearLightboxPhotoPlaceholder(token);
         img.style.opacity = '1';
         updateMobileImgWrapHeight();
