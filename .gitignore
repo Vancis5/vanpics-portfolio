@@ -45,3 +45,7 @@ scripts/devtools-perf-trace.mjs
 /playwright/.cache/
 /playwright/.auth/
 vanpics-portfolio.zip
+C:\*
+C:\\*
+*.diff
+lighthouse-*.json

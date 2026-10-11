@@ -1,7 +1,7 @@
 // video.js (minimal UI) is only needed once someone opens a motion piece, so it is no longer
 // a <script> in index.html. It loads on first interaction / idle, or immediately when a motion
 // lightbox renders. Same CDN + SRI as before, with the local /vendor copy as fallback.
-const CDN_SRC = 'https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video-minimal-ui.js';
+const CDN_SRC = 'https://cdn.jsdelivr.net/npm/@videojs/html@10.0.0-beta.31/cdn/video-minimal-ui.js';
 const CDN_SRI = 'sha384-xvwA3Pz3/jXep9mMlx56tEboXqea6AuWRXb8i6/j1Pxw8EBdyZtfLxg4wZAkE2Lp';
 const LOCAL_FALLBACK = '/vendor/video-minimal-ui.js';
 

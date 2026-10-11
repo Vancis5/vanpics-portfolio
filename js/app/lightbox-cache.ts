@@ -10,11 +10,34 @@ const _full = new Map<string, CacheEntry>();
 const _thumb = new Map<string, CacheEntry>();
 const MAX = { full: 6, thumb: 24 };
 
+// Track failed 1600px lb tier URLs in-session so retries and subsequent views instantly fallback to p.src
+const failedLbUrls = new Set<string>();
+
+export function markLbSrcFailed(url: string | null | undefined): void {
+  if (!url) return;
+  failedLbUrls.add(url);
+  _full.delete(url);
+}
+
+export function isLbSrcFailed(url: string | null | undefined): boolean {
+  return !url ? false : failedLbUrls.has(url);
+}
+
+// True when `url` is the 1600px tier of `p` (a file distinct from the original). Callers use this
+// instead of !isLbSrcFailed(): cacheImage's own onerror marks the URL failed before the caller's
+// error branch runs, so "not failed yet" is already false by then and the retry would never fire.
+// After the retry lightboxSrc() returns the original, so this is false and it can never loop.
+export function isLbSrcUrl(p: { src: string; lbSrc?: string | null }, url: string | null | undefined): boolean {
+  return !!(url && p.lbSrc && p.src && p.lbSrc !== p.src && url === p.lbSrc);
+}
+
 // URL the lightbox should load for the main photo: the 1600px tier when the record has one,
-// otherwise the original `src` (old records, or a stale cached payload). `src` stays the item's
-// identity everywhere else (ratio cache keys, hero lookup, signatures).
+// otherwise the original `src` (old records, or a stale cached payload / 404 fallback).
 export function lightboxSrc(p: { src: string; lbSrc?: string | null }): string {
-  return p.lbSrc || p.src;
+  if (p.lbSrc && !failedLbUrls.has(p.lbSrc)) {
+    return p.lbSrc;
+  }
+  return p.src;
 }
 
 export function cacheImage(src: string, eagerDecode: boolean = false) {
@@ -67,7 +90,15 @@ export function cacheImage(src: string, eagerDecode: boolean = false) {
     }
 
     img.onload = markDecoded;
-    img.onerror = function () { resolve(entry); };
+    img.onerror = function () {
+      if (bucket.get(src) === entry) {
+        bucket.delete(src);
+      }
+      if (src.includes('photos-lb/')) {
+        markLbSrcFailed(src);
+      }
+      resolve(entry);
+    };
     img.src = src;
     if (img.complete && img.naturalWidth > 0) markDecoded();
   });

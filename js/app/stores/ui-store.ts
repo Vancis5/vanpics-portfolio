@@ -16,6 +16,7 @@ export class UIStore {
   lastInputType: 'pointer' | 'keyboard' = 'pointer';
   pushNextState: boolean = false;
   isPopState: boolean = false;
+  lightboxHistoryPushed: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {

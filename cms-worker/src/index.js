@@ -1,4 +1,4 @@
-import { assertAdmin, emptyCorsResponse, errorResponse, jsonResponse } from './http.js';
+import { assertAdmin, emptyCorsResponse, errorResponse, jsonResponse, publicMediaCorsHeaders } from './http.js';
 import {
   deletePhoto,
   deleteVideo,
@@ -53,11 +53,17 @@ function matchRoute(method, pathname) {
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
     if (request.method === 'OPTIONS') {
+      if (url.pathname.startsWith('/media/')) {
+        return new Response(null, {
+          status: 204,
+          headers: publicMediaCorsHeaders(),
+        });
+      }
       return emptyCorsResponse(request, env);
     }
 
-    const url = new URL(request.url);
     const match = matchRoute(request.method, url.pathname);
 
     if (!match) {

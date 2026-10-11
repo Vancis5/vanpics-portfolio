@@ -344,6 +344,7 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
       cancelPendingHashUpdate();
       history.pushState(null, '', newHash);
       state.pushNextState = false;
+      state.lightboxHistoryPushed = true;
     } else {
       cancelPendingHashUpdate();
       hashTimer = setTimeout(() => {

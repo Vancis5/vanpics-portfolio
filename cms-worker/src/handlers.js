@@ -1,4 +1,4 @@
-import { corsHeaders, errorResponse, jsonResponse, applyCors } from './http.js';
+import { corsHeaders, errorResponse, jsonResponse, applyCors, applyPublicMediaCors, publicMediaCorsHeaders } from './http.js';
 import {
   extensionForContentType,
   inferContentType,
@@ -40,7 +40,7 @@ import {
 
 // 30 MB for images, 100 MB for videos
 const MAX_IMAGE_SIZE = 30 * 1024 * 1024;
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 60 * 1024 * 1024;
 
 // Reject keys that could traverse R2 bucket structure
 function isValidMediaKey(key) {
@@ -74,7 +74,7 @@ export async function serveMedia(request, env, params, ctx) {
 
     let cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) {
-      return applyCors(cachedResponse, request, env);
+      return applyPublicMediaCors(cachedResponse);
     }
   }
 
@@ -106,17 +106,18 @@ export async function serveMedia(request, env, params, ctx) {
   if (!object) {
     return new Response('Media asset not found', {
       status: 404,
-      headers: corsHeaders(request, env),
+      headers: publicMediaCorsHeaders(),
     });
   }
 
   const totalSize = object.size;
-  const headers = new Headers(corsHeaders(request, env));
+  const headers = new Headers(publicMediaCorsHeaders());
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Accept-Ranges', 'bytes');
+  headers.delete('Vary');
 
   if (!headers.has('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
     headers.set('Content-Type', inferContentType(fileKey));
@@ -178,7 +179,7 @@ export async function listPhotos(request, env, params, ctx) {
     headers: {
       ...corsHeaders(request, env),
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, s-maxage=300, max-age=0, must-revalidate',
+      'Cache-Control': 'public, s-maxage=60, max-age=0, must-revalidate',
     },
   });
 
@@ -215,7 +216,7 @@ export async function listVideos(request, env, params, ctx) {
     headers: {
       ...corsHeaders(request, env),
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, s-maxage=300, max-age=0, must-revalidate',
+      'Cache-Control': 'public, s-maxage=60, max-age=0, must-revalidate',
     },
   });
 

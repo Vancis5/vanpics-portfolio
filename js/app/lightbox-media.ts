@@ -1,6 +1,6 @@
 import { domRefs } from './dom.js';
 import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
-import { cacheImage, getImageCacheEntry, lightboxSrc } from './lightbox-cache.js';
+import { cacheImage, getImageCacheEntry, isLbSrcUrl, lightboxSrc, markLbSrcFailed } from './lightbox-cache.js';
 import { getVideoPlayerMarkup } from './motion-markup.js';
 import { Photo, Video } from '../types.js';
 import { updateMobileImgWrapHeight } from './lightbox/renderer.js';
@@ -43,6 +43,15 @@ export function showLightboxPhotoError(expectedToken?: number) {
   wrap.classList.add('photo-loading', 'photo-placeholder-visible', 'photo-error');
   if (img) img.removeAttribute('data-loading-photo');
   if (domRefs.lightboxPhotoError) domRefs.lightboxPhotoError.textContent = 'image failed to load';
+}
+
+// Redo this photo against the original after its 1600px tier failed to load. False when `usedSrc`
+// was not the lb tier (nothing different to try), so a broken original reaches the normal error.
+function retryWithOriginal(p: Photo, usedSrc: string) {
+  if (!isLbSrcUrl(p, usedSrc)) return false;
+  markLbSrcFailed(p.lbSrc);
+  prepareLightboxPhoto(p);
+  return true;
 }
 
 export function prepareLightboxPhoto(p: Photo) {
@@ -154,6 +163,7 @@ export function prepareLightboxPhoto(p: Photo) {
           finishFull();
         }
       } else {
+        if (retryWithOriginal(p, fullSrc)) return;
         img.src = fullSrc;
         if (img.complete && img.naturalWidth > 0) {
           clearLightboxPhotoPlaceholder(token);
@@ -168,12 +178,14 @@ export function prepareLightboxPhoto(p: Photo) {
           };
           img.onerror = function () {
             if (token !== photoPlaceholderToken) return;
+            if (retryWithOriginal(p, fullSrc)) return;
             showLightboxPhotoError(token);
           };
         }
       }
     }).catch(() => {
       if (token !== photoPlaceholderToken) return;
+      if (retryWithOriginal(p, fullSrc)) return;
       img.src = fullSrc;
       img.onload = function () {
         if (token !== photoPlaceholderToken) return;
@@ -183,6 +195,7 @@ export function prepareLightboxPhoto(p: Photo) {
       };
       img.onerror = function () {
         if (token !== photoPlaceholderToken) return;
+        if (retryWithOriginal(p, fullSrc)) return;
         showLightboxPhotoError(token);
       };
     });
@@ -208,6 +221,7 @@ export function prepareLightboxPhoto(p: Photo) {
     };
     img.onerror = function () {
       if (token !== photoPlaceholderToken) return;
+      if (retryWithOriginal(p, fullSrc)) return;
       showLightboxPhotoError(token);
     };
   }

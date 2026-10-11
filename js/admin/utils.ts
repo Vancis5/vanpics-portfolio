@@ -2,7 +2,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://vanpic
 
 // Client-side file size limits (match worker limits)
 export const MAX_IMAGE_BYTES = 30 * 1024 * 1024;  // 30 MB
-export const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB
+export const MAX_VIDEO_BYTES = 60 * 1024 * 1024; // 60 MB (prevents 128MB worker RAM exhaustion on multipart buffering)
 
 // Local placeholder data URI (no external requests)
 export const PLACEHOLDER_SRC = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%23222"><rect width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23555" font-size="11" font-family="monospace">no img</text></svg>');

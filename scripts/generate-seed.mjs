@@ -87,7 +87,7 @@ async function main() {
 
     sql += `\nCOMMIT;\n`;
 
-    const outputPath = path.resolve('cms-worker/db/seed.sql');
+    const outputPath = path.resolve('cms-worker/db/seed.dev.sql');
     fs.writeFileSync(outputPath, sql, 'utf8');
     console.log(`\n✨ Success! Seed file generated at: ${outputPath}`);
   } catch (err) {

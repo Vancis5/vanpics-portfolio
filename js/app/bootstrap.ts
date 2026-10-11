@@ -2,7 +2,7 @@ import { APP_CONFIG } from './config.js';
 import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
 import { getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
-import { slugify, pruneRatioCache } from './utils.js';
+import { slugify, pruneRatioCache, safeStorage } from './utils.js';
 import { closeLightbox, initBlurRenderer, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
 import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
 import { buildCarousel, recalculateCarouselLayout, setCarouselReadyCallback, tick, triggerExposurePulse } from './hero-carousel.js';
@@ -239,6 +239,8 @@ if (domRefs.hero) {
 
 // Deep Link Initial Load
 let _isInitialDeepLink = true; // true only for the very first checkHash call (from renderUI)
+let checkHashRetries = 0;
+const MAX_CHECK_HASH_RETRIES = 20;
 
 function checkHash() {
   const fullHash = window.location.hash.substring(1);
@@ -275,9 +277,12 @@ function checkHash() {
   if (itemSlug && itemSlug.trim().length > 0) {
     const items = state.currentCategory === 'motion' ? motionProjects : state.activePhotos;
     if (items.length === 0 && state.currentCategory !== 'motion') {
-      setTimeout(checkHash, ROUTING_CONFIG.itemRecheckDelay);
+      if (++checkHashRetries <= MAX_CHECK_HASH_RETRIES) {
+        setTimeout(checkHash, ROUTING_CONFIG.itemRecheckDelay);
+      }
       return;
     }
+    checkHashRetries = 0;
 
     for (let i = 0; i < items.length; i++) {
       const itemTitleSlug = slugify(items[i].title);
@@ -460,12 +465,12 @@ function renderUI(photos: Photo[], videos: Video[]) {
     }
   };
 
-  if (!sessionStorage.getItem('pv_tracked')) {
+  if (!safeStorage.get('session', 'pv_tracked')) {
     fetch(`${API_BASE_URL}/api/views?path=${encodeURIComponent(window.location.pathname)}`, {
       method: 'POST',
     })
       .then(function (res) {
-        sessionStorage.setItem('pv_tracked', '1');
+        safeStorage.set('session', 'pv_tracked', '1');
         handleViews(res);
       })
       .catch(function () {});

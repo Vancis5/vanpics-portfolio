@@ -92,9 +92,10 @@ export function buildFilmstrip() {
       : (p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : ''));
     img.src = thumbPath;
     img.alt = p.title || '';
-    img.loading = 'eager';
+    const isNearby = Math.abs(i - state.cur) <= 8;
+    img.loading = isNearby ? 'eager' : 'lazy';
     img.decoding = 'async';
-    img.fetchPriority = Math.abs(i - state.cur) <= 8 ? 'high' : 'auto';
+    img.fetchPriority = isNearby ? 'high' : 'auto';
     setupImagePlaceholderFallback(img);
     fadeInWhenReady(img);
     thumb.appendChild(img);

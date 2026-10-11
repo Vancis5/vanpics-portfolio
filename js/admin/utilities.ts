@@ -113,7 +113,7 @@ export function initUtilities(options: { onDbSorted: () => void }) {
         if (res.ok && data.success) {
           showToast('edge cdn cache purged successfully', 'success');
           if (utilityTerminal) {
-            utilityTerminal.innerText += `> success! successfully invalidated ${data.purgedCount} endpoint cache objects.\n> changes should propagate to all clients instantly!\n`;
+            utilityTerminal.innerText += `> success! invalidated ${data.purgedCount} local edge cache objects.\n> global edge nodes revalidate within 60s.\n`;
           }
         } else {
           showToast(data.error || 'purge failed', 'error');

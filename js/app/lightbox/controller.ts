@@ -44,10 +44,10 @@ export function loadSwipeNeighbors() {
   let len = currentSet.length;
   if (!len) return;
 
-  // Immediately preload & eagerly decode ±1 immediate neighbor off-thread for instant transitions
+  // Immediately prefetch ±1 immediate neighbor (network cache only, avoid CPU decode contention)
   [-1, 1].forEach(function (offset) {
     let p = currentSet[(state.cur + offset + len) % len];
-    if (p && p.src) cacheImage(lightboxSrc(p), true);
+    if (p && p.src) cacheImage(lightboxSrc(p), false);
   });
 
   if (typeof cancelIdleCallback === 'function' && preloadIdleId !== null) {
@@ -232,6 +232,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     let headerRect = header ? header.getBoundingClientRect() : null;
 
     lb.classList.add('open');
+    lb.removeAttribute('inert');
     startNavAnimationLoop();
     let closeBtn = document.getElementById('lightbox-close');
     if (closeBtn) {
@@ -339,6 +340,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   window.dispatchEvent(new Event('lightbox-close'));
   lb.classList.remove('open');
   lb.classList.remove('mode-motion');
+  lb.setAttribute('inert', '');
   let targetToFocus = previouslyFocusedElement;
   if (!targetToFocus || !document.body.contains(targetToFocus)) {
     const currentCard = document.querySelector(`.photo-card[data-idx="${state.cur}"]`) as HTMLElement | null;
@@ -408,7 +410,11 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   clearBlurPreloadTimer();
   cancelPendingHashUpdate();
 
-  if (window.location.hash) {
+  if (state.lightboxHistoryPushed && !state.isPopState) {
+    state.lightboxHistoryPushed = false;
+    history.back();
+  } else if (window.location.hash) {
+    state.lightboxHistoryPushed = false;
     let catSlug = getCategorySlug(state.currentCategory);
     history.replaceState(null, '', '#' + catSlug);
   }

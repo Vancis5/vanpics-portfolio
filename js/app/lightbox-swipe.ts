@@ -8,7 +8,7 @@ import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml, fadeInWhenReady } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
-import { lightboxSrc } from './lightbox-cache.js';
+import { isLbSrcUrl, lightboxSrc, markLbSrcFailed } from './lightbox-cache.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -106,7 +106,25 @@ if (state.isMobile) {
           });
         }
 
+        let attemptedFallback = false;
         img.onerror = function () {
+          if (!attemptedFallback && isLbSrcUrl(p, img.getAttribute('src'))) {
+            attemptedFallback = true;
+            markLbSrcFailed(p.lbSrc);
+            img.src = p.src;
+            fadeInWhenReady(img).then(() => {
+              if (inner) {
+                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+                inner.classList.add('photo-loaded');
+                if (img.naturalWidth && img.naturalHeight) {
+                  let r = img.naturalWidth / img.naturalHeight;
+                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
+                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+                }
+              }
+            });
+            return;
+          }
           inner.classList.remove('photo-loading', 'photo-placeholder-visible');
           inner.classList.add('photo-error');
         };

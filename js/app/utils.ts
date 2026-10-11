@@ -1,3 +1,23 @@
+export const safeStorage = {
+  get(type: 'local' | 'session', key: string): string | null {
+    try {
+      return (type === 'local' ? window.localStorage : window.sessionStorage).getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(type: 'local' | 'session', key: string, value: string): void {
+    try {
+      (type === 'local' ? window.localStorage : window.sessionStorage).setItem(key, value);
+    } catch {}
+  },
+  remove(type: 'local' | 'session', key: string): void {
+    try {
+      (type === 'local' ? window.localStorage : window.sessionStorage).removeItem(key);
+    } catch {}
+  }
+};
+
 export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
   let timeout: any;
   return function(this: any, ...args: Parameters<T>) {

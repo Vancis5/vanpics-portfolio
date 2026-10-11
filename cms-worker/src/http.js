@@ -13,6 +13,16 @@ export function isOriginAllowed(origin, env) {
   const allowed = getAllowedOrigins(env);
   if (allowed.has(origin)) return true;
 
+  try {
+    const url = new URL(origin);
+    const { hostname, protocol } = url;
+    if (protocol === 'https:' && (hostname === 'vanpics.pages.dev' || hostname.endsWith('.vanpics.pages.dev'))) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
   if (env.ENVIRONMENT !== 'production') {
     try {
       const url = new URL(origin);
@@ -55,6 +65,30 @@ export function corsHeaders(request, env) {
   }
 
   return headers;
+}
+
+export function publicMediaCorsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+    'Access-Control-Max-Age': '86400',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  };
+}
+
+export function applyPublicMediaCors(response) {
+  const headers = new Headers(response.headers);
+  const cors = publicMediaCorsHeaders();
+  for (const [key, value] of Object.entries(cors)) {
+    headers.set(key, value);
+  }
+  headers.delete('Vary');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 export function applyCors(response, request, env) {
@@ -182,14 +216,15 @@ export async function assertAdmin(request, env) {
     return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
+  const jwtSecret = env.JWT_SECRET || env.ADMIN_SECRET;
+
   // 1. If it's a JWT, verify the signature & expiry
   const parts = adminToken.split('.');
   if (parts.length === 3) {
-    const payload = await verifyJWT(adminToken, env.ADMIN_SECRET);
+    const payload = await verifyJWT(adminToken, jwtSecret);
     if (payload && payload.exp && payload.exp > Math.floor(Date.now() / 1000)) {
       return { ok: true, token: adminToken };
     }
-    return { ok: false, status: 401, error: 'unauthorized: session expired or invalid' };
   }
 
   // 2. Otherwise, check if it's the raw master password (Timing-safe comparison using SHA-256)
@@ -260,7 +295,7 @@ export async function assertAdmin(request, env) {
     sub: 'admin',
     exp: Math.floor(now / 1000) + 24 * 60 * 60
   };
-  const jwt = await signJWT(payload, env.ADMIN_SECRET);
+  const jwt = await signJWT(payload, jwtSecret);
 
   return { ok: true, token: jwt };
 }

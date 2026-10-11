@@ -338,8 +338,10 @@ let lastHeroScroll = -1;
 // updateHeroOverlay runs inside the first animation frame, right after the carousel and masonry
 // are built. Read it once while the DOM is still small and only re-read after a real resize.
 let heroViewportH = window.innerHeight;
+const supportsScrollTimeline = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('animation-timeline: scroll()');
 
 export function updateHeroOverlay(scrollPos?: number) {
+  if (supportsScrollTimeline) return;
   const currentScroll = typeof scrollPos === 'number' ? scrollPos : state.heroScrollY;
   if (currentScroll === lastHeroScroll) return;
   lastHeroScroll = currentScroll;

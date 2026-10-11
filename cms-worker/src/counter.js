@@ -1,3 +1,5 @@
+const ALLOWED_PATHS = new Set(['/', '/index.html', '/admin.html', '/login.html']);
+
 export class CounterDO {
   constructor(state, env) {
     this.state = state;
@@ -7,7 +9,9 @@ export class CounterDO {
     const url = new URL(request.url);
     let rawPath = url.searchParams.get('path') || '/';
     let path = rawPath.trim().slice(0, 128);
-    if (!/^\/[a-zA-Z0-9_.\-\/]*$/.test(path)) {
+    if (!ALLOWED_PATHS.has(path)) {
+      path = '/';
+    } else if (path === '/index.html') {
       path = '/';
     }
 

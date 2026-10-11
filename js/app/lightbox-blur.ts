@@ -202,7 +202,11 @@ export class WebGLBlurRenderer {
     `;
 
     const FS_LIQUID = `
+      #ifdef GL_FRAGMENT_PRECISION_HIGH
+      precision highp float;
+      #else
       precision mediump float;
+      #endif
       varying vec2 v_texCoord;
       uniform sampler2D u_texture_prev;
       uniform sampler2D u_texture;
@@ -609,7 +613,7 @@ export class WebGLBlurRenderer {
     gl.uniform1i(loc.u_texture, 1);
 
     gl.uniform1f(loc.u_mix, easedMix);
-    gl.uniform1f(loc.u_time, elapsedSeconds);
+    gl.uniform1f(loc.u_time, elapsedSeconds % 2880);
     gl.uniform1f(loc.u_dir_prev, this.dirPrev);
     gl.uniform1f(loc.u_dir_curr, this.dirCurr);
 

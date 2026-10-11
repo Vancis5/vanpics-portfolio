@@ -8,11 +8,27 @@ const TEXT_LIMITS = {
 
 export const ALLOWED_CATEGORIES = new Set(['', 'figures']);
 
+export function sanitizeDesc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<(?!\/?(?:br|a)\b)[^>]*>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
 export function cleanText(value, fieldName, errors, options = {}) {
   // eslint-disable-next-line security/detect-object-injection
   const max = options.max || TEXT_LIMITS[fieldName] || 255;
   const required = Boolean(options.required);
-  const text = String(value || '').trim().replace(/\s+/g, ' ');
+  let text = String(value || '').trim();
+
+  if (fieldName === 'desc') {
+    text = sanitizeDesc(text);
+  } else {
+    text = text.replace(/\s+/g, ' ');
+  }
 
   if (required && !text) {
     errors.push(`${fieldName} is required`);

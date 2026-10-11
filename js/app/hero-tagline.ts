@@ -11,15 +11,17 @@ const taglines = [
   "taken when something was worth keeping"
 ];
 
+import { safeStorage } from './utils';
+
 export function initHeroTagline() {
   const el = document.querySelector('#hero-identity p');
   if (!el) return;
 
-  const visited = localStorage.getItem('van_v3_visited');
+  const visited = safeStorage.get('local', 'van_v3_visited');
   let selected;
   if (!visited) {
     selected = taglines[0];
-    localStorage.setItem('van_v3_visited', 'true');
+    safeStorage.set('local', 'van_v3_visited', 'true');
   } else {
     selected = taglines[Math.floor(Math.random() * taglines.length)];
   }

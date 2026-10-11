@@ -13,6 +13,14 @@ let currentMode: 'photo' | 'video' = 'photo';
 let selectedFile: File | null = null;
 let selectedVideoFile: File | null = null;
 let selectedPosterFile: File | null = null;
+let activeVideoObjectUrl: string | null = null;
+
+function clearActiveVideoObjectUrl() {
+  if (activeVideoObjectUrl) {
+    URL.revokeObjectURL(activeVideoObjectUrl);
+    activeVideoObjectUrl = null;
+  }
+}
 
 let computedAspectRatio = 1.0;
 
@@ -31,6 +39,7 @@ function setStepState(step: string, state: 'active' | 'success' | 'failed' | str
 }
 
 export function resetFileSelection() {
+  clearActiveVideoObjectUrl();
   selectedFile = null;
   selectedVideoFile = null;
   selectedPosterFile = null;
@@ -97,6 +106,7 @@ function resetSpecificFile(
   if (input) input.value = '';
   if (previewContainer) previewContainer.style.display = 'none';
   if (type === 'video') {
+    clearActiveVideoObjectUrl();
     if (previewEl) (previewEl as any).src = '';
     selectedVideoFile = null;
     processedVideoBlob = null;
@@ -119,7 +129,7 @@ function resetSpecificFile(
   }
 }
 
-async function processVideoPipeline(videoFile: File) {
+async function processVideoPipeline(videoFile: File, objectUrl?: string) {
   const pipelineStatus = document.getElementById('pipeline-status');
   if (!pipelineStatus) return;
   pipelineStatus.innerHTML = `
@@ -130,13 +140,17 @@ async function processVideoPipeline(videoFile: File) {
   setStepState('dimensions', 'active');
   
   const videoEl = document.createElement('video');
-  videoEl.src = URL.createObjectURL(videoFile);
+  const tempUrl = objectUrl || URL.createObjectURL(videoFile);
+  videoEl.src = tempUrl;
   videoEl.muted = true;
   videoEl.playsInline = true;
   
   await new Promise(resolve => {
     videoEl.addEventListener('loadedmetadata', resolve);
   });
+  if (!objectUrl) {
+    URL.revokeObjectURL(tempUrl);
+  }
 
   computedAspectRatio = parseFloat((videoEl.videoWidth / videoEl.videoHeight).toFixed(4));
   const stepDimensions = document.getElementById('step-dimensions');
@@ -242,15 +256,11 @@ function handleFileSelect(
       return;
     }
     selectedVideoFile = file;
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      if (e.target && e.target.result) {
-        if (previewEl) (previewEl as any).src = e.target.result as string;
-        if (previewContainer) previewContainer.style.display = 'block';
-        processVideoPipeline(file);
-      }
-    };
-    reader.readAsDataURL(file);
+    clearActiveVideoObjectUrl();
+    activeVideoObjectUrl = URL.createObjectURL(file);
+    if (previewEl) (previewEl as any).src = activeVideoObjectUrl;
+    if (previewContainer) previewContainer.style.display = 'block';
+    processVideoPipeline(file, activeVideoObjectUrl);
   } else if (type === 'poster') {
     if (!file.type.startsWith('image/')) {
       showToast('file is not an image', 'error');

@@ -1335,8 +1335,9 @@ body::after {
   display: flex;
   flex-direction: column;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
   overflow: clip;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1361,6 +1362,7 @@ body::after {
 
 #lightbox.open {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 

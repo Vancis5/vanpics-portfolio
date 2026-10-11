@@ -121,9 +121,10 @@ if (savedToken) {
               window.location.replace('admin.html');
             }, 500);
           } else {
-            loginErrorMsg.innerText = 'invalid archive token';
-            localStorage.removeItem('vanpics_admin_token');
-            sessionStorage.removeItem('vanpics_admin_token');
+            const errJson = await res.json().catch(() => null);
+            loginErrorMsg.innerText = (errJson && errJson.error) || 'invalid archive token';
+            try { localStorage.removeItem('vanpics_admin_token'); } catch {}
+            try { sessionStorage.removeItem('vanpics_admin_token'); } catch {}
           }
         } catch (err) {
           loginErrorMsg.innerText = 'server connection failed';
