@@ -118,17 +118,24 @@ export function prepareLightboxPhoto(p: Photo) {
 
       if (cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
         let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
-        wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+        // Everything that changes the wrap's box (ratio var, dropping .photo-loading) must happen
+        // together with the real <img> getting the full photo, never while it still holds the thumb.
+        const finishFull = function () {
+          wrap.style.setProperty('--lightbox-photo-ratio', String(r));
+          clearLightboxPhotoPlaceholder(token);
+          img.style.opacity = '1';
+          updateMobileImgWrapHeight();
+        };
         // Thumb is on screen: fade the full photo in over it instead of hard-cutting the src.
         const fading = thumbShown && crossfadeToFull(
           wrap, img, fullSrc,
           function () { return token === photoPlaceholderToken; },
-          updateMobileImgWrapHeight
+          finishFull
         );
-        if (!fading) img.src = fullSrc;
-        clearLightboxPhotoPlaceholder(token);
-        img.style.opacity = '1';
-        updateMobileImgWrapHeight();
+        if (!fading) {
+          img.src = fullSrc;
+          finishFull();
+        }
       } else {
         img.src = fullSrc;
         if (img.complete && img.naturalWidth > 0) {
