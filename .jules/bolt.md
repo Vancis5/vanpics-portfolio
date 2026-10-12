@@ -1,3 +1,6 @@
 ## 2024-05-14 - Avoiding Layout Thrashing on mousemove
 **Learning:** Calling `getBoundingClientRect()` inside high-frequency events like `mousemove` causes forced synchronous layout (layout thrashing) which blocks the main thread. This app uses glowing cursor trackers that follow the mouse, but they were reading layout on every tick.
 **Action:** Always cache the element's position on `mouseenter` (as document-relative coordinates) and use `e.pageX/pageY` (which are document-relative) instead of `e.clientX/clientY` to compute relative mouse positions. This completely eliminates synchronous layout reads from the critical animation path.
+## 2024-10-12 - Layout Thrashing in High-Frequency Listeners
+**Learning:** Checking edge thresholds in `js/smooth-scroll.ts` during scroll events caused synchronous layout reads via `document.documentElement.scrollHeight`, triggering layout thrashing during animation frames. Playwright webkit tests for the cursor ring behavior are flaky due to this tight loop.
+**Action:** Use a `ResizeObserver` on `document.body` coupled with `window.addEventListener('resize')` to cache `scrollHeight` and `innerHeight`, reading them only when layout actually changes, effectively preventing forced synchronous reflows inside touch/scroll event handlers.
