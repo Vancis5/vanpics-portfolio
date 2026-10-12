@@ -1,19 +1,16 @@
 import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
 import { getCategorySlug, getPhotoLibrary, motionProjects } from './media-data.js';
-import { getMotionThumbnailMarkup } from './motion-markup.js';
 import { openLightbox, preloadLightboxBlurNeighbors } from './lightbox.js';
 import { updateCustomScrollbar } from './custom-scrollbar.js';
 import { updateStickyHeaderSurface } from './sticky-header.js';
 import { getPhotoAspectRatio, saveRatioToCache, isRatioCached, setupImagePlaceholderFallback } from './utils.js';
 
 let galleryLastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-let galleryScrollDirection = 'down';
 let gallerySuppressScrollRevealUntil = 0;
 let galleryRevealRepairTimer: any = null;
 let galleryTabSwitchSettleTimer: any = null;
 const GALLERY_REVEAL_CLEANUP_MS = 850;
-const GALLERY_REVEAL_IMAGE_WAIT_MS = 120;
 const GALLERY_TAB_SWITCH_SETTLE_MS = 920;
 
 function clearCardRevealTimers(card: HTMLElement) {
@@ -67,27 +64,6 @@ function getViewportHeight() {
   return window.innerHeight || document.documentElement.clientHeight || 0;
 }
 
-function armCardsBelowViewport(scope?: HTMLElement | Document | null) {
-  let root = scope || getActiveGalleryPanel() || document;
-  let viewportHeight = getViewportHeight();
-
-  const toArm: HTMLElement[] = [];
-  root.querySelectorAll('.photo-card').forEach(function (cardEl) {
-    const card = cardEl as HTMLElement;
-    if (card.classList.contains('revealed') || !card.classList.contains('pending-reveal')) return;
-    if (card.getBoundingClientRect().top >= viewportHeight) toArm.push(card);
-  });
-
-  toArm.forEach(function (card) {
-    clearCardRevealTimers(card);
-    delete card.dataset.revealPending;
-    delete card.dataset.revealCleanupTimer;
-    delete card.dataset.revealFallbackTimer;
-    card.classList.add('pending-reveal');
-    card.classList.remove('revealed');
-  });
-}
-
 // Read pass: returns the cards of `root` matching `selector` that intersect the viewport.
 function collectCardsInViewport(root: HTMLElement | Document, selector: string) {
   const viewportHeight = getViewportHeight();
@@ -98,12 +74,6 @@ function collectCardsInViewport(root: HTMLElement | Document, selector: string) 
     if (rect.bottom > 0 && rect.top < viewportHeight) visible.push(card);
   });
   return visible;
-}
-
-function showVisibleCardsWithoutScrollReveal(scope?: HTMLElement | Document | null) {
-  let root = scope || getActiveGalleryPanel() || document;
-
-  collectCardsInViewport(root, '.photo-card').forEach(showCardWithoutScrollReveal);
 }
 
 function repairVisiblePendingCards(scope?: HTMLElement | Document | null) {
@@ -246,7 +216,6 @@ function resetGalleryScrollMemory() {
 function updateGalleryScrollDirection() {
   let scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
   if (Math.abs(scrollY - galleryLastScrollY) > 1) {
-    galleryScrollDirection = scrollY > galleryLastScrollY ? 'down' : 'up';
     galleryLastScrollY = scrollY;
   }
 }

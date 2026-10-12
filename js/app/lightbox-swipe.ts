@@ -5,14 +5,13 @@ import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightbox
 import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
-import { getPhotoAspectRatio, saveRatioToCache, sanitizeHtml, fadeInWhenReady } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache, fadeInWhenReady } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
 import { isLbSrcUrl, lightboxSrc, markLbSrcFailed } from './lightbox-cache.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
-let mobileScrollToSlide = null;
 let swipeHappened = false;
 
 let lastTapT = 0;

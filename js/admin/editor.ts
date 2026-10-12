@@ -307,7 +307,7 @@ export function initEditor(options: {
   }
 
   // Delete actions
-  async function deleteItem(type: string, id: string | number, title: string) {
+  async function deleteItem(type: string, id: string | number, _title: string) {
     const token = getAdminToken();
     try {
       const res = await deleteArchiveItem(type, id, token);

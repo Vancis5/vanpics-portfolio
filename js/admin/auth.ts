@@ -1,5 +1,5 @@
 import { API_BASE_URL } from './utils.js';
-import { getDocEl, showToast } from './ui.js';
+import { showToast } from './ui.js';
 
 let currentAdminToken = localStorage.getItem('vanpics_admin_token') || sessionStorage.getItem('vanpics_admin_token') || '';
 

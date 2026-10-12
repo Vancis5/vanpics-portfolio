@@ -47,7 +47,7 @@ export function plaintextToHtml(text: string | null | undefined): string {
   
   const links: string[] = [];
   // 2. Convert Markdown links [Text](URL) to placeholder tokens
-  let html = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match: string, label: string, url: string) => {
+  let html = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_match: string, label: string, url: string) => {
     const rawUrl = url.replace(/&amp;/g, '&');
     links.push(`<a href="${rawUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`);
     return `___LINK_PLACEHOLDER_${links.length - 1}___`;
@@ -77,13 +77,13 @@ export function htmlToPlaintext(html: string | null | undefined): string {
   let text = html;
   
   // 1. Convert <a href="URL" ...>Text</a> to [Text](URL)
-  text = text.replace(/&lt;a\s+(?:[^&gt;]*?\s+)?href=(['"])(.*?)\1[^&gt;]*?&gt;(.*?)&lt;\/a&gt;/gi, (match: string, quote: string, url: string, label: string) => {
+  text = text.replace(/&lt;a\s+(?:[^&gt;]*?\s+)?href=(['"])(.*?)\1[^&gt;]*?&gt;(.*?)&lt;\/a&gt;/gi, (_match: string, _quote: string, url: string, label: string) => {
     if (label.trim() === url.trim()) {
       return url;
     }
     return `[${label}](${url})`;
   });
-  text = text.replace(/<a\s+(?:[^>]*?\s+)?href=(['"])(.*?)\1[^>]*?>(.*?)<\/a>/gi, (match: string, quote: string, url: string, label: string) => {
+  text = text.replace(/<a\s+(?:[^>]*?\s+)?href=(['"])(.*?)\1[^>]*?>(.*?)<\/a>/gi, (_match: string, _quote: string, url: string, label: string) => {
     if (label.trim() === url.trim()) {
       return url;
     }

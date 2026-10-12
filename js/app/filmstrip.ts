@@ -13,11 +13,6 @@ let filmstripTrack: HTMLElement | null = null;
 let filmstripBuilt = false;
 let FILMSTRIP_CONFIG = APP_CONFIG.filmstrip;
 
-function galleryAlreadyHasThumb(thumbPath: string, loadedThumbs: Set<string>) {
-  if (!thumbPath || !loadedThumbs) return false;
-  return loadedThumbs.has(thumbPath);
-}
-
 window.addEventListener('category-change', function () {
   filmstripBuilt = false;
   if (typeof filmstripEl !== 'undefined' && filmstripEl) {
@@ -121,7 +116,6 @@ export function buildFilmstrip() {
   initFilmstripDrag();
 }
 
-let fsVelocity = 0;
 let fsTarget = 0;
 let fsSyncTarget: number | null = null;
 let fsSyncRaf: number | null = null;
@@ -365,7 +359,6 @@ function startFilmstripSettle(target: number) {
   fsSettleTarget = target;
   let startTime = 0;
   let duration = Math.max(300, Math.min(500, 250 + Math.abs(distance) * 0.4));
-  let previous = start;
 
   function settleStep(time: number) {
     if (!startTime) startTime = time;
@@ -377,7 +370,6 @@ function startFilmstripSettle(target: number) {
     else next = Math.max(target, Math.min(start, next));
 
     setFilmstripScroll(next);
-    previous = next;
     if (t < 1) {
       fsSyncRaf = requestAnimationFrame(settleStep);
       return;
@@ -612,7 +604,7 @@ if (liftZone) {
 }
 
 // Capture wheel events early to trigger UI logic (scroll handled by fsLenis)
-filmstripWrap.addEventListener('wheel', function (e) {
+filmstripWrap.addEventListener('wheel', function (_e) {
   stopFsSync();
   clearTimeout(state.filmstripHideTimer);
   state.filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.touchHideDelay);

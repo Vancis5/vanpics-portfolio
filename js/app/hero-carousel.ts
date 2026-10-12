@@ -1,7 +1,6 @@
 import { APP_CONFIG } from './config.js';
 import { domRefs } from './dom.js';
 import { state } from './state.js';
-import { getInternalCategory } from './media-data.js';
 import { openLightbox } from './lightbox.js';
 import { rebuildGallery } from './gallery.js';
 import { startLoopsIfReady } from './core.js';
@@ -185,7 +184,7 @@ export function buildCarousel(isRebuild = false) {
           }
         }
 
-        wrapper.addEventListener('click', function (e) {
+        wrapper.addEventListener('click', function (_e) {
           if (globalHasDragged) return;
           let targetCat = (p.category === 'figures') ? 'figures' : 'all';
           if (state.currentCategory === targetCat) {

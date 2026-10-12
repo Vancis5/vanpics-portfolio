@@ -1,6 +1,5 @@
 import { fetchArchives } from './api.js';
 import { renderArchivesList } from './render.js';
-import { getDocEl } from './ui.js';
 
 let activeFilter = localStorage.getItem('vanpics_cms_filter_type') || 'all';
 let searchQuery = localStorage.getItem('vanpics_cms_search') || '';
