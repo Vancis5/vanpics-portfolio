@@ -24,9 +24,34 @@ function setupEdgeHaptics() {
   let gestureStartedNearTop = true;
   let gestureStartedNearBottom = false;
 
+  // Cache layout reads to prevent sync thrashing on scroll
+  let cachedDocHeight = 0;
+  let cachedWinHeight = 0;
+
+  if (typeof window !== 'undefined' && window.ResizeObserver) {
+    // Initial read
+    cachedDocHeight = document.documentElement.scrollHeight;
+    cachedWinHeight = window.innerHeight;
+
+    // Invalidate on resize/DOM changes
+    new ResizeObserver(() => {
+      cachedDocHeight = document.documentElement.scrollHeight;
+      cachedWinHeight = window.innerHeight;
+    }).observe(document.body);
+
+    window.addEventListener('resize', () => {
+      cachedWinHeight = window.innerHeight;
+    }, { passive: true });
+  }
+
   function checkEdge(scrollPos: number) {
     if (document.body.classList.contains('lightbox-open')) return;
-    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+    // Fallback if ResizeObserver isn't supported, otherwise use cache
+    const docHeight = cachedDocHeight || document.documentElement.scrollHeight;
+    const winHeight = cachedWinHeight || window.innerHeight;
+
+    const maxScroll = Math.max(0, docHeight - winHeight);
     if (maxScroll < EDGE_THRESHOLD * 2) return;
 
     if (scrollPos <= 0) {
@@ -58,7 +83,9 @@ function setupEdgeHaptics() {
 
   window.addEventListener('touchstart', () => {
     const scrollPos = window.scrollY || document.documentElement.scrollTop || 0;
-    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const docHeight = cachedDocHeight || document.documentElement.scrollHeight;
+    const winHeight = cachedWinHeight || window.innerHeight;
+    const maxScroll = Math.max(0, docHeight - winHeight);
     gestureStartedNearTop = scrollPos < EDGE_THRESHOLD;
     gestureStartedNearBottom = scrollPos > maxScroll - EDGE_THRESHOLD;
   }, { passive: true });
