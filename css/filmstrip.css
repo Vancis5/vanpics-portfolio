@@ -1,0 +1,193 @@
+/* FILMSTRIP */
+#filmstrip-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 1.25rem 0 calc(var(--filmstrip-bottom-pad) + var(--browser-bottom));
+  background: linear-gradient(to top, rgba(13, 12, 12, 0.92) calc(var(--filmstrip-bottom-pad) + var(--browser-bottom)), transparent 100%);
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(12px);
+  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+  will-change: opacity, transform, filter;
+  pointer-events: none;
+}
+
+#filmstrip-wrap::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--liquid-edge-bleed));
+  height: var(--liquid-edge-bleed);
+  background: rgba(13, 12, 12, 0.92);
+  pointer-events: none;
+}
+
+@media (hover: none) {
+  #filmstrip-wrap {
+    /* Fast but smooth ease-out */
+    transition: opacity 0.2s ease-out, transform 0.28s cubic-bezier(0.25, 1, 0.5, 1), filter 0.25s ease-out;
+  }
+}
+
+#filmstrip-wrap.visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0px);
+  pointer-events: auto;
+}
+
+#filmstrip {
+  position: relative;
+  z-index: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-x;
+  will-change: transform;
+  /* native horizontal scroll on mobile, doesn't interfere with swipe */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
+}
+
+#filmstrip-track {
+  display: flex;
+  gap: 5px;
+  width: max-content;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+#filmstrip::-webkit-scrollbar {
+  display: none;
+}
+
+
+
+#lightbox.mode-motion #filmstrip::-webkit-scrollbar {
+  display: none;
+}
+
+#filmstrip.dragging {
+  cursor: grabbing;
+}
+
+.filmstrip-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 38px;
+  border: none;
+  padding: 0;
+  background: none;
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 0.32;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filmstrip-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 4;
+  transition: border-color 0.25s ease;
+}
+
+.filmstrip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filmstrip-thumb img.fade-in-on-load {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filmstrip-thumb img.media-loaded {
+  opacity: 1;
+}
+
+.filmstrip-thumb.active {
+  opacity: 1;
+  transform: scaleY(1.12);
+  transition: opacity 0s, transform 0.1s ease-out;
+}
+
+#lightbox.mode-motion #filmstrip .filmstrip-thumb {
+  width: 78px;
+  height: 44px;
+  opacity: 0.55;
+}
+
+#lightbox.mode-motion #filmstrip .filmstrip-thumb.active {
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+@media (min-width: 640px) {
+  .filmstrip-thumb {
+    width: 62px;
+    height: 44px;
+  }
+
+  #filmstrip-wrap {
+    padding: 1.5rem 0 calc(1.75rem + var(--safe-bottom));
+  }
+}
+
+@media (min-width: 1024px) {
+  #filmstrip {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 8%, black 20%, black 80%, rgba(0, 0, 0, 0.8) 92%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 8%, black 20%, black 80%, rgba(0, 0, 0, 0.8) 92%, transparent 100%);
+  }
+}
+
+
+@media (hover: hover) {
+  .filmstrip-thumb:hover {
+    opacity: 0.85;
+  }
+  .filmstrip-thumb.active:hover {
+    opacity: 1;
+  }
+  .filmstrip-thumb:hover::after {
+    border-color: rgba(var(--text-rgb), 0.18);
+  }
+}
+
+
+/* invisible hit zone — always pointer-events active so hover can revive hidden filmstrip */
+#filmstrip-lift-zone {
+  display: none;
+  /* hidden by default — JS sets display:block when lightbox opens */
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #filmstrip-lift-zone {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    z-index: 9;
+    /* just below filmstrip-wrap (z-index: 10) */
+    pointer-events: auto;
+    cursor: default;
+  }
+}
+

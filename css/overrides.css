@@ -1,0 +1,261 @@
+/* Selection UI Lock */
+#gallery-header,
+#scroll-hint,
+#lightbox-close,
+#lightbox-desc-toggle,
+.motion-start-button,
+.filmstrip-thumb,
+#filmstrip,
+.photo-card,
+.date-header,
+button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Safari / iPhone Immersion Fixes */
+#gallery-header {
+  isolation: isolate;
+}
+
+#lightbox-bg {
+  inset: calc(-1 * var(--liquid-edge-bleed)) !important;
+}
+
+
+
+
+
+body.lightbox-open {
+  background: #0d0c0c;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* -- STABILIZE SUBNAV ON LIGHTBOX OPEN -- */
+/* Pin the subnav at the top when lightbox opens (kills position:sticky) */
+body.lightbox-open.gallery-header-stuck #gallery-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  margin-left: 0 !important;
+  z-index: 100 !important;
+  /* Stays BELOW lightbox (1000) */
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  body.lightbox-open.gallery-header-stuck #gallery-header {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  body.lightbox-open.gallery-header-stuck #gallery-header {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  body.lightbox-open.gallery-header-stuck #gallery-header {
+    padding-left: calc((100vw - 1400px) / 2 + 2rem);
+    padding-right: calc((100vw - 1400px) / 2 + 2rem);
+  }
+}
+
+/* Maintain the vertical gap to prevent page jump underneath */
+body.lightbox-open.gallery-header-stuck #gallery-section {
+  padding-top: calc(3.1rem + var(--safe-top, 0px)) !important;
+}
+
+@media (min-width: 640px) {
+  body.lightbox-open.gallery-header-stuck #gallery-section {
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  body.lightbox-open.gallery-header-stuck #gallery-section {
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
+  }
+}
+
+
+
+
+
+/* ==========================================================================
+   WCAG 2.2 Level AA Accessibility Enhancements
+   ========================================================================== */
+
+/* 2.4.7 Focus Visible & 2.4.11 Focus Appearance (Contrast & Offset) */
+:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: 4px !important;
+}
+
+/* Specific focus style overrides to fit the dark aesthetic beautifully */
+.photo-card:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: 6px !important;
+  border-radius: 4px;
+}
+
+
+#gallery-header .active:focus-visible,
+#gallery-header .inactive:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: -4px !important;
+  border-radius: 2px;
+}
+
+.filmstrip-thumb:focus-visible {
+  outline: 2px solid var(--text, #ddd8cf) !important;
+  outline-offset: 2px !important;
+}
+
+/* Ensure focus-visible behaves nicely in lightbox */
+#lightbox *:focus:not(:focus-visible),
+#lightbox-close:focus:not(:focus-visible),
+.filmstrip-thumb:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Video player has no border-radius so standard outline works fine */
+
+/* The close button lives inside a dark overlay with clear hover/active states —
+   programmatic .focus() on page load always triggers :focus-visible, so we
+   suppress the outline entirely and rely on the button's own border for feedback */
+#lightbox-close:focus,
+#lightbox-close:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+/* Programmatic focus suppression — kept on until blur, not a timer */
+.prevent-focus-ring,
+.prevent-focus-ring:focus,
+.prevent-focus-ring:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+/* 2.4.11 Focus Not Obscured (Minimum) - Clear sticky elements (header/footer) */
+.photo-card,
+.footer-instagram,
+.footer-email,
+#lightbox-close,
+#lightbox-desc-toggle,
+.filmstrip-thumb {
+  scroll-margin-top: 100px;
+  scroll-margin-bottom: 120px;
+}
+
+/* 2.5.8 Target Size (Minimum) - Ensure all interactive controls meet 24x24px minimum */
+#lightbox-desc-toggle {
+  min-height: 24px !important;
+}
+
+.footer-instagram,
+.footer-email {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+
+/* FOOTER STATS BAR */
+#footer-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: clamp(1.25rem, 3vw, 2rem);
+  margin-bottom: 0;
+  padding-top: clamp(1.25rem, 3vw, 2.25rem);
+  padding-bottom: clamp(1.25rem, 3vw, 2.25rem);
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(0.52rem, 1.2vw, 0.6rem);
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+  color: rgba(var(--text-rgb), 0.28);
+  transition: color 0.4s ease;
+}
+
+@media (min-width: 820px) {
+  #footer-stats {
+    padding-left: max(2.25rem, (100vw - 1400px) / 2 + 2.25rem);
+    padding-right: max(2.25rem, (100vw - 1400px) / 2 + 2.25rem);
+  }
+}
+
+#site-footer:hover #footer-stats,
+#site-footer.is-visible #footer-stats {
+  color: rgba(var(--text-rgb), 0.42);
+}
+
+.footer-stat {
+  white-space: nowrap;
+}
+
+.stat-num {
+  color: rgba(var(--text-rgb), 0.55);
+  transition: color 0.4s ease;
+}
+
+#site-footer:hover .stat-num,
+#site-footer.is-visible .stat-num {
+  color: rgba(var(--text-rgb), 0.78);
+}
+
+.footer-stat-dot {
+  color: rgba(var(--text-rgb), 0.15);
+  user-select: none;
+}
+
+@media (max-width: 560px) {
+  #footer-stats {
+    gap: 0.4rem 0.6rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #footer-stats .footer-stat-dot:nth-child(6) {
+    display: none;
+  }
+
+  #stat-since,
+  #stat-views {
+    text-align: center;
+    margin-top: 0.2rem;
+  }
+}
+
+
+/* PLACEHOLDER FALLBACK STYLES */
+img.placeholder-fallback {
+  object-fit: contain !important;
+  opacity: 0.25 !important;
+  background-color: #141313;
+}
+
+.filmstrip-thumb img.placeholder-fallback {
+  padding: 4px !important;
+}
+
+.photo-card img.placeholder-fallback {
+  padding: 24px !important;
+}
+
+.carousel-item img.placeholder-fallback {
+  padding: 16px !important;
+}
+
