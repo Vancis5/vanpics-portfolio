@@ -38,12 +38,12 @@
     </div>
     
     <div class="auth-container header-auth-row">
-      <button type="button" class="btn-utilities" id="btn-open-utilities-modal">
+      <button type="button" class="btn-utilities" id="btn-open-utilities-modal" aria-label="Utilities">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-btn-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span>utilities</span>
       </button>
 
-      <button type="button" class="btn-logout" id="btn-logout">
+      <button type="button" class="btn-logout" id="btn-logout" aria-label="Log out">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-btn-icon"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span>log out</span>
       </button>
@@ -57,7 +57,7 @@
             <div class="spinner" id="auth-spinner" style="display:none;"></div>
           </div>
           <input type="password" id="secret-token" class="secret-input tiny-secret-token" placeholder="secret token" autocomplete="new-password">
-          <button type="button" class="btn-toggle-password" id="toggle-password-btn" title="Toggle token visibility">
+          <button type="button" class="btn-toggle-password" id="toggle-password-btn" aria-label="Toggle token visibility" title="Toggle token visibility">
             <svg id="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg id="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-hide-svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           </button>
@@ -77,7 +77,7 @@
         <div class="search-wrapper">
           <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input type="text" id="dashboard-search" placeholder="search archives">
-          <button id="btn-clear-filters-mobile" class="btn-clear-filters-mobile" title="Reset all filters">
+          <button id="btn-clear-filters-mobile" class="btn-clear-filters-mobile" aria-label="Reset all filters" title="Reset all filters">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
@@ -127,7 +127,7 @@
       </div>
       
       <div style="display: flex; gap: 0.75rem; align-items: center;">
-        <button class="btn-create-trigger" id="btn-open-upload-modal">
+        <button class="btn-create-trigger" id="btn-open-upload-modal" aria-label="Add media">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m-8-8h16"/></svg>
           <span>add media</span>
         </button>
@@ -164,11 +164,11 @@
               
               <!-- Segmented Tab switcher for Photo vs Video Upload Mode -->
               <div class="tabs-container" style="margin-bottom: 0.25rem; flex-shrink: 0;">
-                <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo">
+                <button type="button" class="tab-btn active" id="tab-photo" data-mode="photo" aria-label="Photo upload mode">
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 8.75h18a2.25 2.25 0 002.25-2.25V5.25A2.25 2.25 0 0022 3H2.25A2.25 2.25 0 000 5.25v16.5A2.25 2.25 0 002.25 24zm10.5-11.25h.008v.008h-.008v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
                   photo
                 </button>
-                <button type="button" class="tab-btn" id="tab-video" data-mode="video">
+                <button type="button" class="tab-btn" id="tab-video" data-mode="video" aria-label="Video upload mode">
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
                   video
                 </button>
@@ -187,7 +187,7 @@
                   
                   <div class="preview-container" id="preview-container-photo">
                     <img id="image-preview-photo" class="preview-image" src="" alt="preview" style="width: 100%; height: 100%; object-fit: contain;">
-                    <button class="remove-file" id="remove-btn-photo" type="button">&times;</button>
+                    <button class="remove-file" id="remove-btn-photo" type="button" aria-label="Remove photo">&times;</button>
                   </div>
                 </div>
 
@@ -204,7 +204,7 @@
                     
                     <div class="preview-container" id="preview-container-video">
                       <video id="video-preview" class="preview-image" muted loop playsinline style="width: 100%; height: 100%; object-fit: contain;"></video>
-                      <button class="remove-file" id="remove-btn-video" type="button">&times;</button>
+                      <button class="remove-file" id="remove-btn-video" type="button" aria-label="Remove video">&times;</button>
                     </div>
                   </div>
 
@@ -219,7 +219,7 @@
                     
                     <div class="preview-container" id="preview-container-poster">
                       <img id="image-preview-poster" class="preview-image" src="" alt="preview" style="width: 100%; height: 100%; object-fit: contain;">
-                      <button class="remove-file" id="remove-btn-poster" type="button">&times;</button>
+                      <button class="remove-file" id="remove-btn-poster" type="button" aria-label="Remove poster">&times;</button>
                     </div>
                   </div>
                 </div>
