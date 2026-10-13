@@ -561,26 +561,49 @@
   backface-visibility: hidden;
 }
 
-@media (hover: none) and (max-width: 767px) {
-  #lightbox-info-wrap {
-    height: 95px;
-  }
-
-  #lightbox-content.desc-open #lightbox-info-wrap {
-    height: auto;
-    min-height: 95px;
-  }
+#lightbox-bottom-row {
+  display: contents;
 }
 
 @media (hover: none) and (max-width: 767px) {
   #lightbox-info-wrap {
-    margin-top: 1.35rem;
+    position: absolute;
+    bottom: var(--filmstrip-clearance);
+    left: 0;
+    right: 0;
     width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 0 1rem;
-    position: relative;
+    margin: 0;
+    padding: 3rem 1.25rem 0.25rem;
     box-sizing: border-box;
+    pointer-events: none;
+    z-index: 20;
+    background: linear-gradient(to top, #0d0c0c 72%, rgba(13, 12, 12, 0));
+    transform: none !important;
+    height: auto;
+    min-height: 0;
+  }
+
+  #lightbox-content.desc-open #lightbox-info-wrap {
+    height: auto;
+    min-height: 0;
+  }
+
+  #lightbox-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    margin: 0;
+    padding: 0;
+    opacity: 1;
+    transform: none !important;
+    pointer-events: none;
+  }
+
+  #lightbox-info a,
+  #lightbox-desc a,
+  #lightbox-desc-toggle {
+    pointer-events: auto;
   }
 }
 
@@ -623,42 +646,68 @@
   text-decoration-color: var(--text-muted);
 }
 
-/* mobile: show a two-line preview by default, then expand on toggle */
+/* mobile: title, clamped 3-line description with fade mask, and toggle */
 @media (hover: none) and (max-width: 767px) {
+  #lightbox-title-row {
+    margin-bottom: 0.5rem;
+    padding-right: 0;
+  }
+
+  #lightbox-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.9rem;
+    line-height: 1.05;
+    margin: 0;
+  }
+
   #lightbox-desc {
     position: relative;
-    font-size: clamp(0.88rem, 2.5vw, 1rem);
-    max-height: 3.5em;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    max-height: 4.35em;
     overflow: hidden;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.65rem;
+    max-width: none;
+    color: var(--dynamic-text-muted, var(--text-muted));
     opacity: 1;
     filter: blur(0);
-    transition: opacity 0.38s ease, filter 0.38s ease;
+    transition: max-height 0.3s ease;
+  }
+
+  #lightbox-desc.is-empty {
+    display: none !important;
+    margin-bottom: 0 !important;
   }
 
   #lightbox-desc.desc-overflow {
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.35em), transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.35em), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.45em), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.45em), transparent 100%);
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
     -webkit-mask-position: top;
     mask-position: top;
     -webkit-mask-size: 100% 100%;
     mask-size: 100% 100%;
-    transition: -webkit-mask-size 0.38s cubic-bezier(0.22, 1, 0.36, 1), mask-size 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.38s ease, filter 0.38s ease;
+    transition: -webkit-mask-size 0.3s ease, mask-size 0.3s ease;
   }
 
   #lightbox-desc.desc-overflow.desc-expanded,
   #lightbox-content.desc-open #lightbox-desc.desc-overflow {
-    -webkit-mask-size: 100% calc(100% + 3.5rem);
-    mask-size: 100% calc(100% + 3.5rem);
+    -webkit-mask-size: 100% calc(100% + 3rem);
+    mask-size: 100% calc(100% + 3rem);
   }
 
   #lightbox-content.desc-open #lightbox-desc {
-    max-height: none;
     opacity: 1;
     filter: blur(0px);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #lightbox-desc,
+    #lightbox-desc.desc-overflow {
+      transition: none !important;
+    }
   }
 }
 
@@ -668,58 +717,44 @@
 }
 
 @media (hover: none) and (max-width: 767px) {
-  #lightbox-title-row {
-    margin-bottom: 0.62rem;
-    padding-right: 5.4rem;
-  }
-
   #lightbox-desc-toggle {
     display: inline-flex;
-    position: absolute;
-    top: -0.02rem;
-    right: 0;
-    z-index: 4;
-    /* Keep every photo top-aligned; the active info offset follows its bottom. */
-    align-items: flex-start;
-    justify-content: center;
-    min-height: 1.35rem;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 44px;
+    min-width: 72px;
+    padding: 0 0.25rem;
+    margin: 0;
+    margin-left: auto;
     background: none;
     border: 0;
-    border-bottom: 1px solid var(--dynamic-text-faint, rgba(var(--text-rgb), 0.40));
-    color: var(--dynamic-text-muted, rgba(var(--text-rgb), 0.78));
+    color: var(--dynamic-text-faint, rgba(var(--text-rgb), 0.5));
     font-family: 'DM Mono', monospace;
-    font-size: 0.5rem;
-    letter-spacing: 0.08em;
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
     text-transform: lowercase;
-    padding: 0.1rem 0 0.04rem;
-    margin: 0;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--dynamic-text-faint, rgba(var(--text-rgb), 0.4));
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     outline: none;
     touch-action: manipulation;
     user-select: none;
-    opacity: 1;
-    filter: blur(0);
-    visibility: visible;
-    transition:
-      color 0.4s ease,
-      border-color 0.4s ease,
-      opacity 0.28s ease,
-      filter 0.28s ease,
-      visibility 0s linear 0s;
+    -webkit-user-select: none;
+    pointer-events: auto;
+    z-index: 10;
+    transition: color 0.4s ease, border-color 0.4s ease, opacity 0.2s ease;
   }
 
   #lightbox-desc-toggle:active {
     color: var(--text-muted);
-    border-color: rgba(var(--text-rgb), 0.5);
   }
 
   /* hide the toggle when there's no description to show */
   #lightbox-desc-toggle.no-desc {
     display: none !important;
-    opacity: 0;
-    filter: blur(4px);
-    visibility: hidden;
     pointer-events: none;
   }
 }
@@ -739,8 +774,22 @@
 }
 
 @media (hover: none) and (max-width: 767px) {
+  #lightbox-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    margin-top: 0;
+  }
+
   #lightbox-meta {
-    gap: 0.54rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
     font-size: 0.55rem;
   }
 
@@ -1168,6 +1217,66 @@ html.custom-cursor-enabled #lightbox-close::before {
   #motion-player-shell {
     --lightbox-video-max-height: 72dvh;
     max-height: 72dvh;
+  }
+}
+
+@media (hover: none) and (max-width: 767px) {
+  #lightbox-content {
+    position: relative;
+    height: var(--app-height);
+    overflow: hidden;
+  }
+
+  #lightbox #lightbox-info-wrap,
+  #lightbox:not(.mode-motion) #lightbox-info-wrap,
+  #lightbox-info-wrap {
+    position: absolute !important;
+    bottom: var(--filmstrip-clearance) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 3rem 1.25rem 0.25rem !important;
+    box-sizing: border-box !important;
+    pointer-events: none;
+    z-index: 20 !important;
+    background: linear-gradient(to top, #0d0c0c 72%, rgba(13, 12, 12, 0)) !important;
+    transform: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  #lightbox-img-wrap {
+    position: absolute;
+    top: calc(var(--safe-top) + 0.75rem);
+    left: 0;
+    right: 0;
+    bottom: calc(var(--filmstrip-clearance) + var(--lightbox-dock-collapsed-height, 160px));
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+    z-index: 2;
+  }
+
+  .snap-slide {
+    height: 100% !important;
+  }
+
+  .snap-slide-inner {
+    max-height: 100% !important;
+    height: 100%;
+    width: auto;
+    max-width: calc(100% - 0.25rem);
+    transform: none !important;
+  }
+
+  #motion-player-shell {
+    max-height: 100% !important;
+    height: 100%;
+    width: auto;
+    max-width: calc(100% - 2rem);
+    transform: none !important;
   }
 }
 

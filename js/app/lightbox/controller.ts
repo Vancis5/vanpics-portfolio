@@ -125,7 +125,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
       if (oldSlideInner) {
         oldSlideInner.style.transition = 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)';
         oldSlideInner.style.opacity = '0';
-        oldSlideInner.style.transform = `translateY(-4dvh) translateX(${exitX}) scale(0.992)`;
+        oldSlideInner.style.transform = `translateX(${exitX}) scale(0.992)`;
       }
     } else {
       img.style.transition = 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)';
@@ -166,7 +166,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
         let newSlideInner = imgWrap ? (imgWrap.querySelector(`.snap-slide[data-idx="${i}"] .snap-slide-inner`) as HTMLElement | null) : null;
         if (newSlideInner) {
           newSlideInner.style.transition = 'none';
-          newSlideInner.style.transform = `translateY(-4dvh) translateX(${enterX}) scale(0.992)`;
+          newSlideInner.style.transform = `translateX(${enterX}) scale(0.992)`;
           newSlideInner.style.opacity = '0';
           void newSlideInner.offsetHeight;
         }
@@ -177,7 +177,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
           if (newSlideInner) {
             newSlideInner.style.transition = 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
             newSlideInner.style.opacity = '1';
-            newSlideInner.style.transform = 'translateY(-4dvh) translateX(0) scale(1)';
+            newSlideInner.style.transform = 'translateX(0) scale(1)';
             setTimeout(function () {
               if (gen === navGen && newSlideInner) {
                 newSlideInner.style.transition = '';

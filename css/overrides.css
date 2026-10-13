@@ -156,9 +156,10 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   scroll-margin-bottom: 120px;
 }
 
-/* 2.5.8 Target Size (Minimum) - Ensure all interactive controls meet 24x24px minimum */
+/* 2.5.8 Target Size (Minimum) - Ensure all interactive controls meet minimum size */
 #lightbox-desc-toggle {
-  min-height: 24px !important;
+  min-height: 44px !important;
+  min-width: 72px !important;
 }
 
 .footer-instagram,

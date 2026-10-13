@@ -152,89 +152,58 @@ export function setLightboxBlur(src: string) {
   }
 }
 
-let flipTimer: any = null;
-// True from the moment a read more / read less flip starts until it is cleaned up. While set,
-// updateMobileImgWrapHeight() must not rewrite the transforms the flip is animating.
-let descFlipActive = false;
+let cachedCollapsedDockHeight = 0;
 
-export function getMobileInfoBaseOffset(): number {
-  const imgWrap = domRefs.lightboxImgWrap;
-  if (!imgWrap) return 0;
-  const containerH = imgWrap.clientHeight;
-  if (!containerH) return 0;
+export function measureCollapsedDockHeight(): number {
+  const infoWrap = domRefs.lightboxInfoWrap;
+  if (!infoWrap) return cachedCollapsedDockHeight || 180;
 
-  let photoDisplayedH = containerH;
-  if (state.currentLightboxIsMotion) {
-    const shell = domRefs.motionPlayerShell;
-    const items = getCurrentLightboxItems();
-    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : (16 / 9);
-    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-    const shellRect = shell ? shell.getBoundingClientRect() : null;
-    photoDisplayedH = shellRect && shellRect.height > 0 ? shellRect.height : Math.min(containerH, (viewportWidth - 32) / fallbackRatio);
-  } else {
-    const slide = imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement;
-    const slideRatio = slide ? parseFloat(slide.style.getPropertyValue('--lightbox-photo-ratio')) : 0;
-    const items = getCurrentLightboxItems();
-    const fallbackRatio = items[state.cur] ? getPhotoAspectRatio(items[state.cur]) : 1;
-    const ratio = Number.isFinite(slideRatio) && slideRatio > 0 ? slideRatio : fallbackRatio;
-    const viewportWidth = imgWrap.clientWidth || window.innerWidth;
-    photoDisplayedH = Math.min(containerH, (viewportWidth - 36) / ratio);
+  const desc = domRefs.lightboxDesc;
+  const content = domRefs.lightboxContent;
+  const isDescOpen = content?.classList.contains('desc-open');
+
+  if (desc) {
+    const prevDisplay = desc.style.display;
+    const prevMaxH = desc.style.maxHeight;
+    const prevTransition = desc.style.transition;
+
+    desc.style.display = '';
+    desc.style.transition = 'none';
+    desc.style.maxHeight = '4.35em';
+
+    const h = Math.round(infoWrap.offsetHeight);
+
+    desc.style.display = prevDisplay;
+    desc.style.maxHeight = isDescOpen ? `${desc.scrollHeight}px` : prevMaxH;
+    desc.style.transition = prevTransition;
+
+    if (h > 0) {
+      cachedCollapsedDockHeight = h;
+      return h;
+    }
   }
 
-  const topShift = window.innerHeight * 0.04;
-  return -Math.max(0, (containerH - photoDisplayedH) / 2) - topShift;
-}
-
-export function getDescExpansionDiff(): number {
-  let desc = domRefs.lightboxDesc;
-  if (!desc || !state.isMobile) return 0;
-  let prevTransition = desc.style.transition;
-  let prevMaxH = desc.style.maxHeight;
-
-  desc.style.transition = 'none';
-  desc.style.maxHeight = '3.5em';
-  let collapsedH = desc.offsetHeight;
-
-  desc.style.maxHeight = 'none';
-  let expandedH = desc.offsetHeight;
-
-  desc.style.maxHeight = prevMaxH;
-  desc.style.transition = prevTransition;
-
-  return Math.max(0, expandedH - collapsedH);
+  const h = Math.round(infoWrap.offsetHeight);
+  if (h > 0) {
+    cachedCollapsedDockHeight = h;
+    return h;
+  }
+  return cachedCollapsedDockHeight || 180;
 }
 
 export function cancelDescFlipTransition() {
-  if (flipTimer) {
-    clearTimeout(flipTimer);
-    flipTimer = null;
-  }
-  descFlipActive = false;
-  let imgWrap = domRefs.lightboxImgWrap;
-  let infoWrap = domRefs.lightboxInfoWrap;
-  let photoVisual = state.currentLightboxIsMotion
-    ? domRefs.motionPlayerShell
-    : (imgWrap?.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
-  if (photoVisual) {
-    photoVisual.style.transition = '';
-    photoVisual.style.transform = '';
-  }
-  if (infoWrap) {
-    infoWrap.style.transition = '';
-    let meta = infoWrap.querySelector('#lightbox-meta') as HTMLElement | null;
-    if (meta) {
-      meta.style.transition = '';
-      meta.style.transform = '';
-    }
-  }
+  let content = domRefs.lightboxContent;
   let desc = domRefs.lightboxDesc;
+  let btn = domRefs.lightboxDescToggle;
+  if (content) content.classList.remove('desc-open');
+  if (btn) {
+    btn.textContent = 'read more';
+    btn.setAttribute('aria-expanded', 'false');
+  }
   if (desc) {
     desc.style.transition = '';
     desc.style.maxHeight = '';
-    desc.style.overflow = '';
-    desc.style.clipPath = '';
-    // The flip may have held the fade mask off; put it back in line with the real open state.
-    desc.classList.toggle('desc-expanded', !!domRefs.lightboxContent?.classList.contains('desc-open'));
+    desc.classList.remove('desc-expanded');
   }
 }
 
@@ -256,28 +225,33 @@ export function updateLightboxDescPreview() {
   if (!desc || !btn || !content || !state.isMobile) return;
 
   let cleanText = (desc.textContent || '').trim();
-  desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
+  let isDescOpen = content.classList.contains('desc-open');
 
   if (!cleanText) {
-    desc.classList.remove('desc-overflow');
+    desc.classList.add('is-empty');
+    desc.classList.remove('desc-overflow', 'desc-expanded');
     btn.classList.add('no-desc');
     btn.setAttribute('aria-expanded', 'false');
     return;
   }
 
+  desc.classList.remove('is-empty');
+  desc.classList.toggle('desc-expanded', isDescOpen);
+
   let prevTransition = desc.style.transition;
-  let prevMaxHeight = desc.style.maxHeight;
   desc.style.transition = 'none';
-  
-  desc.style.maxHeight = 'none';
-  let naturalH = desc.offsetHeight;
 
-  desc.style.maxHeight = '3.5em';
-  let clampedH = desc.offsetHeight;
+  desc.style.maxHeight = '4.35em';
+  let clampedH = desc.clientHeight;
+  let naturalH = desc.scrollHeight;
 
-  let hasOverflow = naturalH > clampedH + 4;
+  let hasOverflow = naturalH > clampedH + 2;
 
-  desc.style.maxHeight = prevMaxHeight;
+  if (isDescOpen) {
+    desc.style.maxHeight = `${naturalH}px`;
+  } else {
+    desc.style.maxHeight = '';
+  }
   void desc.offsetHeight;
   desc.style.transition = prevTransition;
 
@@ -433,181 +407,55 @@ export function animateInfo(dir: number) {
   refreshLightboxInfoRefs();
 }
 
-export function updateMobileImgWrapHeight(force?: boolean) {
+export function updateMobileImgWrapHeight(_force?: boolean) {
   if (!state.isMobile) {
     domRefs.lightboxImgWrap?.style.removeProperty('height');
-    domRefs.lightboxContent?.style.removeProperty('--lightbox-img-wrap-height');
+    domRefs.lightboxContent?.style.removeProperty('--lightbox-dock-collapsed-height');
     domRefs.lightboxInfoWrap?.style.removeProperty('transform');
     return;
   }
-  if (state.isUserTouching && !force) return;
-  if (descFlipActive && !force) return;
-  const imgWrap = domRefs.lightboxImgWrap;
-  const infoWrap = domRefs.lightboxInfoWrap;
-  if (!imgWrap || !infoWrap) return;
 
-  const baseOffset = getMobileInfoBaseOffset();
-  const isDescOpen = domRefs.lightboxContent?.classList.contains('desc-open');
-  const shift = isDescOpen ? Math.round(getDescExpansionDiff() / 2) : 0;
-
-  let photoVisual = state.currentLightboxIsMotion
-    ? domRefs.motionPlayerShell
-    : (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
-
-  if (photoVisual) {
-    photoVisual.style.transform = shift > 0 ? `translateY(calc(-4dvh - ${shift}px))` : '';
+  const collapsedH = measureCollapsedDockHeight();
+  if (collapsedH > 0 && domRefs.lightboxContent) {
+    domRefs.lightboxContent.style.setProperty('--lightbox-dock-collapsed-height', `${collapsedH}px`);
   }
-
-  infoWrap.style.transform = shift > 0
-    ? `translateY(calc(${baseOffset}px - ${shift}px))`
-    : `translateY(${baseOffset}px)`;
 }
 
 // Read more / read less.
 //
-// The final layout is committed in one step and the move is played back with transforms only
-// (FLIP), so nothing animates layout: animating max-height on a block inside a vertically centred
-// column re-centres everything by half the growth every frame, which is what made the old version
-// lurch and pivot around a different point each time. Pieces and what animates them:
-//   photo + info wrap: translateY from where they visibly were (even mid-flip) to their rest spot
-//   meta row:          translateY, so it rides the edge of the text being revealed
-//   description:       clip-path, so lines unfurl instead of the box changing size
-// All four share one duration and easing so they stay locked together.
+// The dock stays pinned directly above the filmstrip; only the description
+// expands upward over the photo on a gradient scrim. Neither the photo nor the
+// bottom row (meta + toggle) shifts or jumps.
 export function toggleLightboxDesc() {
   let content = domRefs.lightboxContent;
   let btn = domRefs.lightboxDescToggle;
-  if (!content || !btn || btn.classList.contains('no-desc')) return;
-
-  let imgWrap = domRefs.lightboxImgWrap;
-  let infoWrap = domRefs.lightboxInfoWrap;
   let desc = domRefs.lightboxDesc;
-  if (!imgWrap || !infoWrap || !desc) return;
-
-  let photoVisual = state.currentLightboxIsMotion
-    ? domRefs.motionPlayerShell
-    : (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
-  if (!photoVisual) photoVisual = imgWrap;
-  let meta = infoWrap.querySelector('#lightbox-meta') as HTMLElement | null;
+  if (!content || !btn || !desc || btn.classList.contains('no-desc')) return;
 
   let opening = !content.classList.contains('desc-open');
 
-  if (flipTimer) {
-    clearTimeout(flipTimer);
-    flipTimer = null;
-  }
-
-  // 1. FIRST: read where everything visibly is right now. This must happen before any transition
-  // is switched off, because switching it off snaps an in-flight transition to its end value and
-  // the measurement would then start from the wrong place.
-  let startPhotoTop = photoVisual.getBoundingClientRect().top;
-  let startInfoTop = infoWrap.getBoundingClientRect().top;
-  let startMetaOffset = meta ? meta.getBoundingClientRect().top - startInfoTop : 0;
-
-  descFlipActive = true;
-  photoVisual.style.transition = 'none';
-  infoWrap.style.transition = 'none';
-  desc.style.transition = 'none';
-  desc.style.maxHeight = '';
-  desc.style.overflow = '';
-  desc.style.clipPath = '';
-  if (meta) {
-    meta.style.transition = 'none';
-    meta.style.transform = '';
-  }
-
-  // How much taller the description gets for this specific text and photo.
-  let prevDescMaxH = desc.style.maxHeight;
-  desc.style.maxHeight = '3.5em';
-  let collapsedDescH = desc.offsetHeight;
-  desc.style.maxHeight = 'none';
-  let expandedDescH = desc.offsetHeight;
-  desc.style.maxHeight = prevDescMaxH;
-
-  let diff = Math.max(0, expandedDescH - collapsedDescH);
-  let shift = Math.round(diff / 2);
-  let baseOffset = getMobileInfoBaseOffset();
-
-  // 2. LAST: commit the final layout in one step.
   content.classList.toggle('desc-open', opening);
   btn.textContent = opening ? 'read less' : 'read more';
   btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
-  updateLightboxDescPreview();
-
-  // Keep overflow visible while closing so the extra lines tuck away with clip-path,
-  // and trigger the mask gradient animation.
   desc.classList.toggle('desc-expanded', opening);
-  if (!opening) {
-    desc.style.overflow = 'visible';
-  }
 
-  if (opening) hideFilmstripIfReady();
-  else showFilmstripIfReady();
-
-  let targetShift = opening ? shift : 0;
-  let targetPhotoTransform = targetShift > 0 ? `translateY(calc(-4dvh - ${targetShift}px))` : '';
-  let targetInfoTransform = targetShift > 0 ? `translateY(calc(${baseOffset}px - ${targetShift}px))` : `translateY(${baseOffset}px)`;
-
-  photoVisual.style.transform = targetPhotoTransform;
-  infoWrap.style.transform = targetInfoTransform;
-
-  let endPhotoTop = photoVisual.getBoundingClientRect().top;
-  let endInfoTop = infoWrap.getBoundingClientRect().top;
-  let endMetaOffset = meta ? meta.getBoundingClientRect().top - endInfoTop : 0;
-
-  // 3. INVERT: put every piece back where it visibly was.
-  let dPhoto = startPhotoTop - endPhotoTop;
-  let dInfo = startInfoTop - endInfoTop;
-  let dMeta = startMetaOffset - endMetaOffset;
-
-  photoVisual.style.transform = targetPhotoTransform
-    ? `${targetPhotoTransform} translateY(${dPhoto}px)`
-    : `translateY(${dPhoto}px)`;
-  infoWrap.style.transform = `${targetInfoTransform} translateY(${dInfo}px)`;
-  if (meta) meta.style.transform = `translateY(${dMeta}px)`;
-
-  // Hidden slice of the description: opening hides the new lines below the old end of the text,
-  // closing keeps the old lines visible past the new, shorter box.
-  let hiddenPx = Math.max(0, Math.round(diff));
-  desc.style.clipPath = opening
-    ? `inset(0px 0px ${hiddenPx}px 0px)`
-    : `inset(0px 0px ${-hiddenPx}px 0px)`;
-
-  // Commit the inverted state before switching transitions on.
-  void infoWrap.offsetHeight;
-
-  // 4. PLAY: everything eases to rest together.
-  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
-  const dur = '0.38s';
-
-  photoVisual.style.transition = `transform ${dur} ${ease}`;
-  photoVisual.style.transform = targetPhotoTransform;
-
-  infoWrap.style.transition = `transform ${dur} ${ease}`;
-  infoWrap.style.transform = targetInfoTransform;
-
-  if (meta) {
-    meta.style.transition = `transform ${dur} ${ease}, color 0.4s ease`;
-    meta.style.transform = 'translateY(0px)';
-  }
-
-  desc.style.transition = `clip-path ${dur} ${ease}, color 0.4s ease, opacity 0.38s ease, filter 0.38s ease`;
-  desc.style.clipPath = 'inset(0px 0px 0px 0px)';
-
-  flipTimer = setTimeout(function () {
-    photoVisual.style.transition = '';
-    infoWrap.style.transition = '';
-    if (meta) {
-      meta.style.transition = '';
-      meta.style.transform = '';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    desc.style.transition = 'none';
+    desc.style.maxHeight = opening ? `${desc.scrollHeight}px` : '';
+  } else {
+    desc.style.transition = 'max-height 0.3s ease';
+    if (opening) {
+      desc.style.maxHeight = `${desc.scrollHeight}px`;
+    } else {
+      desc.style.maxHeight = '';
     }
-    desc.style.transition = '';
-    desc.style.clipPath = '';
-    desc.style.overflow = '';
-    desc.style.maxHeight = '';
-    desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
-    descFlipActive = false;
-    flipTimer = null;
-  }, 420);
+  }
+
+  if (opening) {
+    hideFilmstripIfReady();
+  } else {
+    showFilmstripIfReady();
+  }
 }
 
 export function resetDescToggle() {
@@ -626,9 +474,20 @@ export function resetDescToggle() {
     desc.style.maxHeight = '';
     desc.style.clipPath = '';
     desc.style.transition = '';
+    desc.classList.remove('desc-expanded');
   }
 }
 
 window.addEventListener('resize', function () {
-  if (state.isMobile && domRefs.lightbox?.classList.contains('open')) updateMobileImgWrapHeight();
+  if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+    updateLightboxDescPreview();
+    updateMobileImgWrapHeight();
+  }
+}, { passive: true });
+
+window.addEventListener('orientationchange', function () {
+  if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+    updateLightboxDescPreview();
+    updateMobileImgWrapHeight();
+  }
 }, { passive: true });

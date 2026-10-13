@@ -189,11 +189,15 @@ if (state.isMobile) {
         cancelDescFlipTransition();
         content.classList.remove('desc-open');
         let btn = domRefs.lightboxDescToggle;
-        if (btn) btn.textContent = 'read more';
+        if (btn) {
+          btn.textContent = 'read more';
+          btn.setAttribute('aria-expanded', 'false');
+        }
         let desc = domRefs.lightboxDesc;
         if (desc) {
           desc.style.maxHeight = '';
           desc.style.transition = '';
+          desc.classList.remove('desc-expanded');
         }
         updateLightboxDescPreview();
         updateMobileImgWrapHeight(true);
@@ -548,8 +552,8 @@ if (state.isMobile) {
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
-      // stricter check to prevent interaction fight between filmstrip and dismiss gesture
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      // stricter check to prevent interaction fight between controls/dock and dismiss gesture
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
 
       if (state.currentLightboxIsMotion) {
         if (e.touches.length >= 2) {
@@ -623,7 +627,7 @@ if (state.isMobile) {
     }, { passive: false });
 
     lbEl.addEventListener('touchmove', function (e) {
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
       if (state.currentLightboxIsMotion && e.touches.length >= 2) {
         e.preventDefault();
         return;
@@ -733,7 +737,7 @@ if (state.isMobile) {
     }, { passive: false });
 
     lbEl.addEventListener('touchend', function (e) {
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
       if (e.touches.length < 2) {
         if (isPinching && e.touches.length === 1 && state.lbZoomLevel > 1) {
           dStartX = e.touches[0].clientX;
