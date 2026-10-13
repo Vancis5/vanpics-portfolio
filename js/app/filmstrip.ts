@@ -100,7 +100,6 @@ export function buildFilmstrip() {
           return;
         }
         let d = idx === state.cur ? 0 : (idx > state.cur ? 1 : -1);
-        state.cur = idx;
         openLightbox(idx, d, state.currentLightboxIsMotion);
       };
     })(i));

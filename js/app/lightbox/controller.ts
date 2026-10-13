@@ -96,6 +96,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     state.pushNextState = true;
   }
 
+  let oldCur = state.cur;
   state.cur = i;
   state.isManuallyNavigating = true;
   state.currentLightboxIsMotion = !!isMotion;
@@ -112,35 +113,25 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
   else lb.classList.remove('mode-motion');
   if (isMotion) clearLightboxPhotoPlaceholder();
 
-  // Mobile: already open — natively smooth scroll
-  if (lb.classList.contains('open') && state.isMobile && !isMotion) {
-    let dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
-    if (mobileScrollHandler) {
-      mobileScrollHandler(i, true, dir);
-    } else {
-      window.dispatchEvent(new CustomEvent('lightbox-scroll-to', {
-        detail: { index: i, smooth: true, direction: dir }
-      }));
-    }
-
-    state.cur = i;
-    if (p) {
-      setLightboxBlur(p.thumb || p.src);
-      setLightboxContent(p);
-    }
-    updateFilmstrip();
-    return;
-  }
-
   if (lb.classList.contains('open')) {
-    let dir = (typeof direction === 'number' && direction !== 0) ? direction : 1;
+    let dir = (typeof direction === 'number' && direction !== 0) ? direction : (i > oldCur ? 1 : -1);
     let exitX = dir > 0 ? '-6%' : '6%';
     let enterX = dir > 0 ? '6%' : '-6%';
     let gen = ++navGen;
 
-    img.style.transition = 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)';
-    img.style.opacity = '0';
-    img.style.transform = 'translateX(' + exitX + ') scale(0.992)';
+    let oldSlideInner: HTMLElement | null = null;
+    if (state.isMobile && !isMotion && imgWrap) {
+      oldSlideInner = imgWrap.querySelector(`.snap-slide[data-idx="${oldCur}"] .snap-slide-inner`) as HTMLElement | null;
+      if (oldSlideInner) {
+        oldSlideInner.style.transition = 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)';
+        oldSlideInner.style.opacity = '0';
+        oldSlideInner.style.transform = `translateY(-4dvh) translateX(${exitX}) scale(0.992)`;
+      }
+    } else {
+      img.style.transition = 'opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1)';
+      img.style.opacity = '0';
+      img.style.transform = 'translateX(' + exitX + ') scale(0.992)';
+    }
     playerShell.style.transition = 'opacity 0.16s ease';
     playerShell.style.opacity = '0';
 
@@ -157,6 +148,47 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     function doEnter() {
       if (entered || gen !== navGen) return;
       entered = true;
+
+      if (state.isMobile && !isMotion) {
+        if (oldSlideInner) {
+          oldSlideInner.style.transition = '';
+          oldSlideInner.style.opacity = '';
+          oldSlideInner.style.transform = '';
+        }
+        if (mobileScrollHandler) {
+          mobileScrollHandler(i, false, dir);
+        }
+        let bSrc = p.thumb || p.src || '';
+        setLightboxBlur(bSrc);
+        setLightboxContent(p, { deferDynamicTextColor: true });
+        updateFilmstrip();
+
+        let newSlideInner = imgWrap ? (imgWrap.querySelector(`.snap-slide[data-idx="${i}"] .snap-slide-inner`) as HTMLElement | null) : null;
+        if (newSlideInner) {
+          newSlideInner.style.transition = 'none';
+          newSlideInner.style.transform = `translateY(-4dvh) translateX(${enterX}) scale(0.992)`;
+          newSlideInner.style.opacity = '0';
+          void newSlideInner.offsetHeight;
+        }
+
+        requestAnimationFrame(function () {
+          if (gen !== navGen) return;
+          animateInfo(dir);
+          if (newSlideInner) {
+            newSlideInner.style.transition = 'opacity 0.22s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+            newSlideInner.style.opacity = '1';
+            newSlideInner.style.transform = 'translateY(-4dvh) translateX(0) scale(1)';
+            setTimeout(function () {
+              if (gen === navGen && newSlideInner) {
+                newSlideInner.style.transition = '';
+                newSlideInner.style.transform = '';
+                newSlideInner.style.opacity = '';
+              }
+            }, 300);
+          }
+        });
+        return;
+      }
 
       img.onload = null; img.onerror = null;
       img.style.transition = 'none';
@@ -183,8 +215,10 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
-          playerShell.style.transition = 'opacity 0.3s ease';
-          playerShell.style.opacity = '1';
+          requestAnimationFrame(function () {
+            playerShell.style.transition = 'opacity 0.35s ease';
+            playerShell.style.opacity = '1';
+          });
           imgWrap.style.transition = 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
           imgWrap.style.opacity = '1';
           imgWrap.style.transform = 'translateX(0) scale(1)';
@@ -297,8 +331,10 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
         if (isMotion) {
           renderVideoInLightbox(p as Video);
-          playerShell.style.transition = 'opacity 0.35s ease';
-          playerShell.style.opacity = '1';
+          requestAnimationFrame(function () {
+            playerShell.style.transition = 'opacity 0.35s ease';
+            playerShell.style.opacity = '1';
+          });
           imgWrap.style.transition = 'opacity 0.35s ease';
           imgWrap.style.opacity = '1';
         } else {
@@ -356,7 +392,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
         el.removeEventListener('blur', removePFR);
       });
     }
-    el.focus();
+    el.focus({ preventScroll: true });
   }
   previouslyFocusedElement = null;
   document.body.classList.remove('lightbox-open');
@@ -477,7 +513,19 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
       content.style.opacity = '';
     }
     let lb = domRefs.lightbox;
-    if (lb) lb.classList.remove('zoom-active');
+    if (lb) {
+      lb.style.transition = '';
+      lb.style.backgroundColor = '';
+      lb.classList.remove('zoom-active');
+    }
+    if (domRefs.lightboxBg) {
+      domRefs.lightboxBg.style.transition = '';
+      domRefs.lightboxBg.style.opacity = '';
+    }
+    if (domRefs.blurCanvas) {
+      domRefs.blurCanvas.style.transition = '';
+      domRefs.blurCanvas.style.opacity = '';
+    }
 
     if (state.isMobile) {
       let mWrap = domRefs.lightboxImgWrap;

@@ -44,8 +44,11 @@ export function setCarouselReadyCallback(callback: (() => void) | null) {
 
 function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
 function getCurrentSpeed(frame: number) {
-  if (frame >= EASE_FRAMES) return CRUISE_SPEED;
-  let t = frame / EASE_FRAMES;
+  const HOLD_FRAMES = 24; // Hold peak boost as loader curtain lifts so it's visibly seen
+  if (frame < HOLD_FRAMES) return CRUISE_SPEED * START_SPEED_MULT;
+  let effectiveFrame = frame - HOLD_FRAMES;
+  if (effectiveFrame >= EASE_FRAMES) return CRUISE_SPEED;
+  let t = effectiveFrame / EASE_FRAMES;
   return CRUISE_SPEED * START_SPEED_MULT + (CRUISE_SPEED - CRUISE_SPEED * START_SPEED_MULT) * easeOutCubic(t);
 }
 
@@ -429,6 +432,11 @@ function onTouchMove(e: TouchEvent) {
       while (rawOffset > 0) { rawOffset -= setWidth; dragWrapAdjust -= setWidth; }
     }
     rowState[ri].offset = rawOffset;
+    let px = [state.heroScrollY * 0.18, -state.heroScrollY * 0.12, state.heroScrollY * 0.22];
+    let rows = domRefs.heroRows;
+    if (ri < rows.length) {
+      rows[ri].style.transform = 'translate3d(' + (rawOffset + px[ri]) + 'px, 0, 0)';
+    }
 
     let now = performance.now();
     dragHistory.push({ x: clientX, time: now });
@@ -542,6 +550,10 @@ domRefs.heroRows.forEach(function (row, ri) {
   }, { passive: true });
 });
 
+export function resumeHeroCarousel() {
+  isHeroPaused = false;
+}
+
 if (domRefs.hero) {
   domRefs.hero.addEventListener('focusin', () => { isHeroPaused = true; });
   domRefs.hero.addEventListener('focusout', (e: FocusEvent) => {
@@ -550,6 +562,9 @@ if (domRefs.hero) {
     }
   });
 }
+window.addEventListener('lightbox-close', () => {
+  isHeroPaused = false;
+});
 
 if (typeof window !== 'undefined' && window.matchMedia) {
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');

@@ -252,7 +252,9 @@ export function renderVideoInLightbox(p: Video) {
   shell.style.filter = 'blur(0px)';
   
   shell.innerHTML = getVideoPlayerMarkup(p);
-  shell.style.opacity = '1';
+  if (shell.style.opacity !== '0') {
+    shell.style.opacity = '1';
+  }
   shell.style.display = 'block'; // Ensure it's not hidden
   updateMobileImgWrapHeight();
 

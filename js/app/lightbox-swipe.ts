@@ -58,10 +58,14 @@ if (state.isMobile) {
     let slidesBuilt = false;
     let snapTimer: any = null;
     function clearSlides() {
+      state.isManuallyNavigating = true;
       let slides = imgWrap.querySelectorAll('.snap-slide');
       slides.forEach(function (slide) { slide.remove(); });
       slidesBuilt = false;
       imgWrap.scrollLeft = 0;
+      setTimeout(function () {
+        state.isManuallyNavigating = false;
+      }, 50);
     }
 
     // ── Build slides ──
@@ -79,7 +83,7 @@ if (state.isMobile) {
         slide.dataset.idx = String(i);
 
         let inner = document.createElement('div');
-        inner.className = 'snap-slide-inner photo-loading';
+        inner.className = 'snap-slide-inner photo-loading photo-placeholder-visible';
         let ratio = getPhotoAspectRatio(p);
         inner.style.setProperty('--lightbox-photo-ratio', String(ratio));
 
@@ -141,6 +145,9 @@ if (state.isMobile) {
       let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (idx * w);
       clearTimeout(snapTimer);
       state.isManuallyNavigating = true;
+      if (smooth) {
+        imgWrap.style.scrollSnapType = 'none';
+      }
       if (slide) {
         imgWrap.scrollTo({
           left: targetLeft,
@@ -149,10 +156,12 @@ if (state.isMobile) {
       } else {
         imgWrap.scrollLeft = targetLeft;
       }
-      let dist = Math.abs(idx - state.cur);
-      let settleDelay = smooth ? Math.min(450, Math.max(180, dist * 60)) : 30;
+      let currentIdx = Math.round(imgWrap.scrollLeft / (w || 1));
+      let dist = Math.abs(idx - currentIdx);
+      let settleDelay = smooth ? Math.min(600, Math.max(300, dist * 70)) : 30;
       updateLoading(idx);
       snapTimer = setTimeout(function () {
+        imgWrap.style.scrollSnapType = '';
         if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
           imgWrap.scrollLeft = targetLeft;
         }
@@ -278,7 +287,7 @@ if (state.isMobile) {
           let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
           if (inner) {
             inner.classList.remove('photo-loaded');
-            inner.classList.add('photo-loading');
+            inner.classList.add('photo-loading', 'photo-placeholder-visible');
           }
         }
       }
@@ -367,6 +376,7 @@ if (state.isMobile) {
 
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
     imgWrap.addEventListener('scrollend', function () {
+      if (!lbEl.classList.contains('open')) return;
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
       clearTimeout(snapTimer);
@@ -374,6 +384,7 @@ if (state.isMobile) {
     });
 
     imgWrap.addEventListener('scroll', function () {
+      if (!lbEl.classList.contains('open')) return;
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (state.isManuallyNavigating) return;
       clearTimeout(snapTimer);
@@ -511,7 +522,7 @@ if (state.isMobile) {
     });
 
     window.addEventListener('lightbox-close', function () {
-      clearSlides();
+      setTimeout(clearSlides, 400);
     });
 
     window.addEventListener('lightbox-preload-neighbors', function () {
@@ -679,6 +690,11 @@ if (state.isMobile) {
         content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
         content.style.opacity = String(Math.max(0.15, 1 - dy / 400));
 
+        let bgOpac = Math.max(0, 1 - dy / 400);
+        if (domRefs.lightboxBg) domRefs.lightboxBg.style.opacity = String(bgOpac);
+        if (domRefs.blurCanvas) domRefs.blurCanvas.style.opacity = String(bgOpac);
+        lbEl.style.backgroundColor = `rgba(13, 12, 12, ${bgOpac})`;
+
         let isFF = document.documentElement.classList.contains('is-firefox');
         let swipeProgress = Math.min(1, Math.max(0, dy / 300));
         let blurVal = isFF ? 0 : Math.pow(swipeProgress, 2.4) * 18;
@@ -757,6 +773,17 @@ if (state.isMobile) {
         content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
         content.style.opacity = '0';
 
+        if (domRefs.lightboxBg) {
+          domRefs.lightboxBg.style.transition = 'opacity 0.28s ease-out';
+          domRefs.lightboxBg.style.opacity = '0';
+        }
+        if (domRefs.blurCanvas) {
+          domRefs.blurCanvas.style.transition = 'opacity 0.28s ease-out';
+          domRefs.blurCanvas.style.opacity = '0';
+        }
+        lbEl.style.transition = 'background-color 0.28s ease-out';
+        lbEl.style.backgroundColor = 'rgba(13, 12, 12, 0)';
+
         let isFF = document.documentElement.classList.contains('is-firefox');
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
@@ -793,6 +820,17 @@ if (state.isMobile) {
         content.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
         content.style.transform = '';
         content.style.opacity = '1';
+
+        if (domRefs.lightboxBg) {
+          domRefs.lightboxBg.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+          domRefs.lightboxBg.style.opacity = '1';
+        }
+        if (domRefs.blurCanvas) {
+          domRefs.blurCanvas.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+          domRefs.blurCanvas.style.opacity = '1';
+        }
+        lbEl.style.transition = 'background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+        lbEl.style.backgroundColor = '';
 
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
@@ -841,6 +879,16 @@ if (state.isMobile) {
             fsWrap.style.filter = '';
             fsWrap.style.opacity = '';
           }
+          if (domRefs.lightboxBg) {
+            domRefs.lightboxBg.style.transition = '';
+            domRefs.lightboxBg.style.opacity = '';
+          }
+          if (domRefs.blurCanvas) {
+            domRefs.blurCanvas.style.transition = '';
+            domRefs.blurCanvas.style.opacity = '';
+          }
+          lbEl.style.transition = '';
+          lbEl.style.backgroundColor = '';
         }, 360);
       }
       dLocked = false;

@@ -189,13 +189,25 @@ document.addEventListener('visibilitychange', function () {
   startLoops();
 });
 
-// Pre-warm blur renderer on first card hover so lightbox opens instantly
-document.addEventListener('pointerenter', function (e) {
+// Pre-warm blur renderer on first card touch or hover so lightbox opens instantly with blur
+const prewarmBlur = (e: Event) => {
   const target = e.target as HTMLElement;
   if (target && target.closest && target.closest('.photo-card, .carousel-item')) {
     initBlurRenderer();
   }
-}, { capture: true, once: true });
+};
+document.addEventListener('pointerenter', prewarmBlur, { capture: true, once: true });
+document.addEventListener('touchstart', prewarmBlur, { capture: true, once: true, passive: true });
+
+// Prevent pinch and gesture zoom anywhere on mobile (Safari iOS + mobile browsers)
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', function (e) {
+  if (e.touches && e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 // JIT proactive layer promotion for hero carousel hover scale
 if (domRefs.hero) {
