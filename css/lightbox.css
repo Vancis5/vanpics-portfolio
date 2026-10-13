@@ -565,29 +565,8 @@
   display: contents;
 }
 
-@media (hover: none) and (max-width: 767px) {
-  #lightbox-info-wrap {
-    position: absolute;
-    bottom: var(--filmstrip-clearance);
-    left: 0;
-    right: 0;
-    width: 100%;
-    margin: 0;
-    padding: 3rem 1.25rem 0.25rem;
-    box-sizing: border-box;
-    pointer-events: none;
-    z-index: 20;
-    background: linear-gradient(to top, #0d0c0c 72%, rgba(13, 12, 12, 0));
-    transform: none !important;
-    height: auto;
-    min-height: 0;
-  }
-
-  #lightbox-content.desc-open #lightbox-info-wrap {
-    height: auto;
-    min-height: 0;
-  }
-
+@media (hover: none) and (max-width: 767px),
+(hover: none) and (max-height: 500px) {
   #lightbox-info {
     width: 100%;
     display: flex;
@@ -647,7 +626,8 @@
 }
 
 /* mobile: title, clamped 3-line description with fade mask, and toggle */
-@media (hover: none) and (max-width: 767px) {
+@media (hover: none) and (max-width: 767px),
+(hover: none) and (max-height: 500px) {
   #lightbox-title-row {
     margin-bottom: 0.5rem;
     padding-right: 0;
@@ -716,7 +696,8 @@
   /* desktop: desc always visible, no toggle needed */
 }
 
-@media (hover: none) and (max-width: 767px) {
+@media (hover: none) and (max-width: 767px),
+(hover: none) and (max-height: 500px) {
   #lightbox-desc-toggle {
     display: inline-flex;
     align-items: center;
@@ -773,7 +754,8 @@
   transition: color 0.4s ease;
 }
 
-@media (hover: none) and (max-width: 767px) {
+@media (hover: none) and (max-width: 767px),
+(hover: none) and (max-height: 500px) {
   #lightbox-bottom-row {
     display: flex;
     justify-content: space-between;
@@ -815,8 +797,9 @@
   opacity: 0.6;
 }
 
-@media (min-width: 640px) and (orientation: landscape),
-(min-width: 768px) {
+@media (hover: hover) and (min-width: 640px) and (orientation: landscape),
+(hover: hover) and (min-width: 768px),
+(min-width: 1024px) {
   #lightbox-content {
     flex-direction: row;
     align-items: center;
@@ -1220,30 +1203,60 @@ html.custom-cursor-enabled #lightbox-close::before {
   }
 }
 
-@media (hover: none) and (max-width: 767px) {
+@media (hover: none) and (max-width: 767px),
+(hover: none) and (max-height: 500px) {
   #lightbox-content {
     position: relative;
     height: var(--app-height);
     overflow: hidden;
+    transform: none !important;
+  }
+
+  #lightbox.filmstrip-visible #lightbox-content {
+    transform: none !important;
   }
 
   #lightbox #lightbox-info-wrap,
   #lightbox:not(.mode-motion) #lightbox-info-wrap,
   #lightbox-info-wrap {
-    position: absolute !important;
-    bottom: var(--filmstrip-clearance) !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 3rem 1.25rem 0.25rem !important;
-    box-sizing: border-box !important;
+    position: absolute;
+    bottom: var(--lightbox-filmstrip-top-offset, var(--filmstrip-clearance));
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0.5rem 1.25rem 0.25rem;
+    box-sizing: border-box;
     pointer-events: none;
-    z-index: 20 !important;
-    background: linear-gradient(to top, #0d0c0c 72%, rgba(13, 12, 12, 0)) !important;
+    z-index: 20;
+    background: none;
     transform: none !important;
-    height: auto !important;
-    min-height: 0 !important;
+    height: auto;
+    min-height: 0;
+    isolation: isolate;
+  }
+
+  #lightbox-info-wrap::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: -3rem;
+    background: linear-gradient(to top, #0d0c0c 72%, rgba(13, 12, 12, 0));
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+  }
+
+  #lightbox-content.desc-open #lightbox-info-wrap::before {
+    opacity: 1;
+  }
+
+  #lightbox-content.desc-open #lightbox-info-wrap {
+    height: auto;
+    min-height: 0;
   }
 
   #lightbox-img-wrap {
@@ -1251,7 +1264,7 @@ html.custom-cursor-enabled #lightbox-close::before {
     top: calc(var(--safe-top) + 0.75rem);
     left: 0;
     right: 0;
-    bottom: calc(var(--filmstrip-clearance) + var(--lightbox-dock-collapsed-height, 160px));
+    bottom: calc(var(--lightbox-filmstrip-top-offset, var(--filmstrip-clearance)) + var(--lightbox-dock-collapsed-height, 160px));
     height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1277,6 +1290,12 @@ html.custom-cursor-enabled #lightbox-close::before {
     width: auto;
     max-width: calc(100% - 2rem);
     transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lightbox-info-wrap::before {
+    transition: none;
   }
 }
 

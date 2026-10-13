@@ -407,10 +407,34 @@ export function animateInfo(dir: number) {
   refreshLightboxInfoRefs();
 }
 
+let cachedFilmstripTopOffset = 0;
+
+export function measureFilmstripTopOffset(): number {
+  const wrap = domRefs.filmstripWrap;
+  const strip = domRefs.filmstrip;
+  if (!wrap) return cachedFilmstripTopOffset;
+
+  const wrapH = wrap.offsetHeight;
+  if (wrapH > 0) {
+    const padTop = strip ? strip.offsetTop : (parseFloat(window.getComputedStyle(wrap).paddingTop) || 0);
+    const thumbTopFromBottom = wrapH - padTop;
+    const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+    const breathingRoom = rootFontSize * 0.5;
+    const offset = Math.round(thumbTopFromBottom + breathingRoom);
+    if (offset > 0) {
+      cachedFilmstripTopOffset = offset;
+      return offset;
+    }
+  }
+
+  return cachedFilmstripTopOffset;
+}
+
 export function updateMobileImgWrapHeight(_force?: boolean) {
   if (!state.isMobile) {
     domRefs.lightboxImgWrap?.style.removeProperty('height');
     domRefs.lightboxContent?.style.removeProperty('--lightbox-dock-collapsed-height');
+    domRefs.lightboxContent?.style.removeProperty('--lightbox-filmstrip-top-offset');
     domRefs.lightboxInfoWrap?.style.removeProperty('transform');
     return;
   }
@@ -418,6 +442,11 @@ export function updateMobileImgWrapHeight(_force?: boolean) {
   const collapsedH = measureCollapsedDockHeight();
   if (collapsedH > 0 && domRefs.lightboxContent) {
     domRefs.lightboxContent.style.setProperty('--lightbox-dock-collapsed-height', `${collapsedH}px`);
+  }
+
+  const filmstripOffset = measureFilmstripTopOffset();
+  if (filmstripOffset > 0 && domRefs.lightboxContent) {
+    domRefs.lightboxContent.style.setProperty('--lightbox-filmstrip-top-offset', `${filmstripOffset}px`);
   }
 }
 
@@ -491,3 +520,12 @@ window.addEventListener('orientationchange', function () {
     updateMobileImgWrapHeight();
   }
 }, { passive: true });
+
+if (typeof window !== 'undefined' && window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function () {
+    if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+      updateLightboxDescPreview();
+      updateMobileImgWrapHeight();
+    }
+  }, { passive: true });
+}
