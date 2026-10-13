@@ -153,6 +153,9 @@ export function setLightboxBlur(src: string) {
 }
 
 let flipTimer: any = null;
+// True from the moment a read more / read less flip starts until it is cleaned up. While set,
+// updateMobileImgWrapHeight() must not rewrite the transforms the flip is animating.
+let descFlipActive = false;
 
 export function getMobileInfoBaseOffset(): number {
   const imgWrap = domRefs.lightboxImgWrap;
@@ -206,6 +209,7 @@ export function cancelDescFlipTransition() {
     clearTimeout(flipTimer);
     flipTimer = null;
   }
+  descFlipActive = false;
   let imgWrap = domRefs.lightboxImgWrap;
   let infoWrap = domRefs.lightboxInfoWrap;
   let photoVisual = state.currentLightboxIsMotion
@@ -217,13 +221,20 @@ export function cancelDescFlipTransition() {
   }
   if (infoWrap) {
     infoWrap.style.transition = '';
-    infoWrap.style.transform = '';
+    let meta = infoWrap.querySelector('#lightbox-meta') as HTMLElement | null;
+    if (meta) {
+      meta.style.transition = '';
+      meta.style.transform = '';
+    }
   }
   let desc = domRefs.lightboxDesc;
   if (desc) {
     desc.style.transition = '';
     desc.style.maxHeight = '';
+    desc.style.overflow = '';
     desc.style.clipPath = '';
+    // The flip may have held the fade mask off; put it back in line with the real open state.
+    desc.classList.toggle('desc-expanded', !!domRefs.lightboxContent?.classList.contains('desc-open'));
   }
 }
 
@@ -429,7 +440,8 @@ export function updateMobileImgWrapHeight(force?: boolean) {
     domRefs.lightboxInfoWrap?.style.removeProperty('transform');
     return;
   }
-  if ((state.isUserTouching || flipTimer !== null) && !force) return;
+  if (state.isUserTouching && !force) return;
+  if (descFlipActive && !force) return;
   const imgWrap = domRefs.lightboxImgWrap;
   const infoWrap = domRefs.lightboxInfoWrap;
   if (!imgWrap || !infoWrap) return;
@@ -451,11 +463,20 @@ export function updateMobileImgWrapHeight(force?: boolean) {
     : `translateY(${baseOffset}px)`;
 }
 
+// Read more / read less.
+//
+// The final layout is committed in one step and the move is played back with transforms only
+// (FLIP), so nothing animates layout: animating max-height on a block inside a vertically centred
+// column re-centres everything by half the growth every frame, which is what made the old version
+// lurch and pivot around a different point each time. Pieces and what animates them:
+//   photo + info wrap: translateY from where they visibly were (even mid-flip) to their rest spot
+//   meta row:          translateY, so it rides the edge of the text being revealed
+//   description:       clip-path, so lines unfurl instead of the box changing size
+// All four share one duration and easing so they stay locked together.
 export function toggleLightboxDesc() {
   let content = domRefs.lightboxContent;
   let btn = domRefs.lightboxDescToggle;
   if (!content || !btn || btn.classList.contains('no-desc')) return;
-  if (flipTimer !== null) return;
 
   let imgWrap = domRefs.lightboxImgWrap;
   let infoWrap = domRefs.lightboxInfoWrap;
@@ -466,39 +487,58 @@ export function toggleLightboxDesc() {
     ? domRefs.motionPlayerShell
     : (imgWrap.querySelector(`.snap-slide[data-idx="${state.cur}"] .snap-slide-inner`) as HTMLElement);
   if (!photoVisual) photoVisual = imgWrap;
+  let meta = infoWrap.querySelector('#lightbox-meta') as HTMLElement | null;
 
   let opening = !content.classList.contains('desc-open');
 
-  // 1. FIRST: measure exact dynamic current positions (including in-flight)
+  if (flipTimer) {
+    clearTimeout(flipTimer);
+    flipTimer = null;
+  }
+
+  // 1. FIRST: read where everything visibly is right now. This must happen before any transition
+  // is switched off, because switching it off snaps an in-flight transition to its end value and
+  // the measurement would then start from the wrong place.
+  let startPhotoTop = photoVisual.getBoundingClientRect().top;
+  let startInfoTop = infoWrap.getBoundingClientRect().top;
+  let startMetaOffset = meta ? meta.getBoundingClientRect().top - startInfoTop : 0;
+
+  descFlipActive = true;
   photoVisual.style.transition = 'none';
   infoWrap.style.transition = 'none';
   desc.style.transition = 'none';
+  desc.style.maxHeight = '';
+  desc.style.overflow = '';
+  desc.style.clipPath = '';
+  if (meta) {
+    meta.style.transition = 'none';
+    meta.style.transform = '';
+  }
 
-  let startPhotoRect = photoVisual.getBoundingClientRect();
-  let startInfoRect = infoWrap.getBoundingClientRect();
-  let startDescH = desc.offsetHeight;
-
-  // Measure dynamic collapsed vs expanded heights
-  let prevMaxH = desc.style.maxHeight;
-  let prevTransition = desc.style.transition;
-  desc.style.transition = 'none';
+  // How much taller the description gets for this specific text and photo.
+  let prevDescMaxH = desc.style.maxHeight;
   desc.style.maxHeight = '3.5em';
   let collapsedDescH = desc.offsetHeight;
   desc.style.maxHeight = 'none';
   let expandedDescH = desc.offsetHeight;
-  desc.style.maxHeight = prevMaxH;
-  desc.style.transition = prevTransition;
+  desc.style.maxHeight = prevDescMaxH;
 
   let diff = Math.max(0, expandedDescH - collapsedDescH);
-  if (diff === 0) return;
   let shift = Math.round(diff / 2);
   let baseOffset = getMobileInfoBaseOffset();
 
-  // 2. LAST: set target layout in DOM
+  // 2. LAST: commit the final layout in one step.
   content.classList.toggle('desc-open', opening);
   btn.textContent = opening ? 'read less' : 'read more';
   btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
   updateLightboxDescPreview();
+
+  // Keep overflow visible while closing so the extra lines tuck away with clip-path,
+  // and trigger the mask gradient animation.
+  desc.classList.toggle('desc-expanded', opening);
+  if (!opening) {
+    desc.style.overflow = 'visible';
+  }
 
   if (opening) hideFilmstripIfReady();
   else showFilmstripIfReady();
@@ -506,60 +546,68 @@ export function toggleLightboxDesc() {
   let targetShift = opening ? shift : 0;
   let targetPhotoTransform = targetShift > 0 ? `translateY(calc(-4dvh - ${targetShift}px))` : '';
   let targetInfoTransform = targetShift > 0 ? `translateY(calc(${baseOffset}px - ${targetShift}px))` : `translateY(${baseOffset}px)`;
-  let targetDescH = opening ? expandedDescH : collapsedDescH;
 
   photoVisual.style.transform = targetPhotoTransform;
   infoWrap.style.transform = targetInfoTransform;
-  desc.style.maxHeight = targetDescH + 'px';
 
-  let endPhotoRect = photoVisual.getBoundingClientRect();
-  let endInfoRect = infoWrap.getBoundingClientRect();
-  let endDescH = desc.offsetHeight;
+  let endPhotoTop = photoVisual.getBoundingClientRect().top;
+  let endInfoTop = infoWrap.getBoundingClientRect().top;
+  let endMetaOffset = meta ? meta.getBoundingClientRect().top - endInfoTop : 0;
 
-  // 3. INVERT: calculate exact delta from dynamic start to end
-  let dPhoto = startPhotoRect.top - endPhotoRect.top;
-  let dInfo = startInfoRect.top - endInfoRect.top;
+  // 3. INVERT: put every piece back where it visibly was.
+  let dPhoto = startPhotoTop - endPhotoTop;
+  let dInfo = startInfoTop - endInfoTop;
+  let dMeta = startMetaOffset - endMetaOffset;
 
-  let invertPhotoTransform = targetPhotoTransform
+  photoVisual.style.transform = targetPhotoTransform
     ? `${targetPhotoTransform} translateY(${dPhoto}px)`
-    : `translateY(calc(-4dvh + ${dPhoto}px))`;
-  let invertInfoTransform = targetInfoTransform
-    ? `${targetInfoTransform} translateY(${dInfo}px)`
-    : `translateY(calc(${baseOffset}px + ${dInfo}px))`;
+    : `translateY(${dPhoto}px)`;
+  infoWrap.style.transform = `${targetInfoTransform} translateY(${dInfo}px)`;
+  if (meta) meta.style.transform = `translateY(${dMeta}px)`;
 
-  photoVisual.style.transform = invertPhotoTransform;
-  infoWrap.style.transform = invertInfoTransform;
-  desc.style.maxHeight = startDescH + 'px';
+  // Hidden slice of the description: opening hides the new lines below the old end of the text,
+  // closing keeps the old lines visible past the new, shorter box.
+  let hiddenPx = Math.max(0, Math.round(diff));
+  desc.style.clipPath = opening
+    ? `inset(0px 0px ${hiddenPx}px 0px)`
+    : `inset(0px 0px ${-hiddenPx}px 0px)`;
 
-  // Force reflow
+  // Commit the inverted state before switching transitions on.
   void infoWrap.offsetHeight;
 
-  // 4. PLAY: animate smoothly to target positions
-  requestAnimationFrame(function () {
-    const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
-    const dur = '0.38s';
+  // 4. PLAY: everything eases to rest together.
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const dur = '0.38s';
 
-    photoVisual.style.transition = `transform ${dur} ${ease}`;
-    photoVisual.style.transform = targetPhotoTransform;
+  photoVisual.style.transition = `transform ${dur} ${ease}`;
+  photoVisual.style.transform = targetPhotoTransform;
 
-    infoWrap.style.transition = `transform ${dur} ${ease}`;
-    infoWrap.style.transform = targetInfoTransform;
+  infoWrap.style.transition = `transform ${dur} ${ease}`;
+  infoWrap.style.transform = targetInfoTransform;
 
-    desc.style.transition = `max-height ${dur} ${ease}, opacity ${dur} ease`;
-    desc.style.maxHeight = endDescH + 'px';
+  if (meta) {
+    meta.style.transition = `transform ${dur} ${ease}, color 0.4s ease`;
+    meta.style.transform = 'translateY(0px)';
+  }
 
-    flipTimer = setTimeout(function () {
-      photoVisual.style.transition = '';
-      infoWrap.style.transition = '';
-      desc.style.transition = '';
-      if (opening) {
-        desc.style.maxHeight = 'none';
-      } else {
-        desc.style.maxHeight = '';
-      }
-      flipTimer = null;
-    }, 400);
-  });
+  desc.style.transition = `clip-path ${dur} ${ease}, color 0.4s ease, opacity 0.38s ease, filter 0.38s ease`;
+  desc.style.clipPath = 'inset(0px 0px 0px 0px)';
+
+  flipTimer = setTimeout(function () {
+    photoVisual.style.transition = '';
+    infoWrap.style.transition = '';
+    if (meta) {
+      meta.style.transition = '';
+      meta.style.transform = '';
+    }
+    desc.style.transition = '';
+    desc.style.clipPath = '';
+    desc.style.overflow = '';
+    desc.style.maxHeight = '';
+    desc.classList.toggle('desc-expanded', content.classList.contains('desc-open'));
+    descFlipActive = false;
+    flipTimer = null;
+  }, 420);
 }
 
 export function resetDescToggle() {
