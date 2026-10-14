@@ -554,6 +554,18 @@ function renderUI(photos: Photo[], videos: Video[]) {
   }
 
   if (!renderedFromCache) {
+    if (newPhotos.length === 0) {
+      try {
+        const [{ photos: fallbackPhotos }, { videos: fallbackVideos }] = await Promise.all([
+          import('../data/photos.js'),
+          import('../data/videos.js')
+        ]);
+        newPhotos = processPhotos(fallbackPhotos || []);
+        newVideos = processVideos(fallbackVideos || []);
+      } catch (fallbackErr) {
+        console.warn('Static fallback data failed to load:', fallbackErr);
+      }
+    }
     // ── First ever visit: fire image warm in parallel, render immediately ──
     if (newPhotos.length > 0) {
       warmStartupImages(newPhotos).catch(function() {});
