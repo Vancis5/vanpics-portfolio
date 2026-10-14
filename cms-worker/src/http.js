@@ -228,24 +228,30 @@ export async function assertAdmin(request, env) {
   }
 
   // 2. Otherwise, check if it's the raw master password (Timing-safe comparison using SHA-256)
-  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const ip =
+    request.headers.get('CF-Connecting-IP') ||
+    request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    null;
   const now = Date.now();
   const lockoutTime = 15 * 60 * 1000; // 15 minutes
 
-  if (env.DB) {
+  if (env.DB && ip) {
     try {
       const record = await env.DB.prepare(
-        'SELECT attempts, last_attempt FROM rate_limits WHERE ip = ?'
-      ).bind(ip).first();
+        `INSERT INTO rate_limits (ip, attempts, last_attempt)
+         VALUES (?, 1, ?)
+         ON CONFLICT(ip) DO UPDATE SET
+           attempts = CASE WHEN (? - last_attempt) > ? THEN 1 ELSE attempts + 1 END,
+           last_attempt = CASE WHEN (? - last_attempt) > ? THEN ? ELSE last_attempt END
+         RETURNING attempts, last_attempt`
+      ).bind(ip, now, now, lockoutTime, now, lockoutTime, now).first();
 
-      if (record) {
-        if (record.attempts >= 5 && (now - record.last_attempt) < lockoutTime) {
-          const remainingSec = Math.ceil((lockoutTime - (now - record.last_attempt)) / 1000);
-          return { ok: false, status: 429, error: `too many login attempts. try again in ${remainingSec} seconds.` };
-        }
+      if (record && record.attempts > 5 && (now - record.last_attempt) < lockoutTime) {
+        const remainingSec = Math.ceil((lockoutTime - (now - record.last_attempt)) / 1000);
+        return { ok: false, status: 429, error: `too many login attempts. try again in ${remainingSec} seconds.` };
       }
     } catch (dbErr) {
-      console.error('Rate limit select error:', dbErr);
+      console.error('Rate limit check error:', dbErr);
     }
   }
 
@@ -265,24 +271,11 @@ export async function assertAdmin(request, env) {
   }
 
   if (mismatch !== 0) {
-    if (env.DB) {
-      try {
-        await env.DB.prepare(
-          `INSERT INTO rate_limits (ip, attempts, last_attempt)
-           VALUES (?, 1, ?)
-           ON CONFLICT(ip) DO UPDATE SET
-             attempts = CASE WHEN (? - last_attempt) > ? THEN 1 ELSE attempts + 1 END,
-             last_attempt = ?`
-        ).bind(ip, now, now, lockoutTime, now).run();
-      } catch (dbErr) {
-        console.error('Rate limit increment error:', dbErr);
-      }
-    }
     return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
   // Success! Clear/reset attempts on successful login
-  if (env.DB) {
+  if (env.DB && ip) {
     try {
       await env.DB.prepare('DELETE FROM rate_limits WHERE ip = ?').bind(ip).run();
     } catch (dbErr) {
