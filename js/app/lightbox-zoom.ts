@@ -13,7 +13,6 @@ const LUCIDE_GRABBING = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org
 let isDraggingZoom = false;
 let lastDragX: number | null = null;
 let lastDragY: number | null = null;
-let lastTapTime = 0;
 let zoomTransitionTimeout: any = null;
 let isSpacePressed = false;
 let dragDistance = 0;
@@ -237,6 +236,8 @@ export function toggleImageZoom(e: any) {
   let img = e.target as HTMLImageElement;
   if (!img.classList.contains('zoomable')) return;
 
+  if (state.isMobile) return;
+
   // Ignore zoom attempts during or right after side navigation (400ms buffer)
   if (Date.now() - getLastSideNavTime() < 400) {
     e.stopPropagation();
@@ -253,33 +254,6 @@ export function toggleImageZoom(e: any) {
   }
   
   e.stopPropagation();
-  
-  if (state.isMobile) {
-    // Double-tap to zoom on mobile
-    const now = Date.now();
-    if (now - lastTapTime < 350) {
-      // Double tap detected
-      if (state.lbZoomLevel > 1) {
-        resetZoom();
-      } else {
-        // Zoom to tap position
-        const rect = img.getBoundingClientRect();
-        const tapX = e.clientX - rect.left;
-        const tapY = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        state.lbZoomLevel = 3; // 3x zoom on double-tap
-        state.lbZoomPanX = (centerX - tapX) * 2;
-        state.lbZoomPanY = (centerY - tapY) * 2;
-        updateZoomTransform(img, true);
-      }
-      lastTapTime = 0;
-    } else {
-      lastTapTime = now;
-    }
-    return;
-  }
   
   // Desktop: click to reset if zoomed, or zoom in if not
   if (state.lbZoomLevel > 1) { 

@@ -2,7 +2,7 @@
 import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight, cancelDescFlipTransition, updateLightboxDescPreview } from './lightbox.js';
-import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
+import { resetZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getPhotoAspectRatio, saveRatioToCache, fadeInWhenReady } from './utils.js';
@@ -94,7 +94,6 @@ if (state.isMobile) {
         let shouldLoad = (Math.abs(i - state.cur) <= 2);
         img.loading = shouldLoad ? 'eager' : 'lazy';
         img.classList.add('zoomable');
-        img.addEventListener('click', toggleImageZoom);
 
         if (shouldLoad) {
           img.src = lightboxSrc(p);
@@ -145,9 +144,7 @@ if (state.isMobile) {
       let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (idx * w);
       clearTimeout(snapTimer);
       state.isManuallyNavigating = true;
-      if (smooth) {
-        imgWrap.style.scrollSnapType = 'none';
-      }
+      imgWrap.style.scrollSnapType = 'none';
       if (slide) {
         imgWrap.scrollTo({
           left: targetLeft,
@@ -158,7 +155,7 @@ if (state.isMobile) {
       }
       let currentIdx = Math.round(imgWrap.scrollLeft / (w || 1));
       let dist = Math.abs(idx - currentIdx);
-      let settleDelay = smooth ? Math.min(600, Math.max(300, dist * 70)) : 30;
+      let settleDelay = smooth ? Math.min(600, Math.max(300, dist * 70)) : 50;
       updateLoading(idx);
       snapTimer = setTimeout(function () {
         imgWrap.style.scrollSnapType = '';
@@ -187,21 +184,8 @@ if (state.isMobile) {
       let content = domRefs.lightboxContent;
       if (content && content.classList.contains('desc-open')) {
         cancelDescFlipTransition();
-        content.classList.remove('desc-open');
-        let btn = domRefs.lightboxDescToggle;
-        if (btn) {
-          btn.textContent = 'read more';
-          btn.setAttribute('aria-expanded', 'false');
-        }
-        let desc = domRefs.lightboxDesc;
-        if (desc) {
-          desc.style.maxHeight = '';
-          desc.style.transition = '';
-          desc.classList.remove('desc-expanded');
-        }
         updateLightboxDescPreview();
         updateMobileImgWrapHeight(true);
-        showFilmstripIfReady();
       }
       state.isUserTouching = true;
     }, { passive: true });
