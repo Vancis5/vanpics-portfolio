@@ -53,9 +53,17 @@ async function processEditImagePipeline(imgSrc: string) {
   `;
   
   const img = new Image();
-  img.src = imgSrc;
-  
-  await new Promise(resolve => img.onload = resolve);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('image decode failed'));
+      img.src = imgSrc;
+    });
+  } catch {
+    setStepState('edit-dimensions', 'failed');
+    showToast('failed to decode replacement image', 'error');
+    return;
+  }
   
   setStepState('edit-dimensions', 'active');
   computedEditAspectRatio = parseFloat((img.width / img.height).toFixed(4));
@@ -72,19 +80,39 @@ async function processEditImagePipeline(imgSrc: string) {
 
   setStepState('edit-compress', 'active');
   processedEditPhotoBlob = await resizeImage(img, 2500, 0.75);
+  if (!processedEditPhotoBlob) {
+    setStepState('edit-compress', 'failed');
+    showToast('photo compression failed (memory limit)', 'error');
+    return;
+  }
   setStepState('edit-compress', 'success');
 
   setStepState('edit-raw', 'active');
   processedEditRawBlob = await resizeImage(img, 4000, 0.95);
+  if (!processedEditRawBlob) {
+    setStepState('edit-raw', 'failed');
+    showToast('raw compression failed (memory limit)', 'error');
+    return;
+  }
   setStepState('edit-raw', 'success');
 
   // Lightbox tier is cut from the original (not from the 2500px q75 blob) to avoid double compression.
   setStepState('edit-lb', 'active');
   processedEditLbBlob = await resizeImage(img, 1600, 0.8);
+  if (!processedEditLbBlob) {
+    setStepState('edit-lb', 'failed');
+    showToast('lightbox compression failed (memory limit)', 'error');
+    return;
+  }
   setStepState('edit-lb', 'success');
 
   setStepState('edit-thumbnail', 'active');
   processedEditThumbBlob = await resizeImage(img, 600, 0.75);
+  if (!processedEditThumbBlob) {
+    setStepState('edit-thumbnail', 'failed');
+    showToast('thumbnail compression failed', 'error');
+    return;
+  }
   setStepState('edit-thumbnail', 'success');
   
   showToast('replacement photo processed successfully', 'success');

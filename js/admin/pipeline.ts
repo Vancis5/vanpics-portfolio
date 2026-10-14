@@ -38,6 +38,8 @@ export function resizeImage(
     }
     
     canvas.toBlob((blob) => {
+      canvas.width = 0;
+      canvas.height = 0;
       resolve(blob);
     }, 'image/webp', quality);
   });

@@ -183,10 +183,24 @@ async function processPosterPipeline(imgSrc: string) {
 
   setStepState('poster-compress', 'active');
   const img = new Image();
-  img.src = imgSrc;
-  await new Promise(resolve => img.onload = resolve);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('poster decode failed'));
+      img.src = imgSrc;
+    });
+  } catch {
+    setStepState('poster-compress', 'failed');
+    showToast('failed to decode poster image', 'error');
+    return;
+  }
   
   processedPosterBlob = await resizeImage(img, 1200, 0.75);
+  if (!processedPosterBlob) {
+    setStepState('poster-compress', 'failed');
+    showToast('poster compression failed', 'error');
+    return;
+  }
   setStepState('poster-compress', 'success');
 
   checkFormState();
@@ -207,9 +221,17 @@ async function processImagePipeline(imgSrc: string) {
   `;
   
   const img = new Image();
-  img.src = imgSrc;
-  
-  await new Promise(resolve => img.onload = resolve);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('image decode failed'));
+      img.src = imgSrc;
+    });
+  } catch {
+    setStepState('dimensions', 'failed');
+    showToast('failed to decode image file', 'error');
+    return;
+  }
   
   setStepState('dimensions', 'active');
   computedAspectRatio = parseFloat((img.width / img.height).toFixed(4));
@@ -221,19 +243,39 @@ async function processImagePipeline(imgSrc: string) {
 
   setStepState('compress', 'active');
   processedPhotoBlob = await resizeImage(img, 2500, 0.75);
+  if (!processedPhotoBlob) {
+    setStepState('compress', 'failed');
+    showToast('photo compression failed (memory limit)', 'error');
+    return;
+  }
   setStepState('compress', 'success');
 
   setStepState('raw', 'active');
   processedRawBlob = await resizeImage(img, 4000, 0.95);
+  if (!processedRawBlob) {
+    setStepState('raw', 'failed');
+    showToast('raw compression failed (memory limit)', 'error');
+    return;
+  }
   setStepState('raw', 'success');
 
   // Lightbox tier is cut from the original (not from the 2500px q75 blob) to avoid double compression.
   setStepState('lb', 'active');
   processedLbBlob = await resizeImage(img, 1600, 0.8);
+  if (!processedLbBlob) {
+    setStepState('lb', 'failed');
+    showToast('lightbox compression failed (memory limit)', 'error');
+    return;
+  }
   setStepState('lb', 'success');
 
   setStepState('thumbnail', 'active');
   processedThumbBlob = await resizeImage(img, 600, 0.75);
+  if (!processedThumbBlob) {
+    setStepState('thumbnail', 'failed');
+    showToast('thumbnail compression failed', 'error');
+    return;
+  }
   setStepState('thumbnail', 'success');
   
   checkFormState();
