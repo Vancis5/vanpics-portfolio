@@ -609,8 +609,12 @@ filmstripWrap.addEventListener('wheel', function (_e) {
   state.filmstripHideTimer = setTimeout(hideFilmstrip, FILMSTRIP_CONFIG.touchHideDelay);
 }, { passive: true, capture: true });
 
+let filmstripDragInitialized = false;
+
 // click-drag scroll
 function initFilmstripDrag() {
+  if (filmstripDragInitialized) return;
+  filmstripDragInitialized = true;
   let isDragging = false;
   let dragStartX = 0;
   let scrollStart = 0;
