@@ -1,6 +1,8 @@
 import { state } from '../js/app/state.js';
 import { domRefs } from '../js/app/dom.js';
 import { tick } from '../js/app/hero-carousel.js';
+import { lightboxSrc } from '../js/app/lightbox-cache.js';
+import { updateDynamicTextColor } from '../js/app/lightbox-color.js';
 
 export const isFirefox = typeof navigator !== 'undefined' && (
   /firefox/i.test(navigator.userAgent) ||
@@ -26,70 +28,15 @@ function applyThumbHandoff() {
   img.src = thumbPath;
 
   // Immediately extract and set the ambient background color for this photo
-  updateAmbientBg(photo);
+  updateDynamicTextColor(photo);
 
   // Swap to high-res once entrance/navigation transition settles
   setTimeout(() => {
     const lb = domRefs.lightbox || document.getElementById('lightbox');
     if (lb?.classList.contains('open') && state.cur === currentIdx) {
-      img.src = photo.src;
+      img.src = lightboxSrc(photo);
     }
   }, 500);
-}
-
-function updateAmbientBg(photo) {
-  if (!photo) return;
-  const lb = domRefs.lightbox || document.getElementById('lightbox');
-  if (!lb) return;
-  const src = photo.thumb || (photo.src ? photo.src.replace('photos/', 'photos/thumbs/') : '');
-  if (!src) return;
-
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 8;
-      canvas.height = 8;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, 8, 8);
-      const data = ctx.getImageData(0, 0, 8, 8).data;
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i + 3] > 180) {
-          r += data[i];
-          g += data[i + 1];
-          b += data[i + 2];
-          count++;
-        }
-      }
-      if (count > 0) {
-        r = Math.round(r / count);
-        g = Math.round(g / count);
-        b = Math.round(b / count);
-        const max = Math.max(r, g, b) / 255;
-        const min = Math.min(r, g, b) / 255;
-        let h = 0, s = 0, l = (max + min) / 2;
-        if (max !== min) {
-          const d = max - min;
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-          const rn = r / 255, gn = g / 255, bn = b / 255;
-          switch (max) {
-            case rn: h = (gn - bn) / d + (gn < bn ? 6 : 0); break;
-            case gn: h = (bn - rn) / d + 2; break;
-            case bn: h = (rn - gn) / d + 4; break;
-          }
-          h = Math.round(h * 60);
-          s = Math.round(s * 100);
-        }
-        const sat = Math.min(Math.max(s, 30), 55);
-        const col = `hsl(${h}, ${sat}%, 14%)`;
-        lb.style.setProperty('--lightbox-ambient-bg', col);
-      }
-    } catch (e) {}
-  };
-  img.src = src;
 }
 
 if (typeof document !== 'undefined' && isFirefox) {
