@@ -199,12 +199,17 @@ const prewarmBlur = (e: Event) => {
 document.addEventListener('pointerenter', prewarmBlur, { capture: true, once: true });
 document.addEventListener('touchstart', prewarmBlur, { capture: true, once: true, passive: true });
 
-// Prevent pinch and gesture zoom anywhere on mobile (Safari iOS + mobile browsers)
-document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
-document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
-document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+// Prevent native browser pinch-zoom only while inside the lightbox so custom lightbox zoom owns gestures
+function preventLightboxNativeZoom(e: Event) {
+  if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
+    e.preventDefault();
+  }
+}
+document.addEventListener('gesturestart', preventLightboxNativeZoom, { passive: false });
+document.addEventListener('gesturechange', preventLightboxNativeZoom, { passive: false });
+document.addEventListener('gestureend', preventLightboxNativeZoom, { passive: false });
 document.addEventListener('touchmove', function (e) {
-  if (e.touches && e.touches.length > 1) {
+  if (e.touches && e.touches.length > 1 && domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
     e.preventDefault();
   }
 }, { passive: false });
