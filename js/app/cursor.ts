@@ -20,11 +20,22 @@ if (isMouseDevice) {
   let fsCurrentOffset = 0;
   let fsCurrentWidth = 28;
 
+  // ⚡ Bolt: Cache filmstrip bounding rect to avoid layout thrashing in rAF loop
+  let cachedFilmstripRect: DOMRect | null = null;
+  window.addEventListener('resize', () => { cachedFilmstripRect = null; }, { passive: true });
+  window.addEventListener('scroll', () => { cachedFilmstripRect = null; }, { passive: true });
+  window.addEventListener('transitionend', (e) => {
+    if (e.target === domRefs.filmstripWrap) cachedFilmstripRect = null;
+  });
+
   function isCursorOverFilmstrip(x = mx, y = my): boolean {
-    if (!domRefs.filmstripWrap || !domRefs.filmstripWrap.classList.contains('visible')) {
+    const wrap = domRefs.filmstripWrap;
+    if (!wrap || !wrap.classList.contains('visible')) {
+      cachedFilmstripRect = null;
       return false;
     }
-    const rect = domRefs.filmstripWrap.getBoundingClientRect();
+    if (!cachedFilmstripRect) cachedFilmstripRect = wrap.getBoundingClientRect();
+    const rect = cachedFilmstripRect;
     return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
   }
 
