@@ -18,10 +18,21 @@ const path = require('path');
 
 const PHOTOS_FILE = path.join(__dirname, '..', 'js', 'data', 'photos.js');
 
+const MONTHS = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+  january: 0, february: 1, march: 2, april: 3, june: 5,
+  july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+};
+
 function getPhotoDate(photo) {
   const dateStr = photo.date ? photo.date.trim().toLowerCase() : '';
   
   if (dateStr) {
+    const matchMDY = dateStr.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+    if (matchMDY && MONTHS[matchMDY[1]] !== undefined) {
+      return new Date(parseInt(matchMDY[3], 10), MONTHS[matchMDY[1]], parseInt(matchMDY[2], 10));
+    }
     // Try full date: "oct 19, 2025"
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) return d;

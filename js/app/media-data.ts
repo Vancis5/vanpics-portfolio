@@ -4,9 +4,20 @@ export let photoLibrary: Photo[] = [];
 
 export let motionProjects: Video[] = [];
 
+const MONTHS: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+  january: 0, february: 1, march: 2, april: 3, june: 5,
+  july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+};
+
 function parseDate(item: Photo | Video) {
   if (!item.date) return new Date(0);
   const dateStr = item.date.trim().toLowerCase();
+  const matchMDY = dateStr.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (matchMDY && MONTHS[matchMDY[1]] !== undefined) {
+    return new Date(parseInt(matchMDY[3], 10), MONTHS[matchMDY[1]], parseInt(matchMDY[2], 10));
+  }
   const parsed = new Date(dateStr);
   if (!isNaN(parsed.getTime())) return parsed;
   
