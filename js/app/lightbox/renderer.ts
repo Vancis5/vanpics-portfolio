@@ -154,41 +154,43 @@ export function setLightboxBlur(src: string) {
 
 let cachedCollapsedDockHeight = 0;
 
-export function measureCollapsedDockHeight(): number {
-  const infoWrap = domRefs.lightboxInfoWrap;
-  if (!infoWrap) return cachedCollapsedDockHeight || 180;
-
-  const desc = domRefs.lightboxDesc;
-  const content = domRefs.lightboxContent;
-  const isDescOpen = content?.classList.contains('desc-open');
-
-  if (desc) {
-    const prevDisplay = desc.style.display;
-    const prevMaxH = desc.style.maxHeight;
-    const prevTransition = desc.style.transition;
-
-    desc.style.display = '';
-    desc.style.transition = 'none';
-    desc.style.maxHeight = '4.35em';
-
-    const h = Math.round(infoWrap.offsetHeight);
-
-    desc.style.display = prevDisplay;
-    desc.style.maxHeight = isDescOpen ? `${desc.scrollHeight}px` : prevMaxH;
-    desc.style.transition = prevTransition;
-
-    if (h > 0) {
-      cachedCollapsedDockHeight = h;
-      return h;
-    }
+export function measureCollapsedDockHeight(force?: boolean): number {
+  if (cachedCollapsedDockHeight > 0 && !force) {
+    return cachedCollapsedDockHeight;
   }
+  if (typeof document === 'undefined') return 165;
 
-  const h = Math.round(infoWrap.offsetHeight);
+  const probe = document.createElement('div');
+  probe.id = 'lightbox';
+  probe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:100vw;visibility:hidden;pointer-events:none;z-index:-9999;';
+  probe.innerHTML = `
+    <div id="lightbox-info-wrap">
+      <div id="lightbox-info">
+        <div id="lightbox-title-row">
+          <h2 id="lightbox-title">Sample Title</h2>
+        </div>
+        <div id="lightbox-desc">
+          Sample description line 1<br>Sample description line 2<br>Sample description line 3
+        </div>
+        <div id="lightbox-bottom-row">
+          <div id="lightbox-meta">
+            <span class="meta-item"><span>Location</span></span>
+          </div>
+          <button id="lightbox-desc-toggle" type="button">read more</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(probe);
+  const wrap = probe.querySelector('#lightbox-info-wrap') as HTMLElement | null;
+  const h = wrap ? Math.round(wrap.getBoundingClientRect().height) : 0;
+  document.body.removeChild(probe);
+
   if (h > 0) {
     cachedCollapsedDockHeight = h;
     return h;
   }
-  return cachedCollapsedDockHeight || 180;
+  return cachedCollapsedDockHeight || 165;
 }
 
 export function cancelDescFlipTransition() {
@@ -409,7 +411,8 @@ export function animateInfo(dir: number) {
 
 let cachedFilmstripTopOffset = 0;
 
-export function measureFilmstripTopOffset(): number {
+export function measureFilmstripTopOffset(force?: boolean): number {
+  if (cachedFilmstripTopOffset > 0 && !force) return cachedFilmstripTopOffset;
   const wrap = domRefs.filmstripWrap;
   const strip = domRefs.filmstrip;
   if (!wrap) return cachedFilmstripTopOffset;
@@ -430,7 +433,7 @@ export function measureFilmstripTopOffset(): number {
   return cachedFilmstripTopOffset;
 }
 
-export function updateMobileImgWrapHeight(_force?: boolean) {
+export function updateMobileImgWrapHeight(force?: boolean) {
   if (!state.isMobile) {
     domRefs.lightboxImgWrap?.style.removeProperty('height');
     domRefs.lightboxContent?.style.removeProperty('--lightbox-dock-collapsed-height');
@@ -439,12 +442,12 @@ export function updateMobileImgWrapHeight(_force?: boolean) {
     return;
   }
 
-  const collapsedH = measureCollapsedDockHeight();
+  const collapsedH = measureCollapsedDockHeight(force);
   if (collapsedH > 0 && domRefs.lightboxContent) {
     domRefs.lightboxContent.style.setProperty('--lightbox-dock-collapsed-height', `${collapsedH}px`);
   }
 
-  const filmstripOffset = measureFilmstripTopOffset();
+  const filmstripOffset = measureFilmstripTopOffset(force);
   if (filmstripOffset > 0 && domRefs.lightboxContent) {
     domRefs.lightboxContent.style.setProperty('--lightbox-filmstrip-top-offset', `${filmstripOffset}px`);
   }
@@ -510,14 +513,14 @@ export function resetDescToggle() {
 window.addEventListener('resize', function () {
   if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
     updateLightboxDescPreview();
-    updateMobileImgWrapHeight();
+    updateMobileImgWrapHeight(true);
   }
 }, { passive: true });
 
 window.addEventListener('orientationchange', function () {
   if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
     updateLightboxDescPreview();
-    updateMobileImgWrapHeight();
+    updateMobileImgWrapHeight(true);
   }
 }, { passive: true });
 
@@ -525,7 +528,23 @@ if (typeof window !== 'undefined' && window.visualViewport) {
   window.visualViewport.addEventListener('resize', function () {
     if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
       updateLightboxDescPreview();
-      updateMobileImgWrapHeight();
+      updateMobileImgWrapHeight(true);
     }
   }, { passive: true });
 }
+
+if (typeof document !== 'undefined' && 'fonts' in document) {
+  document.fonts.ready.then(() => {
+    if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+      updateLightboxDescPreview();
+      updateMobileImgWrapHeight(true);
+    }
+  });
+  document.fonts.addEventListener?.('loadingdone', () => {
+    if (state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+      updateLightboxDescPreview();
+      updateMobileImgWrapHeight(true);
+    }
+  });
+}
+

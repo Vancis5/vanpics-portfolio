@@ -1,0 +1,22 @@
+# Bundled vendor files
+public/vendor/**
+
+# Lockfiles
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Media & binary assets
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.svg
+**/*.ico
+**/*.gif
+**/*.avif
+
+# Test suites & fixtures (remove if needed in prompt context)
+tests/**
+playwright.config.js
+cms-worker/db/seed.dev.sql

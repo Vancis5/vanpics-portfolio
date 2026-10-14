@@ -11,16 +11,23 @@ import path from 'node:path';
 // across 1:1, 4:5, and 16:9 ratios, plus a bright white photo for visual scrim inspection.
 const LONG_DESC = "someone crashed their truck onto a wall. lots of people die and crash in this road daily, which is ironic because the highway itself is beautiful <br> <br> taken by <a href='https://www.facebook.com/share/p/1aePoJX4dk/' target='_blank' rel='noopener noreferrer'>JohnB</a>";
 
-const SVG_DARK = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23222"%3E%3Crect width="300" height="200"/%3E%3C/svg%3E';
-const SVG_BRIGHT = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="%23ffffff"%3E%3Crect width="300" height="200"/%3E%3C/svg%3E';
+const makeSvg = (w, h, fill = '%23222') =>
+  `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" fill="${fill}"%3E%3Crect width="${w}" height="${h}"/%3E%3C/svg%3E`;
+
+const SVG_1_1 = makeSvg(300, 300);
+const SVG_4_5 = makeSvg(240, 300);
+const SVG_3_2 = makeSvg(300, 200);
+const SVG_16_9 = makeSvg(320, 180);
+const SVG_9_16 = makeSvg(180, 320);
+const SVG_BRIGHT = makeSvg(300, 200, '%23ffffff');
 
 const mockPhotos = [
   // 1:1 Aspect Ratio
   {
     id: 1,
     title: 'photo 1-1 long',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_1_1,
+    thumb: SVG_1_1,
     aspect_ratio: 1.0,
     category: '',
     location: 'tokyo, japan',
@@ -31,8 +38,8 @@ const mockPhotos = [
   {
     id: 2,
     title: 'photo 1-1 two-liner',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_1_1,
+    thumb: SVG_1_1,
     aspect_ratio: 1.0,
     category: '',
     location: 'osaka, japan',
@@ -43,8 +50,8 @@ const mockPhotos = [
   {
     id: 3,
     title: 'photo 1-1 one-liner',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_1_1,
+    thumb: SVG_1_1,
     aspect_ratio: 1.0,
     category: '',
     location: 'kyoto, japan',
@@ -55,8 +62,8 @@ const mockPhotos = [
   {
     id: 4,
     title: 'photo 1-1 no-desc',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_1_1,
+    thumb: SVG_1_1,
     aspect_ratio: 1.0,
     category: '',
     location: 'nara, japan',
@@ -69,8 +76,8 @@ const mockPhotos = [
   {
     id: 5,
     title: 'photo 4-5 long',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_4_5,
+    thumb: SVG_4_5,
     aspect_ratio: 0.8,
     category: '',
     location: 'cebu, philippines',
@@ -81,8 +88,8 @@ const mockPhotos = [
   {
     id: 6,
     title: 'photo 4-5 two-liner',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_4_5,
+    thumb: SVG_4_5,
     aspect_ratio: 0.8,
     category: '',
     location: 'manila, philippines',
@@ -93,8 +100,8 @@ const mockPhotos = [
   {
     id: 7,
     title: 'photo 4-5 one-liner',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_4_5,
+    thumb: SVG_4_5,
     aspect_ratio: 0.8,
     category: '',
     location: 'bohol, philippines',
@@ -105,8 +112,8 @@ const mockPhotos = [
   {
     id: 8,
     title: 'photo 4-5 no-desc',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_4_5,
+    thumb: SVG_4_5,
     aspect_ratio: 0.8,
     category: '',
     location: 'siargao, philippines',
@@ -119,8 +126,8 @@ const mockPhotos = [
   {
     id: 9,
     title: 'photo 16-9 long',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_16_9,
+    thumb: SVG_16_9,
     aspect_ratio: 1.7777777777777777,
     category: '',
     location: 'seoul, korea',
@@ -131,8 +138,8 @@ const mockPhotos = [
   {
     id: 10,
     title: 'photo 16-9 two-liner',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_16_9,
+    thumb: SVG_16_9,
     aspect_ratio: 1.7777777777777777,
     category: '',
     location: 'busan, korea',
@@ -143,8 +150,8 @@ const mockPhotos = [
   {
     id: 11,
     title: 'photo 16-9 one-liner',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_16_9,
+    thumb: SVG_16_9,
     aspect_ratio: 1.7777777777777777,
     category: '',
     location: 'incheon, korea',
@@ -155,8 +162,8 @@ const mockPhotos = [
   {
     id: 12,
     title: 'photo 16-9 no-desc',
-    src: SVG_DARK,
-    thumb: SVG_DARK,
+    src: SVG_16_9,
+    thumb: SVG_16_9,
     aspect_ratio: 1.7777777777777777,
     category: '',
     location: 'jeju, korea',
@@ -165,16 +172,56 @@ const mockPhotos = [
     hero_slide: true
   },
 
-  // Bright mostly-white image for human review screenshot
+  // 3:2 Aspect Ratio (1.5)
   {
     id: 13,
+    title: 'photo 3-2 long',
+    src: SVG_3_2,
+    thumb: SVG_3_2,
+    aspect_ratio: 1.5,
+    category: '',
+    location: 'kyoto, japan',
+    date: '2026-03-29',
+    desc: LONG_DESC,
+    hero_slide: true
+  },
+  {
+    id: 14,
+    title: 'photo 3-2 one-liner',
+    src: SVG_3_2,
+    thumb: SVG_3_2,
+    aspect_ratio: 1.5,
+    category: '',
+    location: 'kobe, japan',
+    date: '2026-03-28',
+    desc: 'standard landscape 3:2 view.',
+    hero_slide: true
+  },
+
+  // 9:16 Tall Portrait (0.5625)
+  {
+    id: 15,
+    title: 'photo 9-16 long',
+    src: SVG_9_16,
+    thumb: SVG_9_16,
+    aspect_ratio: 0.5625,
+    category: '',
+    location: 'sapporo, japan',
+    date: '2026-03-27',
+    desc: LONG_DESC,
+    hero_slide: true
+  },
+
+  // Bright mostly-white image for human review screenshot
+  {
+    id: 16,
     title: 'photo bright long',
     src: SVG_BRIGHT,
     thumb: SVG_BRIGHT,
     aspect_ratio: 1.3333,
     category: '',
     location: 'snow peak',
-    date: '2026-03-29',
+    date: '2026-03-26',
     desc: LONG_DESC,
     hero_slide: true
   }
@@ -214,20 +261,26 @@ async function waitForGallery(page) {
 
 /**
  * Helper that returns getBoundingClientRect() for key elements:
- * photo, title, toggle, meta, infoWrap, filmstrip, and bottomRow.
+ * photo, slideInner, img, imgWrap, title, toggle, meta, infoWrap, filmstrip, and bottomRow.
  */
 async function getElementsRects(page, slideIdx = 0) {
   return await page.evaluate((idx) => {
     const isMobile = window.matchMedia('(hover: none)').matches;
+    const activeThumb = document.querySelector('.filmstrip-thumb.active');
+    const activeIdx = activeThumb ? parseInt(activeThumb.dataset.idx, 10) : idx;
+    let slideInnerEl = null;
+    let imgEl = null;
     let photoEl = null;
+
     if (isMobile) {
-      const activeIdx = (window.state && typeof window.state.cur === 'number') ? window.state.cur : idx;
-      photoEl = document.querySelector(`.snap-slide[data-idx="${activeIdx}"] .snap-slide-inner`) ||
-                document.querySelector(`.snap-slide[data-idx="${activeIdx}"] img`) ||
-                document.getElementById('lightbox-img');
+      slideInnerEl = document.querySelector(`.snap-slide[data-idx="${activeIdx}"] .snap-slide-inner`);
+      imgEl = document.querySelector(`.snap-slide[data-idx="${activeIdx}"] img`);
+      photoEl = slideInnerEl || imgEl || document.getElementById('lightbox-img');
     } else {
       photoEl = document.getElementById('lightbox-img');
+      imgEl = document.getElementById('lightbox-img');
     }
+    const imgWrapEl = document.getElementById('lightbox-img-wrap');
     const titleEl = document.getElementById('lightbox-title');
     const toggleEl = document.getElementById('lightbox-desc-toggle');
     const metaEl = document.getElementById('lightbox-meta');
@@ -252,6 +305,9 @@ async function getElementsRects(page, slideIdx = 0) {
 
     return {
       photo: toRect(photoEl),
+      slideInner: toRect(slideInnerEl),
+      img: toRect(imgEl),
+      imgWrap: toRect(imgWrapEl),
       title: toRect(titleEl),
       toggle: toRect(toggleEl),
       meta: toRect(metaEl),
@@ -295,12 +351,12 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
       const beforeStyle = window.getComputedStyle(wrap, '::before');
       return {
         wrapBgImage: wrapStyle.backgroundImage,
-        beforeOpacity: beforeStyle.opacity
+        beforeContent: beforeStyle.content
       };
     });
 
     expect(scrimStyles.wrapBgImage).toBe('none');
-    expect(scrimStyles.beforeOpacity).toBe('0');
+    expect(scrimStyles.beforeContent).toBe('none');
   });
 
   test('2. No gap above the filmstrip', async ({ page }) => {
@@ -358,13 +414,6 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     // Meta rect identical (tolerance 1px)
     expect(expandedRects.meta.x).toBeCloseTo(collapsedRects.meta.x, 1);
     expect(expandedRects.meta.y).toBeCloseTo(collapsedRects.meta.y, 1);
-
-    // Scrim ::before opacity is 1
-    const beforeOpacity = await page.evaluate(() => {
-      const wrap = document.getElementById('lightbox-info-wrap');
-      return window.getComputedStyle(wrap, '::before').opacity;
-    });
-    expect(beforeOpacity).toBe('1');
 
     // Filmstrip wrap no longer has visible class
     await expect(page.locator('#filmstrip-wrap')).not.toHaveClass(/visible/);
@@ -453,12 +502,6 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     expect(reCollapsedRects.photo.y).toBeCloseTo(initialRects.photo.y, 1);
     expect(reCollapsedRects.toggle.y).toBeCloseTo(initialRects.toggle.y, 1);
 
-    const beforeOpacity = await page.evaluate(() => {
-      const wrap = document.getElementById('lightbox-info-wrap');
-      return window.getComputedStyle(wrap, '::before').opacity;
-    });
-    expect(beforeOpacity).toBe('0');
-
     await expect(page.locator('#filmstrip-wrap')).toHaveClass(/visible/);
   });
 
@@ -478,6 +521,7 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     // Close lightbox via Escape key
     await page.keyboard.press('Escape');
     await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+    await page.waitForTimeout(400);
 
     // No-desc photo
     const noDescCard = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 no-desc"]');
@@ -493,6 +537,7 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     // Close lightbox via Escape key
     await page.keyboard.press('Escape');
     await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+    await page.waitForTimeout(400);
 
     // Long photo
     const longCard = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
@@ -595,7 +640,84 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     expect(rects.toggle.top).toBeGreaterThanOrEqual(0);
   });
 
-  test('Screenshots for human review (dark and bright images, collapsed & expanded)', async ({ page }) => {
+  test('10. Photo frame sizing, centering, and clearance across aspect ratios (1:1, 4:5, 3:2, 16:9, 9:16)', async ({ page }) => {
+    await waitForGallery(page);
+
+    const testPhotos = [
+      { label: 'View photo 1-1 long', name: '1:1', idx: 0 },
+      { label: 'View photo 4-5 long', name: '4:5', idx: 4 },
+      { label: 'View photo 3-2 long', name: '3:2', idx: 12 },
+      { label: 'View photo 16-9 long', name: '16:9', idx: 8 },
+      { label: 'View photo 9-16 long', name: '9:16', idx: 14 }
+    ];
+
+    for (const item of testPhotos) {
+      const card = page.locator(`.masonry-panel[data-category="all"] .photo-card[aria-label="${item.label}"]`);
+      await card.scrollIntoViewIfNeeded();
+      await card.tap();
+
+      await expect(page.locator('#lightbox')).toHaveClass(/open/);
+      await expect(page.locator('#lightbox-title')).toBeVisible();
+      await page.waitForFunction(() => document.fonts ? document.fonts.ready.then(() => true) : true);
+      await page.waitForTimeout(200);
+
+      const rects = await getElementsRects(page, item.idx);
+      const vp = page.viewportSize();
+
+      // 1. Photo area bottom edge is above the info block top edge (at least 8px clearance)
+      const clearance = rects.infoWrap.top - rects.imgWrap.bottom;
+      expect(clearance).toBeGreaterThanOrEqual(7.9);
+      expect(rects.infoWrap.top - rects.photo.bottom).toBeGreaterThanOrEqual(7.9);
+
+      // 2. Photo is vertically centered in the photo area:
+      // |photo.top - area.top - (area.bottom - photo.bottom)| < 8px
+      const topGap = rects.photo.top - rects.imgWrap.top;
+      const bottomGap = rects.imgWrap.bottom - rects.photo.bottom;
+      const verticalGapDiff = Math.abs(topGap - bottomGap);
+      expect(verticalGapDiff).toBeLessThan(8);
+
+      // 3. Photo is horizontally centered in the viewport
+      const photoCenterX = (rects.photo.left + rects.photo.right) / 2;
+      const vpCenterX = vp.width / 2;
+      expect(Math.abs(photoCenterX - vpCenterX)).toBeLessThan(2);
+
+      // 4. .snap-slide-inner's bounding box matches visible photo's bounding box within 2px on all sides (no ghost frame)
+      expect(Math.abs(rects.slideInner.top - rects.img.top)).toBeLessThanOrEqual(2);
+      expect(Math.abs(rects.slideInner.bottom - rects.img.bottom)).toBeLessThanOrEqual(2);
+      expect(Math.abs(rects.slideInner.left - rects.img.left)).toBeLessThanOrEqual(2);
+      expect(Math.abs(rects.slideInner.right - rects.img.right)).toBeLessThanOrEqual(2);
+
+      // 5. Photo never exceeds photo area on either axis
+      expect(rects.photo.top).toBeGreaterThanOrEqual(rects.imgWrap.top - 0.5);
+      expect(rects.photo.bottom).toBeLessThanOrEqual(rects.imgWrap.bottom + 0.5);
+      expect(rects.photo.width).toBeLessThanOrEqual(rects.imgWrap.width);
+
+      // Close lightbox
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+    }
+  });
+
+  test('11. Photo frame and centering verified after navigating between photos and document.fonts.ready', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 3-2 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    await page.waitForFunction(() => document.fonts ? document.fonts.ready.then(() => true) : true);
+
+    // Navigate to next photo
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(300);
+
+    const rectsAfterNav = await getElementsRects(page);
+    expect(rectsAfterNav.infoWrap.top - rectsAfterNav.imgWrap.bottom).toBeGreaterThanOrEqual(7.9);
+    expect(Math.abs((rectsAfterNav.photo.top - rectsAfterNav.imgWrap.top) - (rectsAfterNav.imgWrap.bottom - rectsAfterNav.photo.bottom))).toBeLessThan(8);
+    expect(Math.abs(rectsAfterNav.slideInner.bottom - rectsAfterNav.img.bottom)).toBeLessThanOrEqual(2);
+  });
+
+  test('Screenshots for human review (dark and bright images, collapsed & expanded, 3:2 and 16:9)', async ({ page }) => {
     const outputDir = path.resolve(process.cwd(), 'test-results/lightbox-dock');
     fs.mkdirSync(outputDir, { recursive: true });
 
@@ -637,6 +759,350 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     await page.waitForTimeout(400);
 
     await page.screenshot({ path: path.join(outputDir, 'expanded-bright.png') });
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+
+    // 3. Mobile viewport screenshots (iPhone 14 Pro 393x852) for 3:2 and 16:9
+    await page.setViewportSize({ width: 393, height: 852 });
+    await page.waitForTimeout(150);
+
+    const card32 = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 3-2 long"]');
+    await card32.scrollIntoViewIfNeeded();
+    await card32.tap();
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(outputDir, 'mobile-3-2.png') });
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+
+    const card169 = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 16-9 long"]');
+    await card169.scrollIntoViewIfNeeded();
+    await card169.tap();
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(outputDir, 'mobile-16-9.png') });
+  });
+
+  test('14. Mobile double-tap zoom: double tap zooms in, second double tap resets zoom', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const imgLocator = page.locator('.snap-slide[data-idx="0"] img');
+    await expect(imgLocator).toBeVisible();
+
+    const box = await imgLocator.boundingBox();
+    expect(box).toBeTruthy();
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    // Wait for open navigation buffer (400ms) to clear
+    await page.waitForTimeout(500);
+
+    // First double tap to zoom in
+    await page.touchscreen.tap(cx, cy);
+    await page.waitForTimeout(60);
+    await page.touchscreen.tap(cx, cy);
+
+    await expect(page.locator('#lightbox')).toHaveClass(/zoom-active/);
+
+    const transform = await imgLocator.evaluate((el) => el.style.transform);
+    expect(transform).toContain('scale(');
+
+    // Frame size should not change during zoom
+    const frameRect = await page.locator('.snap-slide[data-idx="0"] .snap-slide-inner').boundingBox();
+    expect(frameRect).toBeTruthy();
+
+    // Wait for zoom transition to settle
+    await page.waitForTimeout(400);
+
+    // Second double tap to zoom out
+    await page.touchscreen.tap(cx, cy);
+    await page.waitForTimeout(30);
+    await page.touchscreen.tap(cx, cy);
+
+    await expect(page.locator('#lightbox')).not.toHaveClass(/zoom-active/, { timeout: 4000 });
+  });
+
+  test('15. Mobile pinch zoom via CDP: two touches pinching outward activates zoom', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const imgLocator = page.locator('.snap-slide[data-idx="0"] img');
+    await expect(imgLocator).toBeVisible();
+
+    const client = await page.context().newCDPSession(page);
+    const box = await imgLocator.boundingBox();
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: cx - 20, y: cy, id: 0 },
+        { x: cx + 20, y: cy, id: 1 }
+      ]
+    });
+
+    for (let step = 1; step <= 5; step++) {
+      const spread = 20 + step * 25;
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          { x: cx - spread, y: cy, id: 0 },
+          { x: cx + spread, y: cy, id: 1 }
+        ]
+      });
+      await page.waitForTimeout(20);
+    }
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: []
+    });
+
+    await expect(page.locator('#lightbox')).toHaveClass(/zoom-active/);
+    const transform = await imgLocator.evaluate((el) => el.style.transform);
+    expect(transform).toContain('scale(');
+  });
+
+  test('16. Pull-down to dismiss via CDP: drag down on photo past threshold dismisses lightbox and keeps dock stationary', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const client = await page.context().newCDPSession(page);
+    const img = page.locator('.snap-slide[data-idx="0"] img');
+    const box = await img.boundingBox();
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+
+    const initialDockBox = await page.locator('#lightbox-info').boundingBox();
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: startX, y: startY, id: 0 }]
+    });
+
+    for (let dy = 20; dy <= 160; dy += 20) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: startX, y: startY + dy, id: 0 }]
+      });
+      await page.waitForTimeout(16);
+    }
+
+    const imgWrapTransform = await page.locator('#lightbox-img-wrap').evaluate(el => el.style.transform);
+    expect(imgWrapTransform).toContain('translateY(');
+    expect(imgWrapTransform).toContain('rotate(');
+
+    // Verify info dock text has NOT moved
+    const infoTransform = await page.locator('#lightbox-info-wrap').evaluate(el => el.style.transform);
+    expect(infoTransform === '' || infoTransform === 'none').toBe(true);
+    const contentTransform = await page.locator('#lightbox-content').evaluate(el => el.style.transform);
+    expect(contentTransform === '' || contentTransform === 'none').toBe(true);
+
+    const currentDockBox = await page.locator('#lightbox-info').boundingBox();
+    expect(Math.abs(currentDockBox.y - initialDockBox.y)).toBeLessThan(1);
+
+    const rotateMatch = imgWrapTransform.match(/rotate\(([-\d.]+)deg\)/);
+    expect(rotateMatch).not.toBeNull();
+    const rotDeg = Math.abs(parseFloat(rotateMatch[1]));
+    expect(rotDeg).toBeGreaterThan(1);
+    expect(rotDeg).toBeLessThan(15);
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: []
+    });
+
+    await expect(page.locator('#lightbox')).not.toHaveClass(/open/, { timeout: 4000 });
+  });
+
+  test('17. Pull-down under threshold snaps back via CDP', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const client = await page.context().newCDPSession(page);
+    const img = page.locator('.snap-slide[data-idx="0"] img');
+    const box = await img.boundingBox();
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: startX, y: startY, id: 0 }]
+    });
+
+    for (let dy = 5; dy <= 30; dy += 5) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: startX, y: startY + dy, id: 0 }]
+      });
+      await page.waitForTimeout(30);
+    }
+
+    // Hold at 30px so velocity drops to 0 before release
+    await page.waitForTimeout(150);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: startX, y: startY + 30, id: 0 }]
+    });
+    await page.waitForTimeout(50);
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: []
+    });
+
+    await page.waitForTimeout(400);
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const imgWrapTransformAfterSnap = await page.locator('#lightbox-img-wrap').evaluate(el => el.style.transform);
+    expect(imgWrapTransformAfterSnap === '' || imgWrapTransformAfterSnap === 'none').toBe(true);
+  });
+
+  test('18. Touch drag starting on dock does not trigger dismiss', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const client = await page.context().newCDPSession(page);
+    const dock = page.locator('#lightbox-info');
+    const box = await dock.boundingBox();
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: startX, y: startY, id: 0 }]
+    });
+
+    for (let dy = 20; dy <= 120; dy += 20) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: startX, y: startY + dy, id: 0 }]
+      });
+      await page.waitForTimeout(16);
+    }
+
+    const imgWrapTransform = await page.locator('#lightbox-img-wrap').evaluate(el => el.style.transform);
+    expect(imgWrapTransform).toBe('');
+    const contentTransform = await page.locator('#lightbox-content').evaluate(el => el.style.transform);
+    expect(contentTransform).toBe('');
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: []
+    });
+
+    await page.waitForTimeout(300);
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+  });
+
+  test('19. Layout independence: dock reserved height and photo area top/bottom remain constant across 1:1, 4:5, 3:2, 16:9, and no-desc', async ({ page }) => {
+    await waitForGallery(page);
+
+    const testPhotos = [
+      { label: 'View photo 1-1 long', name: '1:1-long', idx: 0 },
+      { label: 'View photo 1-1 no-desc', name: '1:1-no-desc', idx: 3 },
+      { label: 'View photo 4-5 long', name: '4:5-long', idx: 4 },
+      { label: 'View photo 3-2 long', name: '3:2-long', idx: 12 },
+      { label: 'View photo 16-9 no-desc', name: '16:9-no-desc', idx: 11 }
+    ];
+
+    let baselineImgWrapRect = null;
+    let baselineDockCollapsedH = null;
+
+    for (const item of testPhotos) {
+      const card = page.locator(`.masonry-panel[data-category="all"] .photo-card[aria-label="${item.label}"]`);
+      await card.scrollIntoViewIfNeeded();
+      await card.tap();
+
+      await expect(page.locator('#lightbox')).toHaveClass(/open/);
+      await expect(page.locator('#lightbox-title')).toBeVisible();
+
+      const rects = await getElementsRects(page, item.idx);
+      const dockH = await page.locator('#lightbox-content').evaluate(el => el.style.getPropertyValue('--lightbox-dock-collapsed-height'));
+
+      if (!baselineImgWrapRect) {
+        baselineImgWrapRect = rects.imgWrap;
+        baselineDockCollapsedH = dockH;
+      } else {
+        expect(rects.imgWrap.top).toBeCloseTo(baselineImgWrapRect.top, 1);
+        expect(rects.imgWrap.bottom).toBeCloseTo(baselineImgWrapRect.bottom, 1);
+        expect(rects.imgWrap.height).toBeCloseTo(baselineImgWrapRect.height, 1);
+        expect(dockH).toBe(baselineDockCollapsedH);
+      }
+
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+    }
+  });
+
+  test('20. Pull-down rotation variation: multiple pulls exhibit randomized varied tilts', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    const client = await page.context().newCDPSession(page);
+    const img = page.locator('.snap-slide[data-idx="0"] img');
+    const box = await img.boundingBox();
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+
+    const observedTilts = [];
+
+    for (let pull = 0; pull < 5; pull++) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: startX, y: startY, id: 0 }]
+      });
+
+      for (let dy = 10; dy <= 50; dy += 10) {
+        await client.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: startX, y: startY + dy, id: 0 }]
+        });
+        await page.waitForTimeout(16);
+      }
+
+      const imgWrapTransform = await page.locator('#lightbox-img-wrap').evaluate(el => el.style.transform);
+      const match = imgWrapTransform.match(/rotate\(([-\d.]+)deg\)/);
+      if (match) {
+        observedTilts.push(parseFloat(match[1]));
+      }
+
+      // Snap back
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: []
+      });
+      await page.waitForTimeout(400);
+    }
+
+    expect(observedTilts.length).toBe(5);
+    for (const tilt of observedTilts) {
+      expect(Math.abs(tilt)).toBeGreaterThan(0.3);
+      expect(Math.abs(tilt)).toBeLessThan(12);
+    }
+    const uniqueTilts = new Set(observedTilts.map(t => t.toFixed(2)));
+    expect(uniqueTilts.size).toBeGreaterThan(1);
   });
 });
 
@@ -652,7 +1118,7 @@ test.describe('Desktop unchanged', () => {
     await setupApiMocks(page);
   });
 
-  test('10. Desktop layout unchanged: info-wrap not position: absolute pinned to bottom, toggle not displayed', async ({ page }) => {
+  test('12. Desktop layout unchanged: info-wrap not position: absolute pinned to bottom, toggle not displayed', async ({ page }) => {
     await waitForGallery(page);
     const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
     await card.scrollIntoViewIfNeeded();

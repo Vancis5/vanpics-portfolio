@@ -257,7 +257,7 @@ export function toggleImageZoom(e: any) {
   if (state.isMobile) {
     // Double-tap to zoom on mobile
     const now = Date.now();
-    if (now - lastTapTime < 300) {
+    if (now - lastTapTime < 350) {
       // Double tap detected
       if (state.lbZoomLevel > 1) {
         resetZoom();

@@ -549,6 +549,17 @@ if (state.isMobile) {
     let dLocked = false, dChecked = false;
     let dPts: Array<{ y: number; t: number }> = [];
     let isPinching = false, wasPinchingOrZooming = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
+    let dismissTiltSign = -1;
+    let dismissMaxTilt = 8;
+    let dismissTiltOrigin = 'bottom left';
+    let dismissExitTilt = -24;
+
+    function seedDismissTilt(preferredSign?: number) {
+      dismissTiltSign = preferredSign !== undefined ? preferredSign : (Math.random() < 0.5 ? -1 : 1);
+      dismissMaxTilt = 5.5 + Math.random() * 4.0; // 5.5° to 9.5° realistic tilt
+      dismissTiltOrigin = dismissTiltSign < 0 ? 'bottom left' : 'bottom right';
+      dismissExitTilt = dismissTiltSign * (18 + Math.random() * 10); // 18° to 28° exit angle
+    }
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
@@ -566,6 +577,7 @@ if (state.isMobile) {
         dLocked = false;
         dChecked = false;
         dPts = [{ y: dStartY, t: Date.now() }];
+        seedDismissTilt();
         return;
       }
 
@@ -624,10 +636,11 @@ if (state.isMobile) {
       dLocked = false;
       dChecked = false;
       dPts = [{ y: dStartY, t: Date.now() }];
+      seedDismissTilt();
     }, { passive: false });
 
     lbEl.addEventListener('touchmove', function (e) {
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
+      if (!dLocked && !isPinching && (e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
       if (state.currentLightboxIsMotion && e.touches.length >= 2) {
         e.preventDefault();
         return;
@@ -679,6 +692,13 @@ if (state.isMobile) {
       if (!dChecked && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
         dChecked = true;
         dLocked = dy > 0 && Math.abs(dy) > Math.abs(dx);
+        if (dLocked) {
+          if (dx > 8) {
+            seedDismissTilt(1);
+          } else if (dx < -8) {
+            seedDismissTilt(-1);
+          }
+        }
       }
 
       if (dLocked && dy > 0) {
@@ -687,21 +707,26 @@ if (state.isMobile) {
         }
         dDY = dy;
         e.preventDefault();
-        let content = domRefs.lightboxContent;
-        content.style.transition = 'none';
-        let tilt = Math.max(-10, (dy / 400) * -10); // reduced from -25
-        content.style.transformOrigin = 'bottom left';
-        content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
-        content.style.opacity = String(Math.max(0.15, 1 - dy / 400));
+
+        let isFF = document.documentElement.classList.contains('is-firefox');
+        let swipeProgress = Math.min(1, Math.max(0, dy / 300));
+        let blurVal = isFF ? 0 : Math.pow(swipeProgress, 2.4) * 18;
+
+        // Apply translation and natural randomized tilt strictly to the photo/video wrap, keeping info dock stationary
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          let dragTilt = dismissTiltSign * Math.min(dismissMaxTilt, (dy / 380) * dismissMaxTilt);
+          imgWrapEl.style.transition = 'none';
+          imgWrapEl.style.transformOrigin = dismissTiltOrigin;
+          imgWrapEl.style.transform = 'translateY(' + dy + 'px) rotate(' + dragTilt.toFixed(2) + 'deg)';
+          imgWrapEl.style.opacity = String(Math.max(0.15, 1 - dy / 400));
+          imgWrapEl.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
+        }
 
         let bgOpac = Math.max(0, 1 - dy / 400);
         if (domRefs.lightboxBg) domRefs.lightboxBg.style.opacity = String(bgOpac);
         if (domRefs.blurCanvas) domRefs.blurCanvas.style.opacity = String(bgOpac);
         lbEl.style.backgroundColor = `rgba(13, 12, 12, ${bgOpac})`;
-
-        let isFF = document.documentElement.classList.contains('is-firefox');
-        let swipeProgress = Math.min(1, Math.max(0, dy / 300));
-        let blurVal = isFF ? 0 : Math.pow(swipeProgress, 2.4) * 18;
 
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
@@ -710,13 +735,6 @@ if (state.isMobile) {
           info.style.transition = 'none';
           info.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
           info.style.opacity = String(txtOpac);
-        }
-
-        // Swipe down exit: blur the entire photo container including its outline border
-        let imgWrapEl = domRefs.lightboxImgWrap;
-        if (imgWrapEl) {
-          imgWrapEl.style.transition = 'none';
-          imgWrapEl.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
         }
 
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
@@ -737,7 +755,7 @@ if (state.isMobile) {
     }, { passive: false });
 
     lbEl.addEventListener('touchend', function (e) {
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
+      if (!dLocked && !isPinching && (e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
       if (e.touches.length < 2) {
         if (isPinching && e.touches.length === 1 && state.lbZoomLevel > 1) {
           dStartX = e.touches[0].clientX;
@@ -772,10 +790,17 @@ if (state.isMobile) {
       }
       if (dDY > 100 || vy > 0.35) {
         swipeHappened = true;
-        let content = domRefs.lightboxContent;
-        content.style.transition = 'transform 0.28s ease-out, opacity 0.28s ease-out';
-        content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
-        content.style.opacity = '0';
+        let isFF = document.documentElement.classList.contains('is-firefox');
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = isFF
+            ? 'transform 0.28s ease-out, opacity 0.28s ease-out'
+            : 'transform 0.28s ease-out, opacity 0.28s ease-out, filter 0.2s ease';
+          imgWrapEl.style.transformOrigin = dismissTiltOrigin;
+          imgWrapEl.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(' + dismissExitTilt.toFixed(2) + 'deg)';
+          imgWrapEl.style.opacity = '0';
+          if (!isFF) imgWrapEl.style.filter = 'blur(18px)';
+        }
 
         if (domRefs.lightboxBg) {
           domRefs.lightboxBg.style.transition = 'opacity 0.28s ease-out';
@@ -788,18 +813,11 @@ if (state.isMobile) {
         lbEl.style.transition = 'background-color 0.28s ease-out';
         lbEl.style.backgroundColor = 'rgba(13, 12, 12, 0)';
 
-        let isFF = document.documentElement.classList.contains('is-firefox');
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
           info.style.transition = isFF ? 'opacity 0.2s ease' : 'opacity 0.2s ease, filter 0.2s ease';
           info.style.filter = isFF ? '' : 'blur(18px)';
           info.style.opacity = '0';
-        }
-
-        let imgWrapEl = domRefs.lightboxImgWrap;
-        if (imgWrapEl) {
-          imgWrapEl.style.transition = isFF ? 'none' : 'filter 0.2s ease';
-          imgWrapEl.style.filter = isFF ? '' : 'blur(18px)';
         }
 
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
@@ -820,10 +838,13 @@ if (state.isMobile) {
           closeLightbox();
         }, 280);
       } else {
-        let content = domRefs.lightboxContent;
-        content.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
-        content.style.transform = '';
-        content.style.opacity = '1';
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+          imgWrapEl.style.transform = '';
+          imgWrapEl.style.opacity = '1';
+          imgWrapEl.style.filter = '';
+        }
 
         if (domRefs.lightboxBg) {
           domRefs.lightboxBg.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
@@ -841,12 +862,6 @@ if (state.isMobile) {
           info.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           info.style.filter = '';
           info.style.opacity = '1';
-        }
-
-        let imgWrapEl = domRefs.lightboxImgWrap;
-        if (imgWrapEl) {
-          imgWrapEl.style.transition = 'filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-          imgWrapEl.style.filter = '';
         }
 
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
@@ -867,15 +882,23 @@ if (state.isMobile) {
         }
 
         setTimeout(function () {
+          let content = domRefs.lightboxContent;
           if (content) {
             content.style.transition = '';
             content.style.transformOrigin = '';
+            content.style.transform = '';
+            content.style.opacity = '';
           }
           if (info) {
             info.style.transition = '';
+            info.style.opacity = '';
+            info.style.filter = '';
           }
           if (imgWrapEl) {
             imgWrapEl.style.transition = '';
+            imgWrapEl.style.transformOrigin = '';
+            imgWrapEl.style.transform = '';
+            imgWrapEl.style.opacity = '';
             imgWrapEl.style.filter = '';
           }
           if (fsWrap) {

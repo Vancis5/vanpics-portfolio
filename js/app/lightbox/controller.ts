@@ -485,6 +485,7 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
     if (domRefs.lightboxImgWrap) {
       domRefs.lightboxImgWrap.style.transition = '';
       domRefs.lightboxImgWrap.style.transform = '';
+      domRefs.lightboxImgWrap.style.transformOrigin = '';
       domRefs.lightboxImgWrap.style.opacity = '';
       domRefs.lightboxImgWrap.style.filter = '';
     }
