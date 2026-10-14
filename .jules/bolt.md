@@ -1,3 +1,7 @@
 ## 2024-05-14 - Avoiding Layout Thrashing on mousemove
 **Learning:** Calling `getBoundingClientRect()` inside high-frequency events like `mousemove` causes forced synchronous layout (layout thrashing) which blocks the main thread. This app uses glowing cursor trackers that follow the mouse, but they were reading layout on every tick.
 **Action:** Always cache the element's position on `mouseenter` (as document-relative coordinates) and use `e.pageX/pageY` (which are document-relative) instead of `e.clientX/clientY` to compute relative mouse positions. This completely eliminates synchronous layout reads from the critical animation path.
+
+## 2024-10-14 - Avoiding Layout Thrashing inside requestAnimationFrame
+**Learning:** Calling `getBoundingClientRect()` on an element inside a `requestAnimationFrame` loop that also applies inline style changes (like transforming a cursor element) will cause forced synchronous layouts (layout thrashing) every frame. In this codebase, the cursor ring loop was checking `isCursorOverFilmstrip()` up to 60 times a second, crushing the framerate because it queried `filmstripWrap.getBoundingClientRect()` while also writing styles.
+**Action:** Cache the element's bounding rectangle instead of querying it every frame. Invalidate the cached rect by listening to events that actually change its layout, such as `window.resize` or CSS `transitionend` (for elements animating in/out like the filmstrip).
