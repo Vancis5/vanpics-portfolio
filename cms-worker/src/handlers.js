@@ -587,9 +587,8 @@ export async function replacePhotoFile(request, env, params) {
   const thumbFile = formData.get('thumb');
   const rawFile = formData.get('raw');
   const lbFile = formData.get('lb');
-  const aspectRatio = parseFloat(formData.get('aspectRatio'));
-
   const errors = [];
+  const aspectRatio = parseAspectRatio(formData.get('aspectRatio'), errors);
   if (!photoFile || !thumbFile) {
     errors.push('missing processed image assets');
   } else {
@@ -609,9 +608,10 @@ export async function replacePhotoFile(request, env, params) {
     errors.push('lb field must be a valid image file');
   }
 
-  if (isNaN(aspectRatio)) {
-    errors.push('invalid aspect ratio');
-  }
+  if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (rawFile?.size > MAX_IMAGE_SIZE) errors.push(`raw photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (lbFile?.size > MAX_IMAGE_SIZE) errors.push(`lightbox photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });

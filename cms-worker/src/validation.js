@@ -8,14 +8,45 @@ const TEXT_LIMITS = {
 
 export const ALLOWED_CATEGORIES = new Set(['', 'figures']);
 
+function escapeHtmlEntities(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function sanitizeDesc(str) {
   if (!str) return '';
-  return String(str)
+  const withoutBlocks = String(str)
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-    .replace(/<(?!\/?(?:br|a)\b)[^>]*>/gi, '')
-    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
-    .replace(/javascript:/gi, '');
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+  const tokens = [];
+  const tokenized = withoutBlocks
+    .replace(/<br\s*\/?>/gi, () => {
+      tokens.push('<br>');
+      return `___SAFE_TOKEN_${tokens.length - 1}___`;
+    })
+    .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_match, attrs, innerText) => {
+      const hrefMatch = String(attrs).match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))/i);
+      const rawHref = hrefMatch ? (hrefMatch[1] ?? hrefMatch[2] ?? hrefMatch[3] ?? '') : '';
+      const cleanHref = rawHref.replace(/[\u0000-\u001F\u007F\s]+/g, '');
+      if (!/^(https?:\/\/|mailto:)/i.test(cleanHref)) {
+        return escapeHtmlEntities(innerText.replace(/<[^>]*>/g, ''));
+      }
+      const safeHref = escapeHtmlEntities(cleanHref);
+      const safeLabel = escapeHtmlEntities(innerText.replace(/<[^>]*>/g, ''));
+      tokens.push(`<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`);
+      return `___SAFE_TOKEN_${tokens.length - 1}___`;
+    });
+
+  let escaped = escapeHtmlEntities(tokenized.replace(/<[^>]*>/g, ''));
+  for (let i = 0; i < tokens.length; i++) {
+    escaped = escaped.replace(`___SAFE_TOKEN_${i}___`, tokens[i]);
+  }
+  return escaped;
 }
 
 export function cleanText(value, fieldName, errors, options = {}) {
