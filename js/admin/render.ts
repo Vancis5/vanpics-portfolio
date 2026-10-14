@@ -8,7 +8,7 @@ export function renderSingleCardHtml(p: any) {
   const thumbSrc = isVideo ? p.poster : (p.thumb || p.src);
 
   return `
-    <div class="asset-card" data-id="${p.id}" data-type="${p.type}" style="cursor: pointer;">
+    <div class="asset-card" data-id="${p.id}" data-type="${p.type}">
       <div class="card-preview-wrapper">
         <img class="card-preview-media" src="${escapeHtml(thumbSrc || PLACEHOLDER_SRC)}" alt="${escapeHtml(p.title || 'untitled')}">
         ${isVideo ? `
@@ -17,19 +17,19 @@ export function renderSingleCardHtml(p: any) {
           </div>
         ` : ''}
       </div>
-      <div class="card-info" style="padding: 1.2rem 1.2rem 1.4rem 1.2rem;">
+      <div class="card-info">
         <div class="card-header-row">
           <div class="card-title" title="${escapeHtml(p.title || 'untitled')}">${escapeHtml(p.title || 'untitled')}</div>
           <span class="badge ${typeClass}">${typeLabel}</span>
         </div>
         
-        <div class="card-meta-row" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.3rem; overflow: hidden; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 0.45rem; overflow: hidden; width: 100%;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="card-meta-row">
+          <div class="card-meta-item">
+            <svg class="card-meta-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
             <span class="meta-text" title="${escapeHtml(p.location || 'unknown location')}">${escapeHtml(p.location || 'unknown location')}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.45rem; overflow: hidden; width: 100%;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-faint); flex-shrink: 0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div class="card-meta-item">
+            <svg class="card-meta-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span class="meta-text" title="${escapeHtml(p.date || 'undated')}">${escapeHtml(p.date || 'undated')}</span>
           </div>
         </div>
@@ -101,7 +101,7 @@ export function renderArchivesList(
   });
 
   if (filtered.length === 0) {
-    itemsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.05em;">no matching archives found.</p>`;
+    itemsContainer.innerHTML = `<p class="empty-archives-msg">no matching archives found.</p>`;
     return;
   }
 
@@ -143,11 +143,11 @@ export function renderArchivesList(
       const groupItems = groups[groupKey];
       const renderedCards = groupItems.map((p: any) => renderSingleCardHtml(p)).join('');
       return `
-        <div class="group-section" style="grid-column: 1 / -1; margin-bottom: 2.5rem; width: 100%;">
-          <div class="group-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-            <h3 style="font-family: 'DM Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); white-space: nowrap;">${groupKey}</h3>
-            <div style="flex-grow: 1; height: 1px; background: var(--border);"></div>
-            <span style="font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-faint); letter-spacing: 0.05em;">${groupItems.length} item${groupItems.length > 1 ? 's' : ''}</span>
+        <div class="group-section">
+          <div class="group-header">
+            <h3 class="group-title">${groupKey}</h3>
+            <div class="group-divider"></div>
+            <span class="group-count">${groupItems.length} item${groupItems.length > 1 ? 's' : ''}</span>
           </div>
           <div class="asset-grid">
             ${renderedCards}
