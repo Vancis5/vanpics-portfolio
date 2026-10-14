@@ -347,10 +347,6 @@
       appearance: textfield;
     }
 
-    #create-carousel-toggle-wrapper {
-      display: none !important;
-    }
-
     input:focus,
     textarea:focus,
     select:focus {
