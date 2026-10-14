@@ -131,17 +131,36 @@ export function errorResponse(request, env, message, status) {
 }
 
 // Base64Url helpers for native Web Crypto signature encoding
-function base64UrlEncode(str) {
-  return btoa(str)
+function base64UrlEncodeBytes(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 }
 
-function base64UrlDecode(str) {
+function base64UrlDecodeBytes(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
-  return atob(str);
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    // eslint-disable-next-line security/detect-object-injection
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function base64UrlEncodeJson(obj) {
+  return base64UrlEncodeBytes(new TextEncoder().encode(JSON.stringify(obj)));
+}
+
+function base64UrlDecodeJson(str) {
+  return JSON.parse(new TextDecoder().decode(base64UrlDecodeBytes(str)));
 }
 
 // Generate JWT signature natively with HMAC SHA-256
@@ -149,8 +168,8 @@ async function signJWT(payload, secret) {
   const encoder = new TextEncoder();
   const header = { alg: 'HS256', typ: 'JWT' };
   
-  const headerStr = base64UrlEncode(JSON.stringify(header));
-  const payloadStr = base64UrlEncode(JSON.stringify(payload));
+  const headerStr = base64UrlEncodeJson(header);
+  const payloadStr = base64UrlEncodeJson(payload);
   const dataToSign = encoder.encode(`${headerStr}.${payloadStr}`);
   
   const key = await crypto.subtle.importKey(
@@ -162,7 +181,7 @@ async function signJWT(payload, secret) {
   );
   
   const signature = await crypto.subtle.sign('HMAC', key, dataToSign);
-  const signatureStr = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
+  const signatureStr = base64UrlEncodeBytes(new Uint8Array(signature));
   
   return `${headerStr}.${payloadStr}.${signatureStr}`;
 }
@@ -177,6 +196,9 @@ async function verifyJWT(token, secret) {
   const dataToVerify = encoder.encode(`${headerStr}.${payloadStr}`);
   
   try {
+    const header = base64UrlDecodeJson(headerStr);
+    if (!header || header.alg !== 'HS256' || header.typ !== 'JWT') return null;
+
     const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(secret),
@@ -185,17 +207,12 @@ async function verifyJWT(token, secret) {
       ['verify']
     );
     
-    const sigBinary = base64UrlDecode(signatureStr);
-    const sigArr = new Uint8Array(sigBinary.length);
-    for (let i = 0; i < sigBinary.length; i++) {
-      // eslint-disable-next-line security/detect-object-injection
-      sigArr[i] = sigBinary.charCodeAt(i);
-    }
+    const sigArr = base64UrlDecodeBytes(signatureStr);
     
     const isValid = await crypto.subtle.verify('HMAC', key, sigArr, dataToVerify);
     if (!isValid) return null;
     
-    return JSON.parse(base64UrlDecode(payloadStr));
+    return base64UrlDecodeJson(payloadStr);
   } catch (e) {
     return null;
   }
