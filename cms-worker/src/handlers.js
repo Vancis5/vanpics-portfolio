@@ -154,14 +154,18 @@ export async function serveMedia(request, env, params, ctx) {
 }
 
 export async function listPhotos(request, env, params, ctx) {
-  const cache = caches.default;
-  const cacheUrl = new URL(request.url).toString();
-  const cacheReq = new Request(cacheUrl, { method: 'GET' });
-  const cached = await cache.match(cacheReq);
-  if (cached) return applyCors(cached, request, env);
-
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
+  const bypassCache = url.searchParams.has('_t');
+  const cache = caches.default;
+  const canonicalUrl = `${url.origin}${url.pathname}?limit=${limit}&offset=${offset}`;
+  const cacheReq = new Request(canonicalUrl, { method: 'GET' });
+
+  if (!bypassCache) {
+    const cached = await cache.match(cacheReq);
+    if (cached) return applyCors(cached, request, env);
+  }
+
   const { rows, total } = await fetchPhotos(env, limit, offset);
   const items = rows.map((row) => publicPhoto(request, row));
 
@@ -183,7 +187,7 @@ export async function listPhotos(request, env, params, ctx) {
     },
   });
 
-  if (ctx && ctx.waitUntil) {
+  if (!bypassCache && ctx && ctx.waitUntil) {
     ctx.waitUntil(cache.put(cacheReq, response.clone()));
   }
 
@@ -191,14 +195,18 @@ export async function listPhotos(request, env, params, ctx) {
 }
 
 export async function listVideos(request, env, params, ctx) {
-  const cache = caches.default;
-  const cacheUrl = new URL(request.url).toString();
-  const cacheReq = new Request(cacheUrl, { method: 'GET' });
-  const cached = await cache.match(cacheReq);
-  if (cached) return applyCors(cached, request, env);
-
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
+  const bypassCache = url.searchParams.has('_t');
+  const cache = caches.default;
+  const canonicalUrl = `${url.origin}${url.pathname}?limit=${limit}&offset=${offset}`;
+  const cacheReq = new Request(canonicalUrl, { method: 'GET' });
+
+  if (!bypassCache) {
+    const cached = await cache.match(cacheReq);
+    if (cached) return applyCors(cached, request, env);
+  }
+
   const { rows, total } = await fetchVideos(env, limit, offset);
   const items = rows.map((row) => publicVideo(request, row));
 
@@ -220,7 +228,7 @@ export async function listVideos(request, env, params, ctx) {
     },
   });
 
-  if (ctx && ctx.waitUntil) {
+  if (!bypassCache && ctx && ctx.waitUntil) {
     ctx.waitUntil(cache.put(cacheReq, response.clone()));
   }
 

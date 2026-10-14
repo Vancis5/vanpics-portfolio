@@ -3,18 +3,17 @@ export async function clearApiCache(request) {
   try {
     const cache = caches.default;
     const origin = new URL(request.url).origin;
-    const urls = [
-      `${origin}/api/photos`,
-      `${origin}/api/photos?limit=50`,
-      `${origin}/api/photos?limit=100`,
-      `${origin}/api/photos?limit=500`,
-      `${origin}/api/videos`,
-      `${origin}/api/videos?limit=50`,
-      `${origin}/api/videos?limit=100`,
-      `${origin}/api/videos?limit=500`
-    ];
+    const limits = [50, 100, 500];
+    const offsets = [0, 50, 100, 200, 300, 400];
+    const urls = [`${origin}/api/photos`, `${origin}/api/videos`];
+    for (const limit of limits) {
+      for (const offset of offsets) {
+        urls.push(`${origin}/api/photos?limit=${limit}&offset=${offset}`);
+        urls.push(`${origin}/api/videos?limit=${limit}&offset=${offset}`);
+      }
+    }
     for (const url of urls) {
-      const deleted = await cache.delete(new Request(url));
+      const deleted = await cache.delete(new Request(url, { method: 'GET' }));
       if (deleted) purgedCount++;
     }
   } catch (err) {
