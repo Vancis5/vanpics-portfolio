@@ -333,18 +333,18 @@ window.addEventListener('popstate', function () {
 function processPhotos(raw: any[]) {
   return raw.map((p: any) => ({
     ...p,
-    aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : undefined),
-    heroSlide: p.hero_slide === 1 || p.hero_slide === true,
-    rawSrc: p.raw_src || null,
-    lbSrc: p.lb_src || null
+    aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : p.aspectRatio),
+    heroSlide: p.hero_slide === 1 || p.hero_slide === true || p.heroSlide === true,
+    rawSrc: p.raw_src ?? p.rawSrc ?? null,
+    lbSrc: p.lb_src ?? p.lbSrc ?? null
   }));
 }
 
 function processVideos(raw: any[]) {
   return raw.map((v: any) => ({
     ...v,
-    thumb: v.poster || '',
-    aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : (v.aspect_ratio ? parseFloat(v.aspect_ratio) : undefined)
+    thumb: v.poster || v.thumb || '',
+    aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : (v.aspect_ratio ? parseFloat(v.aspect_ratio) : v.aspectRatio)
   }));
 }
 
@@ -506,8 +506,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
       if (Array.isArray(photos) && photos.length > 0) {
         renderedPhotos = processPhotos(photos);
         renderedVideos = processVideos(videos || []);
-        warmStartupImages(photos).catch(function() {});
-        renderUI(photos, videos || []);
+        warmStartupImages(renderedPhotos).catch(function() {});
+        renderUI(renderedPhotos, renderedVideos);
         renderedFromCache = true;
         // Carousel readiness lifts the curtain after the first hero thumbnails decode.
       }
@@ -557,8 +557,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
     if (state.carouselPhotos.length === 0) safeLift();
   } else if (newPhotos.length > 0) {
     // ── Already rendered from cache: compare fresh data against what we rendered ──
-    const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
-    const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}-${v.thumb || ''}-${v.date || ''}-${v.desc || ''}`;
+    const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.lbSrc || ''}-${p.rawSrc || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
+    const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}-${v.thumb || ''}-${v.aspectRatio || ''}-${v.date || ''}-${v.location || ''}-${v.music || ''}-${v.desc || ''}`;
 
     const photosSame = newPhotos.length === renderedPhotos.length &&
                        newPhotos.every((p: Photo, idx: number) => photoSig(p) === photoSig(renderedPhotos[idx]));
