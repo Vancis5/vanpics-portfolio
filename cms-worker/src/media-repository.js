@@ -51,7 +51,7 @@ export async function fetchPhotos(env, limit, offset) {
     env.DB.prepare(
       `SELECT id, title, src, thumb, raw_src, lb_src, aspect_ratio, category, location, date, \`desc\`, hero_slide, created_at
        FROM photos
-       ORDER BY created_at DESC, id DESC
+       ORDER BY sort_order ASC, created_at DESC, id DESC
        LIMIT ? OFFSET ?`
     ).bind(limit, offset),
     env.DB.prepare('SELECT COUNT(*) AS total FROM photos')
@@ -68,7 +68,7 @@ export async function fetchVideos(env, limit, offset) {
     env.DB.prepare(
       `SELECT id, title, src, poster, aspect_ratio, location, date, \`desc\`, music, created_at
        FROM videos
-       ORDER BY created_at DESC, id DESC
+       ORDER BY sort_order ASC, created_at DESC, id DESC
        LIMIT ? OFFSET ?`
     ).bind(limit, offset),
     env.DB.prepare('SELECT COUNT(*) AS total FROM videos')
@@ -186,9 +186,9 @@ export async function getAllPhotosForSorting(env) {
   return results;
 }
 
-export async function batchUpdatePhotosCreatedAt(env, photoUpdates) {
-  const statements = photoUpdates.map(({ id, createdAt }) =>
-    env.DB.prepare('UPDATE photos SET created_at = ? WHERE id = ?').bind(createdAt, id)
+export async function batchUpdatePhotosSortOrder(env, photoUpdates) {
+  const statements = photoUpdates.map(({ id, sortOrder }) =>
+    env.DB.prepare('UPDATE photos SET sort_order = ? WHERE id = ?').bind(sortOrder, id)
   );
   if (statements.length > 0) {
     await env.DB.batch(statements);
@@ -200,9 +200,9 @@ export async function getAllVideosForSorting(env) {
   return results;
 }
 
-export async function batchUpdateVideosCreatedAt(env, videoUpdates) {
-  const statements = videoUpdates.map(({ id, createdAt }) =>
-    env.DB.prepare('UPDATE videos SET created_at = ? WHERE id = ?').bind(createdAt, id)
+export async function batchUpdateVideosSortOrder(env, videoUpdates) {
+  const statements = videoUpdates.map(({ id, sortOrder }) =>
+    env.DB.prepare('UPDATE videos SET sort_order = ? WHERE id = ?').bind(sortOrder, id)
   );
   if (statements.length > 0) {
     await env.DB.batch(statements);

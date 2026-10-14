@@ -33,9 +33,9 @@ import {
   updateVideoRecord,
   updatePhotoMediaKeys,
   getAllPhotosForSorting,
-  batchUpdatePhotosCreatedAt,
+  batchUpdatePhotosSortOrder,
   getAllVideosForSorting,
-  batchUpdateVideosCreatedAt,
+  batchUpdateVideosSortOrder,
 } from './media-repository.js';
 
 // 30 MB for images, 100 MB for videos
@@ -506,6 +506,16 @@ export async function sortDatabase(request, env) {
   function parsePhotoDate(dateStr) {
     if (!dateStr) return null;
     const cleanStr = dateStr.trim().toLowerCase();
+    const months = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+      january: 0, february: 1, march: 2, april: 3, june: 5,
+      july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+    };
+    const matchMDY = cleanStr.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+    if (matchMDY && months[matchMDY[1]] !== undefined) {
+      return new Date(Date.UTC(parseInt(matchMDY[3], 10), months[matchMDY[1]], parseInt(matchMDY[2], 10)));
+    }
     const d = new Date(cleanStr);
     if (!isNaN(d.getTime())) return d;
     if (/^\d{4}$/.test(cleanStr)) {
@@ -532,14 +542,9 @@ export async function sortDatabase(request, env) {
     return timeB - timeA;
   });
 
-  const baseTime = Date.now();
-  const photoUpdates = photos.map((photo, index) => {
-    const itemTime = new Date(baseTime - index * 10000);
-    const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
-    return { id: photo.id, createdAt: isoString };
-  });
+  const photoUpdates = photos.map((photo, index) => ({ id: photo.id, sortOrder: index + 1 }));
 
-  await batchUpdatePhotosCreatedAt(env, photoUpdates);
+  await batchUpdatePhotosSortOrder(env, photoUpdates);
 
   // 2. Sort Videos
   const videos = await getAllVideosForSorting(env);
@@ -559,13 +564,9 @@ export async function sortDatabase(request, env) {
     return timeB - timeA;
   });
 
-  const videoUpdates = videos.map((video, index) => {
-    const itemTime = new Date(baseTime - index * 10000);
-    const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
-    return { id: video.id, createdAt: isoString };
-  });
+  const videoUpdates = videos.map((video, index) => ({ id: video.id, sortOrder: index + 1 }));
 
-  await batchUpdateVideosCreatedAt(env, videoUpdates);
+  await batchUpdateVideosSortOrder(env, videoUpdates);
 
   await clearApiCache(request);
 
