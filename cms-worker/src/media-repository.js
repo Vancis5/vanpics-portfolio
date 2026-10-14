@@ -28,6 +28,10 @@ export async function getMediaObject(env, key, rangeOptions) {
   return env.MEDIA_BUCKET.get(key, rangeOptions ? { range: rangeOptions } : undefined);
 }
 
+export async function headMediaObject(env, key) {
+  return env.MEDIA_BUCKET.head(key);
+}
+
 export async function putMediaObject(env, key, data, { contentType, cacheControl = 'public, max-age=31536000, immutable' }) {
   return env.MEDIA_BUCKET.put(key, data, {
     httpMetadata: { contentType, cacheControl },

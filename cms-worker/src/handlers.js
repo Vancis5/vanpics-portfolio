@@ -19,6 +19,7 @@ import {
 import {
   clearApiCache,
   getMediaObject,
+  headMediaObject,
   putMediaObject,
   deleteMediaObjects,
   fetchPhotos,
@@ -63,18 +64,20 @@ export async function serveMedia(request, env, params, ctx) {
   }
 
   const rangeHeader = request.headers.get('Range');
+  const isHead = request.method === 'HEAD';
 
   // 1. Try Cloudflare CDN edge cache first (only for non-range requests)
   let cacheKey;
   let cache;
   if (!rangeHeader) {
     const cacheUrl = new URL(request.url);
-    cacheKey = new Request(cacheUrl.toString(), request);
+    cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
     cache = caches.default;
 
     let cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) {
-      return applyPublicMediaCors(cachedResponse);
+      const corsRes = applyPublicMediaCors(cachedResponse);
+      return isHead ? new Response(null, { status: corsRes.status, headers: corsRes.headers }) : corsRes;
     }
   }
 
@@ -101,7 +104,9 @@ export async function serveMedia(request, env, params, ctx) {
   }
 
   // 3. Single GET from R2 via repository
-  const object = await getMediaObject(env, fileKey, rangeOptions);
+  const object = isHead
+    ? await headMediaObject(env, fileKey)
+    : await getMediaObject(env, fileKey, rangeOptions);
 
   if (!object) {
     return new Response('Media asset not found', {
@@ -140,10 +145,10 @@ export async function serveMedia(request, env, params, ctx) {
     headers.set('Content-Length', totalSize.toString());
   }
 
-  const response = new Response(object.body, { status, headers });
+  const response = new Response(isHead ? null : object.body, { status, headers });
 
   // 4. Cache full responses at the edge in background
-  if (!rangeHeader && request.method === 'GET' && totalSize > 0 && cache) {
+  if (!isHead && !rangeHeader && request.method === 'GET' && totalSize > 0 && cache) {
     const putPromise = cache.put(cacheKey, response.clone());
     if (ctx && ctx.waitUntil) {
       ctx.waitUntil(putPromise);
