@@ -547,6 +547,7 @@ if (state.isMobile) {
     let dismissMaxTilt = 8;
     let dismissTiltOrigin = 'bottom left';
     let dismissExitTilt = -24;
+    let wasFsVisibleAtSwipeStart = false;
 
     function seedDismissTilt(preferredSign?: number) {
       dismissTiltSign = preferredSign !== undefined ? preferredSign : (Math.random() < 0.5 ? -1 : 1);
@@ -630,6 +631,7 @@ if (state.isMobile) {
       dLocked = false;
       dChecked = false;
       dPts = [{ y: dStartY, t: Date.now() }];
+      wasFsVisibleAtSwipeStart = domRefs.filmstripWrap ? domRefs.filmstripWrap.classList.contains('visible') : false;
       seedDismissTilt();
     }, { passive: false });
 
@@ -739,7 +741,7 @@ if (state.isMobile) {
         }
 
         let fsWrap = domRefs.filmstripWrap;
-        if (fsWrap) {
+        if (fsWrap && wasFsVisibleAtSwipeStart) {
           let fsOpac = Math.max(0, 1 - dy / 250);
           fsWrap.style.transition = 'none';
           fsWrap.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
@@ -822,7 +824,7 @@ if (state.isMobile) {
         }
 
         let fsWrap = domRefs.filmstripWrap;
-        if (fsWrap) {
+        if (fsWrap && wasFsVisibleAtSwipeStart) {
           fsWrap.style.transition = isFF ? 'opacity 0.2s ease' : 'opacity 0.2s ease, filter 0.2s ease';
           fsWrap.style.filter = isFF ? '' : 'blur(18px)';
           fsWrap.style.opacity = '0';
@@ -869,10 +871,10 @@ if (state.isMobile) {
         }
 
         let fsWrap = domRefs.filmstripWrap;
-        if (fsWrap) {
+        if (fsWrap && wasFsVisibleAtSwipeStart) {
           fsWrap.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           fsWrap.style.filter = '';
-          fsWrap.style.opacity = '';
+          fsWrap.style.opacity = '1';
         }
 
         setTimeout(function () {
@@ -885,7 +887,7 @@ if (state.isMobile) {
           }
           if (info) {
             info.style.transition = '';
-            info.style.opacity = '';
+            info.style.opacity = '1';
             info.style.filter = '';
           }
           if (imgWrapEl) {
@@ -895,7 +897,7 @@ if (state.isMobile) {
             imgWrapEl.style.opacity = '';
             imgWrapEl.style.filter = '';
           }
-          if (fsWrap) {
+          if (fsWrap && wasFsVisibleAtSwipeStart) {
             fsWrap.style.transition = '';
             fsWrap.style.filter = '';
             fsWrap.style.opacity = '';

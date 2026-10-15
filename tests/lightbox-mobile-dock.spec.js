@@ -1004,10 +1004,52 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
       touchPoints: []
     });
 
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(650);
     await expect(page.locator('#lightbox')).toHaveClass(/open/);
     const imgWrapTransformAfterSnap = await page.locator('#lightbox-img-wrap').evaluate(el => el.style.transform);
     expect(imgWrapTransformAfterSnap === '' || imgWrapTransformAfterSnap === 'none').toBe(true);
+
+    // Text and visible filmstrip must both be restored and visible
+    const infoOpacity = await page.locator('#lightbox-info').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(infoOpacity)).toBeGreaterThan(0.95);
+    const fsOpacity = await page.locator('#filmstrip-wrap').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(fsOpacity)).toBeGreaterThan(0.95);
+
+    // Now test snap-back when filmstrip was initially hidden
+    await page.evaluate(() => {
+      document.getElementById('filmstrip-wrap')?.classList.remove('visible');
+    });
+    await page.waitForTimeout(100);
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: startX, y: startY, id: 0 }]
+    });
+
+    for (let dy = 5; dy <= 30; dy += 5) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: startX, y: startY + dy, id: 0 }]
+      });
+      await page.waitForTimeout(20);
+    }
+
+    // Verify filmstrip did NOT pop into view during drag
+    const fsOpacityDuringDrag = await page.locator('#filmstrip-wrap').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(fsOpacityDuringDrag)).toBe(0);
+
+    // Release and snap back
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: []
+    });
+    await page.waitForTimeout(650);
+
+    // Info text must remain visible, and filmstrip must remain hidden
+    const infoOpacityAfterSnap = await page.locator('#lightbox-info').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(infoOpacityAfterSnap)).toBeGreaterThan(0.95);
+    const fsOpacityAfterSnap = await page.locator('#filmstrip-wrap').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(fsOpacityAfterSnap)).toBe(0);
   });
 
   test('18. Touch drag starting on dock does not trigger dismiss', async ({ page }) => {

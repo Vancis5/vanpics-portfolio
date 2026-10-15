@@ -561,6 +561,10 @@
   backface-visibility: hidden;
 }
 
+#lightbox.open #lightbox-info {
+  opacity: 1;
+}
+
 #lightbox-bottom-row {
   display: contents;
 }
