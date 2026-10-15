@@ -830,6 +830,12 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     // Wait for zoom transition to settle
     await page.waitForTimeout(400);
 
+    // Verify info wrap blurs during zoom instead of disappearing
+    const infoFilterZoomed = await page.locator('#lightbox-info-wrap').evaluate(el => el.style.filter);
+    expect(infoFilterZoomed.includes('blur')).toBe(true);
+    const infoOpacityZoomed = await page.locator('#lightbox-info-wrap').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(infoOpacityZoomed)).toBeGreaterThan(0.5);
+
     const wrapBoxZoomed = await page.locator('#lightbox-img-wrap').boundingBox();
     // Wrap geometry must remain identical (no layout jump or expansion)
     expect(Math.abs(wrapBoxZoomed.y - wrapBoxBefore.y)).toBeLessThanOrEqual(1);
@@ -850,6 +856,9 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
 
     await expect(page.locator('#lightbox')).not.toHaveClass(/zoom-active/, { timeout: 4000 });
     await page.waitForTimeout(400);
+
+    const infoFilterAfter = await page.locator('#lightbox-info-wrap').evaluate(el => el.style.filter);
+    expect(infoFilterAfter === '' || infoFilterAfter === 'none').toBe(true);
 
     const wrapBoxAfter = await page.locator('#lightbox-img-wrap').boundingBox();
     expect(Math.abs(wrapBoxAfter.y - wrapBoxBefore.y)).toBeLessThanOrEqual(1);

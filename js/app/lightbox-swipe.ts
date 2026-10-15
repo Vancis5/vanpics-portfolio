@@ -25,7 +25,7 @@ lbEl.addEventListener('click', function (e) {
 
   let now = Date.now();
   let img = ((e.target as HTMLElement).closest('.snap-slide')?.querySelector('img') || e.target) as HTMLImageElement;
-  if (img && img.tagName && img.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
+  if (img && img.tagName && img.tagName.toLowerCase() === 'img' && now - lastTapT < 400) {
     // Double tap zoom
     if (singleTapTimer) {
       clearTimeout(singleTapTimer);

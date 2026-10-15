@@ -530,7 +530,7 @@
 }
 
 #lightbox.zoom-active #lightbox-info-wrap {
-  z-index: 10 !important;
+  z-index: 45 !important;
   pointer-events: none;
 }
 
@@ -1154,7 +1154,7 @@ html.custom-cursor-enabled #lightbox-close::before {
   }
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-info-wrap {
-    z-index: 1 !important;
+    z-index: 10 !important;
     pointer-events: none;
   }
 
@@ -1261,10 +1261,8 @@ html.custom-cursor-enabled #lightbox-close::before {
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-info-wrap,
   #lightbox.zoom-active #lightbox-info-wrap {
-    z-index: 1 !important;
-    opacity: 0;
+    z-index: 10 !important;
     pointer-events: none;
-    transition: opacity 0.2s ease;
   }
 
   #lightbox.zoom-active:not(.mode-motion) .snap-slide-inner,
