@@ -15,6 +15,7 @@ let imgWrap = domRefs.lightboxImgWrap;
 let swipeHappened = false;
 
 let lastTapT = 0;
+let singleTapTimer: any = null;
 
 // mobile: tap content area (not interactive elements) to toggle filmstrip
 lbEl.addEventListener('click', function (e) {
@@ -23,9 +24,14 @@ lbEl.addEventListener('click', function (e) {
   if ((e.target as HTMLElement).closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info, video-player, #motion-player-shell')) return;
 
   let now = Date.now();
-  let img = e.target as HTMLImageElement;
-  if (img && img.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
+  let img = ((e.target as HTMLElement).closest('.snap-slide')?.querySelector('img') || e.target) as HTMLImageElement;
+  if (img && img.tagName && img.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
     // Double tap zoom
+    if (singleTapTimer) {
+      clearTimeout(singleTapTimer);
+      singleTapTimer = null;
+    }
+    lastTapT = 0;
     if (state.lbZoomLevel > 1) {
       resetZoom();
     } else {
@@ -40,14 +46,18 @@ lbEl.addEventListener('click', function (e) {
         img.classList.add('zoomed'); // Disable transition for subsequent panning
       }, 360);
     }
-    lastTapT = 0;
   } else {
     lastTapT = now;
-    if (domRefs.filmstripWrap.classList.contains('visible')) {
-      hideFilmstripIfReady();
-    } else {
-      showFilmstripIfReady();
-    }
+    if (singleTapTimer) clearTimeout(singleTapTimer);
+    singleTapTimer = setTimeout(() => {
+      singleTapTimer = null;
+      if (state.lbZoomLevel > 1) return;
+      if (domRefs.filmstripWrap.classList.contains('visible')) {
+        hideFilmstripIfReady();
+      } else {
+        showFilmstripIfReady();
+      }
+    }, 250);
   }
 });
 

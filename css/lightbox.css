@@ -1149,9 +1149,6 @@ html.custom-cursor-enabled #lightbox-close::before {
   }
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap {
-    height: 100% !important;
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
     overflow: visible;
     z-index: 50 !important;
   }
@@ -1241,8 +1238,8 @@ html.custom-cursor-enabled #lightbox-close::before {
     min-height: 0;
   }
 
-  #lightbox:not(.zoom-active) #lightbox-img-wrap,
-  #lightbox:not(.zoom-active):not(.mode-motion) #lightbox-img-wrap,
+  #lightbox #lightbox-img-wrap,
+  #lightbox:not(.mode-motion) #lightbox-img-wrap,
   #lightbox-img-wrap {
     position: absolute;
     top: calc(var(--safe-top, 0px) + 0.75rem);
@@ -1258,15 +1255,6 @@ html.custom-cursor-enabled #lightbox-close::before {
 
   #lightbox.zoom-active:not(.mode-motion) #lightbox-img-wrap,
   #lightbox.zoom-active #lightbox-img-wrap {
-    position: absolute;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
     overflow: visible;
     z-index: 50 !important;
   }

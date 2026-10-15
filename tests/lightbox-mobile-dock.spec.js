@@ -785,7 +785,7 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     await page.screenshot({ path: path.join(outputDir, 'mobile-16-9.png') });
   });
 
-  test('14. Mobile double-tap zoom: double tap zooms in, second double tap resets zoom', async ({ page }) => {
+  test('14. Mobile double-tap zoom: double tap zooms in directly at tapped coordinate without shift, second double tap resets zoom', async ({ page }) => {
     await waitForGallery(page);
     const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
     await card.scrollIntoViewIfNeeded();
@@ -797,35 +797,63 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
 
     const box = await imgLocator.boundingBox();
     expect(box).toBeTruthy();
+    const wrapBoxBefore = await page.locator('#lightbox-img-wrap').boundingBox();
+    expect(wrapBoxBefore).toBeTruthy();
+
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
+    // Tap off-center (e.g. 40px left, 30px up from center)
+    const tapX = cx - 40;
+    const tapY = cy - 30;
+
+    // Relative fraction on unzoomed image
+    const u = (tapX - box.x) / box.width;
+    const v = (tapY - box.y) / box.height;
+
+    // Filmstrip starts hidden or visible; remember state
+    const fsVisibleBefore = await page.locator('#filmstrip-wrap').evaluate(el => el.classList.contains('visible'));
 
     // Wait for open navigation buffer (400ms) to clear
     await page.waitForTimeout(500);
 
-    // First double tap to zoom in
-    await page.touchscreen.tap(cx, cy);
-    await page.waitForTimeout(60);
-    await page.touchscreen.tap(cx, cy);
+    // Double tap off-center
+    await page.touchscreen.tap(tapX, tapY);
+    await page.waitForTimeout(50);
+    await page.touchscreen.tap(tapX, tapY);
 
     await expect(page.locator('#lightbox')).toHaveClass(/zoom-active/);
 
-    const transform = await imgLocator.evaluate((el) => el.style.transform);
-    expect(transform).toContain('scale(');
-
-    // Frame size should not change during zoom
-    const frameRect = await page.locator('.snap-slide[data-idx="0"] .snap-slide-inner').boundingBox();
-    expect(frameRect).toBeTruthy();
+    // Filmstrip should NOT have toggled from the double-tap
+    const fsVisibleDuring = await page.locator('#filmstrip-wrap').evaluate(el => el.classList.contains('visible'));
+    expect(fsVisibleDuring).toBe(false);
 
     // Wait for zoom transition to settle
     await page.waitForTimeout(400);
 
+    const wrapBoxZoomed = await page.locator('#lightbox-img-wrap').boundingBox();
+    // Wrap geometry must remain identical (no layout jump or expansion)
+    expect(Math.abs(wrapBoxZoomed.y - wrapBoxBefore.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(wrapBoxZoomed.height - wrapBoxBefore.height)).toBeLessThanOrEqual(1);
+
+    // Verify tapped point remains directly under the finger (within 2px)
+    const zoomedBox = await imgLocator.boundingBox();
+    expect(zoomedBox).toBeTruthy();
+    const pointXAfter = zoomedBox.x + u * zoomedBox.width;
+    const pointYAfter = zoomedBox.y + v * zoomedBox.height;
+    expect(Math.abs(pointXAfter - tapX)).toBeLessThanOrEqual(2);
+    expect(Math.abs(pointYAfter - tapY)).toBeLessThanOrEqual(2);
+
     // Second double tap to zoom out
-    await page.touchscreen.tap(cx, cy);
-    await page.waitForTimeout(30);
-    await page.touchscreen.tap(cx, cy);
+    await page.touchscreen.tap(tapX, tapY);
+    await page.waitForTimeout(50);
+    await page.touchscreen.tap(tapX, tapY);
 
     await expect(page.locator('#lightbox')).not.toHaveClass(/zoom-active/, { timeout: 4000 });
+    await page.waitForTimeout(400);
+
+    const wrapBoxAfter = await page.locator('#lightbox-img-wrap').boundingBox();
+    expect(Math.abs(wrapBoxAfter.y - wrapBoxBefore.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(wrapBoxAfter.height - wrapBoxBefore.height)).toBeLessThanOrEqual(1);
   });
 
   test('15. Mobile pinch zoom via CDP: two touches pinching outward activates zoom', async ({ page }) => {
