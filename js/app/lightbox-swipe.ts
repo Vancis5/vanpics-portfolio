@@ -66,7 +66,9 @@ lbEl.addEventListener('click', function (e) {
 if (state.isMobile) {
   (function () {
     let slidesBuilt = false;
-    let snapTimer: any = null;
+    let touchSnapTimer: any = null;
+    let manualNavTimer: any = null;
+    let manualNavTargetIdx: number | null = null;
     function clearSlides() {
       state.isManuallyNavigating = true;
       let slides = imgWrap.querySelectorAll('.snap-slide');
@@ -147,13 +149,39 @@ if (state.isMobile) {
       });
     }
 
+    function settleManualNav(targetIdx?: number) {
+      if (manualNavTimer) {
+        clearTimeout(manualNavTimer);
+        manualNavTimer = null;
+      }
+      imgWrap.style.scrollSnapType = '';
+      let resolvedIdx = typeof targetIdx === 'number' ? targetIdx : (manualNavTargetIdx !== null ? manualNavTargetIdx : state.cur);
+      manualNavTargetIdx = null;
+      state.isManuallyNavigating = false;
+      let slide = imgWrap.querySelector('.snap-slide[data-idx="' + resolvedIdx + '"]') as HTMLElement;
+      let w = imgWrap.offsetWidth || window.innerWidth;
+      let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (resolvedIdx * w);
+      if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
+        imgWrap.scrollLeft = targetLeft;
+      }
+      onSnapSettle(resolvedIdx);
+    }
+
     function scrollToSlide(idx: number, smooth = true) {
       if (state.currentLightboxIsMotion) return;
       let slide = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"]') as HTMLElement;
       let w = imgWrap.offsetWidth || window.innerWidth;
       let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (idx * w);
-      clearTimeout(snapTimer);
+      if (manualNavTimer) {
+        clearTimeout(manualNavTimer);
+        manualNavTimer = null;
+      }
+      if (touchSnapTimer) {
+        clearTimeout(touchSnapTimer);
+        touchSnapTimer = null;
+      }
       state.isManuallyNavigating = true;
+      manualNavTargetIdx = idx;
       imgWrap.style.scrollSnapType = 'none';
       if (slide) {
         imgWrap.scrollTo({
@@ -167,12 +195,8 @@ if (state.isMobile) {
       let dist = Math.abs(idx - currentIdx);
       let settleDelay = smooth ? Math.min(600, Math.max(300, dist * 70)) : 50;
       updateLoading(idx);
-      snapTimer = setTimeout(function () {
-        imgWrap.style.scrollSnapType = '';
-        if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
-          imgWrap.scrollLeft = targetLeft;
-        }
-        onSnapSettle(idx);
+      manualNavTimer = setTimeout(function () {
+        settleManualNav(idx);
       }, settleDelay);
     }
     setMobileScrollHandler(scrollToSlide);
@@ -212,12 +236,13 @@ if (state.isMobile) {
       if (Math.abs(state.lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
       let dx = e.changedTouches[0].clientX - wrapTouchX;
       let maxScroll = imgWrap.scrollWidth - imgWrap.offsetWidth;
-      if (imgWrap.scrollLeft >= maxScroll - 5 && dx < -45) {
+      let lastIdx = state.activePhotos.length - 1;
+      if ((state.cur === lastIdx || imgWrap.scrollLeft >= maxScroll - 5) && dx < -45) {
         // Pulled left while on the last slide -> Loop to 0
         openLightbox(0, 1);
-      } else if (imgWrap.scrollLeft <= 5 && dx > 45) {
+      } else if ((state.cur === 0 || imgWrap.scrollLeft <= 5) && dx > 45) {
         // Pulled right while on the first slide -> Loop to end
-        openLightbox(state.activePhotos.length - 1, -1);
+        openLightbox(lastIdx, -1);
       } else {
         filmstripReleaseFollowUntil = performance.now() + FILMSTRIP_RELEASE_FOLLOW_MS;
         setTimeout(function () {
@@ -377,16 +402,23 @@ if (state.isMobile) {
       if (!lbEl.classList.contains('open')) return;
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
-      clearTimeout(snapTimer);
-      if (!state.isManuallyNavigating) onSnapSettle();
+      if (touchSnapTimer) {
+        clearTimeout(touchSnapTimer);
+        touchSnapTimer = null;
+      }
+      if (state.isManuallyNavigating) {
+        settleManualNav();
+      } else {
+        onSnapSettle();
+      }
     });
 
     imgWrap.addEventListener('scroll', function () {
       if (!lbEl.classList.contains('open')) return;
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (state.isManuallyNavigating) return;
-      clearTimeout(snapTimer);
-      snapTimer = setTimeout(onSnapSettle, 80);
+      if (touchSnapTimer) clearTimeout(touchSnapTimer);
+      touchSnapTimer = setTimeout(onSnapSettle, 80);
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;

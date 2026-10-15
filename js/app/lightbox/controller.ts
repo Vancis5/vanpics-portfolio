@@ -563,8 +563,8 @@ export function navigateLightbox(d: number) {
   if (typeof state.lbZoomLevel !== 'undefined' && state.lbZoomLevel > 1) resetZoom();
   let currentSet = getCurrentLightboxItems();
   if (!currentSet || currentSet.length <= 1) return;
-  state.cur = (state.cur + d + currentSet.length) % currentSet.length;
-  openLightbox(state.cur, d, state.currentLightboxIsMotion);
+  let target = (state.cur + d + currentSet.length) % currentSet.length;
+  openLightbox(target, d, state.currentLightboxIsMotion);
 }
 
 // ── Event Listeners ──

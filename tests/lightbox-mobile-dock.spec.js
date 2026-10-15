@@ -1183,6 +1183,58 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     const uniqueTilts = new Set(observedTilts.map(t => t.toFixed(2)));
     expect(uniqueTilts.size).toBeGreaterThan(1);
   });
+
+  test('21. Navigating from first pic to last pic preserves scroll snapping, settles description, and keeps filmstrip responsive', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    await expect(page.locator('#lightbox-title')).toHaveText('photo 1-1 long');
+
+    const client = await page.context().newCDPSession(page);
+    const img = page.locator('.snap-slide[data-idx="0"] img');
+    const box = await img.boundingBox();
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+
+    // Pull right past edge (dx > 45) to loop from first to last photo
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: startX, y: startY, id: 0 }]
+    });
+
+    for (let dx = 15; dx <= 90; dx += 15) {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: startX + dx, y: startY, id: 0 }]
+      });
+      await page.waitForTimeout(20);
+    }
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: []
+    });
+
+    // Wait for loop navigation to settle
+    await page.waitForTimeout(700);
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    await expect(page.locator('#lightbox-title')).toHaveText('photo bright long', { timeout: 4000 });
+
+    // Check that scroll-snap is NOT disabled ('none')
+    const snapStyle = await page.locator('#lightbox-img-wrap').evaluate(el => el.style.scrollSnapType);
+    expect(snapStyle).not.toBe('none');
+
+    // Check that description text is fully visible
+    const infoOpacity = await page.locator('#lightbox-info').evaluate(el => window.getComputedStyle(el).opacity);
+    expect(parseFloat(infoOpacity)).toBeGreaterThan(0.95);
+
+    // Active filmstrip thumbnail must be the last one (idx 15)
+    const activeThumb = page.locator('.filmstrip-thumb.active');
+    await expect(activeThumb).toHaveAttribute('data-idx', '15');
+  });
 });
 
 test.describe('Desktop unchanged', () => {
