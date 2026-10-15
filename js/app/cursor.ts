@@ -20,11 +20,23 @@ if (isMouseDevice) {
   let fsCurrentOffset = 0;
   let fsCurrentWidth = 28;
 
+  // ⚡ Bolt: Cache bounding rect per-frame to prevent layout thrashing in interleaved rAF loops
+  // Reading and writing styles (ring width/transform) in the same frame causes forced synchronous layouts.
+  // By caching per frame we avoid the thrashing but never risk stale state across frames.
+  let cachedFilmstripRect: DOMRect | null = null;
+
   function isCursorOverFilmstrip(x = mx, y = my): boolean {
     if (!domRefs.filmstripWrap || !domRefs.filmstripWrap.classList.contains('visible')) {
       return false;
     }
-    const rect = domRefs.filmstripWrap.getBoundingClientRect();
+    if (!cachedFilmstripRect) {
+      cachedFilmstripRect = domRefs.filmstripWrap.getBoundingClientRect();
+
+      // Clear cache on the next microtask or macro task, so it only lives for the current execution cycle
+      // Using Promise.resolve().then() acts like a microtask which lives through the end of the script block
+      Promise.resolve().then(() => { cachedFilmstripRect = null; });
+    }
+    const rect = cachedFilmstripRect;
     return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
   }
 

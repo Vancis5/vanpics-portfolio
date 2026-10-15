@@ -1,3 +1,6 @@
 ## 2024-05-14 - Avoiding Layout Thrashing on mousemove
 **Learning:** Calling `getBoundingClientRect()` inside high-frequency events like `mousemove` causes forced synchronous layout (layout thrashing) which blocks the main thread. This app uses glowing cursor trackers that follow the mouse, but they were reading layout on every tick.
 **Action:** Always cache the element's position on `mouseenter` (as document-relative coordinates) and use `e.pageX/pageY` (which are document-relative) instead of `e.clientX/clientY` to compute relative mouse positions. This completely eliminates synchronous layout reads from the critical animation path.
+## 2024-05-19 - Safe Bounding Rect Caching Strategy
+**Learning:** Persistently caching `getBoundingClientRect()` across frames and relying on event listeners (`scroll`, `resize`) for invalidation is highly brittle and can easily lead to a broken UI due to missed DOM mutations.
+**Action:** When trying to prevent layout thrashing within a frame, use per-frame microtask caching (e.g., `Promise.resolve().then(() => cache = null)`) instead. This guarantees fresh measurements at the start of every frame while safely skipping redundant layout calculations within the same execution tick.
