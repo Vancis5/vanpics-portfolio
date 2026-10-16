@@ -113,6 +113,16 @@
   transition: color 0.4s ease;
 }
 
+.footer-bio p span {
+  display: block;
+  text-wrap: balance;
+  transition: color 0.4s ease;
+}
+
+.footer-bio p span:last-child {
+  color: #a89c8a;
+}
+
 .footer-links {
   display: flex;
   gap: 0.85rem;
@@ -170,6 +180,10 @@
   color: #d9cfc0;
 }
 
+#site-footer.is-visible .footer-bio p span:last-child {
+  color: #a89c8a;
+}
+
 #site-footer.is-visible .footer-brand p,
 #site-footer.is-visible .footer-instagram,
 #site-footer.is-visible .footer-email {
@@ -187,6 +201,10 @@
 
   #site-footer:hover .footer-bio p {
     color: #ede6dc;
+  }
+
+  #site-footer:hover .footer-bio p span:last-child {
+    color: #baae9d;
   }
 
   #site-footer:hover .footer-brand p,
