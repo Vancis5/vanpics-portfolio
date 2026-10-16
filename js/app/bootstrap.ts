@@ -1,7 +1,7 @@
 import { APP_CONFIG } from './config.js';
 import { domRefs } from './dom.js';
 import { state, updateActivePhotos } from './state.js';
-import { getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
+import { getCategorySlug, getInternalCategory, motionProjects, updateMediaLibrary } from './media-data.js';
 import { slugify, pruneRatioCache, safeStorage } from './utils.js';
 import { closeLightbox, initBlurRenderer, openLightbox, startUnifiedMotionPlayer, toggleLightboxDesc } from './lightbox.js';
 import { buildMasonry, initFilters, rebuildGallery, getMasonryColumnCount } from './gallery.js';
@@ -39,7 +39,12 @@ function liftLoader() {
 
 // Lift loader via direct callback — no MutationObserver (flaky in Firefox)
 let _loaderLifted = false;
-function safeLift() {
+async function safeLift() {
+  if (_loaderLifted) return;
+  const fontsPromise = (window as any).__fontsReady || (document.fonts ? document.fonts.ready : Promise.resolve());
+  try {
+    await fontsPromise;
+  } catch (_) {}
   if (!_loaderLifted) {
     _loaderLifted = true;
     liftLoader();
@@ -53,10 +58,7 @@ async function onReadyToLift() {
   const fontsPromise = (window as any).__fontsReady || (document.fonts ? document.fonts.ready : Promise.resolve());
   try {
     // Fonts load first before anything pops up
-    await Promise.race([
-      fontsPromise,
-      new Promise(function (resolve) { setTimeout(resolve, 2500); })
-    ]);
+    await fontsPromise;
   } catch (_) {}
 
   setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay);
@@ -199,13 +201,18 @@ const prewarmBlur = (e: Event) => {
 document.addEventListener('pointerenter', prewarmBlur, { capture: true, once: true });
 document.addEventListener('touchstart', prewarmBlur, { capture: true, once: true, passive: true });
 
-// Prevent pinch and gesture zoom anywhere on mobile (Safari iOS + mobile browsers)
-document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
-document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
-document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+// Prevent native browser pinch-zoom only while inside the lightbox so custom lightbox zoom owns gestures
+function preventLightboxNativeZoom(e: Event) {
+  if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
+    if (e.cancelable) e.preventDefault();
+  }
+}
+document.addEventListener('gesturestart', preventLightboxNativeZoom, { passive: false });
+document.addEventListener('gesturechange', preventLightboxNativeZoom, { passive: false });
+document.addEventListener('gestureend', preventLightboxNativeZoom, { passive: false });
 document.addEventListener('touchmove', function (e) {
-  if (e.touches && e.touches.length > 1) {
-    e.preventDefault();
+  if (e.touches && e.touches.length > 1 && domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {
+    if (e.cancelable) e.preventDefault();
   }
 }, { passive: false });
 
@@ -254,7 +261,7 @@ let _isInitialDeepLink = true; // true only for the very first checkHash call (f
 let checkHashRetries = 0;
 const MAX_CHECK_HASH_RETRIES = 20;
 
-function checkHash() {
+async function checkHash() {
   const fullHash = window.location.hash.substring(1);
 
   const lb = domRefs.lightbox;
@@ -279,6 +286,11 @@ function checkHash() {
 
   // 1. If we're not in the right category, switch it first
   if (state.currentCategory !== targetCat) {
+    if (state.isLightboxClosing || state.isLightboxDismissing || (performance.now() - (state.lightboxClosedTime || 0) < 450)) {
+      let currentSlug = getCategorySlug(state.currentCategory);
+      history.replaceState(null, '', '#' + currentSlug);
+      return;
+    }
     rebuildGallery(targetCat);
     // Wait for rebuild, then re-check for the item
     setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
@@ -312,6 +324,11 @@ function checkHash() {
         }
         _isInitialDeepLink = false;
 
+        const fontsPromise = (window as any).__fontsReady || (document.fonts ? document.fonts.ready : Promise.resolve());
+        try {
+          await fontsPromise;
+        } catch (_) {}
+
         state.isPopState = true;
         openLightbox(i, 0, state.currentCategory === 'motion');
         setTimeout(function () { state.isPopState = false; }, ROUTING_CONFIG.itemRecheckDelay);
@@ -333,18 +350,18 @@ window.addEventListener('popstate', function () {
 function processPhotos(raw: any[]) {
   return raw.map((p: any) => ({
     ...p,
-    aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : undefined),
-    heroSlide: p.hero_slide === 1 || p.hero_slide === true,
-    rawSrc: p.raw_src || null,
-    lbSrc: p.lb_src || null
+    aspectRatio: typeof p.aspect_ratio === 'number' ? p.aspect_ratio : (p.aspect_ratio ? parseFloat(p.aspect_ratio) : p.aspectRatio),
+    heroSlide: p.hero_slide === 1 || p.hero_slide === true || p.heroSlide === true,
+    rawSrc: p.raw_src ?? p.rawSrc ?? null,
+    lbSrc: p.lb_src ?? p.lbSrc ?? null
   }));
 }
 
 function processVideos(raw: any[]) {
   return raw.map((v: any) => ({
     ...v,
-    thumb: v.poster || '',
-    aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : (v.aspect_ratio ? parseFloat(v.aspect_ratio) : undefined)
+    thumb: v.poster || v.thumb || '',
+    aspectRatio: typeof v.aspect_ratio === 'number' ? v.aspect_ratio : (v.aspect_ratio ? parseFloat(v.aspect_ratio) : v.aspectRatio)
   }));
 }
 
@@ -506,8 +523,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
       if (Array.isArray(photos) && photos.length > 0) {
         renderedPhotos = processPhotos(photos);
         renderedVideos = processVideos(videos || []);
-        warmStartupImages(photos).catch(function() {});
-        renderUI(photos, videos || []);
+        warmStartupImages(renderedPhotos).catch(function() {});
+        renderUI(renderedPhotos, renderedVideos);
         renderedFromCache = true;
         // Carousel readiness lifts the curtain after the first hero thumbnails decode.
       }
@@ -549,6 +566,18 @@ function renderUI(photos: Photo[], videos: Video[]) {
   }
 
   if (!renderedFromCache) {
+    if (newPhotos.length === 0) {
+      try {
+        const [{ photos: fallbackPhotos }, { videos: fallbackVideos }] = await Promise.all([
+          import('../data/photos.js'),
+          import('../data/videos.js')
+        ]);
+        newPhotos = processPhotos(fallbackPhotos || []);
+        newVideos = processVideos(fallbackVideos || []);
+      } catch (fallbackErr) {
+        console.warn('Static fallback data failed to load:', fallbackErr);
+      }
+    }
     // ── First ever visit: fire image warm in parallel, render immediately ──
     if (newPhotos.length > 0) {
       warmStartupImages(newPhotos).catch(function() {});
@@ -557,8 +586,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
     if (state.carouselPhotos.length === 0) safeLift();
   } else if (newPhotos.length > 0) {
     // ── Already rendered from cache: compare fresh data against what we rendered ──
-    const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
-    const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}-${v.thumb || ''}-${v.date || ''}-${v.desc || ''}`;
+    const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.lbSrc || ''}-${p.rawSrc || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
+    const videoSig = (v: Video) => `${v.id}-${v.title || ''}-${v.src || ''}-${v.thumb || ''}-${v.aspectRatio || ''}-${v.date || ''}-${v.location || ''}-${v.music || ''}-${v.desc || ''}`;
 
     const photosSame = newPhotos.length === renderedPhotos.length &&
                        newPhotos.every((p: Photo, idx: number) => photoSig(p) === photoSig(renderedPhotos[idx]));

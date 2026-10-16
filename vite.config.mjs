@@ -5,7 +5,11 @@ export default {
   server: {
     host: true,
     port: 5199,
+    cors: true,
     allowedHosts: true,
+    watch: {
+      ignored: ['**/playwright-report/**', '**/test-results/**']
+    },
     headers: {
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
     }

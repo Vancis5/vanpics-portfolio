@@ -66,13 +66,161 @@ function applyColorPalette(palette: DynamicColorPalette | null) {
   lbEl.style.setProperty('--lightbox-ambient-bg', palette.ambient);
 }
 
+export function getPhotoThumbSrc(p: Photo): string {
+  if (!p) return '';
+  if (p.thumb) return p.thumb;
+  if (p.src && p.src.includes('photos/') && !p.src.includes('photos/thumbs/')) {
+    return p.src.replace('photos/', 'photos/thumbs/');
+  }
+  return p.src || '';
+}
+
+function extractPaletteFromImage(img: HTMLImageElement): DynamicColorPalette | null {
+  try {
+    if (!sharedCanvas) {
+      sharedCanvas = document.createElement('canvas');
+      sharedCanvas.width = 10;
+      sharedCanvas.height = 10;
+      sharedCtx = sharedCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    if (!sharedCtx) return null;
+    sharedCtx.drawImage(img, 0, 0, 10, 10);
+    const imgData = sharedCtx.getImageData(0, 0, 10, 10).data;
+
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (let i = 0; i < imgData.length; i += 4) {
+      const a = imgData[i + 3];
+      if (a > 200) {
+        rSum += imgData[i];
+        gSum += imgData[i + 1];
+        bSum += imgData[i + 2];
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      const r = Math.round(rSum / count);
+      const g = Math.round(gSum / count);
+      const b = Math.round(bSum / count);
+
+      const hsl = rgbToHsl(r, g, b);
+      const s = Math.min(Math.max(hsl.s * 0.75, 18), 35);
+      const l = Math.min(Math.max(hsl.l, 82), 85);
+
+      return {
+        color: `hsl(${hsl.h}, ${s}%, ${l}%)`,
+        muted: `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`,
+        faint: `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`,
+        ambient: `hsl(${hsl.h}, ${Math.min(Math.max(hsl.s, 28), 50)}%, 13.5%)`
+      };
+    }
+    return null;
+  } catch (e) {
+    sharedCanvas = null;
+    sharedCtx = null;
+    console.warn("Dynamic text color extraction failed (possibly CORS):", e);
+    return null;
+  }
+}
+
+export function preloadPhotoColor(p: Photo): DynamicColorPalette | null {
+  if (!p || state.currentLightboxIsMotion) return null;
+  const thumbSrc = getPhotoThumbSrc(p);
+  if (!thumbSrc) return null;
+
+  const cachedPalette = colorCache.get(thumbSrc);
+  if (cachedPalette) return cachedPalette;
+
+  // 1. If thumbnail is already rendered and loaded in the DOM with anonymous crossOrigin, extract instantly
+  let domImg: HTMLImageElement | null = null;
+  try {
+    domImg = document.querySelector(`img[src="${CSS.escape(thumbSrc)}"]`) as HTMLImageElement | null;
+  } catch {
+    domImg = null;
+  }
+  if (domImg && domImg.complete && domImg.naturalWidth > 0 && domImg.crossOrigin === 'anonymous') {
+    const pal = extractPaletteFromImage(domImg);
+    if (pal) {
+      colorCache.set(thumbSrc, pal);
+      return pal;
+    }
+  }
+
+  // 2. Otherwise load via cacheImage
+  const cached = cacheImage(thumbSrc, true);
+  if (!cached) return null;
+
+  if (cached.decoded || (cached.img.complete && cached.img.naturalWidth > 0)) {
+    const pal = extractPaletteFromImage(cached.img);
+    if (pal) {
+      colorCache.set(thumbSrc, pal);
+      return pal;
+    }
+  } else {
+    const onDone = () => {
+      if (!colorCache.has(thumbSrc) && cached.img.complete && cached.img.naturalWidth > 0) {
+        const pal = extractPaletteFromImage(cached.img);
+        if (pal) colorCache.set(thumbSrc, pal);
+      }
+    };
+    if (cached.decodePromise) {
+      cached.decodePromise.then(onDone).catch(() => {});
+    } else {
+      cached.img.addEventListener('load', onDone, { once: true });
+    }
+  }
+
+  return null;
+}
+
+export function preloadAdjacentPhotoColors(currentIndex: number, photoList?: Photo[]) {
+  if (state.currentLightboxIsMotion) return;
+  const list = photoList || (state.activePhotos as Photo[]);
+  if (!list || !list.length) return;
+  const len = list.length;
+
+  const offsets = [-1, 1, -2, 2, -3, 3];
+  for (const offset of offsets) {
+    const idx = (currentIndex + offset + len) % len;
+    const p = list[idx];
+    if (p) preloadPhotoColor(p);
+  }
+}
+
+export function warmUpAllPhotoColors(photoList?: Photo[]) {
+  if (state.currentLightboxIsMotion) return;
+  const list = photoList || (state.activePhotos as Photo[]);
+  if (!list || !list.length) return;
+
+  let idx = 0;
+  const batchSize = 6;
+  function processBatch() {
+    const end = Math.min(idx + batchSize, list.length);
+    for (; idx < end; idx++) {
+      preloadPhotoColor(list[idx]);
+    }
+    if (idx < list.length) {
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(processBatch, { timeout: 1000 });
+      } else {
+        setTimeout(processBatch, 40);
+      }
+    }
+  }
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(processBatch, { timeout: 1000 });
+  } else {
+    setTimeout(processBatch, 40);
+  }
+}
+
 export function updateDynamicTextColor(p: Photo) {
   if (state.currentLightboxIsMotion) {
     resetDynamicTextColor();
     return;
   }
 
-  const thumbSrc = p.thumb || p.src;
+  const thumbSrc = getPhotoThumbSrc(p);
   if (!thumbSrc) {
     resetDynamicTextColor();
     return;
@@ -83,92 +231,53 @@ export function updateDynamicTextColor(p: Photo) {
     return;
   }
 
-  const cached = cacheImage(thumbSrc);
+  // Attempt synchronous extraction
+  const pal = preloadPhotoColor(p);
+  if (pal) {
+    applyColorPalette(pal);
+    return;
+  }
+
+  const cached = cacheImage(thumbSrc, true);
   if (!cached) {
     resetDynamicTextColor();
     return;
   }
 
-  function processColor() {
+  const applyWhenReady = () => {
     const currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
-    if (!currentSet || currentSet[state.cur] !== p) return;
+    const curPhoto = currentSet && currentSet[state.cur] ? (currentSet[state.cur] as Photo) : null;
 
     if (colorCache.has(thumbSrc)) {
-      applyColorPalette(colorCache.get(thumbSrc)!);
+      if (curPhoto && getPhotoThumbSrc(curPhoto) === thumbSrc) {
+        applyColorPalette(colorCache.get(thumbSrc)!);
+      }
       return;
     }
 
-    try {
-      if (!sharedCanvas) {
-        sharedCanvas = document.createElement('canvas');
-        sharedCanvas.width = 10;
-        sharedCanvas.height = 10;
-        sharedCtx = sharedCanvas.getContext('2d', { willReadFrequently: true });
-      }
-      if (!sharedCtx) return;
-      sharedCtx.drawImage(cached!.img, 0, 0, 10, 10);
-      const imgData = sharedCtx.getImageData(0, 0, 10, 10).data;
-
-      let rSum = 0, gSum = 0, bSum = 0, count = 0;
-      for (let i = 0; i < imgData.length; i += 4) {
-        const r = imgData[i];
-        const g = imgData[i + 1];
-        const b = imgData[i + 2];
-        const a = imgData[i + 3];
-        if (a > 200) {
-          rSum += r;
-          gSum += g;
-          bSum += b;
-          count++;
-        }
-      }
-
-      if (count > 0) {
-        const r = Math.round(rSum / count);
-        const g = Math.round(gSum / count);
-        const b = Math.round(bSum / count);
-
-        const hsl = rgbToHsl(r, g, b);
-        const s = Math.min(Math.max(hsl.s * 0.75, 18), 35);
-        const l = Math.min(Math.max(hsl.l, 82), 85);
-
-        const palette: DynamicColorPalette = {
-          color: `hsl(${hsl.h}, ${s}%, ${l}%)`,
-          muted: `hsla(${hsl.h}, ${s}%, ${l}%, 0.78)`,
-          faint: `hsla(${hsl.h}, ${s}%, ${l}%, 0.40)`,
-          ambient: `hsl(${hsl.h}, ${Math.min(Math.max(hsl.s, 28), 50)}%, 13.5%)`
-        };
+    if (cached.img.complete && cached.img.naturalWidth > 0) {
+      const palette = extractPaletteFromImage(cached.img);
+      if (palette) {
         colorCache.set(thumbSrc, palette);
-        applyColorPalette(palette);
-      } else {
+        if (curPhoto && getPhotoThumbSrc(curPhoto) === thumbSrc) {
+          applyColorPalette(palette);
+        }
+      } else if (curPhoto && getPhotoThumbSrc(curPhoto) === thumbSrc) {
         resetDynamicTextColor();
       }
-    } catch (e) {
-      console.warn("Dynamic text color extraction failed (possibly CORS):", e);
-      resetDynamicTextColor();
-    }
-  }
-
-  const scheduleProcess = () => {
-    if (typeof requestIdleCallback === 'function') {
-      requestIdleCallback(processColor);
-    } else {
-      setTimeout(processColor, 30);
     }
   };
 
-  if (cached.decoded) {
-    scheduleProcess();
-  } else if (cached.decodePromise) {
-    cached.decodePromise.then(scheduleProcess);
+  if (cached.decodePromise) {
+    cached.decodePromise.then(applyWhenReady).catch(() => {});
   } else {
-    cached.img.addEventListener('load', function onLoad() {
-      cached.img.removeEventListener('load', onLoad);
-      scheduleProcess();
-    });
-    cached.img.addEventListener('error', function onError() {
-      cached.img.removeEventListener('error', onError);
-      resetDynamicTextColor();
-    });
+    cached.img.addEventListener('load', applyWhenReady, { once: true });
+    cached.img.addEventListener('error', () => {
+      const currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
+      const curPhoto = currentSet && currentSet[state.cur] ? (currentSet[state.cur] as Photo) : null;
+      if (curPhoto && getPhotoThumbSrc(curPhoto) === thumbSrc) {
+        resetDynamicTextColor();
+      }
+    }, { once: true });
   }
 }

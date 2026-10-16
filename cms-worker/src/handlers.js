@@ -19,6 +19,7 @@ import {
 import {
   clearApiCache,
   getMediaObject,
+  headMediaObject,
   putMediaObject,
   deleteMediaObjects,
   fetchPhotos,
@@ -33,9 +34,9 @@ import {
   updateVideoRecord,
   updatePhotoMediaKeys,
   getAllPhotosForSorting,
-  batchUpdatePhotosCreatedAt,
+  batchUpdatePhotosSortOrder,
   getAllVideosForSorting,
-  batchUpdateVideosCreatedAt,
+  batchUpdateVideosSortOrder,
 } from './media-repository.js';
 
 // 30 MB for images, 100 MB for videos
@@ -63,18 +64,20 @@ export async function serveMedia(request, env, params, ctx) {
   }
 
   const rangeHeader = request.headers.get('Range');
+  const isHead = request.method === 'HEAD';
 
   // 1. Try Cloudflare CDN edge cache first (only for non-range requests)
   let cacheKey;
   let cache;
   if (!rangeHeader) {
     const cacheUrl = new URL(request.url);
-    cacheKey = new Request(cacheUrl.toString(), request);
+    cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
     cache = caches.default;
 
     let cachedResponse = await cache.match(cacheKey);
     if (cachedResponse) {
-      return applyPublicMediaCors(cachedResponse);
+      const corsRes = applyPublicMediaCors(cachedResponse);
+      return isHead ? new Response(null, { status: corsRes.status, headers: corsRes.headers }) : corsRes;
     }
   }
 
@@ -101,7 +104,9 @@ export async function serveMedia(request, env, params, ctx) {
   }
 
   // 3. Single GET from R2 via repository
-  const object = await getMediaObject(env, fileKey, rangeOptions);
+  const object = isHead
+    ? await headMediaObject(env, fileKey)
+    : await getMediaObject(env, fileKey, rangeOptions);
 
   if (!object) {
     return new Response('Media asset not found', {
@@ -140,10 +145,10 @@ export async function serveMedia(request, env, params, ctx) {
     headers.set('Content-Length', totalSize.toString());
   }
 
-  const response = new Response(object.body, { status, headers });
+  const response = new Response(isHead ? null : object.body, { status, headers });
 
   // 4. Cache full responses at the edge in background
-  if (!rangeHeader && request.method === 'GET' && totalSize > 0 && cache) {
+  if (!isHead && !rangeHeader && request.method === 'GET' && totalSize > 0 && cache) {
     const putPromise = cache.put(cacheKey, response.clone());
     if (ctx && ctx.waitUntil) {
       ctx.waitUntil(putPromise);
@@ -154,14 +159,18 @@ export async function serveMedia(request, env, params, ctx) {
 }
 
 export async function listPhotos(request, env, params, ctx) {
-  const cache = caches.default;
-  const cacheUrl = new URL(request.url).toString();
-  const cacheReq = new Request(cacheUrl, { method: 'GET' });
-  const cached = await cache.match(cacheReq);
-  if (cached) return applyCors(cached, request, env);
-
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
+  const bypassCache = url.searchParams.has('_t');
+  const cache = caches.default;
+  const canonicalUrl = `${url.origin}${url.pathname}?limit=${limit}&offset=${offset}`;
+  const cacheReq = new Request(canonicalUrl, { method: 'GET' });
+
+  if (!bypassCache) {
+    const cached = await cache.match(cacheReq);
+    if (cached) return applyCors(cached, request, env);
+  }
+
   const { rows, total } = await fetchPhotos(env, limit, offset);
   const items = rows.map((row) => publicPhoto(request, row));
 
@@ -183,7 +192,7 @@ export async function listPhotos(request, env, params, ctx) {
     },
   });
 
-  if (ctx && ctx.waitUntil) {
+  if (!bypassCache && ctx && ctx.waitUntil) {
     ctx.waitUntil(cache.put(cacheReq, response.clone()));
   }
 
@@ -191,14 +200,18 @@ export async function listPhotos(request, env, params, ctx) {
 }
 
 export async function listVideos(request, env, params, ctx) {
-  const cache = caches.default;
-  const cacheUrl = new URL(request.url).toString();
-  const cacheReq = new Request(cacheUrl, { method: 'GET' });
-  const cached = await cache.match(cacheReq);
-  if (cached) return applyCors(cached, request, env);
-
   const url = new URL(request.url);
   const { limit, offset } = parsePagination(url.searchParams);
+  const bypassCache = url.searchParams.has('_t');
+  const cache = caches.default;
+  const canonicalUrl = `${url.origin}${url.pathname}?limit=${limit}&offset=${offset}`;
+  const cacheReq = new Request(canonicalUrl, { method: 'GET' });
+
+  if (!bypassCache) {
+    const cached = await cache.match(cacheReq);
+    if (cached) return applyCors(cached, request, env);
+  }
+
   const { rows, total } = await fetchVideos(env, limit, offset);
   const items = rows.map((row) => publicVideo(request, row));
 
@@ -220,7 +233,7 @@ export async function listVideos(request, env, params, ctx) {
     },
   });
 
-  if (ctx && ctx.waitUntil) {
+  if (!bypassCache && ctx && ctx.waitUntil) {
     ctx.waitUntil(cache.put(cacheReq, response.clone()));
   }
 
@@ -498,6 +511,16 @@ export async function sortDatabase(request, env) {
   function parsePhotoDate(dateStr) {
     if (!dateStr) return null;
     const cleanStr = dateStr.trim().toLowerCase();
+    const months = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+      january: 0, february: 1, march: 2, april: 3, june: 5,
+      july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+    };
+    const matchMDY = cleanStr.match(/([a-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+    if (matchMDY && months[matchMDY[1]] !== undefined) {
+      return new Date(Date.UTC(parseInt(matchMDY[3], 10), months[matchMDY[1]], parseInt(matchMDY[2], 10)));
+    }
     const d = new Date(cleanStr);
     if (!isNaN(d.getTime())) return d;
     if (/^\d{4}$/.test(cleanStr)) {
@@ -524,14 +547,9 @@ export async function sortDatabase(request, env) {
     return timeB - timeA;
   });
 
-  const baseTime = Date.now();
-  const photoUpdates = photos.map((photo, index) => {
-    const itemTime = new Date(baseTime - index * 10000);
-    const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
-    return { id: photo.id, createdAt: isoString };
-  });
+  const photoUpdates = photos.map((photo, index) => ({ id: photo.id, sortOrder: index + 1 }));
 
-  await batchUpdatePhotosCreatedAt(env, photoUpdates);
+  await batchUpdatePhotosSortOrder(env, photoUpdates);
 
   // 2. Sort Videos
   const videos = await getAllVideosForSorting(env);
@@ -551,13 +569,9 @@ export async function sortDatabase(request, env) {
     return timeB - timeA;
   });
 
-  const videoUpdates = videos.map((video, index) => {
-    const itemTime = new Date(baseTime - index * 10000);
-    const isoString = itemTime.toISOString().replace('T', ' ').substring(0, 19);
-    return { id: video.id, createdAt: isoString };
-  });
+  const videoUpdates = videos.map((video, index) => ({ id: video.id, sortOrder: index + 1 }));
 
-  await batchUpdateVideosCreatedAt(env, videoUpdates);
+  await batchUpdateVideosSortOrder(env, videoUpdates);
 
   await clearApiCache(request);
 
@@ -579,9 +593,8 @@ export async function replacePhotoFile(request, env, params) {
   const thumbFile = formData.get('thumb');
   const rawFile = formData.get('raw');
   const lbFile = formData.get('lb');
-  const aspectRatio = parseFloat(formData.get('aspectRatio'));
-
   const errors = [];
+  const aspectRatio = parseAspectRatio(formData.get('aspectRatio'), errors);
   if (!photoFile || !thumbFile) {
     errors.push('missing processed image assets');
   } else {
@@ -601,9 +614,10 @@ export async function replacePhotoFile(request, env, params) {
     errors.push('lb field must be a valid image file');
   }
 
-  if (isNaN(aspectRatio)) {
-    errors.push('invalid aspect ratio');
-  }
+  if (photoFile?.size > MAX_IMAGE_SIZE) errors.push(`photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (thumbFile?.size > MAX_IMAGE_SIZE) errors.push(`thumbnail exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (rawFile?.size > MAX_IMAGE_SIZE) errors.push(`raw photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
+  if (lbFile?.size > MAX_IMAGE_SIZE) errors.push(`lightbox photo exceeds ${MAX_IMAGE_SIZE / 1024 / 1024}MB limit`);
 
   if (errors.length > 0) {
     return jsonResponse(request, env, { error: 'validation failed', details: errors }, { status: 400 });

@@ -17,6 +17,9 @@ export class UIStore {
   pushNextState: boolean = false;
   isPopState: boolean = false;
   lightboxHistoryPushed: boolean = false;
+  isLightboxDismissing: boolean = false;
+  isLightboxClosing: boolean = false;
+  lightboxClosedTime: number = 0;
 
   constructor() {
     if (typeof window !== 'undefined') {

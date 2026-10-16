@@ -6,6 +6,7 @@ import { Photo, Video } from '../types.js';
 import { updateMobileImgWrapHeight } from './lightbox/renderer.js';
 import { loadVideoPlayer } from './video-player-loader.js';
 import { clearSwapOverlay, crossfadeToFull } from './lightbox-swap.js';
+import { getLightboxLayout } from './lightbox/layout.js';
 
 let photoPlaceholderTimer: any = null;
 let photoPlaceholderToken = 0;
@@ -258,10 +259,15 @@ export function renderVideoInLightbox(p: Video) {
   shell.style.display = 'block'; // Ensure it's not hidden
   updateMobileImgWrapHeight();
 
-  // Play/pause gesture handling
+  // Play/pause gesture handling (desktop only; mobile/tablet tap toggles controls)
   const container = shell.querySelector('media-container') as HTMLElement | null;
   if (container) {
     container.addEventListener('click', (e: MouseEvent) => {
+      const isTouchOrTablet = window.matchMedia('(hover: none)').matches || getLightboxLayout() !== 'desktop';
+      if (isTouchOrTablet) {
+        return;
+      }
+
       const target = e.target as HTMLElement;
       if (target.closest('media-controls') || target.closest('.motion-start-button')) {
         return;
@@ -303,4 +309,160 @@ export function pauseMotionVideo() {
   if (video && !video.paused) {
     video.pause();
   }
+}
+
+let swipeInitialVolume = 1;
+let restoreVolumeRafId: number | null = null;
+let motionFadeRafId: number | null = null;
+
+export function initMotionSwipeVolume() {
+  if (restoreVolumeRafId !== null) {
+    cancelAnimationFrame(restoreVolumeRafId);
+    restoreVolumeRafId = null;
+  }
+  const shell = domRefs.motionPlayerShell;
+  const video = shell ? (shell.querySelector('video') as HTMLVideoElement | null) : null;
+  if (video && !video.paused && !video.muted) {
+    swipeInitialVolume = video.volume > 0 ? video.volume : 1;
+  } else {
+    swipeInitialVolume = 0;
+  }
+}
+
+export function updateMotionSwipeVolume(dy: number, maxDist = 300) {
+  if (swipeInitialVolume <= 0) return;
+  const shell = domRefs.motionPlayerShell;
+  const video = shell ? (shell.querySelector('video') as HTMLVideoElement | null) : null;
+  if (!video || video.paused) return;
+
+  const progress = Math.min(1, Math.max(0, dy / maxDist));
+  const newVol = Math.max(0, swipeInitialVolume * (1 - progress));
+  try {
+    video.volume = newVol;
+  } catch (_) {}
+}
+
+export function restoreMotionSwipeVolume(durationMs = 200) {
+  if (swipeInitialVolume <= 0) return;
+  const shell = domRefs.motionPlayerShell;
+  const video = shell ? (shell.querySelector('video') as HTMLVideoElement | null) : null;
+  if (!video || video.paused) return;
+
+  if (restoreVolumeRafId !== null) {
+    cancelAnimationFrame(restoreVolumeRafId);
+    restoreVolumeRafId = null;
+  }
+
+  const currentVolume = video.volume;
+  const targetVolume = swipeInitialVolume;
+  if (currentVolume >= targetVolume) return;
+
+  const startTime = performance.now();
+  const tick = (now: number) => {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / durationMs);
+    try {
+      video.volume = Math.min(targetVolume, currentVolume + (targetVolume - currentVolume) * progress);
+    } catch (_) {}
+
+    if (progress < 1 && !video.paused) {
+      restoreVolumeRafId = requestAnimationFrame(tick);
+    } else {
+      restoreVolumeRafId = null;
+    }
+  };
+  restoreVolumeRafId = requestAnimationFrame(tick);
+}
+
+export function killMotionPlayer() {
+  if (restoreVolumeRafId !== null) {
+    cancelAnimationFrame(restoreVolumeRafId);
+    restoreVolumeRafId = null;
+  }
+  if (motionFadeRafId !== null) {
+    cancelAnimationFrame(motionFadeRafId);
+    motionFadeRafId = null;
+  }
+  swipeInitialVolume = 1;
+
+  const shell = domRefs.motionPlayerShell;
+  if (!shell) return;
+  const video = shell.querySelector('video') as HTMLVideoElement | null;
+  if (video) {
+    try {
+      video.muted = true;
+      video.volume = 0;
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    } catch (_) {}
+  }
+  shell.innerHTML = '';
+}
+
+export function fadeOutMotionVideo(durationMs = 300): Promise<void> {
+  return new Promise((resolve) => {
+    if (restoreVolumeRafId !== null) {
+      cancelAnimationFrame(restoreVolumeRafId);
+      restoreVolumeRafId = null;
+    }
+    if (motionFadeRafId !== null) {
+      cancelAnimationFrame(motionFadeRafId);
+      motionFadeRafId = null;
+    }
+
+    const shell = domRefs.motionPlayerShell;
+    const video = shell ? (shell.querySelector('video') as HTMLVideoElement | null) : null;
+
+    if (!video || video.paused || video.muted || video.volume <= 0) {
+      if (video && !video.paused) {
+        try {
+          video.muted = true;
+          video.pause();
+        } catch (_) {}
+      }
+      resolve();
+      return;
+    }
+
+    const startVolume = video.volume;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+      try {
+        video.volume = Math.max(0, startVolume * (1 - progress));
+      } catch (_) {}
+
+      if (progress < 1 && !video.paused) {
+        motionFadeRafId = requestAnimationFrame(tick);
+      } else {
+        motionFadeRafId = null;
+        try {
+          video.muted = true;
+          video.volume = 0;
+          video.pause();
+        } catch (_) {}
+        resolve();
+      }
+    };
+
+    motionFadeRafId = requestAnimationFrame(tick);
+  });
+}
+
+export function fadeOutAndKillMotionVideo(durationMs = 300): Promise<void> {
+  const shell = domRefs.motionPlayerShell;
+  const video = shell ? (shell.querySelector('video') as HTMLVideoElement | null) : null;
+  const isPlaying = !!(video && !video.paused && !video.muted && video.volume > 0);
+
+  if (!isPlaying) {
+    killMotionPlayer();
+    return Promise.resolve();
+  }
+
+  return fadeOutMotionVideo(durationMs).then(() => {
+    killMotionPlayer();
+  });
 }

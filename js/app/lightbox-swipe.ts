@@ -1,31 +1,74 @@
 // SWIPE for lightbox
 import { domRefs } from './dom.js';
 import { state } from './state.js';
-import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight, cancelDescFlipTransition, updateLightboxDescPreview } from './lightbox.js';
-import { resetZoom, toggleImageZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
+import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight, cancelDescFlipTransition, collapseLightboxDesc, updateLightboxDescPreview } from './lightbox.js';
+import { resetZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
-import { getPhotoAspectRatio, saveRatioToCache, fadeInWhenReady } from './utils.js';
-import { pauseMotionVideo } from './lightbox-media.js';
+import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
+import {
+  pauseMotionVideo,
+  fadeOutMotionVideo,
+  initMotionSwipeVolume,
+  updateMotionSwipeVolume,
+  restoreMotionSwipeVolume
+} from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
-import { isLbSrcUrl, lightboxSrc, markLbSrcFailed } from './lightbox-cache.js';
+import { isLbSrcUrl, lightboxSrc, markLbSrcFailed, cacheImage, getImageCacheEntry } from './lightbox-cache.js';
+import { crossfadeToFull, clearSwapOverlay } from './lightbox-swap.js';
+import { preloadAdjacentPhotoColors, warmUpAllPhotoColors, preloadPhotoColor } from './lightbox-color.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
 let swipeHappened = false;
+let swipeHappenedResetTimer: any = null;
+
+function markSwipeHappened() {
+  swipeHappened = true;
+  if (swipeHappenedResetTimer) clearTimeout(swipeHappenedResetTimer);
+  swipeHappenedResetTimer = setTimeout(() => {
+    swipeHappened = false;
+    swipeHappenedResetTimer = null;
+  }, 150);
+}
+
+function isMobileOrTablet(): boolean {
+  if (state.isMobile) return true;
+  if (typeof window !== 'undefined' && (window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches)) {
+    return true;
+  }
+  const layout = domRefs.lightbox?.dataset.lbLayout;
+  return layout === 'phone' || layout === 'tablet-portrait' || layout === 'tablet-landscape';
+}
 
 let lastTapT = 0;
+let singleTapTimer: any = null;
 
-// mobile: tap content area (not interactive elements) to toggle filmstrip
+// mobile & tablet: tap anywhere in navigation space (not interactive controls) to toggle filmstrip
 lbEl.addEventListener('click', function (e) {
-  if (!state.isMobile || state.currentLightboxIsMotion) return;
-  if (swipeHappened) { swipeHappened = false; return; }
-  if ((e.target as HTMLElement).closest('button, .filmstrip-thumb, #filmstrip-wrap, #lightbox-info, video-player, #motion-player-shell')) return;
+  if (!isMobileOrTablet() || state.currentLightboxIsMotion) return;
+  if (swipeHappened) {
+    swipeHappened = false;
+    if (swipeHappenedResetTimer) {
+      clearTimeout(swipeHappenedResetTimer);
+      swipeHappenedResetTimer = null;
+    }
+    return;
+  }
+  const target = e.target as HTMLElement;
+  if (target.closest('button, [role="button"], a, .filmstrip-thumb, #filmstrip-wrap, #filmstrip-lift-zone, video-player, #motion-player-shell, .media-controls, video')) {
+    return;
+  }
 
   let now = Date.now();
-  let img = e.target as HTMLImageElement;
-  if (img && img.tagName.toLowerCase() === 'img' && now - lastTapT < 350) {
+  let img = target.closest('.snap-slide')?.querySelector('img') || (target.tagName.toLowerCase() === 'img' ? target as HTMLImageElement : null);
+  if (img && now - lastTapT < 300) {
     // Double tap zoom
+    if (singleTapTimer) {
+      clearTimeout(singleTapTimer);
+      singleTapTimer = null;
+    }
+    lastTapT = 0;
     if (state.lbZoomLevel > 1) {
       resetZoom();
     } else {
@@ -40,14 +83,18 @@ lbEl.addEventListener('click', function (e) {
         img.classList.add('zoomed'); // Disable transition for subsequent panning
       }, 360);
     }
-    lastTapT = 0;
   } else {
     lastTapT = now;
-    if (domRefs.filmstripWrap.classList.contains('visible')) {
-      hideFilmstripIfReady();
-    } else {
-      showFilmstripIfReady();
-    }
+    if (singleTapTimer) clearTimeout(singleTapTimer);
+    singleTapTimer = setTimeout(() => {
+      singleTapTimer = null;
+      if (state.lbZoomLevel > 1) return;
+      if (domRefs.filmstripWrap.classList.contains('visible')) {
+        hideFilmstripIfReady(true);
+      } else {
+        showFilmstripIfReady();
+      }
+    }, 280);
   }
 });
 
@@ -56,11 +103,22 @@ lbEl.addEventListener('click', function (e) {
 if (state.isMobile) {
   (function () {
     let slidesBuilt = false;
-    let snapTimer: any = null;
-    function clearSlides() {
+    let touchSnapTimer: any = null;
+    let manualNavTimer: any = null;
+    let manualNavTargetIdx: number | null = null;
+    let clearSlidesTimer: any = null;
+    let dismissCloseTimer: any = null;
+    function clearSlides(force = false) {
+      if (!force && lbEl.classList.contains('open') && !state.currentLightboxIsMotion && !state.isLightboxClosing && !state.isLightboxDismissing) {
+        return;
+      }
       state.isManuallyNavigating = true;
       let slides = imgWrap.querySelectorAll('.snap-slide');
-      slides.forEach(function (slide) { slide.remove(); });
+      slides.forEach(function (slide) {
+        let inner = slide.querySelector('.snap-slide-inner') as HTMLElement | null;
+        if (inner) clearSwapOverlay(inner);
+        slide.remove();
+      });
       slidesBuilt = false;
       imgWrap.scrollLeft = 0;
       setTimeout(function () {
@@ -68,9 +126,132 @@ if (state.isMobile) {
       }, 50);
     }
 
+    function loadSlidePhoto(slide: HTMLElement, p: any, idx: number) {
+      let inner = slide.querySelector('.snap-slide-inner') as HTMLElement | null;
+      let img = slide.querySelector('img') as HTMLImageElement | null;
+      if (!inner || !img || !p) return;
+
+      const fullSrc = lightboxSrc(p);
+      const previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
+      const isCurrentSlide = () => slide.dataset.idx === String(idx) && !!slide.parentNode;
+
+      clearSwapOverlay(inner);
+
+      // Cache hit: full-resolution already decoded
+      const cached = getImageCacheEntry(fullSrc);
+      if (cached && (cached.decoded || (cached.img && cached.img.complete && cached.img.naturalWidth > 0))) {
+        img.src = fullSrc;
+        inner.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
+        inner.classList.add('photo-loaded');
+        if (cached.img.naturalWidth && cached.img.naturalHeight) {
+          let r = cached.img.naturalWidth / cached.img.naturalHeight;
+          inner.style.setProperty('--lightbox-photo-ratio', String(r));
+          saveRatioToCache(p.src, cached.img.naturalWidth, cached.img.naturalHeight);
+        }
+        return;
+      }
+
+      // Cache miss: show thumbnail immediately and remove placeholder
+      let thumbShown = false;
+      if (previewSrc) {
+        const thumbImg = new Image();
+        thumbImg.crossOrigin = 'anonymous';
+        thumbImg.onload = function () {
+          if (!isCurrentSlide()) return;
+          if (inner.classList.contains('photo-loading') && !inner.classList.contains('photo-loaded')) {
+            if (thumbImg.naturalWidth && thumbImg.naturalHeight) {
+              inner.style.setProperty('--lightbox-photo-ratio', String(thumbImg.naturalWidth / thumbImg.naturalHeight));
+            }
+            img.src = previewSrc;
+            thumbShown = true;
+            inner.classList.remove('photo-placeholder-visible');
+          }
+        };
+        thumbImg.src = previewSrc;
+        if (thumbImg.complete && thumbImg.naturalWidth > 0) {
+          thumbImg.onload(new Event('load'));
+        }
+      }
+
+      // Load & decode 1600px full photo in background cache, then crossfade in over the thumb
+      let cacheEntry = cacheImage(fullSrc, true);
+      const onFullReady = () => {
+        if (!isCurrentSlide()) return;
+        const finishFull = () => {
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
+          inner.classList.add('photo-loaded');
+          if (img.naturalWidth && img.naturalHeight) {
+            let r = img.naturalWidth / img.naturalHeight;
+            inner.style.setProperty('--lightbox-photo-ratio', String(r));
+            saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+          }
+        };
+
+        if (cacheEntry && cacheEntry.img && cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
+          let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
+          inner.style.setProperty('--lightbox-photo-ratio', String(r));
+        }
+
+        const fading = thumbShown && crossfadeToFull(
+          inner,
+          img,
+          fullSrc,
+          isCurrentSlide,
+          finishFull
+        );
+        if (!fading) {
+          img.src = fullSrc;
+          if (img.decode) {
+            img.decode().then(finishFull, finishFull);
+          } else {
+            finishFull();
+          }
+        }
+      };
+
+      if (cacheEntry && cacheEntry.decodePromise) {
+        cacheEntry.decodePromise.then(onFullReady).catch(() => {
+          if (!isCurrentSlide()) return;
+          if (isLbSrcUrl(p, fullSrc)) {
+            markLbSrcFailed(p.lbSrc);
+            loadSlidePhoto(slide, p, idx);
+            return;
+          }
+          img.src = fullSrc;
+          img.onload = () => {
+            if (!isCurrentSlide()) return;
+            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+            inner.classList.add('photo-loaded');
+          };
+          img.onerror = () => {
+            if (!isCurrentSlide()) return;
+            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+            inner.classList.add('photo-error');
+          };
+        });
+      } else {
+        img.src = fullSrc;
+        img.onload = () => {
+          if (!isCurrentSlide()) return;
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+          inner.classList.add('photo-loaded');
+        };
+        img.onerror = () => {
+          if (!isCurrentSlide()) return;
+          if (isLbSrcUrl(p, fullSrc)) {
+            markLbSrcFailed(p.lbSrc);
+            loadSlidePhoto(slide, p, idx);
+            return;
+          }
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+          inner.classList.add('photo-error');
+        };
+      }
+    }
+
     // ── Build slides ──
     function buildSlides() {
-      clearSlides();
+      clearSlides(true);
       if (state.currentLightboxIsMotion) return;
       if (slidesBuilt) return;
       slidesBuilt = true;
@@ -94,48 +275,33 @@ if (state.isMobile) {
         let shouldLoad = (Math.abs(i - state.cur) <= 2);
         img.loading = shouldLoad ? 'eager' : 'lazy';
         img.classList.add('zoomable');
-        img.addEventListener('click', toggleImageZoom);
-
-        if (shouldLoad) {
-          img.src = lightboxSrc(p);
-          fadeInWhenReady(img).then(() => {
-            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-            inner.classList.add('photo-loaded');
-            if (img.naturalWidth && img.naturalHeight) {
-              let r = img.naturalWidth / img.naturalHeight;
-              inner.style.setProperty('--lightbox-photo-ratio', String(r));
-              saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-            }
-          });
-        }
-
-        let attemptedFallback = false;
-        img.onerror = function () {
-          if (!attemptedFallback && isLbSrcUrl(p, img.getAttribute('src'))) {
-            attemptedFallback = true;
-            markLbSrcFailed(p.lbSrc);
-            img.src = p.src;
-            fadeInWhenReady(img).then(() => {
-              if (inner) {
-                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-                inner.classList.add('photo-loaded');
-                if (img.naturalWidth && img.naturalHeight) {
-                  let r = img.naturalWidth / img.naturalHeight;
-                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
-                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-                }
-              }
-            });
-            return;
-          }
-          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-          inner.classList.add('photo-error');
-        };
 
         inner.appendChild(img);
         slide.appendChild(inner);
         imgWrap.appendChild(slide);
+
+        if (shouldLoad) {
+          loadSlidePhoto(slide, p, i);
+        }
       });
+    }
+
+    function settleManualNav(targetIdx?: number) {
+      if (manualNavTimer) {
+        clearTimeout(manualNavTimer);
+        manualNavTimer = null;
+      }
+      imgWrap.style.scrollSnapType = '';
+      let resolvedIdx = typeof targetIdx === 'number' ? targetIdx : (manualNavTargetIdx !== null ? manualNavTargetIdx : state.cur);
+      manualNavTargetIdx = null;
+      state.isManuallyNavigating = false;
+      let slide = imgWrap.querySelector('.snap-slide[data-idx="' + resolvedIdx + '"]') as HTMLElement;
+      let w = imgWrap.offsetWidth || window.innerWidth;
+      let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (resolvedIdx * w);
+      if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
+        imgWrap.scrollLeft = targetLeft;
+      }
+      onSnapSettle(resolvedIdx);
     }
 
     function scrollToSlide(idx: number, smooth = true) {
@@ -143,11 +309,17 @@ if (state.isMobile) {
       let slide = imgWrap.querySelector('.snap-slide[data-idx="' + idx + '"]') as HTMLElement;
       let w = imgWrap.offsetWidth || window.innerWidth;
       let targetLeft = (slide && slide.offsetLeft > 0) ? slide.offsetLeft : (idx * w);
-      clearTimeout(snapTimer);
-      state.isManuallyNavigating = true;
-      if (smooth) {
-        imgWrap.style.scrollSnapType = 'none';
+      if (manualNavTimer) {
+        clearTimeout(manualNavTimer);
+        manualNavTimer = null;
       }
+      if (touchSnapTimer) {
+        clearTimeout(touchSnapTimer);
+        touchSnapTimer = null;
+      }
+      state.isManuallyNavigating = true;
+      manualNavTargetIdx = idx;
+      imgWrap.style.scrollSnapType = 'none';
       if (slide) {
         imgWrap.scrollTo({
           left: targetLeft,
@@ -158,14 +330,10 @@ if (state.isMobile) {
       }
       let currentIdx = Math.round(imgWrap.scrollLeft / (w || 1));
       let dist = Math.abs(idx - currentIdx);
-      let settleDelay = smooth ? Math.min(600, Math.max(300, dist * 70)) : 30;
+      let settleDelay = smooth ? Math.min(600, Math.max(300, dist * 70)) : 50;
       updateLoading(idx);
-      snapTimer = setTimeout(function () {
-        imgWrap.style.scrollSnapType = '';
-        if (Math.abs(imgWrap.scrollLeft - targetLeft) > 5) {
-          imgWrap.scrollLeft = targetLeft;
-        }
-        onSnapSettle(idx);
+      manualNavTimer = setTimeout(function () {
+        settleManualNav(idx);
       }, settleDelay);
     }
     setMobileScrollHandler(scrollToSlide);
@@ -183,27 +351,12 @@ if (state.isMobile) {
       if (state.currentLightboxIsMotion) return;
       filmstripReleaseFollowUntil = 0;
       if (e.touches.length === 1) wrapTouchX = e.touches[0].clientX;
-
-      let content = domRefs.lightboxContent;
-      if (content && content.classList.contains('desc-open')) {
-        cancelDescFlipTransition();
-        content.classList.remove('desc-open');
-        let btn = domRefs.lightboxDescToggle;
-        if (btn) btn.textContent = 'read more';
-        let desc = domRefs.lightboxDesc;
-        if (desc) {
-          desc.style.maxHeight = '';
-          desc.style.transition = '';
-        }
-        updateLightboxDescPreview();
-        updateMobileImgWrapHeight(true);
-        showFilmstripIfReady();
-      }
       state.isUserTouching = true;
     }, { passive: true });
 
     imgWrap.addEventListener('touchend', function (e) {
       if (state.currentLightboxIsMotion) return;
+      if (dLocked || state.isLightboxDismissing || state.isLightboxClosing || !lbEl.classList.contains('open')) return;
       state.isUserTouching = false;
       if (wasPinchingOrZooming) {
         if (e.touches.length === 0) {
@@ -213,13 +366,17 @@ if (state.isMobile) {
       }
       if (Math.abs(state.lbZoomLevel) > 1 || e.changedTouches.length !== 1) return;
       let dx = e.changedTouches[0].clientX - wrapTouchX;
+      if (Math.abs(dx) > 10) {
+        markSwipeHappened();
+      }
       let maxScroll = imgWrap.scrollWidth - imgWrap.offsetWidth;
-      if (imgWrap.scrollLeft >= maxScroll - 5 && dx < -45) {
+      let lastIdx = state.activePhotos.length - 1;
+      if ((state.cur === lastIdx || imgWrap.scrollLeft >= maxScroll - 5) && dx < -45) {
         // Pulled left while on the last slide -> Loop to 0
         openLightbox(0, 1);
-      } else if (imgWrap.scrollLeft <= 5 && dx > 45) {
+      } else if ((state.cur === 0 || imgWrap.scrollLeft <= 5) && dx > 45) {
         // Pulled right while on the first slide -> Loop to end
-        openLightbox(state.activePhotos.length - 1, -1);
+        openLightbox(lastIdx, -1);
       } else {
         filmstripReleaseFollowUntil = performance.now() + FILMSTRIP_RELEASE_FOLLOW_MS;
         setTimeout(function () {
@@ -263,28 +420,17 @@ if (state.isMobile) {
         let p = state.activePhotos[i];
         if (shouldEager) {
           if (!img.getAttribute('src') && p) {
-            img.src = lightboxSrc(p);
-            let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
-            fadeInWhenReady(img).then(() => {
-              if (inner) {
-                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-                inner.classList.add('photo-loaded');
-                if (img.naturalWidth && img.naturalHeight) {
-                  let r = img.naturalWidth / img.naturalHeight;
-                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
-                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-                }
-              }
-            });
+            loadSlidePhoto(slides[i] as HTMLElement, p, i);
           }
           img.loading = 'eager';
           if (typeof img.decode === 'function' && !img.dataset.decoded && img.complete) {
             img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
           }
         } else if (Math.abs(i - state.cur) > 4 && img.getAttribute('src')) {
+          let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
+          if (inner) clearSwapOverlay(inner);
           img.removeAttribute('src');
           img.removeAttribute('data-decoded');
-          let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
           if (inner) {
             inner.classList.remove('photo-loaded');
             inner.classList.add('photo-loading', 'photo-placeholder-visible');
@@ -296,6 +442,8 @@ if (state.isMobile) {
     // ── Scroll settle — detect new active slide ──
     function onSnapSettle(targetIdx?: number) {
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1 || window.isAutoRapidScrolling) return;
+      if (state.isLightboxClosing || state.isLightboxDismissing) return;
+      if (!lbEl.classList.contains('open') && typeof targetIdx === 'undefined') return;
       if (state.isUserTouching && typeof targetIdx === 'undefined') return;
       let w = imgWrap.offsetWidth || window.innerWidth;
       if (!w) return;
@@ -320,6 +468,7 @@ if (state.isMobile) {
           setLightboxBlur(p.thumb || p.src);
           setLightboxContent(p);
         }
+        preloadAdjacentPhotoColors(state.cur);
         showFilmstripIfReady();
         updateLoading();
       }
@@ -377,24 +526,43 @@ if (state.isMobile) {
     // scrollend (Chrome 114+, Firefox 109+, Safari 18+)
     imgWrap.addEventListener('scrollend', function () {
       if (!lbEl.classList.contains('open')) return;
+      if (state.isLightboxClosing || state.isLightboxDismissing) return;
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (window.isAutoRapidScrolling) return; // Prevent layout snaps during math interpolation
-      clearTimeout(snapTimer);
-      if (!state.isManuallyNavigating) onSnapSettle();
+      if (touchSnapTimer) {
+        clearTimeout(touchSnapTimer);
+        touchSnapTimer = null;
+      }
+      if (state.isManuallyNavigating) {
+        settleManualNav();
+      } else {
+        onSnapSettle();
+      }
     });
 
     imgWrap.addEventListener('scroll', function () {
       if (!lbEl.classList.contains('open')) return;
+      if (state.isLightboxClosing || state.isLightboxDismissing) return;
       if (state.currentLightboxIsMotion || state.lbZoomLevel > 1) return;
       if (state.isManuallyNavigating) return;
-      clearTimeout(snapTimer);
-      snapTimer = setTimeout(onSnapSettle, 80);
+
+      let content = domRefs.lightboxContent;
+      if (content && content.classList.contains('desc-open')) {
+        collapseLightboxDesc(true);
+      }
+
+      if (touchSnapTimer) clearTimeout(touchSnapTimer);
+      touchSnapTimer = setTimeout(onSnapSettle, 80);
       let w = imgWrap.offsetWidth;
       if (!w) return;
       let f = imgWrap.scrollLeft / w;
 
       let nearest = Math.round(f);
       nearest = Math.max(0, Math.min(nearest, state.activePhotos.length - 1));
+      if (nearest !== state.cur) {
+        let np = state.activePhotos[nearest];
+        if (np) preloadPhotoColor(np);
+      }
 
       let hint = document.getElementById('swipe-hint');
       if (hint && Math.abs(imgWrap.scrollLeft - state.cur * w) > 10) {
@@ -495,8 +663,16 @@ if (state.isMobile) {
 
     // ── Setup on lightbox open ──
     window.addEventListener('lightbox-open', function () {
+      if (dismissCloseTimer) {
+        clearTimeout(dismissCloseTimer);
+        dismissCloseTimer = null;
+      }
+      if (clearSlidesTimer) {
+        clearTimeout(clearSlidesTimer);
+        clearSlidesTimer = null;
+      }
       if (state.currentLightboxIsMotion) {
-        clearSlides();
+        clearSlides(true);
         requestAnimationFrame(function () {
           let motionItem = motionProjects[state.cur];
           if (motionItem) {
@@ -518,11 +694,21 @@ if (state.isMobile) {
         let p = state.activePhotos[state.cur];
         if (p) setLightboxContent(p);
         animateInfo(0);
+        preloadAdjacentPhotoColors(state.cur);
+        warmUpAllPhotoColors();
       });
     });
 
     window.addEventListener('lightbox-close', function () {
-      setTimeout(clearSlides, 400);
+      if (dismissCloseTimer) {
+        clearTimeout(dismissCloseTimer);
+        dismissCloseTimer = null;
+      }
+      if (clearSlidesTimer) clearTimeout(clearSlidesTimer);
+      clearSlidesTimer = setTimeout(function () {
+        clearSlidesTimer = null;
+        clearSlides(true);
+      }, 400);
     });
 
     window.addEventListener('lightbox-preload-neighbors', function () {
@@ -543,17 +729,45 @@ if (state.isMobile) {
     // ─── SWIPE DOWN TO DISMISS & PINCH TO ZOOM ───
     let dStartX = 0, dStartY = 0, dDY = 0;
     let dLocked = false, dChecked = false;
+    let dismissTouchIgnored = false;
     let dPts: Array<{ y: number; t: number }> = [];
     let isPinching = false, wasPinchingOrZooming = false, pinchInitDist = 0, pinchInitLevel = 1, pinchInitPanX = 0, pinchInitPanY = 0, pinchInitMx = 0, pinchInitMy = 0, pinchInitCx = 0, pinchInitCy = 0;
+    let dismissTiltSign = -1;
+    let dismissMaxTilt = 8;
+    let dismissTiltOrigin = 'bottom left';
+    let dismissExitTilt = -24;
+    let wasFsVisibleAtSwipeStart = false;
+
+    function seedDismissTilt(preferredSign?: number) {
+      dismissTiltSign = preferredSign !== undefined ? preferredSign : (Math.random() < 0.5 ? -1 : 1);
+      dismissMaxTilt = 5.5 + Math.random() * 4.0; // 5.5° to 9.5° realistic tilt
+      dismissTiltOrigin = dismissTiltSign < 0 ? 'bottom left' : 'bottom right';
+      dismissExitTilt = dismissTiltSign * (18 + Math.random() * 10); // 18° to 28° exit angle
+    }
 
     lbEl.addEventListener('touchstart', function (e) {
       if (!lbEl.classList.contains('open')) return;
-      // stricter check to prevent interaction fight between filmstrip and dismiss gesture
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      const infoWrapEl = domRefs.lightboxInfoWrap;
+      const touch = e.touches[0];
+      const infoRect = infoWrapEl ? infoWrapEl.getBoundingClientRect() : null;
+      const isPhoneLayout = domRefs.lightbox?.dataset.lbLayout === 'phone';
+      const isTouchOnDock = !!(infoRect && touch && (
+        isPhoneLayout
+          ? touch.clientY >= infoRect.top - 8
+          : (touch.clientX >= infoRect.left - 8 && touch.clientX <= infoRect.right + 8 &&
+             touch.clientY >= infoRect.top - 8 && touch.clientY <= infoRect.bottom + 8)
+      ));
+      if (isTouchOnDock || (e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) {
+        dismissTouchIgnored = true;
+        dLocked = false;
+        dChecked = false;
+        return;
+      }
+      dismissTouchIgnored = false;
 
       if (state.currentLightboxIsMotion) {
         if (e.touches.length >= 2) {
-          e.preventDefault();
+          if (e.cancelable) e.preventDefault();
           return;
         }
         dStartX = e.touches[0].clientX;
@@ -562,6 +776,8 @@ if (state.isMobile) {
         dLocked = false;
         dChecked = false;
         dPts = [{ y: dStartY, t: Date.now() }];
+        seedDismissTilt();
+        initMotionSwipeVolume();
         return;
       }
 
@@ -620,16 +836,19 @@ if (state.isMobile) {
       dLocked = false;
       dChecked = false;
       dPts = [{ y: dStartY, t: Date.now() }];
+      wasFsVisibleAtSwipeStart = domRefs.filmstripWrap ? domRefs.filmstripWrap.classList.contains('visible') : false;
+      seedDismissTilt();
     }, { passive: false });
 
     lbEl.addEventListener('touchmove', function (e) {
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if (dismissTouchIgnored) return;
+      if (!dLocked && !isPinching && (e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
       if (state.currentLightboxIsMotion && e.touches.length >= 2) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         return;
       }
       if (isPinching && e.touches.length === 2) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         let ratio = dist / pinchInitDist;
         let newScale = Math.min(Math.max(1, pinchInitLevel * ratio), 6);
@@ -651,7 +870,7 @@ if (state.isMobile) {
       }
 
       if (state.lbZoomLevel > 1 && e.touches.length === 1 && !isPinching) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         let dx = e.touches[0].clientX - dStartX;
         let dy = e.touches[0].clientY - dStartY;
         state.lbZoomPanX += dx;
@@ -675,29 +894,44 @@ if (state.isMobile) {
       if (!dChecked && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
         dChecked = true;
         dLocked = dy > 0 && Math.abs(dy) > Math.abs(dx);
+        if (dLocked) {
+          state.isLightboxDismissing = true;
+          lbEl.classList.add('is-dismissing');
+          document.body.classList.add('lightbox-dismissing');
+          if (dx > 8) {
+            seedDismissTilt(1);
+          } else if (dx < -8) {
+            seedDismissTilt(-1);
+          }
+        }
       }
 
       if (dLocked && dy > 0) {
-        if (state.currentLightboxIsMotion) {
-          pauseMotionVideo();
-        }
         dDY = dy;
-        e.preventDefault();
-        let content = domRefs.lightboxContent;
-        content.style.transition = 'none';
-        let tilt = Math.max(-10, (dy / 400) * -10); // reduced from -25
-        content.style.transformOrigin = 'bottom left';
-        content.style.transform = 'translateY(' + dy + 'px) rotate(' + tilt + 'deg)';
-        content.style.opacity = String(Math.max(0.15, 1 - dy / 400));
-
-        let bgOpac = Math.max(0, 1 - dy / 400);
-        if (domRefs.lightboxBg) domRefs.lightboxBg.style.opacity = String(bgOpac);
-        if (domRefs.blurCanvas) domRefs.blurCanvas.style.opacity = String(bgOpac);
-        lbEl.style.backgroundColor = `rgba(13, 12, 12, ${bgOpac})`;
+        if (e.cancelable) e.preventDefault();
+        if (state.currentLightboxIsMotion) {
+          updateMotionSwipeVolume(dy, 300);
+        }
 
         let isFF = document.documentElement.classList.contains('is-firefox');
         let swipeProgress = Math.min(1, Math.max(0, dy / 300));
         let blurVal = isFF ? 0 : Math.pow(swipeProgress, 2.4) * 18;
+
+        // Apply translation and natural randomized tilt strictly to the photo/video wrap, keeping info dock stationary
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          let dragTilt = dismissTiltSign * Math.min(dismissMaxTilt, (dy / 380) * dismissMaxTilt);
+          imgWrapEl.style.transition = 'none';
+          imgWrapEl.style.transformOrigin = dismissTiltOrigin;
+          imgWrapEl.style.transform = 'translateY(' + dy + 'px) rotate(' + dragTilt.toFixed(2) + 'deg)';
+          imgWrapEl.style.opacity = String(Math.max(0.15, 1 - dy / 400));
+          imgWrapEl.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
+        }
+
+        let bgOpac = Math.max(0, 1 - dy / 400);
+        if (domRefs.lightboxBg) domRefs.lightboxBg.style.opacity = String(bgOpac);
+        if (domRefs.blurCanvas) domRefs.blurCanvas.style.opacity = String(bgOpac);
+        lbEl.style.backgroundColor = 'rgba(13, 12, 12, 0)';
 
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
@@ -708,13 +942,6 @@ if (state.isMobile) {
           info.style.opacity = String(txtOpac);
         }
 
-        // Swipe down exit: blur the entire photo container including its outline border
-        let imgWrapEl = domRefs.lightboxImgWrap;
-        if (imgWrapEl) {
-          imgWrapEl.style.transition = 'none';
-          imgWrapEl.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
-        }
-
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
         if (activeImg) {
           activeImg.style.transition = 'none';
@@ -723,7 +950,7 @@ if (state.isMobile) {
         }
 
         let fsWrap = domRefs.filmstripWrap;
-        if (fsWrap) {
+        if (fsWrap && wasFsVisibleAtSwipeStart) {
           let fsOpac = Math.max(0, 1 - dy / 250);
           fsWrap.style.transition = 'none';
           fsWrap.style.filter = blurVal > 0.1 ? 'blur(' + blurVal.toFixed(1) + 'px)' : '';
@@ -733,7 +960,13 @@ if (state.isMobile) {
     }, { passive: false });
 
     lbEl.addEventListener('touchend', function (e) {
-      if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb')) return;
+      if (dismissTouchIgnored) {
+        dismissTouchIgnored = false;
+        dLocked = false;
+        dChecked = false;
+        return;
+      }
+      if (!dLocked && !isPinching && (e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, #lightbox-desc-toggle, #lightbox-info-wrap')) return;
       if (e.touches.length < 2) {
         if (isPinching && e.touches.length === 1 && state.lbZoomLevel > 1) {
           dStartX = e.touches[0].clientX;
@@ -749,7 +982,7 @@ if (state.isMobile) {
           }
         }
 
-        if (state.lbZoomLevel <= 1 && state.isMobile) {
+        if (!dLocked && state.lbZoomLevel <= 1 && state.isMobile) {
           let mWrap = domRefs.lightboxImgWrap;
           let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
           for (let i = 0; i < slides.length; i++) {
@@ -767,11 +1000,29 @@ if (state.isMobile) {
         if (dt > 0) vy = (b.y - a.y) / dt;
       }
       if (dDY > 100 || vy > 0.35) {
-        swipeHappened = true;
-        let content = domRefs.lightboxContent;
-        content.style.transition = 'transform 0.28s ease-out, opacity 0.28s ease-out';
-        content.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(-30deg)';
-        content.style.opacity = '0';
+        markSwipeHappened();
+        if (state.currentLightboxIsMotion) {
+          void fadeOutMotionVideo(300);
+        }
+        state.isLightboxDismissing = true;
+        lbEl.classList.add('dismiss-committed');
+        lbEl.style.setProperty('pointer-events', 'none', 'important');
+        let isFF = document.documentElement.classList.contains('is-firefox');
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = isFF
+            ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease-out'
+            : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease-out, filter 0.2s ease';
+          imgWrapEl.style.transformOrigin = dismissTiltOrigin;
+          imgWrapEl.style.transform = 'translateY(' + window.innerHeight + 'px) rotate(' + dismissExitTilt.toFixed(2) + 'deg)';
+          imgWrapEl.style.opacity = '0';
+          if (!isFF) imgWrapEl.style.filter = 'blur(18px)';
+        }
+
+        const crossfadeEase = 'opacity 0.28s ease-out, background-color 0.28s ease-out, visibility 0.28s ease-out';
+        lbEl.style.transition = crossfadeEase;
+        lbEl.style.opacity = '0';
+        lbEl.style.backgroundColor = 'rgba(13, 12, 12, 0)';
 
         if (domRefs.lightboxBg) {
           domRefs.lightboxBg.style.transition = 'opacity 0.28s ease-out';
@@ -781,21 +1032,12 @@ if (state.isMobile) {
           domRefs.blurCanvas.style.transition = 'opacity 0.28s ease-out';
           domRefs.blurCanvas.style.opacity = '0';
         }
-        lbEl.style.transition = 'background-color 0.28s ease-out';
-        lbEl.style.backgroundColor = 'rgba(13, 12, 12, 0)';
 
-        let isFF = document.documentElement.classList.contains('is-firefox');
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
         if (info) {
           info.style.transition = isFF ? 'opacity 0.2s ease' : 'opacity 0.2s ease, filter 0.2s ease';
           info.style.filter = isFF ? '' : 'blur(18px)';
           info.style.opacity = '0';
-        }
-
-        let imgWrapEl = domRefs.lightboxImgWrap;
-        if (imgWrapEl) {
-          imgWrapEl.style.transition = isFF ? 'none' : 'filter 0.2s ease';
-          imgWrapEl.style.filter = isFF ? '' : 'blur(18px)';
         }
 
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
@@ -812,14 +1054,26 @@ if (state.isMobile) {
           fsWrap.style.opacity = '0';
         }
 
-        setTimeout(function () {
+        if (dismissCloseTimer) clearTimeout(dismissCloseTimer);
+        dismissCloseTimer = setTimeout(function () {
+          dismissCloseTimer = null;
           closeLightbox();
-        }, 280);
+        }, 300);
       } else {
-        let content = domRefs.lightboxContent;
-        content.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
-        content.style.transform = '';
-        content.style.opacity = '1';
+        state.isLightboxDismissing = false;
+        lbEl.classList.remove('is-dismissing', 'dismiss-committed');
+        document.body.classList.remove('lightbox-dismissing');
+        lbEl.style.pointerEvents = '';
+        if (state.currentLightboxIsMotion) {
+          restoreMotionSwipeVolume(200);
+        }
+        let imgWrapEl = domRefs.lightboxImgWrap;
+        if (imgWrapEl) {
+          imgWrapEl.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+          imgWrapEl.style.transform = '';
+          imgWrapEl.style.opacity = '1';
+          imgWrapEl.style.filter = '';
+        }
 
         if (domRefs.lightboxBg) {
           domRefs.lightboxBg.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
@@ -829,7 +1083,8 @@ if (state.isMobile) {
           domRefs.blurCanvas.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
           domRefs.blurCanvas.style.opacity = '1';
         }
-        lbEl.style.transition = 'background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+        lbEl.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+        lbEl.style.opacity = '1';
         lbEl.style.backgroundColor = '';
 
         let info = domRefs.lightboxInfo || document.getElementById('lightbox-info');
@@ -837,12 +1092,6 @@ if (state.isMobile) {
           info.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           info.style.filter = '';
           info.style.opacity = '1';
-        }
-
-        let imgWrapEl = domRefs.lightboxImgWrap;
-        if (imgWrapEl) {
-          imgWrapEl.style.transition = 'filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-          imgWrapEl.style.filter = '';
         }
 
         let activeImg = imgWrapEl ? imgWrapEl.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLElement : null;
@@ -856,25 +1105,33 @@ if (state.isMobile) {
         }
 
         let fsWrap = domRefs.filmstripWrap;
-        if (fsWrap) {
+        if (fsWrap && wasFsVisibleAtSwipeStart) {
           fsWrap.style.transition = 'opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
           fsWrap.style.filter = '';
-          fsWrap.style.opacity = '';
+          fsWrap.style.opacity = '1';
         }
 
         setTimeout(function () {
+          let content = domRefs.lightboxContent;
           if (content) {
             content.style.transition = '';
             content.style.transformOrigin = '';
+            content.style.transform = '';
+            content.style.opacity = '';
           }
           if (info) {
             info.style.transition = '';
+            info.style.opacity = '1';
+            info.style.filter = '';
           }
           if (imgWrapEl) {
             imgWrapEl.style.transition = '';
+            imgWrapEl.style.transformOrigin = '';
+            imgWrapEl.style.transform = '';
+            imgWrapEl.style.opacity = '';
             imgWrapEl.style.filter = '';
           }
-          if (fsWrap) {
+          if (fsWrap && wasFsVisibleAtSwipeStart) {
             fsWrap.style.transition = '';
             fsWrap.style.filter = '';
             fsWrap.style.opacity = '';
@@ -895,15 +1152,26 @@ if (state.isMobile) {
       dChecked = false;
     }, { passive: true });
 
+    lbEl.addEventListener('touchcancel', function () {
+      dismissTouchIgnored = false;
+      dLocked = false;
+      dChecked = false;
+      if (!lbEl.classList.contains('dismiss-committed')) {
+        state.isLightboxDismissing = false;
+        lbEl.classList.remove('is-dismissing');
+        document.body.classList.remove('lightbox-dismissing');
+      }
+    }, { passive: true });
+
     lbEl.addEventListener('touchend', function (e) {
-      if (!lbEl.classList.contains('open') || !state.currentLightboxIsMotion) return;
+      if (!lbEl.classList.contains('open') || !state.currentLightboxIsMotion || state.isLightboxDismissing || state.isLightboxClosing || lbEl.classList.contains('dismiss-committed')) return;
       if (isPinching || dLocked || e.changedTouches.length !== 1 || state.lbZoomLevel > 1) return;
       if ((e.target as HTMLElement).closest('#filmstrip-wrap, #filmstrip-lift-zone, .filmstrip-thumb, button')) return;
 
       let dx = e.changedTouches[0].clientX - dStartX;
       let dy = e.changedTouches[0].clientY - dStartY;
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.15) {
-        swipeHappened = true;
+        markSwipeHappened();
         navigateLightbox(dx < 0 ? 1 : -1);
       }
     }, { passive: true });

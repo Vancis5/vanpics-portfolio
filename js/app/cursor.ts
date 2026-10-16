@@ -77,12 +77,14 @@ if (isMouseDevice) {
     cursorVisible = false;
     resetFilmstripStretch();
     stopRingAnimation();
+    window.dispatchEvent(new CustomEvent('cursor-hide'));
   }
   function showCursor() {
     if (cursorVisible) return;
     cursorVisible = true;
     cursor.style.opacity = '1'; ring.style.opacity = '1';
     startRingAnimation();
+    window.dispatchEvent(new CustomEvent('cursor-show'));
   }
   function animateRing() {
     try {
@@ -157,10 +159,15 @@ if (isMouseDevice) {
   }
 
   document.addEventListener('mousemove', function (e) {
+    if (e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY <= 0 || e.clientY >= window.innerHeight) {
+      hideCursor();
+      return;
+    }
     mx = e.clientX; my = e.clientY;
     cursor.style.translate = `${mx}px ${my}px`;
 
-    if (isDraggingScrollbar) {
+    const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    if (isDraggingScrollbar || isFs) {
       hideCursor();
     } else {
       resetCursorTimeout();
@@ -197,6 +204,11 @@ if (isMouseDevice) {
 
   document.addEventListener('mouseleave', hideCursor);
   document.documentElement.addEventListener('mouseleave', hideCursor);
+  document.addEventListener('mouseout', function (e: MouseEvent) {
+    if (!e.relatedTarget && !(e as any).toElement) {
+      hideCursor();
+    }
+  });
   document.addEventListener('mouseenter', showCursor);
   document.documentElement.addEventListener('mouseenter', showCursor);
   document.addEventListener('contextmenu', function () {
@@ -245,4 +257,17 @@ if (isMouseDevice) {
   });
   window.addEventListener('lightbox-close', resetFilmstripStretch);
   window.addEventListener('hide-cursor', hideCursor);
+
+  function onFullscreenChange() {
+    const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    if (isFs) {
+      document.documentElement.classList.add('in-fullscreen');
+      hideCursor();
+    } else {
+      document.documentElement.classList.remove('in-fullscreen');
+      showCursor();
+    }
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }

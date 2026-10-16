@@ -85,8 +85,10 @@
   margin: -1.5rem -0.8rem;
 }
 
-#gallery-header .inactive:hover {
-  color: var(--text);
+@media (hover: hover) {
+  #gallery-header .inactive:hover {
+    color: var(--text);
+  }
 }
 
 #gallery-header .active {
@@ -95,6 +97,11 @@
   /* Full-height Hitbox */
   padding: 1.5rem 0.8rem;
   margin: -1.5rem -0.8rem;
+}
+
+#gallery-header .inactive:focus:not(:focus-visible),
+#gallery-header .active:focus:not(:focus-visible) {
+  outline: none;
 }
 
 @media (min-width: 640px) {
@@ -140,9 +147,18 @@
 }
 
 /* MASONRY */
+#gallery-section {
+  touch-action: pan-y;
+}
+
 #masonry {
   position: relative;
   touch-action: pan-y;
+  min-height: calc(100vh - 120px);
+}
+
+.masonry-panel {
+  min-height: calc(100vh - 120px);
 }
 
 .masonry-panel[hidden] {
@@ -239,7 +255,6 @@
     letter-spacing: 0.18em;
     margin: 3rem 0 0;
     padding-bottom: 1.35rem;
-    width: calc(100% - 0.9rem);
   }
 
   .date-header::after {

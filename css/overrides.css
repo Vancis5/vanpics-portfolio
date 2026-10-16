@@ -28,36 +28,30 @@ button {
 
 body.lightbox-open {
   background: #0d0c0c;
-  overflow: hidden;
   overscroll-behavior: none;
 }
 
-/* -- STABILIZE SUBNAV ON LIGHTBOX OPEN -- */
-/* Pin the subnav at the top when lightbox opens (kills position:sticky) */
-body.lightbox-open.gallery-header-stuck #gallery-header {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100vw !important;
-  margin-left: 0 !important;
-  z-index: 100 !important;
-  /* Stays BELOW lightbox (1000) */
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
-}
-
-@media (min-width: 640px) {
-  body.lightbox-open.gallery-header-stuck #gallery-header {
-    padding-left: 1.75rem;
-    padding-right: 1.75rem;
-  }
-}
-
+/* -- STABILIZE SUBNAV ON LIGHTBOX OPEN (DESKTOP ONLY) -- */
+/* On desktop, pin the subnav at the top when lightbox opens (kills position:sticky) */
 @media (min-width: 1024px) {
+  body.lightbox-open {
+    overflow: hidden;
+  }
+
   body.lightbox-open.gallery-header-stuck #gallery-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    margin-left: 0 !important;
+    z-index: 100 !important;
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+
+  body.lightbox-open.gallery-header-stuck #gallery-section {
+    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
@@ -65,23 +59,6 @@ body.lightbox-open.gallery-header-stuck #gallery-header {
   body.lightbox-open.gallery-header-stuck #gallery-header {
     padding-left: calc((100vw - 1400px) / 2 + 2rem);
     padding-right: calc((100vw - 1400px) / 2 + 2rem);
-  }
-}
-
-/* Maintain the vertical gap to prevent page jump underneath */
-body.lightbox-open.gallery-header-stuck #gallery-section {
-  padding-top: calc(3.1rem + var(--safe-top, 0px)) !important;
-}
-
-@media (min-width: 640px) {
-  body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
   }
 }
 
@@ -156,9 +133,10 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   scroll-margin-bottom: 120px;
 }
 
-/* 2.5.8 Target Size (Minimum) - Ensure all interactive controls meet 24x24px minimum */
+/* 2.5.8 Target Size (Minimum) - Ensure all interactive controls meet minimum size */
 #lightbox-desc-toggle {
-  min-height: 24px !important;
+  min-height: 44px !important;
+  min-width: 72px !important;
 }
 
 .footer-instagram,
@@ -174,10 +152,10 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 0.75rem;
-  margin-top: clamp(1.25rem, 3vw, 2rem);
+  margin-top: clamp(0.95rem, 1.8vw, 1.35rem);
   margin-bottom: 0;
-  padding-top: clamp(1.25rem, 3vw, 2.25rem);
-  padding-bottom: clamp(1.25rem, 3vw, 2.25rem);
+  padding-top: clamp(0.85rem, 1.6vw, 1.2rem);
+  padding-bottom: clamp(0.85rem, 1.6vw, 1.2rem);
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   border-top: 1px solid var(--border);
@@ -185,11 +163,18 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
   font-size: clamp(0.52rem, 1.2vw, 0.6rem);
   letter-spacing: 0.18em;
   text-transform: lowercase;
-  color: rgba(var(--text-rgb), 0.28);
+  color: #8a7f70;
   transition: color 0.4s ease;
 }
 
-@media (min-width: 820px) {
+@media (min-width: 640px) {
+  #footer-stats {
+    padding-left: clamp(1.75rem, 4vw, 3rem);
+    padding-right: clamp(1.75rem, 4vw, 3rem);
+  }
+}
+
+@media (min-width: 1024px) {
   #footer-stats {
     padding-left: max(2.25rem, (100vw - 1400px) / 2 + 2.25rem);
     padding-right: max(2.25rem, (100vw - 1400px) / 2 + 2.25rem);
@@ -198,7 +183,7 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
 
 #site-footer:hover #footer-stats,
 #site-footer.is-visible #footer-stats {
-  color: rgba(var(--text-rgb), 0.42);
+  color: #8a7f70;
 }
 
 .footer-stat {
@@ -206,36 +191,46 @@ body.lightbox-open.gallery-header-stuck #gallery-section {
 }
 
 .stat-num {
-  color: rgba(var(--text-rgb), 0.55);
+  color: #d9cfc0;
   transition: color 0.4s ease;
 }
 
 #site-footer:hover .stat-num,
 #site-footer.is-visible .stat-num {
-  color: rgba(var(--text-rgb), 0.78);
+  color: #d9cfc0;
 }
 
 .footer-stat-dot {
-  color: rgba(var(--text-rgb), 0.15);
+  color: rgba(138, 127, 112, 0.35);
   user-select: none;
 }
 
 @media (max-width: 560px) {
   #footer-stats {
-    gap: 0.4rem 0.6rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 0.5rem;
+    column-gap: 1.25rem;
     margin-top: 1.5rem;
-    justify-content: center;
-    text-align: center;
+    padding-top: 1.25rem;
+    padding-bottom: 1.4rem;
+    padding-inline: 1.25rem;
+    justify-content: start;
+    text-align: left;
   }
 
-  #footer-stats .footer-stat-dot:nth-child(6) {
+  #footer-stats .footer-stat-dot {
     display: none;
+  }
+
+  .footer-stat {
+    text-align: left;
   }
 
   #stat-since,
   #stat-views {
-    text-align: center;
-    margin-top: 0.2rem;
+    text-align: left;
+    margin-top: 0;
   }
 }
 

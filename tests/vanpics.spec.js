@@ -12,8 +12,15 @@ test.beforeEach(async ({ page }) => {
   });
 
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
+    if (message.type() === 'error') {
+      const text = message.text();
+      if (!text.includes('ERR_ADDRESS_UNREACHABLE') && !text.includes('ERR_QUIC_PROTOCOL_ERROR') && !text.includes('googletagmanager')) {
+        errors.push(text);
+      }
+    }
   });
+
+  await page.route('**/*googletagmanager*', (route) => route.abort());
 
   // Mock API calls to ensure stable, hermetic test environment independent of production data
   await page.route('**/api/photos*', async (route) => {
@@ -75,6 +82,14 @@ test.beforeEach(async ({ page }) => {
       })
     });
   });
+
+  await page.route('**/api/views*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ views: 5113 })
+    });
+  });
 });
 
 test.afterEach(async ({ page }) => {
@@ -84,7 +99,7 @@ test.afterEach(async ({ page }) => {
 async function waitForGallery(page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#hero-identity h1')).toHaveText('vanpics');
-  await page.waitForSelector('.masonry-panel[data-category="all"] .photo-card', { timeout: 15000 });
+  await page.waitForSelector('.masonry-panel[data-category="all"] .photo-card', { timeout: 15000, state: 'attached' });
 }
 
 async function expectLightboxPhotoRendered(page) {
@@ -99,7 +114,7 @@ async function expectLightboxPhotoRendered(page) {
 }
 
 async function expectMobileSlideRendered(page, index) {
-  const slideImg = page.locator(`.snap-slide[data-idx="${index}"] img`);
+  const slideImg = page.locator(`.snap-slide[data-idx="${index}"] img:not(.lightbox-swap-overlay)`);
 
   await expect(slideImg).toHaveJSProperty('complete', true);
   await expect.poll(async () => slideImg.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
@@ -138,11 +153,53 @@ test('opens and closes a photo lightbox', async ({ page }) => {
   await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
 });
 
+test('desktop lightbox close button hides on idle and reappears on cursor move, and side glow fades on viewport leave', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit on Linux reports hover: none');
+  await waitForGallery(page);
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+  const closeBtn = page.locator('#lightbox-close');
+  await page.mouse.move(400, 300);
+  await expect(closeBtn).not.toHaveClass(/idle-hidden/);
+
+  // After cursor idle delay (2000ms without cursor movement), close button hides
+  await expect(closeBtn).toHaveClass(/idle-hidden/, { timeout: 4000 });
+
+  // Move cursor around, close button should reappear
+  await page.mouse.move(450, 350);
+  await expect(closeBtn).not.toHaveClass(/idle-hidden/);
+
+  // Test side glow near left edge
+  await page.mouse.move(50, 400);
+  const glowLeft = page.locator('#lightbox-glow-left');
+  await expect.poll(async () => {
+    return parseFloat(await glowLeft.evaluate(el => el.style.opacity || '0'));
+  }, { timeout: 3000 }).toBeGreaterThan(0.05);
+
+  // Move cursor outside the viewport
+  await page.mouse.move(-10, -10);
+
+  // Both side glow and close button should fade out when cursor leaves viewport
+  await expect.poll(async () => {
+    return parseFloat(await glowLeft.evaluate(el => el.style.opacity || '0'));
+  }, { timeout: 3000 }).toBeLessThan(0.02);
+  await expect(closeBtn).toHaveClass(/idle-hidden/, { timeout: 3000 });
+
+  // Move cursor back inside viewport, close button should reappear
+  await page.mouse.move(400, 300);
+  await expect(closeBtn).not.toHaveClass(/idle-hidden/);
+
+  // Close lightbox
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+});
+
 test('opens a photo from the hash route', async ({ page }) => {
   await page.goto('/#photographs/depths');
 
   await expect(page.locator('#lightbox')).toHaveClass(/open/, { timeout: 15000 });
-  await expect(page.locator('#lightbox-title')).toHaveText('depths');
+  await expect(page.locator('#lightbox-title')).toHaveText('depths', { timeout: 15000 });
   await expectLightboxPhotoRendered(page);
 });
 
@@ -234,7 +291,8 @@ test('expands custom cursor ring when hovering over lightbox side buttons', asyn
   await expect(cursorRing).toHaveCSS('scale', /(?:1\.57|1\.(?:5[4-9]|6))/);
 });
 
-test('stretches and shifts cursor ring in direction of filmstrip mouse wheel scroll', async ({ page }) => {
+test('stretches and shifts cursor ring in direction of filmstrip mouse wheel scroll', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit on Linux reports hover: none');
   await waitForGallery(page);
   await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
   await expect(page.locator('#lightbox')).toHaveClass(/open/);

@@ -42,12 +42,4 @@ if (isIOS) {
   );
 });
 
-// Block browser-level webpage zoom ONLY on mobile touch devices
-if (window.matchMedia('(hover: none)').matches) {
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => {
-    document.addEventListener(type, (e: Event) => {
-      e.preventDefault();
-    }, { passive: false });
-  });
-}
 

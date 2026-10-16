@@ -26,9 +26,9 @@ function preventDefaultScroll(e: any) {
       const delta = e.deltaY || -e.detail || e.wheelDelta;
       
       if (delta < 0 && scrollTop <= 0) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
       } else if (delta > 0 && scrollTop + clientHeight >= scrollHeight) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
       }
       return;
     }
@@ -43,15 +43,15 @@ function preventDefaultScroll(e: any) {
         const delta = e.deltaY || -e.detail || e.wheelDelta;
         
         if (delta < 0 && scrollTop <= 0) {
-          e.preventDefault();
+          if (e.cancelable) e.preventDefault();
         } else if (delta > 0 && scrollTop + clientHeight >= scrollHeight) {
-          e.preventDefault();
+          if (e.cancelable) e.preventDefault();
         }
         return;
       }
     }
   }
-  e.preventDefault();
+  if (e.cancelable) e.preventDefault();
 }
 
 function preventDefaultKeys(e: any) {

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS photos (
   date TEXT,
   `desc` TEXT,
   hero_slide BOOLEAN DEFAULT 0,
+  sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS videos (
   date TEXT,
   `desc` TEXT,
   music TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -38,7 +40,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 -- Indices for performance
-CREATE INDEX IF NOT EXISTS idx_photos_created_at ON photos(created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_photos_sort_order ON photos(sort_order ASC, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_category ON photos(category);
-CREATE INDEX IF NOT EXISTS idx_videos_created_at ON videos(created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_videos_sort_order ON videos(sort_order ASC, created_at DESC, id DESC);
 

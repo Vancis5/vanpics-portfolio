@@ -1,4 +1,33 @@
-    :root {
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/cormorant-garamond-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url('/fonts/dm-mono-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/dm-mono-400.woff2') format('woff2');
+}
+
+:root {
       --bg: #090808;
       --text: #f4eee1;
       --text-muted: rgba(244, 238, 225, 0.65);
@@ -347,10 +376,6 @@
       appearance: textfield;
     }
 
-    #create-carousel-toggle-wrapper {
-      display: none !important;
-    }
-
     input:focus,
     textarea:focus,
     select:focus {
@@ -659,6 +684,7 @@
       flex-direction: column;
       transition: box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
       position: relative;
+      cursor: pointer;
     }
 
     .asset-card:hover {
@@ -713,7 +739,7 @@
     }
 
     .card-info {
-      padding: 1.2rem;
+      padding: 1.2rem 1.2rem 1.4rem 1.2rem;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
@@ -742,6 +768,71 @@
       font-size: 0.65rem;
       color: var(--text-muted);
       line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.3rem;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .card-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .card-meta-icon {
+      color: var(--text-faint);
+      flex-shrink: 0;
+    }
+
+    .empty-archives-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+
+    .group-section {
+      grid-column: 1 / -1;
+      margin-bottom: 2.5rem;
+      width: 100%;
+    }
+
+    .group-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .group-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .group-divider {
+      flex-grow: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .group-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-faint);
+      letter-spacing: 0.05em;
     }
 
     .card-actions-row {

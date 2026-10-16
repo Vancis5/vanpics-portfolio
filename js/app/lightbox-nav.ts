@@ -93,12 +93,23 @@ function resetNavIdleTimeout() {
     targetProximityLeft = 0;
     targetProximityRight = 0;
     stopHoldRepeat();
+    startNavAnimationLoop();
   }, 2000);
 }
 
 export function initLightboxMouseNav() {
   const lb = domRefs.lightbox;
   if (!lb) return;
+
+  function handleViewportLeave() {
+    mouseX = -1000;
+    mouseY = -1000;
+    targetProximityLeft = 0;
+    targetProximityRight = 0;
+    clearTimeout(navIdleTimeout);
+    stopHoldRepeat();
+    startNavAnimationLoop();
+  }
 
   // Track mouse movement inside window when lightbox is open
   window.addEventListener('mousemove', (e: MouseEvent) => {
@@ -107,6 +118,11 @@ export function initLightboxMouseNav() {
       targetProximityRight = 0;
       clearTimeout(navIdleTimeout);
       stopHoldRepeat();
+      return;
+    }
+
+    if (e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY <= 0 || e.clientY >= window.innerHeight) {
+      handleViewportLeave();
       return;
     }
 
@@ -186,11 +202,17 @@ export function initLightboxMouseNav() {
     stopHoldRepeat();
     resetNavIdleTimeout();
   });
-  window.addEventListener('mouseleave', () => {
-    targetProximityLeft = 0;
-    targetProximityRight = 0;
-    clearTimeout(navIdleTimeout);
-    stopHoldRepeat();
+
+  document.addEventListener('mouseleave', handleViewportLeave);
+  document.documentElement.addEventListener('mouseleave', handleViewportLeave);
+  document.addEventListener('mouseout', (e: MouseEvent) => {
+    if (!e.relatedTarget && !(e as any).toElement) {
+      handleViewportLeave();
+    }
+  });
+  window.addEventListener('blur', handleViewportLeave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) handleViewportLeave();
   });
 
   // Instant 0ms navigation & press feedback on mousedown + hold-to-repeat
@@ -312,8 +334,12 @@ export function startNavAnimationLoop() {
       navRafId = null;
       const arrowLeft = domRefs.lightboxArrowLeft;
       const arrowRight = domRefs.lightboxArrowRight;
+      const glowLeft = domRefs.lightboxGlowLeft;
+      const glowRight = domRefs.lightboxGlowRight;
       if (arrowLeft) { arrowLeft.style.opacity = '0'; arrowLeft.style.filter = 'blur(12px)'; }
       if (arrowRight) { arrowRight.style.opacity = '0'; arrowRight.style.filter = 'blur(12px)'; }
+      if (glowLeft) glowLeft.style.opacity = '0';
+      if (glowRight) glowRight.style.opacity = '0';
       return;
     }
 
@@ -335,8 +361,10 @@ export function startNavAnimationLoop() {
       }
     }
 
-    // Correct delta-time lerp factor scaling (0.18 & 0.075 calibrated at 60Hz)
-    const alphaProx = 1 - Math.pow(1 - 0.18, dt);
+    // Correct delta-time lerp factor scaling (0.18 tracking, 0.32 fade-out, 0.075 Y calibrated at 60Hz)
+    const isExiting = targetProximityLeft === 0 && targetProximityRight === 0;
+    const proxLerp = isExiting ? 0.32 : 0.18;
+    const alphaProx = 1 - Math.pow(1 - proxLerp, dt);
     const alphaY = 1 - Math.pow(1 - 0.075, dt);
     const alphaClick = 1 - Math.pow(1 - 0.18, dt);
 
@@ -451,6 +479,8 @@ export function startNavAnimationLoop() {
 }
 
 export function resetLightboxMouseNav() {
+  mouseX = -1000;
+  mouseY = -1000;
   targetProximityLeft = 0;
   targetProximityRight = 0;
   currentProximityLeft = 0;
@@ -473,6 +503,8 @@ export function getLastSideNavTime(): number {
 }
 
 export function hideLightboxNavImmediately() {
+  mouseX = -1000;
+  mouseY = -1000;
   targetProximityLeft = 0;
   targetProximityRight = 0;
   currentProximityLeft = 0;

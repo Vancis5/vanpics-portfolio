@@ -13,7 +13,6 @@ const LUCIDE_GRABBING = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org
 let isDraggingZoom = false;
 let lastDragX: number | null = null;
 let lastDragY: number | null = null;
-let lastTapTime = 0;
 let zoomTransitionTimeout: any = null;
 let isSpacePressed = false;
 let dragDistance = 0;
@@ -107,15 +106,30 @@ export function updateZoomTransform(img: any, smooth = true) {
         ? 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
         : 'filter 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
       if (state.isMobile) {
-        // snap-clear inner child scale instantly — no transition so navigation doesn't animate it
-        if (infoInner) { infoInner.style.transition = ''; infoInner.style.transform = ''; infoInner.style.transformOrigin = ''; }
+        if (infoInner) {
+          if (smooth) {
+            infoInner.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            infoInner.style.transform = '';
+          } else {
+            infoInner.style.transition = '';
+            infoInner.style.transform = '';
+            infoInner.style.transformOrigin = '';
+          }
+        }
       } else {
         info.style.transform = '';
         info.style.transformOrigin = '';
       }
       // Clear transition after it finishes so it doesn't persist and slow down swipe filter changes
       const _infoCaptured = info;
-      setTimeout(() => { _infoCaptured.style.transition = ''; }, 320);
+      const _innerCaptured = infoInner;
+      setTimeout(() => {
+        _infoCaptured.style.transition = '';
+        if (_innerCaptured) {
+          _innerCaptured.style.transition = '';
+          _innerCaptured.style.transformOrigin = '';
+        }
+      }, 320);
     }
     showFilmstripIfReady();
   } else {
@@ -196,7 +210,7 @@ export function updateZoomTransform(img: any, smooth = true) {
         infoWrap.style.filter = infoBlur > 0.1 ? `blur(${infoBlur.toFixed(1)}px)` : '';
         if (infoInner) {
           infoInner.style.transition = smooth ? `transform 0.25s ${easing}` : '';
-          infoInner.style.transformOrigin = 'center top';
+          infoInner.style.transformOrigin = 'center bottom';
           infoInner.style.transform = infoScale < 0.999 ? `scale(${infoScale.toFixed(3)})` : '';
         }
       } else {
@@ -228,14 +242,30 @@ export function updateZoomTransform(img: any, smooth = true) {
 
 export function resetZoom() {
   state.lbZoomLevel = 1;
-  let imgs = document.querySelectorAll('.zoomable');
-  for (let i = 0; i < imgs.length; i++) updateZoomTransform(imgs[i]);
+  if (state.isMobile) {
+    let img = domRefs.lightboxImgWrap?.querySelector('.snap-slide[data-idx="' + state.cur + '"] img') as HTMLImageElement | null;
+    if (img) {
+      updateZoomTransform(img);
+    } else {
+      let imgs = document.querySelectorAll('.zoomable');
+      for (let i = 0; i < imgs.length; i++) updateZoomTransform(imgs[i]);
+    }
+  } else {
+    if (domRefs.lightboxImg) {
+      updateZoomTransform(domRefs.lightboxImg);
+    } else {
+      let imgs = document.querySelectorAll('.zoomable');
+      for (let i = 0; i < imgs.length; i++) updateZoomTransform(imgs[i]);
+    }
+  }
 }
 
 export function toggleImageZoom(e: any) {
   if (state.currentLightboxIsMotion) return;
   let img = e.target as HTMLImageElement;
   if (!img.classList.contains('zoomable')) return;
+
+  if (state.isMobile) return;
 
   // Ignore zoom attempts during or right after side navigation (400ms buffer)
   if (Date.now() - getLastSideNavTime() < 400) {
@@ -253,33 +283,6 @@ export function toggleImageZoom(e: any) {
   }
   
   e.stopPropagation();
-  
-  if (state.isMobile) {
-    // Double-tap to zoom on mobile
-    const now = Date.now();
-    if (now - lastTapTime < 300) {
-      // Double tap detected
-      if (state.lbZoomLevel > 1) {
-        resetZoom();
-      } else {
-        // Zoom to tap position
-        const rect = img.getBoundingClientRect();
-        const tapX = e.clientX - rect.left;
-        const tapY = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        state.lbZoomLevel = 3; // 3x zoom on double-tap
-        state.lbZoomPanX = (centerX - tapX) * 2;
-        state.lbZoomPanY = (centerY - tapY) * 2;
-        updateZoomTransform(img, true);
-      }
-      lastTapTime = 0;
-    } else {
-      lastTapTime = now;
-    }
-    return;
-  }
   
   // Desktop: click to reset if zoomed, or zoom in if not
   if (state.lbZoomLevel > 1) { 

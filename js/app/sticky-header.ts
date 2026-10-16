@@ -12,27 +12,25 @@ function initStickyHeaderObserver() {
   const header = domRefs.galleryHeader;
   if (!header) return;
 
-  const sentinel = document.createElement('div');
-  sentinel.id = 'gallery-header-sentinel';
-  sentinel.style.height = '1px';
-  sentinel.style.marginTop = '-1px';
-  sentinel.style.pointerEvents = 'none';
-  sentinel.style.visibility = 'hidden';
-
-  header.parentNode?.insertBefore(sentinel, header);
+  const stickyTop = parseFloat(window.getComputedStyle(header).top) || 0;
 
   const observer = new IntersectionObserver((entries) => {
     const entry = entries[0];
-    const stuck = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    const stuck = entry.intersectionRatio < 1 && entry.boundingClientRect.top <= stickyTop;
     document.body.classList.toggle('gallery-header-stuck', stuck);
   }, {
-    threshold: [0]
+    threshold: [1],
+    rootMargin: `-${stickyTop + 1}px 0px 0px 0px`
   });
 
-  observer.observe(sentinel);
+  observer.observe(header);
 }
 
 export function updateStickyHeaderSurface() {
-  // Now handled asynchronously and layout-free by IntersectionObserver.
-  // We keep this function as a no-op to maintain the module signature.
+  const header = domRefs.galleryHeader;
+  if (!header) return;
+  const stickyTop = parseFloat(window.getComputedStyle(header).top) || 0;
+  const rect = header.getBoundingClientRect();
+  const stuck = rect.top <= stickyTop && (window.pageYOffset || document.documentElement.scrollTop || 0) > 0;
+  document.body.classList.toggle('gallery-header-stuck', stuck);
 }

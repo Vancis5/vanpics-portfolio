@@ -27,7 +27,7 @@ export const APP_CONFIG = {
   },
   loader: {
     liftDuration: 750,
-    hardFallbackDelay: 4000,
+    hardFallbackDelay: 10000,
     carouselReadyDelay: 120
   },
   routing: {

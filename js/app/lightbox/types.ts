@@ -3,7 +3,6 @@ import type { Photo, Video } from '../../types.js';
 export type LightboxMediaItem = Photo | Video;
 
 export interface LightboxContentOptions {
-  deferDynamicTextColor?: boolean;
   skipHeightUpdate?: boolean;
 }
 
