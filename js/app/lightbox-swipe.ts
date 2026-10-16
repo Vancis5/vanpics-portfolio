@@ -5,10 +5,11 @@ import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightbox
 import { resetZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
 import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
-import { getPhotoAspectRatio, saveRatioToCache, fadeInWhenReady } from './utils.js';
+import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 import { pauseMotionVideo } from './lightbox-media.js';
 import { motionProjects } from './media-data.js';
-import { isLbSrcUrl, lightboxSrc, markLbSrcFailed } from './lightbox-cache.js';
+import { isLbSrcUrl, lightboxSrc, markLbSrcFailed, cacheImage, getImageCacheEntry } from './lightbox-cache.js';
+import { crossfadeToFull, clearSwapOverlay } from './lightbox-swap.js';
 
 let lbEl = domRefs.lightbox;
 let imgWrap = domRefs.lightboxImgWrap;
@@ -72,12 +73,139 @@ if (state.isMobile) {
     function clearSlides() {
       state.isManuallyNavigating = true;
       let slides = imgWrap.querySelectorAll('.snap-slide');
-      slides.forEach(function (slide) { slide.remove(); });
+      slides.forEach(function (slide) {
+        let inner = slide.querySelector('.snap-slide-inner') as HTMLElement | null;
+        if (inner) clearSwapOverlay(inner);
+        slide.remove();
+      });
       slidesBuilt = false;
       imgWrap.scrollLeft = 0;
       setTimeout(function () {
         state.isManuallyNavigating = false;
       }, 50);
+    }
+
+    function loadSlidePhoto(slide: HTMLElement, p: any, idx: number) {
+      let inner = slide.querySelector('.snap-slide-inner') as HTMLElement | null;
+      let img = slide.querySelector('img') as HTMLImageElement | null;
+      if (!inner || !img || !p) return;
+
+      const fullSrc = lightboxSrc(p);
+      const previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
+      const isCurrentSlide = () => slide.dataset.idx === String(idx) && !!slide.parentNode;
+
+      clearSwapOverlay(inner);
+
+      // Cache hit: full-resolution already decoded
+      const cached = getImageCacheEntry(fullSrc);
+      if (cached && (cached.decoded || (cached.img && cached.img.complete && cached.img.naturalWidth > 0))) {
+        img.src = fullSrc;
+        inner.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
+        inner.classList.add('photo-loaded');
+        if (cached.img.naturalWidth && cached.img.naturalHeight) {
+          let r = cached.img.naturalWidth / cached.img.naturalHeight;
+          inner.style.setProperty('--lightbox-photo-ratio', String(r));
+          saveRatioToCache(p.src, cached.img.naturalWidth, cached.img.naturalHeight);
+        }
+        return;
+      }
+
+      // Cache miss: show thumbnail immediately and remove placeholder
+      let thumbShown = false;
+      if (previewSrc) {
+        const thumbImg = new Image();
+        thumbImg.crossOrigin = 'anonymous';
+        thumbImg.onload = function () {
+          if (!isCurrentSlide()) return;
+          if (inner.classList.contains('photo-loading') && !inner.classList.contains('photo-loaded')) {
+            if (thumbImg.naturalWidth && thumbImg.naturalHeight) {
+              inner.style.setProperty('--lightbox-photo-ratio', String(thumbImg.naturalWidth / thumbImg.naturalHeight));
+            }
+            img.src = previewSrc;
+            thumbShown = true;
+            inner.classList.remove('photo-placeholder-visible');
+          }
+        };
+        thumbImg.src = previewSrc;
+        if (thumbImg.complete && thumbImg.naturalWidth > 0) {
+          thumbImg.onload(new Event('load'));
+        }
+      }
+
+      // Load & decode 1600px full photo in background cache, then crossfade in over the thumb
+      let cacheEntry = cacheImage(fullSrc, true);
+      const onFullReady = () => {
+        if (!isCurrentSlide()) return;
+        const finishFull = () => {
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible', 'photo-error');
+          inner.classList.add('photo-loaded');
+          if (img.naturalWidth && img.naturalHeight) {
+            let r = img.naturalWidth / img.naturalHeight;
+            inner.style.setProperty('--lightbox-photo-ratio', String(r));
+            saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
+          }
+        };
+
+        if (cacheEntry && cacheEntry.img && cacheEntry.img.naturalWidth && cacheEntry.img.naturalHeight) {
+          let r = cacheEntry.img.naturalWidth / cacheEntry.img.naturalHeight;
+          inner.style.setProperty('--lightbox-photo-ratio', String(r));
+        }
+
+        const fading = thumbShown && crossfadeToFull(
+          inner,
+          img,
+          fullSrc,
+          isCurrentSlide,
+          finishFull
+        );
+        if (!fading) {
+          img.src = fullSrc;
+          if (img.decode) {
+            img.decode().then(finishFull, finishFull);
+          } else {
+            finishFull();
+          }
+        }
+      };
+
+      if (cacheEntry && cacheEntry.decodePromise) {
+        cacheEntry.decodePromise.then(onFullReady).catch(() => {
+          if (!isCurrentSlide()) return;
+          if (isLbSrcUrl(p, fullSrc)) {
+            markLbSrcFailed(p.lbSrc);
+            loadSlidePhoto(slide, p, idx);
+            return;
+          }
+          img.src = fullSrc;
+          img.onload = () => {
+            if (!isCurrentSlide()) return;
+            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+            inner.classList.add('photo-loaded');
+          };
+          img.onerror = () => {
+            if (!isCurrentSlide()) return;
+            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+            inner.classList.add('photo-error');
+          };
+        });
+      } else {
+        img.src = fullSrc;
+        img.onload = () => {
+          if (!isCurrentSlide()) return;
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+          inner.classList.add('photo-loaded');
+        };
+        img.onerror = () => {
+          if (!isCurrentSlide()) return;
+          if (isLbSrcUrl(p, fullSrc)) {
+            markLbSrcFailed(p.lbSrc);
+            loadSlidePhoto(slide, p, idx);
+            return;
+          }
+          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
+          inner.classList.add('photo-error');
+        };
+      }
     }
 
     // ── Build slides ──
@@ -107,45 +235,13 @@ if (state.isMobile) {
         img.loading = shouldLoad ? 'eager' : 'lazy';
         img.classList.add('zoomable');
 
-        if (shouldLoad) {
-          img.src = lightboxSrc(p);
-          fadeInWhenReady(img).then(() => {
-            inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-            inner.classList.add('photo-loaded');
-            if (img.naturalWidth && img.naturalHeight) {
-              let r = img.naturalWidth / img.naturalHeight;
-              inner.style.setProperty('--lightbox-photo-ratio', String(r));
-              saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-            }
-          });
-        }
-
-        let attemptedFallback = false;
-        img.onerror = function () {
-          if (!attemptedFallback && isLbSrcUrl(p, img.getAttribute('src'))) {
-            attemptedFallback = true;
-            markLbSrcFailed(p.lbSrc);
-            img.src = p.src;
-            fadeInWhenReady(img).then(() => {
-              if (inner) {
-                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-                inner.classList.add('photo-loaded');
-                if (img.naturalWidth && img.naturalHeight) {
-                  let r = img.naturalWidth / img.naturalHeight;
-                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
-                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-                }
-              }
-            });
-            return;
-          }
-          inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-          inner.classList.add('photo-error');
-        };
-
         inner.appendChild(img);
         slide.appendChild(inner);
         imgWrap.appendChild(slide);
+
+        if (shouldLoad) {
+          loadSlidePhoto(slide, p, i);
+        }
       });
     }
 
@@ -286,28 +382,17 @@ if (state.isMobile) {
         let p = state.activePhotos[i];
         if (shouldEager) {
           if (!img.getAttribute('src') && p) {
-            img.src = lightboxSrc(p);
-            let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
-            fadeInWhenReady(img).then(() => {
-              if (inner) {
-                inner.classList.remove('photo-loading', 'photo-placeholder-visible');
-                inner.classList.add('photo-loaded');
-                if (img.naturalWidth && img.naturalHeight) {
-                  let r = img.naturalWidth / img.naturalHeight;
-                  inner.style.setProperty('--lightbox-photo-ratio', String(r));
-                  saveRatioToCache(p.src, img.naturalWidth, img.naturalHeight);
-                }
-              }
-            });
+            loadSlidePhoto(slides[i] as HTMLElement, p, i);
           }
           img.loading = 'eager';
           if (typeof img.decode === 'function' && !img.dataset.decoded && img.complete) {
             img.decode().then(function () { img.dataset.decoded = "true"; }).catch(function () { });
           }
         } else if (Math.abs(i - state.cur) > 4 && img.getAttribute('src')) {
+          let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
+          if (inner) clearSwapOverlay(inner);
           img.removeAttribute('src');
           img.removeAttribute('data-decoded');
-          let inner = slides[i].querySelector('.snap-slide-inner') as HTMLElement | null;
           if (inner) {
             inner.classList.remove('photo-loaded');
             inner.classList.add('photo-loading', 'photo-placeholder-visible');

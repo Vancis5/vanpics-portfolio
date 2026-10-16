@@ -667,21 +667,14 @@
   }
 
   #lightbox-desc.desc-overflow {
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.45em), transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 1.45em), transparent 100%);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: top;
-    mask-position: top;
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-    transition: -webkit-mask-size 0.3s ease, mask-size 0.3s ease;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   #lightbox-desc.desc-overflow.desc-expanded,
   #lightbox-content.desc-open #lightbox-desc.desc-overflow {
-    -webkit-mask-size: 100% calc(100% + 3rem);
-    mask-size: 100% calc(100% + 3rem);
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   #lightbox-content.desc-open #lightbox-desc {
@@ -952,6 +945,10 @@
   -webkit-user-select: none;
 }
 
+#lightbox-close.idle-hidden:not(:focus-visible) {
+  opacity: 0;
+}
+
 #lightbox-close::before {
   content: '';
   position: absolute;
@@ -1099,8 +1096,8 @@ html.custom-cursor-enabled #lightbox-close::before {
       rgba(var(--text-ivory-rgb), 0.035);
     border: 1.8px solid rgba(var(--text-ivory-rgb), 0.08);
     box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.025);
-    opacity: 1;
-    transform: scale(1);
+    opacity: 0;
+    transform: scale(0.992);
     transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
   }
@@ -1119,8 +1116,7 @@ html.custom-cursor-enabled #lightbox-close::before {
     opacity: 0;
   }
 
-  .snap-slide-inner:not(.photo-loaded) img,
-  .snap-slide-inner.photo-loading:not(.photo-loaded) img {
+  .snap-slide-inner.photo-loading.photo-placeholder-visible:not(.photo-loaded) img {
     opacity: 0 !important;
     visibility: hidden !important;
   }
@@ -1131,6 +1127,13 @@ html.custom-cursor-enabled #lightbox-close::before {
     outline: 1.8px solid rgba(var(--text-ivory-rgb), 0.08);
     outline-offset: -1.8px;
     border-radius: 3px;
+  }
+
+  .snap-slide-inner .lightbox-swap-overlay {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
   }
 
   #lightbox #lightbox-info-wrap,

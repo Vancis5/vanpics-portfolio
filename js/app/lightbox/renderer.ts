@@ -206,6 +206,9 @@ export function cancelDescFlipTransition() {
     desc.style.transition = '';
     desc.style.maxHeight = '';
     desc.classList.remove('desc-expanded');
+    if (desc.dataset.clampedDesc) {
+      desc.innerHTML = desc.dataset.clampedDesc;
+    }
   }
 }
 
@@ -220,11 +223,123 @@ function scheduleAfterMotionFrame(callback: () => void, delay?: number) {
   });
 }
 
+function cleanEndAndAddEllipsis(text: string): string {
+  let t = text.replace(/[\s\uFEFF\xA0]+$/, '');
+  // If ends with sentence punctuation or ellipsis, strip it so we don't get '....'
+  t = t.replace(/[.,!?:;…]+$/, '');
+  t = t.replace(/[\s\uFEFF\xA0]+$/, '');
+  return t ? t + '...' : '';
+}
+
+function getLastTextNode(node: Node | null): Node | null {
+  if (!node) return null;
+  if (node.nodeType === Node.TEXT_NODE) return node;
+  for (let i = node.childNodes.length - 1; i >= 0; i--) {
+    const found = getLastTextNode(node.childNodes[i]);
+    if (found) return found;
+  }
+  return null;
+}
+
+export function computeClampedDescHtml(descEl: HTMLElement, fullHtml: string, clampedH: number): string {
+  if (typeof document === 'undefined') return fullHtml;
+  const probe = document.createElement('div');
+  probe.id = 'lightbox-desc';
+  const width = descEl.clientWidth || (typeof window !== 'undefined' && window.innerWidth ? Math.max(200, window.innerWidth - 40) : 320);
+  probe.style.cssText = `position:fixed;left:-9999px;top:-9999px;visibility:hidden;pointer-events:none;width:${width}px;max-height:4.35em;`;
+  probe.innerHTML = fullHtml;
+  document.body.appendChild(probe);
+
+  const targetH = clampedH || probe.clientHeight || 66;
+
+  // 1. Pop nodes/words from end until it fits within targetH
+  while (probe.childNodes.length > 0 && probe.scrollHeight > targetH + 2) {
+    const last = probe.lastChild;
+    if (!last) break;
+    if (last.nodeType === Node.TEXT_NODE) {
+      const words = (last.textContent || '').trimEnd().split(/\s+/);
+      if (words.length > 1) {
+        words.pop();
+        last.textContent = words.join(' ') + ' ';
+      } else {
+        probe.removeChild(last);
+      }
+    } else if (last.nodeType === Node.ELEMENT_NODE) {
+      if ((last as HTMLElement).tagName === 'BR') {
+        probe.removeChild(last);
+      } else {
+        const lastText = getLastTextNode(last);
+        if (lastText) {
+          const words = (lastText.textContent || '').trimEnd().split(/\s+/);
+          if (words.length > 1) {
+            words.pop();
+            lastText.textContent = words.join(' ') + ' ';
+          } else {
+            probe.removeChild(last);
+          }
+        } else {
+          probe.removeChild(last);
+        }
+      }
+    }
+  }
+
+  // 2. Strip trailing BR elements and empty text nodes so line breaks are handled cleanly
+  const stripTrailingBreaks = () => {
+    while (probe.lastChild && (
+      probe.lastChild.nodeName === 'BR' ||
+      (probe.lastChild.nodeType === Node.TEXT_NODE && !(probe.lastChild.textContent || '').trim())
+    )) {
+      probe.removeChild(probe.lastChild);
+    }
+  };
+
+  stripTrailingBreaks();
+
+  // 3. Attach ellipsis to the last text node
+  const applyEllipsis = () => {
+    stripTrailingBreaks();
+    const lastText = getLastTextNode(probe);
+    if (!lastText) return false;
+    lastText.textContent = cleanEndAndAddEllipsis(lastText.textContent || '');
+    return true;
+  };
+
+  applyEllipsis();
+
+  // 4. If adding '...' caused an overflow line break, trim words until it fits with '...'
+  while (probe.scrollHeight > targetH + 2 && probe.childNodes.length > 0) {
+    const lastText = getLastTextNode(probe);
+    if (lastText) {
+      let raw = (lastText.textContent || '').replace(/\.{3}$/, '').trimEnd();
+      const words = raw.split(/\s+/);
+      if (words.length > 1) {
+        words.pop();
+        lastText.textContent = words.join(' ');
+        applyEllipsis();
+      } else {
+        const parent = lastText.parentNode;
+        if (parent) parent.removeChild(lastText);
+        applyEllipsis();
+      }
+    } else {
+      break;
+    }
+  }
+
+  const clampedHtml = probe.innerHTML;
+  document.body.removeChild(probe);
+  return clampedHtml;
+}
+
 export function updateLightboxDescPreview() {
   let desc = domRefs.lightboxDesc;
   let btn = domRefs.lightboxDescToggle;
   let content = domRefs.lightboxContent;
   if (!desc || !btn || !content || !state.isMobile) return;
+
+  const fullHtml = desc.dataset.fullDesc ?? desc.innerHTML;
+  desc.dataset.fullDesc = fullHtml;
 
   let cleanText = (desc.textContent || '').trim();
   let isDescOpen = content.classList.contains('desc-open');
@@ -243,11 +358,23 @@ export function updateLightboxDescPreview() {
   let prevTransition = desc.style.transition;
   desc.style.transition = 'none';
 
+  // Measure with full content to determine natural height and clamp boundary
+  desc.innerHTML = fullHtml;
   desc.style.maxHeight = '4.35em';
   let clampedH = desc.clientHeight;
   let naturalH = desc.scrollHeight;
 
   let hasOverflow = naturalH > clampedH + 2;
+
+  if (hasOverflow) {
+    const clampedHtml = computeClampedDescHtml(desc, fullHtml, clampedH);
+    desc.dataset.clampedDesc = clampedHtml;
+    if (!isDescOpen) {
+      desc.innerHTML = clampedHtml;
+    }
+  } else {
+    desc.dataset.clampedDesc = fullHtml;
+  }
 
   if (isDescOpen) {
     desc.style.maxHeight = `${naturalH}px`;
@@ -296,7 +423,12 @@ export function setLightboxContent(p: LightboxMediaItem, options?: LightboxConte
   }
 
   if (domRefs.lightboxTitle) domRefs.lightboxTitle.textContent = safeTitle;
-  if (descEl) descEl.innerHTML = sanitizeHtml(safeDesc);
+  const sanitizedDesc = sanitizeHtml(safeDesc);
+  if (descEl) {
+    descEl.dataset.fullDesc = sanitizedDesc;
+    descEl.dataset.clampedDesc = '';
+    descEl.innerHTML = sanitizedDesc;
+  }
   let locItem = domRefs.metaLocation;
   if (p.location) {
     if (domRefs.metaLocationText) domRefs.metaLocationText.textContent = p.location;
@@ -471,15 +603,36 @@ export function toggleLightboxDesc() {
   btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
   desc.classList.toggle('desc-expanded', opening);
 
+  if (opening && desc.dataset.fullDesc) {
+    desc.innerHTML = desc.dataset.fullDesc;
+  }
+
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     desc.style.transition = 'none';
     desc.style.maxHeight = opening ? `${desc.scrollHeight}px` : '';
+    if (!opening && desc.dataset.clampedDesc) {
+      desc.innerHTML = desc.dataset.clampedDesc;
+    }
   } else {
     desc.style.transition = 'max-height 0.3s ease';
     if (opening) {
       desc.style.maxHeight = `${desc.scrollHeight}px`;
     } else {
       desc.style.maxHeight = '';
+      const onCollapseEnd = (e: TransitionEvent) => {
+        if (e.propertyName === 'max-height' && !content.classList.contains('desc-open')) {
+          desc.removeEventListener('transitionend', onCollapseEnd);
+          if (desc.dataset.clampedDesc && !content.classList.contains('desc-open')) {
+            desc.innerHTML = desc.dataset.clampedDesc;
+          }
+        }
+      };
+      desc.addEventListener('transitionend', onCollapseEnd);
+      setTimeout(() => {
+        if (!content.classList.contains('desc-open') && desc.dataset.clampedDesc) {
+          desc.innerHTML = desc.dataset.clampedDesc;
+        }
+      }, 320);
     }
   }
 
@@ -507,6 +660,9 @@ export function resetDescToggle() {
     desc.style.clipPath = '';
     desc.style.transition = '';
     desc.classList.remove('desc-expanded');
+    if (desc.dataset.clampedDesc) {
+      desc.innerHTML = desc.dataset.clampedDesc;
+    }
   }
 }
 

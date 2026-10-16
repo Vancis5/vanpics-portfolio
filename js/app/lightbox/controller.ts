@@ -1,3 +1,4 @@
+import { APP_CONFIG } from '../config.js';
 import { domRefs } from '../dom.js';
 import { state } from '../state.js';
 import { getCategorySlug } from '../media-data.js';
@@ -90,6 +91,38 @@ export function loadSwipeNeighbors() {
   }
 }
 
+let closeIdleTimer: any = null;
+
+export function showLightboxClose() {
+  if (state.isMobile) return;
+  const closeBtn = domRefs.lightboxClose;
+  if (!closeBtn) return;
+  if (closeBtn.classList.contains('idle-hidden')) {
+    closeBtn.classList.remove('idle-hidden');
+  }
+  resetLightboxCloseIdleTimer();
+}
+
+export function hideLightboxClose(force = false) {
+  const closeBtn = domRefs.lightboxClose;
+  if (!closeBtn) return;
+  const isKeyboardFocused = closeBtn.matches(':focus-visible') && !closeBtn.classList.contains('prevent-focus-ring');
+  if (!force && (closeBtn.matches(':hover') || isKeyboardFocused)) {
+    resetLightboxCloseIdleTimer(APP_CONFIG.filmstrip.hoverRetryDelay);
+    return;
+  }
+  clearTimeout(closeIdleTimer);
+  closeIdleTimer = null;
+  closeBtn.classList.add('idle-hidden');
+}
+
+export function resetLightboxCloseIdleTimer(delay = APP_CONFIG.filmstrip.activeHideDelay) {
+  clearTimeout(closeIdleTimer);
+  const lb = domRefs.lightbox;
+  if (!lb || !lb.classList.contains('open') || state.isMobile) return;
+  closeIdleTimer = setTimeout(() => hideLightboxClose(), delay);
+}
+
 export function openLightbox(i: number, direction?: number, isMotion?: boolean) {
   let lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !state.isPopState) {
@@ -104,6 +137,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
   let p = getCurrentLightboxItems()[i];
 
   if (!p) return;
+  showLightboxClose();
   if (!isMotion) scheduleLightboxBlurNeighborPreload(i, lb && lb.classList.contains('open') ? 80 : 300);
   let img = domRefs.lightboxImg;
   let imgWrap = domRefs.lightboxImgWrap;
@@ -399,6 +433,9 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
   document.body.style.overflow = '';
   clearFilmstripHideTimerIfReady();
   hideFilmstripIfReady(true);
+  clearTimeout(closeIdleTimer);
+  closeIdleTimer = null;
+  domRefs.lightboxClose?.classList.remove('idle-hidden');
   setFilmstripLiftZoneDisplay('none');
   resetLightboxMouseNav();
 
@@ -637,7 +674,32 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'ArrowLeft' || key === 'a' || key === 'w') navigateLightbox(-1);
 });
 
-if (!state.isMobile && domRefs.lightboxBg) domRefs.lightboxBg.addEventListener('click', closeLightbox);
+if (domRefs.lightboxBg) {
+  domRefs.lightboxBg.addEventListener('click', () => {
+    if (!state.isMobile) closeLightbox();
+  });
+}
+
+window.addEventListener('mousemove', () => {
+  if (!state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+    showLightboxClose();
+  }
+}, { passive: true });
+
+window.addEventListener('filmstrip-show', () => {
+  if (!state.isMobile && domRefs.lightbox?.classList.contains('open')) {
+    showLightboxClose();
+  }
+});
+
+if (domRefs.lightboxClose) {
+  domRefs.lightboxClose.addEventListener('mouseenter', () => {
+    if (!state.isMobile) clearTimeout(closeIdleTimer);
+  });
+  domRefs.lightboxClose.addEventListener('mouseleave', () => {
+    if (!state.isMobile) resetLightboxCloseIdleTimer();
+  });
+}
 
 function handleLightboxBlur() {
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) {

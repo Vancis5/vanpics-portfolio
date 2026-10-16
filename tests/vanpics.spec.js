@@ -138,6 +138,43 @@ test('opens and closes a photo lightbox', async ({ page }) => {
   await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
 });
 
+test('desktop lightbox close button hides on idle and reappears on cursor move, and side glow fades on viewport leave', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit on Linux reports hover: none');
+  await waitForGallery(page);
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+  const closeBtn = page.locator('#lightbox-close');
+  await page.mouse.move(400, 300);
+  await expect(closeBtn).not.toHaveClass(/idle-hidden/);
+
+  // After idle delay (2800ms without cursor movement), close button hides
+  await expect(closeBtn).toHaveClass(/idle-hidden/, { timeout: 6000 });
+
+  // Move cursor around, close button should reappear
+  await page.mouse.move(450, 350);
+  await expect(closeBtn).not.toHaveClass(/idle-hidden/);
+
+  // Test side glow near left edge
+  await page.mouse.move(50, 400);
+  const glowLeft = page.locator('#lightbox-glow-left');
+  await expect.poll(async () => {
+    return parseFloat(await glowLeft.evaluate(el => el.style.opacity || '0'));
+  }, { timeout: 3000 }).toBeGreaterThan(0.05);
+
+  // Move cursor outside the viewport
+  await page.mouse.move(-10, -10);
+
+  // Side glow should fade to 0
+  await expect.poll(async () => {
+    return parseFloat(await glowLeft.evaluate(el => el.style.opacity || '0'));
+  }, { timeout: 1500 }).toBeLessThan(0.02);
+
+  // Close lightbox
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
+});
+
 test('opens a photo from the hash route', async ({ page }) => {
   await page.goto('/#photographs/depths');
 

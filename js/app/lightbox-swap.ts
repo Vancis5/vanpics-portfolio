@@ -17,13 +17,14 @@
 const OVERLAY_CLASS = 'lightbox-swap-overlay';
 const FADE_MS = 220;
 
-// Bumped by every crossfade start and every clear, so an older in-flight fade can tell it was
+// Bumped by every crossfade start and every clear per wrap, so an older in-flight fade can tell it was
 // superseded even when the caller's own "is this still the current photo" check still passes.
-let swapSeq = 0;
+const wrapSeqMap = new WeakMap<HTMLElement, number>();
 
 export function clearSwapOverlay(wrap: HTMLElement | null) {
-  swapSeq++;
   if (!wrap) return;
+  const nextSeq = (wrapSeqMap.get(wrap) || 0) + 1;
+  wrapSeqMap.set(wrap, nextSeq);
   wrap.querySelectorAll('.' + OVERLAY_CLASS).forEach(function (el) { el.remove(); });
 }
 
@@ -51,8 +52,9 @@ export function crossfadeToFull(
   if (img.classList.contains('zoomed') || hasTransform(img)) return false;
 
   clearSwapOverlay(wrap);
-  const mySeq = swapSeq;
-  const live = function () { return mySeq === swapSeq && isCurrent(); };
+  const mySeq = (wrapSeqMap.get(wrap) || 0) + 1;
+  wrapSeqMap.set(wrap, mySeq);
+  const live = function () { return wrapSeqMap.get(wrap) === mySeq && isCurrent(); };
   const overlay = document.createElement('img');
   overlay.className = OVERLAY_CLASS;
   overlay.alt = '';
