@@ -15,7 +15,7 @@ export interface DescFlipOptions {
 }
 
 export interface LightboxFacade {
-  open: (index: number, direction?: number, isMotion?: boolean) => void;
+  open: (index: number, direction?: number, isMotion?: boolean, originThumb?: HTMLElement | null) => void;
   close: (shouldPushState?: boolean) => void;
   next: () => void;
   prev: () => void;

@@ -172,7 +172,6 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.4s ease, visibility 0.4s ease;
   overflow: clip;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -507,7 +506,6 @@
   border: 1.8px solid rgba(var(--text-ivory-rgb), 0.06);
   clip-path: inset(0 round 3px);
   overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out, filter 0.25s ease-out;
   will-change: transform, opacity, filter;
 }
 
@@ -1865,4 +1863,25 @@ html.custom-cursor-enabled #lightbox-close::before {
 #lightbox[data-lb-layout^="tablet"].zoom-active #lightbox-info-wrap {
   z-index: 10 !important;
   pointer-events: none !important;
+}
+
+/* VIEW TRANSITIONS SHARED ELEMENT MORPH (DEMO MATCH) */
+::view-transition-group(photo) {
+  animation-duration: 0.35s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(photo),
+::view-transition-new(photo) {
+  animation: none;
+  mix-blend-mode: normal;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*) {
+    animation-duration: 0.01s;
+  }
 }

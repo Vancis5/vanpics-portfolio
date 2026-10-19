@@ -130,7 +130,9 @@ export function resetLightboxCloseIdleTimer(delay = 2000) {
   closeIdleTimer = setTimeout(() => hideLightboxClose(), delay);
 }
 
-export function openLightbox(i: number, direction?: number, isMotion?: boolean) {
+let lastOriginThumb: HTMLElement | null = null;
+
+export function openLightbox(i: number, direction?: number, isMotion?: boolean, originThumb?: HTMLElement | null) {
   updateLightboxLayout();
   let lb = domRefs.lightbox;
   if (lb && !lb.classList.contains('open') && !state.isPopState) {
@@ -303,136 +305,167 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     let openGen = ++navGen;
     previouslyFocusedElement = document.activeElement as HTMLElement | null;
 
-    lb.style.transition = '';
-    lb.style.backgroundColor = '';
-    lb.style.opacity = '';
-    lb.style.pointerEvents = '';
-    if (domRefs.lightboxBg) {
-      domRefs.lightboxBg.style.transition = '';
-      domRefs.lightboxBg.style.opacity = '';
-    }
-    if (domRefs.blurCanvas) {
-      domRefs.blurCanvas.style.transition = '';
-      domRefs.blurCanvas.style.opacity = '';
-    }
+    lastOriginThumb = originThumb || (document.querySelector(`.photo-card[data-idx="${i}"] img`) as HTMLElement | null);
 
-    img.onload = null; img.onerror = null;
-    img.src = '';
-    img.style.transition = 'none';
-    img.style.opacity = '0';
-    img.style.transform = '';
-    img.style.filter = '';
-    imgWrap.style.transition = '';
-    imgWrap.style.opacity = '';
-    imgWrap.style.transform = '';
-    imgWrap.style.filter = '';
-    playerShell.innerHTML = '';
-    playerShell.style.opacity = '0';
-    playerShell.style.filter = '';
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canViewTransition = !isMotion && !!document.startViewTransition && !prefersReducedMotion && !!lastOriginThumb;
 
-    let infoEl2 = domRefs.lightboxInfo;
-    if (infoEl2) {
-      infoEl2.style.animation = 'none';
-      infoEl2.style.opacity = '0';
-    }
+    const runInitialOpen = () => {
+      lb.style.transition = 'none';
+      lb.style.backgroundColor = '';
+      lb.style.opacity = '1';
+      lb.style.pointerEvents = '';
+      if (domRefs.lightboxBg) {
+        domRefs.lightboxBg.style.transition = 'none';
+        domRefs.lightboxBg.style.opacity = '1';
+      }
+      if (domRefs.blurCanvas) {
+        domRefs.blurCanvas.style.transition = 'none';
+        domRefs.blurCanvas.style.opacity = '';
+      }
 
-    let header = domRefs.galleryHeader;
-    let headerRect = (!state.isMobile && header) ? header.getBoundingClientRect() : null;
-    state.isLightboxClosing = false;
-    state.isLightboxDismissing = false;
-    lb.classList.remove('is-closing', 'is-dismissing', 'dismiss-committed');
-    document.body.classList.remove('lightbox-closing', 'lightbox-dismissing');
-    lb.classList.add('open');
-    lb.removeAttribute('inert');
-    startNavAnimationLoop();
-    let closeBtn = document.getElementById('lightbox-close');
-    if (closeBtn) {
-      if (state.lastInputType !== 'keyboard') {
-        closeBtn.classList.add('prevent-focus-ring');
-        closeBtn.addEventListener('blur', function removePFR() {
-          closeBtn.classList.remove('prevent-focus-ring');
-          closeBtn.removeEventListener('blur', removePFR);
+      img.onload = null; img.onerror = null;
+      img.style.transition = 'none';
+      img.style.transform = '';
+      img.style.filter = '';
+      imgWrap.style.transition = 'none';
+      imgWrap.style.opacity = '1';
+      imgWrap.style.transform = '';
+      imgWrap.style.filter = '';
+      playerShell.innerHTML = '';
+      playerShell.style.opacity = '0';
+      playerShell.style.filter = '';
+
+      let infoEl2 = domRefs.lightboxInfo;
+      if (infoEl2) {
+        infoEl2.style.animation = 'none';
+        infoEl2.style.opacity = '0';
+      }
+
+      let header = domRefs.galleryHeader;
+      let headerRect = (!state.isMobile && header) ? header.getBoundingClientRect() : null;
+      state.isLightboxClosing = false;
+      state.isLightboxDismissing = false;
+      lb.classList.remove('is-closing', 'is-dismissing', 'dismiss-committed');
+      document.body.classList.remove('lightbox-closing', 'lightbox-dismissing');
+      lb.classList.add('open');
+      lb.removeAttribute('inert');
+      startNavAnimationLoop();
+      let closeBtn = document.getElementById('lightbox-close');
+      if (closeBtn) {
+        if (state.lastInputType !== 'keyboard') {
+          closeBtn.classList.add('prevent-focus-ring');
+          closeBtn.addEventListener('blur', function removePFR() {
+            closeBtn.classList.remove('prevent-focus-ring');
+            closeBtn.removeEventListener('blur', removePFR);
+          });
+        }
+        closeBtn.focus();
+      }
+      document.body.classList.add('lightbox-open');
+      lb.scrollTop = 0;
+      if (!state.isMobile) {
+        document.body.style.overflow = 'hidden';
+
+        // FLIP: Invert header only on desktop
+        if (header && headerRect) {
+          let last = header.getBoundingClientRect();
+          let dX = headerRect.left - last.left;
+          let dY = headerRect.top - last.top;
+          header.style.transition = 'none';
+          header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
+        }
+
+        requestAnimationFrame(function () {
+          let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+          if (header) {
+            header.style.transition = ease;
+            header.style.transform = '';
+          }
         });
       }
-      closeBtn.focus();
-    }
-    document.body.classList.add('lightbox-open');
-    lb.scrollTop = 0;
-    if (!state.isMobile) {
-      document.body.style.overflow = 'hidden';
 
-      // FLIP: Invert header only on desktop
-      if (header && headerRect) {
-        let last = header.getBoundingClientRect();
-        let dX = headerRect.left - last.left;
-        let dY = headerRect.top - last.top;
-        header.style.transition = 'none';
-        header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
-      }
+      setFilmstripLiftZoneDisplay('block');
+      window.dispatchEvent(new Event('lightbox-open'));
+      setTimeout(showFilmstripIfReady, 300);
 
-      requestAnimationFrame(function () {
-        let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
-        if (header) {
-          header.style.transition = ease;
-          header.style.transform = '';
-        }
-      });
-    }
-
-    setFilmstripLiftZoneDisplay('block');
-    window.dispatchEvent(new Event('lightbox-open'));
-    setTimeout(showFilmstripIfReady, 300);
-
-    let hint = document.getElementById('swipe-hint');
-    if (hint) {
-      hint.classList.add('visible');
-      setTimeout(function () { hint.classList.remove('visible'); }, 2500);
-    }
-
-    let openLoadFired = false;
-    function afterOpenLoad() {
-      if (openLoadFired || openGen !== navGen) return;
-      openLoadFired = true;
-      if (isMotion) {
-        img.onload = null;
-        img.onerror = null;
+      let hint = document.getElementById('swipe-hint');
+      if (hint) {
+        hint.classList.add('visible');
+        setTimeout(function () { hint.classList.remove('visible'); }, 2500);
       }
 
       let bSrc = isMotion ? (p.thumb || '') : (p.thumb || p.src || '');
       setLightboxBlur(bSrc);
       setLightboxContent(p);
-      if (!isMotion) {
-        loadSwipeNeighbors();
-        warmUpAllPhotoColors(getCurrentLightboxItems() as Photo[]);
+
+      let openLoadFired = false;
+      function afterOpenLoad() {
+        if (openLoadFired || openGen !== navGen) return;
+        openLoadFired = true;
+        if (isMotion) {
+          img.onload = null;
+          img.onerror = null;
+        }
+
+        if (!isMotion) {
+          loadSwipeNeighbors();
+          warmUpAllPhotoColors(getCurrentLightboxItems() as Photo[]);
+        }
+
+        requestAnimationFrame(function () {
+          if (openGen !== navGen) return;
+          animateInfo(0);
+          void img.offsetWidth;
+
+          if (isMotion) {
+            renderVideoInLightbox(p as Video);
+            requestAnimationFrame(function () {
+              playerShell.style.transition = 'opacity 0.35s ease';
+              playerShell.style.opacity = '1';
+            });
+          }
+        });
       }
 
       requestAnimationFrame(function () {
-        if (openGen !== navGen) return;
-        animateInfo(0);
-        void img.offsetWidth;
-
         if (isMotion) {
-          renderVideoInLightbox(p as Video);
-          requestAnimationFrame(function () {
-            playerShell.style.transition = 'opacity 0.35s ease';
-            playerShell.style.opacity = '1';
-          });
-          imgWrap.style.transition = 'opacity 0.35s ease';
-          imgWrap.style.opacity = '1';
+          afterOpenLoad();
         } else {
-          img.style.transition = 'opacity 0.28s ease';
+          if (!state.isMobile) prepareLightboxPhoto(p as Photo);
+          afterOpenLoad();
         }
       });
+    };
+
+    if (canViewTransition && lastOriginThumb) {
+      const thumb = lastOriginThumb as HTMLImageElement;
+      thumb.style.viewTransitionName = 'photo';
+
+      const ratio = (p as Photo).aspectRatio || (p.width && p.height ? p.width / p.height : 1.5);
+      domRefs.lightboxImgWrap?.style.setProperty('--lightbox-photo-ratio', String(ratio));
+      domRefs.lightboxContent?.style.setProperty('--lightbox-photo-ratio', String(ratio));
+
+      try {
+        runInitialOpen();
+
+        const transition = document.startViewTransition(() => {
+          thumb.style.viewTransitionName = '';
+          img.style.viewTransitionName = 'photo';
+        });
+        const cleanup = () => {
+          thumb.style.viewTransitionName = '';
+          img.style.viewTransitionName = '';
+        };
+        transition.finished.then(cleanup, cleanup);
+        return;
+      } catch (err) {
+        thumb.style.viewTransitionName = '';
+        img.style.viewTransitionName = '';
+      }
     }
 
-    requestAnimationFrame(function () {
-      if (isMotion) {
-        afterOpenLoad();
-      } else {
-        if (!state.isMobile) prepareLightboxPhoto(p as Photo);
-        afterOpenLoad();
-      }
-    });
+    runInitialOpen();
   }
 }
 

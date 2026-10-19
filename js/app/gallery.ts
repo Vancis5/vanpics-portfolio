@@ -971,10 +971,11 @@ if (masonry) {
     if (!card) return;
     const idx = parseInt(card.dataset.idx || '0', 10);
     const cardCategory = card.dataset.category || 'all';
+    const thumbImg = card.querySelector('img') as HTMLElement | null;
 
     state.currentCategory = cardCategory;
     updateActivePhotos();
-    openLightbox(idx, 0, cardCategory === 'motion');
+    openLightbox(idx, 0, cardCategory === 'motion', thumbImg);
   });
 
   masonry.addEventListener('keydown', function (e) {
