@@ -1622,6 +1622,81 @@ test.describe('Mobile Lightbox Info Dock Redesign', () => {
     // Verify zero console intervention warnings were triggered
     expect(consoleInterventions).toHaveLength(0);
   });
+
+  test('30. Filmstrip navigation on mobile applies blur transition during fade out/in and settles cleanly', async ({ page }) => {
+    await waitForGallery(page);
+    const card = page.locator('.masonry-panel[data-category="all"] .photo-card[aria-label="View photo 1-1 long"]');
+    await card.scrollIntoViewIfNeeded();
+    await card.tap();
+
+    await expect(page.locator('#lightbox')).toHaveClass(/open/);
+    await expect(page.locator('#lightbox-title')).toHaveText('photo 1-1 long');
+
+    // Ensure filmstrip is visible
+    const fsWrap = page.locator('#filmstrip-wrap');
+    await expect(fsWrap).toHaveClass(/visible/);
+
+    // Track filter/transition styles on outgoing slide 0 and info during navigation
+    const blurDetectedDuringFade = await page.evaluate(async () => {
+      let sawSlideBlur = false;
+      let sawInfoBlur = false;
+      const thumb = document.querySelector('.filmstrip-thumb[data-idx="2"]');
+      if (!thumb) return { sawSlideBlur, sawInfoBlur };
+
+      const observer = new MutationObserver(() => {
+        const oldInner = document.querySelector('.snap-slide[data-idx="0"] .snap-slide-inner');
+        if (oldInner && oldInner.style.filter && oldInner.style.filter.includes('blur')) {
+          sawSlideBlur = true;
+        }
+        const info = document.getElementById('lightbox-info');
+        if (info && info.style.filter && info.style.filter.includes('blur')) {
+          sawInfoBlur = true;
+        }
+      });
+      observer.observe(document.getElementById('lightbox') || document.body, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['style']
+      });
+
+      thumb.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+      const start = performance.now();
+      while (performance.now() - start < 350) {
+        const oldInner = document.querySelector('.snap-slide[data-idx="0"] .snap-slide-inner');
+        if (oldInner && oldInner.style.filter && oldInner.style.filter.includes('blur')) {
+          sawSlideBlur = true;
+        }
+        const info = document.getElementById('lightbox-info');
+        if (info && info.style.filter && info.style.filter.includes('blur')) {
+          sawInfoBlur = true;
+        }
+        if (sawSlideBlur && sawInfoBlur) break;
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      observer.disconnect();
+      return { sawSlideBlur, sawInfoBlur };
+    });
+
+    expect(blurDetectedDuringFade.sawSlideBlur).toBe(true);
+    expect(blurDetectedDuringFade.sawInfoBlur).toBe(true);
+
+    // Wait for transition to complete and settle
+    await expect(page.locator('#lightbox-title')).toHaveText('photo 1-1 one-liner');
+    await page.waitForTimeout(400);
+
+    // After settling, incoming slide and info text have cleared temporary transition blur
+    const settledState = await page.evaluate(() => {
+      const activeInner = document.querySelector('.snap-slide[data-idx="2"] .snap-slide-inner');
+      const info = document.getElementById('lightbox-info');
+      return {
+        slideFilter: activeInner ? activeInner.style.filter : null,
+        infoFilter: info ? info.style.filter : null
+      };
+    });
+    expect(settledState.slideFilter === '' || settledState.slideFilter === 'blur(0px)' || settledState.slideFilter === null).toBe(true);
+    expect(settledState.infoFilter === '' || settledState.infoFilter === 'blur(0px)' || settledState.infoFilter === null).toBe(true);
+  });
 });
 
 test.describe('Desktop unchanged', () => {

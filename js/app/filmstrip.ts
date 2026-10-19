@@ -15,6 +15,7 @@ let FILMSTRIP_CONFIG = APP_CONFIG.filmstrip;
 
 window.addEventListener('category-change', function () {
   filmstripBuilt = false;
+  invalidateFilmstripMetrics();
   if (typeof filmstripEl !== 'undefined' && filmstripEl) {
     resetFilmstripTransformScroll();
     getFilmstripTrack().innerHTML = '';
@@ -45,11 +46,12 @@ if (typeof window.requestIdleCallback === 'function') {
 export function buildFilmstrip() {
   if (filmstripBuilt) return;
   filmstripBuilt = true;
+  invalidateFilmstripMetrics();
 
   let currentSet = state.currentLightboxIsMotion ? motionProjects : state.activePhotos;
 
   // Photos: 52px thumb + gap, Motion: 78px thumb
-  let THUMB_W = state.currentLightboxIsMotion ? (window.innerWidth >= 640 ? 78 : 68) : (window.innerWidth >= 640 ? 62 : 52);
+  let THUMB_W = state.currentLightboxIsMotion ? 78 : (window.innerWidth >= 640 ? 62 : 52);
   let pad = (window.innerWidth / 2) - (THUMB_W / 2);
   let track = getFilmstripTrack();
   resetFilmstripTransformScroll();
@@ -109,6 +111,63 @@ let fsDirectSyncTime = 0;
 let fsDirectSyncValue = 0;
 let fsDirectVelocity = 0;
 let fsSettleTarget: number | null = null;
+let fsAnimTarget: number | null = null;
+
+// scroll-driven strip: position = swipe progress, runs on the compositor
+let fsTl: Animation | null = null;
+const FS_TL_SUPPORTED = typeof (window as any).ScrollTimeline === 'function'
+  && typeof Element.prototype.animate === 'function';
+
+function fsTimelinePos(): number {
+  const wrap = domRefs.lightboxImgWrap as HTMLElement | null;
+  const max = wrap ? wrap.scrollWidth - wrap.clientWidth : 0;
+  if (!wrap || max < 1) return 0;
+  return clampFilmstripScroll((wrap.scrollLeft / max) * getFilmstripMaxScroll());
+}
+
+function engageFsTimeline() {
+  if (fsTl || !FS_TL_SUPPORTED || !state.isMobile || state.currentLightboxIsMotion) return;
+  const wrap = domRefs.lightboxImgWrap as HTMLElement | null;
+  const range = getFilmstripMaxScroll();
+  if (!wrap || range < 1) return;
+  cancelAllFsRaf();
+  fsSyncTarget = null;
+  fsSettleTarget = null;
+  clearScheduledFilmstripCommit();
+  fsTransformActive = false;
+  filmstripEl.scrollLeft = 0;
+  const track = getFilmstripTrack();
+  track.style.transform = '';
+  fsTl = track.animate(
+    [{ transform: 'translate3d(0,0,0)' }, { transform: `translate3d(${-range}px,0,0)` }],
+    {
+      fill: 'both',
+      easing: 'linear',
+      timeline: new (window as any).ScrollTimeline({ source: wrap, axis: 'inline' })
+    } as any
+  );
+}
+
+// bake=true hands the current position back to the JS/native path without a jump
+function disengageFsTimeline(bake = true) {
+  if (!fsTl) return;
+  const pos = fsTimelinePos();
+  fsTl.cancel();
+  fsTl = null;
+  if (bake) setFilmstripScroll(pos);
+}
+
+function cancelAllFsRaf() {
+  if (state.fsRaf) {
+    cancelAnimationFrame(state.fsRaf);
+    state.fsRaf = null;
+  }
+  if (fsSyncRaf) {
+    cancelAnimationFrame(fsSyncRaf);
+    fsSyncRaf = null;
+  }
+  fsAnimTarget = null;
+}
 
 function getFilmstripTrack() {
   if (filmstripTrack && filmstripTrack.parentNode === filmstripEl) return filmstripTrack;
@@ -141,7 +200,7 @@ function triggerFilmstripHaptic() {
 function checkFilmstripEdge(pos: number) {
   // ONLY vibrate if the user is directly swiping / dragging the filmstrip
   if (!state.isTouchingFilmstrip || !filmstripEl || !domRefs.lightbox?.classList.contains('open')) return;
-  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  let max = getFilmstripMaxScroll();
   if (max < 20) return;
 
   if (pos <= 0) {
@@ -164,7 +223,7 @@ function checkFilmstripEdge(pos: number) {
 }
 
 function clampFilmstripScroll(value: number): number {
-  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  let max = getFilmstripMaxScroll();
   return Math.max(0, Math.min(value, max));
 }
 
@@ -189,6 +248,7 @@ function setFilmstripScroll(value: number) {
 }
 
 function getFilmstripScroll() {
+  if (fsTl) return fsTimelinePos();
   return fsTransformActive ? fsVisualScroll : filmstripEl.scrollLeft;
 }
 
@@ -205,10 +265,11 @@ function rememberFilmstripDirectVelocity(value: number) {
   fsDirectSyncValue = value;
 }
 
-let filmstripMetrics: { thumbW: number, gap: number, paddingLeft: number, elWidth: number } | null = null;
+let filmstripMetrics: { thumbW: number, gap: number, paddingLeft: number, elWidth: number, maxScroll: number } | null = null;
 
 function invalidateFilmstripMetrics() {
   filmstripMetrics = null;
+  disengageFsTimeline();
 }
 
 let filmstripResizeTimer: any;
@@ -227,13 +288,22 @@ function getFilmstripMetrics() {
   if (thumbs.length < 1) return null;
 
   let track = getFilmstripTrack();
-  let thumbW = thumbs[0].offsetWidth || 62;
+  let thumbW = thumbs[0].offsetWidth || (state.currentLightboxIsMotion ? 78 : (window.innerWidth >= 640 ? 62 : 52));
   let gap = parseFloat(window.getComputedStyle(track).gap) || 5;
-  let paddingLeft = parseFloat(track.style.paddingLeft) || 0;
-  let elWidth = filmstripEl.offsetWidth || 300;
+  let elWidth = filmstripEl.clientWidth || filmstripEl.offsetWidth || window.innerWidth || 300;
+  let paddingLeft = (elWidth / 2) - (thumbW / 2);
+  track.style.paddingLeft = paddingLeft + 'px';
+  track.style.paddingRight = paddingLeft + 'px';
+  let totalWidth = paddingLeft * 2 + thumbs.length * thumbW + Math.max(0, thumbs.length - 1) * gap;
+  let maxScroll = Math.max(0, totalWidth - elWidth);
 
-  filmstripMetrics = { thumbW, gap, paddingLeft, elWidth };
+  filmstripMetrics = { thumbW, gap, paddingLeft, elWidth, maxScroll };
   return filmstripMetrics;
+}
+
+function getFilmstripMaxScroll(): number {
+  let metrics = getFilmstripMetrics();
+  return metrics ? metrics.maxScroll : Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
 }
 
 function getFilmstripTargetForPhotoProgress(progress: number): number | null {
@@ -245,11 +315,8 @@ function getFilmstripTargetForPhotoProgress(progress: number): number | null {
 }
 
 export function syncFilmstripToPhotoProgress(progress: number) {
-  if (state.isTouchingFilmstrip) return;
-  if (fsSyncRaf) {
-    cancelAnimationFrame(fsSyncRaf);
-    fsSyncRaf = null;
-  }
+  if (state.isTouchingFilmstrip || fsTl) return;
+  cancelAllFsRaf();
   fsSyncTarget = null;
   fsSettleTarget = null;
   if (window.fsLenis) window.fsLenis.stop();
@@ -259,21 +326,22 @@ export function syncFilmstripToPhotoProgress(progress: number) {
     target = clampFilmstripScroll(target);
     rememberFilmstripDirectVelocity(target);
     setFilmstripScroll(target);
+    engageFsTimeline(); // lazy re-engage after a manual strip scroll
   }
 }
 
 export function settleFilmstripToPhotoProgress(progress: number) {
-  if (state.isTouchingFilmstrip) return;
+  if (state.isTouchingFilmstrip || fsTl) return;
   let target = getFilmstripTargetForPhotoProgress(progress);
   if (target !== null) startFilmstripSettle(target);
 }
 
 export function finishFilmstripPhotoSync(progress?: number | null) {
+  if (fsTl) return;
   if (typeof progress === 'number') {
     settleFilmstripToPhotoProgress(progress);
   } else {
     if (window.fsLenis) window.fsLenis.start();
-    scheduleFilmstripNativeCommit(180);
   }
 }
 
@@ -281,8 +349,8 @@ function commitFilmstripTransformScroll() {
   if (!fsTransformActive) return;
   clearScheduledFilmstripCommit();
   let value = clampFilmstripScroll(fsVisualScroll);
-  filmstripEl.scrollLeft = value;
   getFilmstripTrack().style.transform = '';
+  filmstripEl.scrollLeft = value;
   fsTransformActive = false;
   fsVisualScroll = value;
 }
@@ -310,14 +378,16 @@ function scheduleFilmstripNativeCommit(delay?: number) {
 function resetFilmstripTransformScroll() {
   if (!filmstripEl) return;
   clearScheduledFilmstripCommit();
+  if (fsTl) { fsTl.cancel(); fsTl = null; }
   fsVisualScroll = 0;
   fsTransformActive = false;
   fsDirectSyncTime = 0;
   fsDirectSyncValue = 0;
   fsDirectVelocity = 0;
   fsSettleTarget = null;
-  filmstripEl.scrollLeft = 0;
+  fsAnimTarget = null;
   getFilmstripTrack().style.transform = '';
+  filmstripEl.scrollLeft = 0;
 }
 
 function startFilmstripSettle(target: number) {
@@ -326,26 +396,24 @@ function startFilmstripSettle(target: number) {
   let distance = target - start;
   if (Math.abs(distance) < 0.5) {
     setFilmstripScroll(target);
-    scheduleFilmstripNativeCommit(180);
     if (window.fsLenis) window.fsLenis.start();
     fsSettleTarget = null;
+    fsAnimTarget = null;
     return;
   }
 
-  if (fsSyncRaf && fsSettleTarget !== null && Math.abs(fsSettleTarget - target) < 0.5) return;
-  if (fsSyncRaf) {
-    cancelAnimationFrame(fsSyncRaf);
-    fsSyncRaf = null;
-  }
+  if ((state.fsRaf || fsSyncRaf) && fsAnimTarget !== null && Math.abs(fsAnimTarget - target) < 0.5) return;
+  cancelAllFsRaf();
   if (window.fsLenis) window.fsLenis.stop();
 
   fsSettleTarget = target;
-  let startTime = 0;
+  fsAnimTarget = target;
+  let startTime = performance.now();
   let duration = Math.max(300, Math.min(500, 250 + Math.abs(distance) * 0.4));
 
   function settleStep(time: number) {
-    if (!startTime) startTime = time;
-    let t = Math.min(1, (time - startTime) / duration);
+    let elapsed = Math.max(0, time - startTime);
+    let t = Math.min(1, elapsed / duration);
     let ease = 1 - Math.pow(1 - t, 3);
     let next = start + distance * ease;
 
@@ -359,10 +427,10 @@ function startFilmstripSettle(target: number) {
     }
 
     setFilmstripScroll(target);
-    scheduleFilmstripNativeCommit(180);
     if (window.fsLenis) window.fsLenis.start();
     fsSyncRaf = null;
     fsSettleTarget = null;
+    fsAnimTarget = null;
     fsDirectVelocity = 0;
   }
 
@@ -373,27 +441,34 @@ function startFilmstripSettle(target: number) {
 // Uses frame-rate-independent exponential decay so the filmstrip
 // chases the target position without jitter or abrupt transitions.
 export function startFsSync(target: number) {
+  target = clampFilmstripScroll(target);
   if (window.fsLenis) window.fsLenis.stop();
+  if (state.fsRaf) {
+    cancelAnimationFrame(state.fsRaf);
+    state.fsRaf = null;
+  }
   fsSettleTarget = null;
   fsSyncTarget = target;
+  fsAnimTarget = target;
   if (fsSyncRaf) return;
-  let prevTime = 0;
+  let prevTime = performance.now();
   function syncLoop(time: number) {
     if (fsSyncTarget === null) {
       if (window.fsLenis) window.fsLenis.start();
       fsSyncRaf = null;
+      fsAnimTarget = null;
       return;
     }
-    let dt = prevTime ? Math.min(time - prevTime, FILMSTRIP_CONFIG.syncMaxDeltaMs) : FILMSTRIP_CONFIG.syncDefaultDeltaMs;
+    let dt = Math.max(1, Math.min(time - prevTime, FILMSTRIP_CONFIG.syncMaxDeltaMs));
     prevTime = time;
     let current = getFilmstripScroll();
     let diff = fsSyncTarget - current;
     if (Math.abs(diff) < 0.5) {
       setFilmstripScroll(fsSyncTarget);
-      scheduleFilmstripNativeCommit(180);
       if (window.fsLenis) window.fsLenis.start();
       fsSyncRaf = null;
       fsSyncTarget = null;
+      fsAnimTarget = null;
       return;
     }
     let alpha = 1 - Math.exp(-FILMSTRIP_CONFIG.syncSpring * dt / 1000);
@@ -404,8 +479,7 @@ export function startFsSync(target: number) {
 }
 
 export function stopFsSync(options?: any) {
-  if (state.fsRaf) { cancelAnimationFrame(state.fsRaf); state.fsRaf = null; }
-  if (fsSyncRaf) { cancelAnimationFrame(fsSyncRaf); fsSyncRaf = null; }
+  cancelAllFsRaf();
   fsSyncTarget = null;
   fsSettleTarget = null;
   if (!options || options.commit !== false) commitFilmstripTransformScroll();
@@ -413,24 +487,36 @@ export function stopFsSync(options?: any) {
   if (window.fsLenis) window.fsLenis.start();
 }
 
-export function updateFilmstrip() {
-  let oldActive = filmstripEl.querySelector('.filmstrip-thumb.active');
+export function setActiveFilmstripThumb(idx: number) {
+  if (!filmstripEl) return;
+  let oldActive = filmstripEl.querySelector('.filmstrip-thumb.active') as HTMLElement | null;
+  if (oldActive && oldActive.dataset.idx === String(idx)) return;
   if (oldActive) oldActive.classList.remove('active');
+  let active = filmstripEl.querySelector('.filmstrip-thumb[data-idx="' + idx + '"]') as HTMLElement | null;
+  if (active) active.classList.add('active');
+}
+
+export function updateFilmstrip() {
+  setActiveFilmstripThumb(state.cur);
+  if (fsTl) return;
 
   let active = filmstripEl.querySelector('.filmstrip-thumb[data-idx="' + state.cur + '"]') as HTMLElement | null;
   if (active) {
-    active.classList.add('active');
-    let wrapW = filmstripEl.offsetWidth;
-    let thumbL = active.offsetLeft;
-    let thumbW = active.offsetWidth;
-    fsTarget = thumbL - wrapW / 2 + thumbW / 2;
+    let metricTarget = getFilmstripTargetForPhotoProgress(state.cur);
+    if (metricTarget !== null) {
+      fsTarget = clampFilmstripScroll(metricTarget);
+    } else {
+      let wrapW = filmstripEl.offsetWidth;
+      let thumbL = active.offsetLeft;
+      let thumbW = active.offsetWidth;
+      fsTarget = clampFilmstripScroll(thumbL - wrapW / 2 + thumbW / 2);
+    }
     if (!state.isMobile || state.isManuallyNavigating) {
+      if ((state.fsRaf || fsSyncRaf) && fsAnimTarget !== null && Math.abs(fsAnimTarget - fsTarget) < 0.5) {
+        return;
+      }
       if (state.fsRaf || fsSyncRaf) {
         // If already animating, drop into lerp mode for smooth continuous chasing
-        if (state.fsRaf) {
-          cancelAnimationFrame(state.fsRaf);
-          state.fsRaf = null;
-        }
         startFsSync(fsTarget);
       } else {
         // Cold start: play strict smooth ease-out
@@ -438,17 +524,23 @@ export function updateFilmstrip() {
         // Stop lenis immediately so it doesn't fight the RAF animation from frame 0
         if (window.fsLenis) window.fsLenis.stop();
         let startPos = getFilmstripScroll();
+        if (Math.abs(fsTarget - startPos) < 0.5) {
+          setFilmstripScroll(fsTarget);
+          state.isManuallyNavigating = false;
+          return;
+        }
+        fsAnimTarget = fsTarget;
         // Pre-seed startTime so frame 1 has a real elapsed value (no dead first frame)
         let startTime = performance.now();
         let duration = FILMSTRIP_CONFIG.scrollDuration;
 
         function step(time: number) {
-          let elapsed = time - startTime;
+          let elapsed = Math.max(0, time - startTime);
           if (elapsed >= duration) {
             setFilmstripScroll(fsTarget);
-            scheduleFilmstripNativeCommit(180);
             if (window.fsLenis) window.fsLenis.start();
             state.fsRaf = null;
+            fsAnimTarget = null;
             state.isManuallyNavigating = false;
             return;
           }
@@ -512,18 +604,23 @@ export function hideFilmstrip(force = false) {
   }
   clearTimeout(state.filmstripHideTimer);
   state.filmstripHideTimer = null;
+  filmstripWrap.style.transition = '';
+  filmstripWrap.style.filter = '';
+  filmstripWrap.style.opacity = '';
   filmstripWrap.classList.remove('visible');
   domRefs.lightbox.classList.remove('filmstrip-visible');
 }
 
 window.addEventListener('lightbox-open', function () {
   let pos = getFilmstripScroll();
-  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  let max = getFilmstripMaxScroll();
   wasFsAtStart = pos <= 0;
   wasFsAtEnd = max > 0 && pos >= max - 1;
+  requestAnimationFrame(engageFsTimeline);
 });
 
 window.addEventListener('lightbox-close', function () {
+  disengageFsTimeline(false);
   hideFilmstrip(true);
   stopFsSync({ commit: false });
   wasFsAtStart = false;
@@ -547,13 +644,14 @@ filmstripWrap.addEventListener('touchstart', function (e) {
   }
   clearTimeout(state.filmstripHideTimer);
   state.isTouchingFilmstrip = true;
+  disengageFsTimeline();
   stopFsSync();
 }, { passive: true });
 
 filmstripWrap.addEventListener('touchmove', function (e) {
   if (!e.touches || e.touches.length !== 1) return;
   let pos = getFilmstripScroll();
-  let max = Math.max(0, filmstripEl.scrollWidth - filmstripEl.clientWidth);
+  let max = getFilmstripMaxScroll();
   if (max < 20) return;
   let dx = e.touches[0].clientX - fsTouchStartX;
   if (pos <= 0 && dx > 8) {
@@ -609,6 +707,7 @@ function initFilmstripDrag() {
     isDragging = true;
     dragMoved = false;
     state.isTouchingFilmstrip = true;
+    disengageFsTimeline();
     stopFsSync();
     if (window.fsLenis) window.fsLenis.stop();
     dragStartX = e.clientX;

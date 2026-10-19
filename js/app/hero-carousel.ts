@@ -149,6 +149,7 @@ export function buildCarousel(isRebuild = false) {
         let thumbPath = p.thumb || p.src.replace('photos/', 'photos/thumbs/');
         img.src = thumbPath; img.alt = p.title; img.draggable = false;
         img.decoding = 'async';
+        img.loading = 'eager';
 
         const filename = p.src.split('/').pop() || '';
         if (CAROUSEL_FOCUS_POINTS[filename]) {
@@ -169,17 +170,13 @@ export function buildCarousel(isRebuild = false) {
           }, 50);
         } else {
           img.addEventListener('error', reveal, { once: true });
+          img.addEventListener('load', reveal);
 
           if (c === 0) {
-            img.loading = 'eager';
-            img.addEventListener('load', reveal);
             eagerImgs.push(img);
             if (pi === 0) {
               criticalImgs.push(img);
             }
-          } else {
-            img.loading = 'lazy';
-            img.addEventListener('load', reveal);
           }
 
           if (img.complete) {
@@ -223,13 +220,14 @@ export function buildCarousel(isRebuild = false) {
     requestAnimationFrame(function () {
       activeRows.forEach(function (row, ri) {
         let items = Array.from(row.querySelectorAll('.carousel-item')) as HTMLElement[];
-        let halfCount = Math.floor(items.length / 2);
+        let groupLen = groups[ri].length > 0 ? groups[ri].length : state.carouselPhotos.length;
         let w = 0;
-        for (let i = 0; i < halfCount; i++) {
+        let measureCount = Math.min(groupLen, items.length);
+        for (let i = 0; i < measureCount; i++) {
           w += (items[i].offsetWidth || 220) + 8;
         }
         let oldSetWidth = rowState[ri].setWidth;
-        let newSetWidth = w > 0 ? w : halfCount * 228;
+        let newSetWidth = w > 0 ? w : measureCount * 228;
         rowState[ri].setWidth = newSetWidth;
 
         if (isRebuild && oldSetWidth > 0 && newSetWidth > 0) {
@@ -285,7 +283,9 @@ export function tick(timestamp: number) {
     let frameScale = dt / 16.67;
     let rows = domRefs.heroRows;
 
-    const isLifting = !domRefs.loader || domRefs.loader.classList.contains('lifting') || domRefs.loader.style.display === 'none';
+    const isLifting = Boolean(domRefs.loader && domRefs.loader.classList.contains('lifting')) ||
+                      Boolean(domRefs.loader && domRefs.loader.style.display === 'none') ||
+                      !domRefs.loader;
     let targetSpeed = (isLifting && !isHeroPaused) ? getCurrentSpeed(easeFrame) : 0;
     if (isLifting && !isHeroPaused && easeFrame < EASE_FRAMES + 10) easeFrame += frameScale;
 
@@ -487,12 +487,13 @@ export function recalculateCarouselLayout() {
     let items = Array.from(row.querySelectorAll('.carousel-item')) as HTMLElement[];
     if (items.length === 0) return;
 
-    let halfCount = Math.floor(items.length / 2);
+    let groupLen = Math.floor(state.carouselPhotos.length / activeRowCount);
+    let measureCount = groupLen > 0 ? Math.min(groupLen, items.length) : Math.floor(items.length / 2);
     let w = 0;
-    for (let i = 0; i < halfCount; i++) w += (items[i].offsetWidth || 220) + 8;
+    for (let i = 0; i < measureCount; i++) w += (items[i].offsetWidth || 220) + 8;
 
     let oldSetWidth = rowState[ri].setWidth;
-    let newSetWidth = w > 0 ? w : halfCount * 228;
+    let newSetWidth = w > 0 ? w : measureCount * 228;
 
     rowState[ri].setWidth = newSetWidth;
 

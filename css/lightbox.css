@@ -822,6 +822,7 @@
   #lightbox-meta .meta-item svg {
     width: 0.7rem;
     height: 0.7rem;
+    transform: translateY(-1px);
   }
 }
 

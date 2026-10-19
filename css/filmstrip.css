@@ -50,7 +50,6 @@
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-x;
-  will-change: transform;
   /* native horizontal scroll on mobile, doesn't interfere with swipe */
   -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
   mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.8) 6%, black 15%, black 85%, rgba(0, 0, 0, 0.8) 94%, transparent 100%);
@@ -92,6 +91,7 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
   opacity: 0.32;
   -webkit-tap-highlight-color: transparent;
+  backface-visibility: hidden;
 }
 
 .filmstrip-thumb::after {

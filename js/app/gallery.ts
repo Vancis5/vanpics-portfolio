@@ -222,8 +222,12 @@ function updateGalleryScrollDirection() {
 }
 
 let galleryScrollSaveTimer: any = null;
+let gallerySuppressScrollSave = false;
+
 function queueGalleryScrollMemory() {
+  if (gallerySuppressScrollSave) return;
   if (domRefs.lightbox && domRefs.lightbox.classList.contains('open')) return;
+  if (!isGalleryHeaderStuck()) return;
 
   if (galleryScrollSaveTimer) {
     window.clearTimeout(galleryScrollSaveTimer);
@@ -231,42 +235,51 @@ function queueGalleryScrollMemory() {
 
   galleryScrollSaveTimer = window.setTimeout(function () {
     galleryScrollSaveTimer = null;
+    if (gallerySuppressScrollSave) return;
+    if (!isGalleryHeaderStuck()) return;
     rememberGalleryScroll(state.currentCategory);
   }, 150);
 }
 
+let galleryHeaderWasStuck = false;
+
+function checkGalleryStickyScrollMemory() {
+  if (gallerySuppressScrollSave) return;
+  let stuck = isGalleryHeaderStuck();
+  if (!stuck && galleryHeaderWasStuck) {
+    if (galleryScrollSaveTimer) {
+      window.clearTimeout(galleryScrollSaveTimer);
+      galleryScrollSaveTimer = null;
+    }
+    resetGalleryScrollMemory();
+  }
+  galleryHeaderWasStuck = stuck;
+}
+
 function handleGalleryScroll() {
   updateGalleryScrollDirection();
+  checkGalleryStickyScrollMemory();
   queueGalleryScrollMemory();
 }
 
 window.addEventListener('scroll', handleGalleryScroll, { passive: true });
 
-function getElementDocumentTop(el: HTMLElement): number {
-  let top = 0;
-  let curr: HTMLElement | null = el;
-  while (curr) {
-    top += curr.offsetTop;
-    curr = curr.offsetParent as HTMLElement | null;
-  }
-  return top;
-}
-
 function getGalleryAnchorScrollY() {
   let section = domRefs.gallerySection;
   if (!section) return 0;
-  return getElementDocumentTop(section);
+  return Math.round(section.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0));
 }
 
 function getGalleryStickyStartScrollY() {
   let header = document.querySelector('#gallery-header') as HTMLElement;
-  if (!header) return getGalleryAnchorScrollY();
+  let section = domRefs.gallerySection;
+  if (!header || !section) return getGalleryAnchorScrollY();
 
-  let headerTop = getElementDocumentTop(header);
   let headerStyles = window.getComputedStyle(header);
   let stickyTop = parseFloat(headerStyles.top) || 0;
+  let sectionDocTop = Math.round(section.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0));
 
-  return Math.max(0, Math.round(headerTop - stickyTop));
+  return Math.max(0, Math.round(sectionDocTop - stickyTop));
 }
 
 function isGalleryHeaderStuck() {
@@ -445,6 +458,9 @@ export function rebuildGallery(newCategory: string, options?: any) {
   let currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
   let headerWasStuck = isGalleryHeaderStuck();
   let targetScrollY = currentScrollY;
+  if (headerWasStuck && previousCategory !== newCategory) {
+    rememberGalleryScroll(previousCategory);
+  }
 
   if (!options.preserveScroll) {
     if (headerWasStuck) {
@@ -454,10 +470,6 @@ export function rebuildGallery(newCategory: string, options?: any) {
     } else {
       resetGalleryScrollMemory();
     }
-  }
-
-  if (previousCategory !== newCategory && !Number.isFinite(galleryScrollPositions[previousCategory])) {
-    rememberGalleryScroll(previousCategory);
   }
 
   state.currentCategory = newCategory;
@@ -474,15 +486,25 @@ export function rebuildGallery(newCategory: string, options?: any) {
   window.dispatchEvent(new Event('category-change'));
   warmUpAllPhotoColors();
   gallerySuppressScrollRevealUntil = performance.now() + GALLERY_TAB_SWITCH_SETTLE_MS;
+  gallerySuppressScrollSave = true;
+  if (galleryScrollSaveTimer) {
+    window.clearTimeout(galleryScrollSaveTimer);
+    galleryScrollSaveTimer = null;
+  }
   let activePanel = setActiveGalleryPanel(newCategory, { animate: options.animate, direction: tabDirection });
   restoreWindowScroll(targetScrollY);
   galleryLastScrollY = targetScrollY;
+  galleryHeaderWasStuck = isGalleryHeaderStuck();
 
   requestAnimationFrame(function () {
     restoreWindowScroll(targetScrollY);
     settleGalleryTabSwitch(activePanel);
     refreshGalleryScrollMetrics();
-    setTimeout(refreshGalleryScrollMetrics, 120);
+    setTimeout(function () {
+      refreshGalleryScrollMetrics();
+      gallerySuppressScrollSave = false;
+      galleryHeaderWasStuck = isGalleryHeaderStuck();
+    }, 120);
     if (typeof options.onReady === 'function') options.onReady();
   });
 }

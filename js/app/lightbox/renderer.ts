@@ -531,10 +531,18 @@ export function animateInfo(dir: number) {
 
   if (isStackedLayout() || state.isMobile || getLightboxLayout() === 'tablet-landscape') {
     info.style.animation = 'none';
-    info.style.transition = 'opacity 0.28s ease';
+    info.style.willChange = 'opacity, filter';
+    info.style.transition = 'opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), filter 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
     info.style.opacity = '1';
-    info.style.filter = '';
+    info.style.filter = 'blur(0px)';
     info.style.transform = '';
+    setTimeout(function () {
+      if (info) {
+        info.style.transition = '';
+        info.style.filter = '';
+        info.style.willChange = '';
+      }
+    }, 280);
     return;
   }
 

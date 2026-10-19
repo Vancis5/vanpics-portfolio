@@ -176,9 +176,9 @@ export function initSmoothScroll(options: any = {}) {
       }
       mainLenis.raf(time);
     }
-    // Only tick fsLenis when filmstrip is visible — saves full RAF work when hidden
+    // Only tick fsLenis when filmstrip is visible and not on mobile (mobile uses native/compositor scroll, wheel smoothing does nothing)
     const fsWrap = document.getElementById('filmstrip-wrap');
-    if (window.fsLenis && fsWrap && fsWrap.classList.contains('visible')) {
+    if (window.fsLenis && !state.isMobile && fsWrap && fsWrap.classList.contains('visible')) {
       if (!window.fsLenis.time || (time - window.fsLenis.time) > 100) {
         window.fsLenis.time = time;
       }
