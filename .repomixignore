@@ -1,10 +1,15 @@
-# Bundled vendor files
+# Bundled vendor files & fonts
 public/vendor/**
+public/fonts/**
 
-# Lockfiles
+# Lockfiles & repo metadata
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+.gitattributes
+google*.html
+site.webmanifest
+robots.txt
 
 # Media & binary assets
 **/*.png
@@ -15,8 +20,13 @@ yarn.lock
 **/*.ico
 **/*.gif
 **/*.avif
+**/*.woff*
 
-# Test suites & fixtures (remove if needed in prompt context)
+# Local/maintenance scripts & docs
+scripts/**
+
+# Test suites & fixtures
 tests/**
 playwright.config.js
 cms-worker/db/seed.dev.sql
+

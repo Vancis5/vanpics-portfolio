@@ -385,6 +385,23 @@ export function killMotionPlayer() {
   }
   swipeInitialVolume = 1;
 
+  if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+    try {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      }
+    } catch (_) {}
+  }
+
+  if (domRefs.cursor && domRefs.cursor.parentElement && domRefs.cursor.parentElement !== document.body) {
+    document.body.appendChild(domRefs.cursor);
+  }
+  if (domRefs.cursorRing && domRefs.cursorRing.parentElement && domRefs.cursorRing.parentElement !== document.body) {
+    document.body.appendChild(domRefs.cursorRing);
+  }
+
   const shell = domRefs.motionPlayerShell;
   if (!shell) return;
   const video = shell.querySelector('video') as HTMLVideoElement | null;

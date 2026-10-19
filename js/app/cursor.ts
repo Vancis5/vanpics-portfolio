@@ -166,8 +166,7 @@ if (isMouseDevice) {
     mx = e.clientX; my = e.clientY;
     cursor.style.translate = `${mx}px ${my}px`;
 
-    const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    if (isDraggingScrollbar || isFs) {
+    if (isDraggingScrollbar) {
       hideCursor();
     } else {
       resetCursorTimeout();
@@ -177,7 +176,8 @@ if (isMouseDevice) {
   // Respond to hold (mousedown)
   window.addEventListener('mousedown', function (e) {
     if (e.button !== 0) return;
-    if (e.clientX >= window.innerWidth - 32) {
+    const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    if (!isFs && e.clientX >= window.innerWidth - 32) {
       isDraggingScrollbar = true;
       hideCursor();
       return;
@@ -217,7 +217,7 @@ if (isMouseDevice) {
   });
 
   // Delegated hover for cursor ring — works on dynamically added cards, carousel imgs, navbar, etc.
-  const interactiveSelector = 'button, a, [role="button"], .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .filmstrip-thumb, .lightbox-nav-arrow';
+  const interactiveSelector = 'button, a, [role="button"], .photo-card, #scroll-hint, .carousel-item, .carousel-row img, .filmstrip-thumb, .lightbox-nav-arrow, media-button, media-play-button, media-seek-button, media-mute-button, media-fullscreen-button, media-time-slider, media-volume-slider, media-slider-thumb, [role="slider"], [commandfor]';
   document.addEventListener('mouseover', function (e) {
     const target = e.target as HTMLElement;
     if (target && target.closest(interactiveSelector)) {
@@ -255,16 +255,32 @@ if (isMouseDevice) {
     ring.style.scale = '1';
     ring.style.borderColor = 'rgba(221,216,207,0.25)';
   });
-  window.addEventListener('lightbox-close', resetFilmstripStretch);
+  window.addEventListener('lightbox-close', function () {
+    resetFilmstripStretch();
+    if (cursor.parentElement !== document.body) {
+      document.body.appendChild(cursor);
+    }
+    if (ring.parentElement !== document.body) {
+      document.body.appendChild(ring);
+    }
+  });
   window.addEventListener('hide-cursor', hideCursor);
 
   function onFullscreenChange() {
-    const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-    if (isFs) {
+    const fsEl = document.fullscreenElement || (document as any).webkitFullscreenElement;
+    if (fsEl) {
       document.documentElement.classList.add('in-fullscreen');
-      hideCursor();
+      fsEl.appendChild(cursor);
+      fsEl.appendChild(ring);
+      showCursor();
     } else {
       document.documentElement.classList.remove('in-fullscreen');
+      if (cursor.parentElement !== document.body) {
+        document.body.appendChild(cursor);
+      }
+      if (ring.parentElement !== document.body) {
+        document.body.appendChild(ring);
+      }
       showCursor();
     }
   }

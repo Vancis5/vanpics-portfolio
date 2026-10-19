@@ -283,75 +283,22 @@ body::after {
     -webkit-tap-highlight-color: transparent !important;
   }
 
-  /* Fullscreen desktop cursor restoration */
-  :fullscreen,
-  :fullscreen *:not(.zoomable) {
-    cursor: default !important;
-  }
-  :fullscreen .media-minimal-skin--video:has(.media-controls:not([data-visible])) {
-    cursor: none !important;
-  }
-  :fullscreen button,
-  :fullscreen [role="button"],
-  :fullscreen media-button,
-  :fullscreen media-play-button,
-  :fullscreen media-seek-button,
-  :fullscreen media-mute-button,
-  :fullscreen media-fullscreen-button,
-  :fullscreen media-time-slider,
-  :fullscreen media-volume-slider,
-  :fullscreen [commandfor],
-  :fullscreen a {
-    cursor: pointer !important;
-  }
-
-  :-webkit-full-screen,
-  :-webkit-full-screen *:not(.zoomable) {
-    cursor: default !important;
-  }
-  :-webkit-full-screen .media-minimal-skin--video:has(.media-controls:not([data-visible])) {
-    cursor: none !important;
-  }
-  :-webkit-full-screen button,
-  :-webkit-full-screen [role="button"],
-  :-webkit-full-screen media-button,
-  :-webkit-full-screen media-play-button,
-  :-webkit-full-screen media-seek-button,
-  :-webkit-full-screen media-mute-button,
-  :-webkit-full-screen media-fullscreen-button,
-  :-webkit-full-screen media-time-slider,
-  :-webkit-full-screen media-volume-slider,
-  :-webkit-full-screen [commandfor],
-  :-webkit-full-screen a {
-    cursor: pointer !important;
-  }
-
+  /* Fullscreen desktop custom cursor & control idle-hide */
+  html.custom-cursor-enabled :fullscreen,
+  html.custom-cursor-enabled :fullscreen *:not(.zoomable),
+  html.custom-cursor-enabled :-webkit-full-screen,
+  html.custom-cursor-enabled :-webkit-full-screen *:not(.zoomable),
   html.in-fullscreen,
-  html.in-fullscreen body,
-  html.in-fullscreen body *:not(.zoomable) {
-    cursor: default !important;
-  }
-  html.in-fullscreen .media-minimal-skin--video:has(.media-controls:not([data-visible])) {
+  html.in-fullscreen *:not(.zoomable) {
     cursor: none !important;
   }
-  html.in-fullscreen button,
-  html.in-fullscreen [role="button"],
-  html.in-fullscreen media-button,
-  html.in-fullscreen media-play-button,
-  html.in-fullscreen media-seek-button,
-  html.in-fullscreen media-mute-button,
-  html.in-fullscreen media-fullscreen-button,
-  html.in-fullscreen media-time-slider,
-  html.in-fullscreen media-volume-slider,
-  html.in-fullscreen [commandfor],
-  html.in-fullscreen a {
-    cursor: pointer !important;
-  }
 
-  html.in-fullscreen #cursor,
-  html.in-fullscreen #cursor-ring {
+  :fullscreen:has(.media-controls:not([data-visible])) #cursor,
+  :fullscreen:has(.media-controls:not([data-visible])) #cursor-ring,
+  :-webkit-full-screen:has(.media-controls:not([data-visible])) #cursor,
+  :-webkit-full-screen:has(.media-controls:not([data-visible])) #cursor-ring {
     opacity: 0 !important;
-    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   body .zoomable:hover {
