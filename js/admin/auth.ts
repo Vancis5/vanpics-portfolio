@@ -81,6 +81,7 @@ export async function verifyToken(token: string) {
         }
       }
       setAuthStatus('secured');
+      document.body.style.visibility = 'visible';
     } else {
       setAuthStatus('failed');
       localStorage.removeItem('vanpics_admin_token');
@@ -91,6 +92,8 @@ export async function verifyToken(token: string) {
     }
   } catch (err) {
     setAuthStatus('unverified');
+    // Network error — show page anyway so offline-cached content is usable
+    document.body.style.visibility = 'visible';
   }
 }
 
