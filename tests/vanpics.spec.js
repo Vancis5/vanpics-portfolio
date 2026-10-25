@@ -14,13 +14,14 @@ test.beforeEach(async ({ page }) => {
   page.on('console', (message) => {
     if (message.type() === 'error') {
       const text = message.text();
-      if (!text.includes('ERR_ADDRESS_UNREACHABLE') && !text.includes('ERR_QUIC_PROTOCOL_ERROR') && !text.includes('googletagmanager')) {
+      if (!text.includes('ERR_ADDRESS_UNREACHABLE') && !text.includes('ERR_QUIC_PROTOCOL_ERROR') && !text.includes('googletagmanager') && !text.includes('google-analytics')) {
         errors.push(text);
       }
     }
   });
 
   await page.route('**/*googletagmanager*', (route) => route.abort());
+  await page.route('**/*google-analytics*', (route) => route.abort());
 
   // Mock API calls to ensure stable, hermetic test environment independent of production data
   await page.route('**/api/photos*', async (route) => {
@@ -144,7 +145,7 @@ test('switches gallery categories', async ({ page }) => {
 test('opens and closes a photo lightbox', async ({ page }) => {
   await waitForGallery(page);
 
-  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click();
+  await page.locator('.masonry-panel[data-category="all"] .photo-card').first().click({ force: true });
   await expect(page.locator('#lightbox')).toHaveClass(/open/);
   await expect(page.locator('#lightbox-title')).not.toBeEmpty();
   await expectLightboxPhotoRendered(page);

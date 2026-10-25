@@ -101,10 +101,24 @@ export function prepareLightboxPhoto(p: Photo) {
   let previewSrc = p.thumb || (p.src ? p.src.replace('photos/', 'photos/thumbs/') : '');
   let thumbShown = false;
   wrap.classList.remove('photo-loaded', 'photo-error');
-  wrap.classList.add('photo-loading', 'photo-placeholder-visible');
+  wrap.classList.add('photo-loading');
   img.removeAttribute('data-loading-photo');
-  img.style.opacity = '0';
-  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
+
+  if (img.src && !img.src.startsWith('data:image/svg') && img.complete && img.naturalWidth > 0) {
+    // Retain existing rendered thumbnail from transition
+    img.style.opacity = '1';
+    wrap.classList.remove('photo-placeholder-visible');
+    thumbShown = true;
+  } else if (previewSrc) {
+    wrap.classList.add('photo-placeholder-visible');
+    img.style.opacity = '0';
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
+  } else {
+    wrap.classList.add('photo-placeholder-visible');
+    img.style.opacity = '0';
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E';
+    img.dataset.loadingPhoto = 'true';
+  }
 
   if (previewSrc) {
     const thumbImg = new Image();

@@ -27,6 +27,7 @@ import {
 } from './renderer.js';
 import { updateLightboxLayout } from './layout.js';
 import { preloadAdjacentPhotoColors, warmUpAllPhotoColors } from '../lightbox-color.js';
+import { getPhotoAspectRatio } from '../utils.js';
 import type { Photo, Video } from '../../types.js';
 
 let navGen = 0;
@@ -442,20 +443,28 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean, 
       const thumb = lastOriginThumb as HTMLImageElement;
       thumb.style.viewTransitionName = 'photo';
 
-      const ratio = (p as Photo).aspectRatio || (p.width && p.height ? p.width / p.height : 1.5);
+      const ratio = getPhotoAspectRatio(p);
       domRefs.lightboxImgWrap?.style.setProperty('--lightbox-photo-ratio', String(ratio));
       domRefs.lightboxContent?.style.setProperty('--lightbox-photo-ratio', String(ratio));
 
       try {
-        runInitialOpen();
-
         const transition = document.startViewTransition(() => {
           thumb.style.viewTransitionName = '';
           img.style.viewTransitionName = 'photo';
+
+          const thumbSrc = thumb.currentSrc || thumb.src || '';
+          if (thumbSrc) {
+            img.src = thumbSrc;
+          }
+          img.style.aspectRatio = String(ratio);
+          img.style.opacity = '1';
+
+          runInitialOpen();
         });
         const cleanup = () => {
           thumb.style.viewTransitionName = '';
           img.style.viewTransitionName = '';
+          img.style.aspectRatio = '';
         };
         transition.finished.then(cleanup, cleanup);
         return;
@@ -487,99 +496,127 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
   let img = domRefs.lightboxImg;
   let activeGen = ++navGen;
-  stopFsSync({ commit: false });
-  window.dispatchEvent(new Event('lightbox-close'));
-  state.isLightboxClosing = true;
-  state.isLightboxDismissing = false;
-  lb.style.pointerEvents = '';
-  lb.classList.remove('open');
-  lb.classList.add('is-closing');
-  document.body.classList.add('lightbox-closing');
-  void fadeOutAndKillMotionVideo(300);
-  lb.setAttribute('inert', '');
-  let targetToFocus = previouslyFocusedElement;
-  if (!targetToFocus || !document.body.contains(targetToFocus)) {
-    const currentCard = document.querySelector(`.photo-card[data-idx="${state.cur}"]`) as HTMLElement | null;
-    if (currentCard) targetToFocus = currentCard;
-  }
 
-  if (!state.isMobile && targetToFocus && typeof targetToFocus.focus === 'function') {
-    let el = targetToFocus;
-    if (!(isKeyboard || state.lastInputType === 'keyboard')) {
-      el.classList.add('prevent-focus-ring');
-      el.addEventListener('blur', function removePFR() {
-        el.classList.remove('prevent-focus-ring');
-        el.removeEventListener('blur', removePFR);
-      });
-    }
-    el.focus({ preventScroll: true });
-  }
-  previouslyFocusedElement = null;
-  document.body.classList.remove('lightbox-open');
-  if (!state.isMobile) {
-    document.body.style.overflow = '';
-  }
-  clearFilmstripHideTimerIfReady();
-  hideFilmstripIfReady(true);
-  clearTimeout(closeIdleTimer);
-  closeIdleTimer = null;
-  domRefs.lightboxClose?.classList.remove('idle-hidden');
-  setFilmstripLiftZoneDisplay('none');
-  resetLightboxMouseNav();
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const currentThumb = document.querySelector(`.photo-card[data-idx="${state.cur}"] img`) as HTMLImageElement | null;
+  const canVTClose = !state.currentLightboxIsMotion && !state.isMobile && !!document.startViewTransition && !prefersReducedMotion && !!currentThumb && !!img && (!state.lbZoomLevel || state.lbZoomLevel <= 1);
 
-  let infoWrap = domRefs.lightboxInfoWrap;
-  if (infoWrap) {
-    infoWrap.style.transition = '';
-    infoWrap.style.filter = '';
-    infoWrap.style.transform = '';
-    infoWrap.style.transformOrigin = '';
-  }
-  let infoInner = domRefs.lightboxInfo;
-  if (infoInner) {
-    infoInner.style.animation = 'none';
-    infoInner.style.transition = 'opacity 0.3s ease';
-    infoInner.style.opacity = '0';
-    infoInner.style.filter = '';
-    infoInner.style.transform = '';
-  }
-
-  if (!state.isMobile) {
-    if (header && headerRect) {
-      let last = header.getBoundingClientRect();
-      let dX = headerRect.left - last.left;
-      let dY = headerRect.top - last.top;
-      header.style.transition = 'none';
-      header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
+  const runCloseState = () => {
+    stopFsSync({ commit: false });
+    window.dispatchEvent(new Event('lightbox-close'));
+    state.isLightboxClosing = true;
+    state.isLightboxDismissing = false;
+    lb.style.pointerEvents = '';
+    lb.classList.remove('open');
+    lb.classList.add('is-closing');
+    document.body.classList.add('lightbox-closing');
+    void fadeOutAndKillMotionVideo(300);
+    lb.setAttribute('inert', '');
+    let targetToFocus = previouslyFocusedElement;
+    if (!targetToFocus || !document.body.contains(targetToFocus)) {
+      const currentCard = document.querySelector(`.photo-card[data-idx="${state.cur}"]`) as HTMLElement | null;
+      if (currentCard) targetToFocus = currentCard;
     }
 
-    requestAnimationFrame(function () {
-      let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
-      if (header) {
-        header.style.transition = ease;
-        header.style.transform = '';
+    if (!state.isMobile && targetToFocus && typeof targetToFocus.focus === 'function') {
+      let el = targetToFocus;
+      if (!(isKeyboard || state.lastInputType === 'keyboard')) {
+        el.classList.add('prevent-focus-ring');
+        el.addEventListener('blur', function removePFR() {
+          el.classList.remove('prevent-focus-ring');
+          el.removeEventListener('blur', removePFR);
+        });
+      }
+      el.focus({ preventScroll: true });
+    }
+    previouslyFocusedElement = null;
+    document.body.classList.remove('lightbox-open');
+    if (!state.isMobile) {
+      document.body.style.overflow = '';
+    }
+    clearFilmstripHideTimerIfReady();
+    hideFilmstripIfReady(true);
+    clearTimeout(closeIdleTimer);
+    closeIdleTimer = null;
+    domRefs.lightboxClose?.classList.remove('idle-hidden');
+    setFilmstripLiftZoneDisplay('none');
+    resetLightboxMouseNav();
+
+    let infoWrap = domRefs.lightboxInfoWrap;
+    if (infoWrap) {
+      infoWrap.style.transition = '';
+      infoWrap.style.filter = '';
+      infoWrap.style.transform = '';
+      infoWrap.style.transformOrigin = '';
+    }
+    let infoInner = domRefs.lightboxInfo;
+    if (infoInner) {
+      infoInner.style.animation = 'none';
+      infoInner.style.transition = 'opacity 0.3s ease';
+      infoInner.style.opacity = '0';
+      infoInner.style.filter = '';
+      infoInner.style.transform = '';
+    }
+
+    if (!state.isMobile) {
+      if (header && headerRect) {
+        let last = header.getBoundingClientRect();
+        let dX = headerRect.left - last.left;
+        let dY = headerRect.top - last.top;
+        header.style.transition = 'none';
+        header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
       }
 
-      setTimeout(function () {
-        const lenis = (window as any).lenis;
-        if (lenis) {
-          lenis.start();
-          lenis.animatedScroll = lenis.targetScroll = window.scrollY;
-          lenis.emit();
+      requestAnimationFrame(function () {
+        let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+        if (header) {
+          header.style.transition = ease;
+          header.style.transform = '';
         }
-      }, 400);
-    });
-  }
 
-  clearBlurPreloadTimer();
-  cancelPendingHashUpdate();
+        setTimeout(function () {
+          const lenis = (window as any).lenis;
+          if (lenis) {
+            lenis.start();
+            lenis.animatedScroll = lenis.targetScroll = window.scrollY;
+            lenis.emit();
+          }
+        }, 400);
+      });
+    }
 
-  if (state.lightboxHistoryPushed && !state.isPopState) {
-    state.lightboxHistoryPushed = false;
-    history.back();
-  } else if (window.location.hash) {
-    state.lightboxHistoryPushed = false;
-    let catSlug = getCategorySlug(state.currentCategory);
-    history.replaceState(null, '', '#' + catSlug);
+    clearBlurPreloadTimer();
+    cancelPendingHashUpdate();
+
+    if (state.lightboxHistoryPushed && !state.isPopState) {
+      state.lightboxHistoryPushed = false;
+      history.back();
+    } else if (window.location.hash) {
+      state.lightboxHistoryPushed = false;
+      let catSlug = getCategorySlug(state.currentCategory);
+      history.replaceState(null, '', '#' + catSlug);
+    }
+  };
+
+  if (canVTClose) {
+    img.style.viewTransitionName = 'photo';
+    try {
+      const transition = document.startViewTransition(() => {
+        img.style.viewTransitionName = '';
+        currentThumb.style.viewTransitionName = 'photo';
+        runCloseState();
+      });
+      const cleanup = () => {
+        currentThumb.style.viewTransitionName = '';
+        img.style.viewTransitionName = '';
+      };
+      transition.finished.then(cleanup, cleanup);
+    } catch {
+      img.style.viewTransitionName = '';
+      runCloseState();
+    }
+  } else {
+    runCloseState();
   }
 
   setTimeout(function () {

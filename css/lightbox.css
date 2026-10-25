@@ -1871,15 +1871,6 @@ html.custom-cursor-enabled #lightbox-close::before {
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-::view-transition-old(photo),
-::view-transition-new(photo) {
-  animation: none;
-  mix-blend-mode: normal;
-  height: 100%;
-  width: 100%;
-  object-fit: contain;
-}
-
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*) {
     animation-duration: 0.01s;
