@@ -12,6 +12,12 @@ function initStickyHeaderObserver() {
   const header = domRefs.galleryHeader;
   if (!header) return;
 
+  const updateHeaderHeight = () => {
+    document.documentElement.style.setProperty('--gallery-header-height', `${header.offsetHeight}px`);
+  };
+  updateHeaderHeight();
+  window.addEventListener('resize', updateHeaderHeight, { passive: true });
+
   const stickyTop = parseFloat(window.getComputedStyle(header).top) || 0;
 
   const observer = new IntersectionObserver((entries) => {
@@ -29,6 +35,7 @@ function initStickyHeaderObserver() {
 export function updateStickyHeaderSurface() {
   const header = domRefs.galleryHeader;
   if (!header) return;
+  document.documentElement.style.setProperty('--gallery-header-height', `${header.offsetHeight}px`);
   const stickyTop = parseFloat(window.getComputedStyle(header).top) || 0;
   const rect = header.getBoundingClientRect();
   const stuck = rect.top <= stickyTop && (window.pageYOffset || document.documentElement.scrollTop || 0) > 0;

@@ -338,6 +338,11 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
 
     let header = domRefs.galleryHeader;
     let headerRect = (!state.isMobile && header) ? header.getBoundingClientRect() : null;
+    let masonry = domRefs.masonry;
+    let masonryRect = (!state.isMobile && masonry) ? masonry.getBoundingClientRect() : null;
+    if (header) {
+      document.documentElement.style.setProperty('--gallery-header-height', `${header.offsetHeight}px`);
+    }
     state.isLightboxClosing = false;
     state.isLightboxDismissing = false;
     lb.classList.remove('is-closing', 'is-dismissing', 'dismiss-committed');
@@ -361,7 +366,7 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
     if (!state.isMobile) {
       document.body.style.overflow = 'hidden';
 
-      // FLIP: Invert header only on desktop
+      // FLIP: Invert header & masonry only on desktop
       if (header && headerRect) {
         let last = header.getBoundingClientRect();
         let dX = headerRect.left - last.left;
@@ -369,12 +374,28 @@ export function openLightbox(i: number, direction?: number, isMotion?: boolean) 
         header.style.transition = 'none';
         header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
       }
+      if (masonry && masonryRect) {
+        let lastM = masonry.getBoundingClientRect();
+        let dMY = masonryRect.top - lastM.top;
+        if (Math.abs(dMY) > 0.5) {
+          masonry.style.transition = 'none';
+          masonry.style.transform = 'translateY(' + dMY + 'px)';
+        }
+      }
 
       requestAnimationFrame(function () {
         let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
         if (header) {
           header.style.transition = ease;
           header.style.transform = '';
+        }
+        if (masonry && masonry.style.transform) {
+          masonry.style.transition = ease;
+          masonry.style.transform = '';
+          masonry.addEventListener('transitionend', function cleanM() {
+            if (masonry) masonry.style.transition = '';
+            masonry?.removeEventListener('transitionend', cleanM);
+          }, { once: true });
         }
       });
     }
@@ -451,6 +472,8 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
 
   let header = domRefs.galleryHeader;
   let headerRect = header ? header.getBoundingClientRect() : null;
+  let masonry = domRefs.masonry;
+  let masonryRect = (!state.isMobile && masonry) ? masonry.getBoundingClientRect() : null;
 
   let img = domRefs.lightboxImg;
   let activeGen = ++navGen;
@@ -518,12 +541,28 @@ export function closeLightbox(eventOrIsKeyboard: any = false) {
       header.style.transition = 'none';
       header.style.transform = 'translate(' + dX + 'px, ' + dY + 'px)';
     }
+    if (masonry && masonryRect) {
+      let lastM = masonry.getBoundingClientRect();
+      let dMY = masonryRect.top - lastM.top;
+      if (Math.abs(dMY) > 0.5) {
+        masonry.style.transition = 'none';
+        masonry.style.transform = 'translateY(' + dMY + 'px)';
+      }
+    }
 
     requestAnimationFrame(function () {
       let ease = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
       if (header) {
         header.style.transition = ease;
         header.style.transform = '';
+      }
+      if (masonry && masonry.style.transform) {
+        masonry.style.transition = ease;
+        masonry.style.transform = '';
+        masonry.addEventListener('transitionend', function cleanM() {
+          if (masonry) masonry.style.transition = '';
+          masonry?.removeEventListener('transitionend', cleanM);
+        }, { once: true });
       }
 
       setTimeout(function () {

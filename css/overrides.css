@@ -51,7 +51,7 @@ body.lightbox-open {
   }
 
   body.lightbox-open.gallery-header-stuck #gallery-section {
-    padding-top: calc(4.05rem + var(--safe-top, 0px)) !important;
+    padding-top: var(--gallery-header-height, calc(1.75rem + 1.75rem + 0.94rem + var(--safe-top, 0px))) !important;
   }
 }
 
