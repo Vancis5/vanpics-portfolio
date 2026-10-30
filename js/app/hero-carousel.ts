@@ -97,18 +97,24 @@ let globalHasDragged = false;
 let dragHistory: { x: number; time: number }[] = [];
 let isHeroPaused = false;
 
-export function buildCarousel(isRebuild = false) {
-  let rows = domRefs.heroRows;
+export function buildCarousel(isRebuild = false): Promise<void> {
+  return new Promise<void>((resolve) => {
+    let rows = domRefs.heroRows;
 
-  CRUISE_SPEED = computeCruiseSpeed();
+    CRUISE_SPEED = computeCruiseSpeed();
 
-  // Clear existing images before building/rebuilding to avoid duplicates
-  rows.forEach(function (r) { r.innerHTML = ''; });
+    // Clear existing images before building/rebuilding to avoid duplicates
+    rows.forEach(function (r) { r.innerHTML = ''; });
 
-  let activeRows = rows;
-  let activeRowCount = activeRows.length;
+    let activeRows = rows;
+    let activeRowCount = activeRows.length;
 
-  if (state.carouselPhotos.length === 0) { carouselReadyCallback(); startLoopsIfReady(); return; }
+    if (state.carouselPhotos.length === 0) {
+      carouselReadyCallback();
+      startLoopsIfReady();
+      resolve();
+      return;
+    }
 
   // rows stay visible; eager images handle their own fade-in
   activeRows.forEach(function (r) { r.style.opacity = '1'; });
@@ -246,6 +252,7 @@ export function buildCarousel(isRebuild = false) {
       activeRows.forEach(function (r) { r.style.opacity = '1'; }); // already visible, belt-and-suspenders
       carouselReadyCallback();
       startLoopsIfReady();
+      resolve();
     });
   }
 
@@ -253,6 +260,7 @@ export function buildCarousel(isRebuild = false) {
     activeRows.forEach(function (r) { r.style.opacity = '1'; });
     carouselReadyCallback();
     startLoopsIfReady();
+    resolve();
     return;
   }
 
@@ -261,6 +269,7 @@ export function buildCarousel(isRebuild = false) {
   Promise.all(imgsToWaitFor.map(function (img) {
     return waitForDecodedImage(img, 2500);
   })).then(finishCarouselReady);
+  });
 }
 
 let lastTime = 0;
@@ -372,6 +381,10 @@ window.addEventListener('resize', function () {
 // Window listeners for moving/releasing drag
 window.addEventListener('mousemove', function (e) {
   if (!isDragging || dragRowIndex === -1) return;
+  if (e.buttons === 0) {
+    endDrag();
+    return;
+  }
   let dx = e.clientX - dragStartX;
   if (Math.abs(dx) > 5) {
     globalHasDragged = true;
@@ -469,11 +482,16 @@ function endDrag() {
   isDragging = false;
   isPendingDrag = false;
   dragRowIndex = -1;
+  isHeroPaused = false;
+  if (globalHasDragged && document.activeElement && domRefs.hero && domRefs.hero.contains(document.activeElement)) {
+    (document.activeElement as HTMLElement).blur?.();
+  }
 }
 
 window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
 window.addEventListener('touchcancel', endDrag);
+window.addEventListener('blur', endDrag);
 
 export function recalculateCarouselLayout() {
   CRUISE_SPEED = computeCruiseSpeed();
@@ -556,7 +574,13 @@ export function resumeHeroCarousel() {
 }
 
 if (domRefs.hero) {
-  domRefs.hero.addEventListener('focusin', () => { isHeroPaused = true; });
+  domRefs.hero.addEventListener('focusin', (e: FocusEvent) => {
+    if (state.isLightboxClosing) return;
+    const target = e.target as HTMLElement | null;
+    if (target && target.matches && target.matches(':focus-visible')) {
+      isHeroPaused = true;
+    }
+  });
   domRefs.hero.addEventListener('focusout', (e: FocusEvent) => {
     if (!domRefs.hero.contains(e.relatedTarget as Node | null)) {
       isHeroPaused = false;
@@ -564,6 +588,9 @@ if (domRefs.hero) {
   });
 }
 window.addEventListener('lightbox-close', () => {
+  isHeroPaused = false;
+});
+window.addEventListener('lightbox-closed', () => {
   isHeroPaused = false;
 });
 

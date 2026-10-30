@@ -39,6 +39,7 @@ function liftLoader() {
 
 // Lift loader via direct callback — no MutationObserver (flaky in Firefox)
 let _loaderLifted = false;
+let _allowCurtainLift = false;
 async function safeLift() {
   if (_loaderLifted) return;
   const fontsPromise = (window as any).__fontsReady || (document.fonts ? document.fonts.ready : Promise.resolve());
@@ -55,6 +56,7 @@ async function safeLift() {
 setTimeout(safeLift, LOADER_CONFIG.hardFallbackDelay);
 
 async function onReadyToLift() {
+  if (!_allowCurtainLift) return;
   const fontsPromise = (window as any).__fontsReady || (document.fonts ? document.fonts.ready : Promise.resolve());
   try {
     // Fonts load first before anything pops up
@@ -375,6 +377,25 @@ function applyCarouselPhotos(photos: Photo[]) {
   if (state.carouselPhotos.length === 0) state.carouselPhotos = photos.filter((p: Photo) => !isUntitled(p));
 }
 
+function getCarouselPhotos(photos: Photo[]): Photo[] {
+  const heroOnly = photos.filter((p: Photo) => p.heroSlide === true && !isUntitled(p));
+  return heroOnly.length > 0 ? heroOnly : photos.filter((p: Photo) => !isUntitled(p));
+}
+
+function areCarouselPhotosEqual(a: Photo[], b: Photo[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const pA = a[i];
+    const pB = b[i];
+    if (pA.id !== pB.id) return false;
+    if ((pA.thumb || pA.src) !== (pB.thumb || pB.src)) return false;
+    if (pA.aspectRatio !== pB.aspectRatio) return false;
+    if (pA.title !== pB.title) return false;
+    if (Boolean(pA.heroSlide) !== Boolean(pB.heroSlide)) return false;
+  }
+  return true;
+}
+
 function getStartupImageUrls(photos: Photo[]) {
   return Array.from(new Set(
     photos.filter((p: Photo) => p.heroSlide === true && !isUntitled(p)).slice(0, 6).map((p: Photo) => p.thumb || p.src).filter(Boolean)
@@ -444,14 +465,14 @@ function updateFooterStats(photos: Photo[], videos: Video[]) {
   }
 }
 
-function renderUI(photos: Photo[], videos: Video[]) {
+function renderUI(photos: Photo[], videos: Video[]): Promise<void> {
   perfMark('renderUI-start');
   updateMediaLibrary(photos, videos);
   updateActivePhotos();
   applyCarouselPhotos(photos);
 
   perfMark('carousel-start');
-  buildCarousel();
+  const carouselPromise = buildCarousel();
   perfMark('carousel-end');
   perfMeasure('renderUI: buildCarousel', 'carousel-start', 'carousel-end');
 
@@ -467,6 +488,7 @@ function renderUI(photos: Photo[], videos: Video[]) {
   perfMeasure('renderUI: total', 'renderUI-start', 'renderUI-end');
 
   setTimeout(checkHash, ROUTING_CONFIG.galleryRecheckDelay);
+  return carouselPromise;
 }
 
 // ─── CLOUDFLARE R2/D1 DATABASE LOADING ───
@@ -511,9 +533,9 @@ function renderUI(photos: Photo[], videos: Video[]) {
 
 
   let renderedFromCache = false;
-  let renderedPhotos: any[] = [];
-  let renderedVideos: any[] = [];
-
+  let renderedPhotos: Photo[] = [];
+  let renderedVideos: Video[] = [];
+  let initialCarouselPromise: Promise<void> | null = null;
 
   // ── 1. Instant render from localStorage cache ──
   try {
@@ -524,9 +546,8 @@ function renderUI(photos: Photo[], videos: Video[]) {
         renderedPhotos = processPhotos(photos);
         renderedVideos = processVideos(videos || []);
         warmStartupImages(renderedPhotos).catch(function() {});
-        renderUI(renderedPhotos, renderedVideos);
+        initialCarouselPromise = renderUI(renderedPhotos, renderedVideos);
         renderedFromCache = true;
-        // Carousel readiness lifts the curtain after the first hero thumbnails decode.
       }
     }
   } catch (e) {
@@ -534,35 +555,52 @@ function renderUI(photos: Photo[], videos: Video[]) {
   }
 
   // ── 2. Fetch fresh data from R2 (always, to keep cache warm) ──
-  let newPhotos = [];
-  let newVideos = [];
+  let newPhotos: Photo[] = [];
+  let newVideos: Video[] = [];
 
-  try {
+  const fetchFreshMedia = async () => {
     const [photosRes, videosRes] = await Promise.all([
       fetch(`${API_BASE_URL}/api/photos?limit=500`),
       fetch(`${API_BASE_URL}/api/videos?limit=500`)
     ]);
 
-    if (photosRes.ok && videosRes.ok) {
-      const photosData = await photosRes.json();
-      const videosData = await videosRes.json();
-      newPhotos = processPhotos(Array.isArray(photosData) ? photosData : photosData.items || []);
-      newVideos = processVideos(Array.isArray(videosData) ? videosData : videosData.items || []);
+    if (!photosRes.ok || !videosRes.ok) throw new Error('API fetch failed');
+    const photosData = await photosRes.json();
+    const videosData = await videosRes.json();
+    return {
+      photos: processPhotos(Array.isArray(photosData) ? photosData : photosData.items || []),
+      videos: processVideos(Array.isArray(videosData) ? videosData : videosData.items || [])
+    };
+  };
 
-      // Store fresh data to cache for next visit
-      try {
-        localStorage.setItem(MEDIA_CACHE_KEY, JSON.stringify({ photos: newPhotos, videos: newVideos }));
-      } catch (e) { /* quota exceeded — not critical */ }
+  const syncTimeoutMs = LOADER_CONFIG.syncTimeout ?? 2000;
+  let freshMedia: { photos: Photo[]; videos: Video[] } | null = null;
 
-      // Prune orphaned aspect ratio cache entries
-      const allSrcs = [
-        ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb, p.lbSrc].filter((s): s is string => Boolean(s))),
-        ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter((s): s is string => Boolean(s)))
-      ];
-      pruneRatioCache(allSrcs);
-    }
+  try {
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), syncTimeoutMs)
+    );
+    freshMedia = await Promise.race([fetchFreshMedia(), timeoutPromise]);
   } catch (err) {
     console.warn('Failed to fetch media from Cloudflare R2:', err);
+    freshMedia = null;
+  }
+
+  if (freshMedia) {
+    newPhotos = freshMedia.photos;
+    newVideos = freshMedia.videos;
+
+    // Store fresh data to cache for next visit
+    try {
+      localStorage.setItem(MEDIA_CACHE_KEY, JSON.stringify({ photos: newPhotos, videos: newVideos }));
+    } catch (e) { /* quota exceeded — not critical */ }
+
+    // Prune orphaned aspect ratio cache entries
+    const allSrcs = [
+      ...newPhotos.flatMap((p: Photo) => [p.src, p.thumb, p.lbSrc].filter((s): s is string => Boolean(s))),
+      ...newVideos.flatMap((v: Video) => [v.src, v.thumb].filter((s): s is string => Boolean(s)))
+    ];
+    pruneRatioCache(allSrcs);
   }
 
   if (!renderedFromCache) {
@@ -582,8 +620,14 @@ function renderUI(photos: Photo[], videos: Video[]) {
     if (newPhotos.length > 0) {
       warmStartupImages(newPhotos).catch(function() {});
     }
-    renderUI(newPhotos, newVideos);
-    if (state.carouselPhotos.length === 0) safeLift();
+    const carouselPromise = renderUI(newPhotos, newVideos);
+    _allowCurtainLift = true;
+    if (state.carouselPhotos.length === 0) {
+      safeLift();
+    } else {
+      await carouselPromise;
+      setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay);
+    }
   } else if (newPhotos.length > 0) {
     // ── Already rendered from cache: compare fresh data against what we rendered ──
     const photoSig = (p: Photo) => `${p.id}-${p.title || ''}-${p.src || ''}-${p.thumb || ''}-${p.lbSrc || ''}-${p.rawSrc || ''}-${p.category || ''}-${p.heroSlide}-${p.aspectRatio || ''}-${p.date || ''}-${p.location || ''}-${p.desc || ''}`;
@@ -595,16 +639,51 @@ function renderUI(photos: Photo[], videos: Video[]) {
                        newVideos.every((v: Video, idx: number) => videoSig(v) === videoSig(renderedVideos[idx]));
     const dataChanged = !(photosSame && videosSame);
 
+    const activeCarousel = getCarouselPhotos(newPhotos);
+    const carouselChanged = !areCarouselPhotosEqual(state.carouselPhotos, activeCarousel);
+
     // Update data store
     updateMediaLibrary(newPhotos, newVideos);
     updateActivePhotos();
     applyCarouselPhotos(newPhotos);
     updateFooterStats(newPhotos, newVideos);
 
-    // If data actually changed (e.g. user set a photo as draft in CMS), rebuild UI
-    if (dataChanged) {
-      buildCarousel(true);
-      buildMasonry();
+    if (_loaderLifted) {
+      // Curtain already lifted (e.g. hard fallback / network timeout).
+      // Crucial: NEVER rebuild or shift the running hero carousel after curtain has lifted!
+      if (dataChanged) {
+        buildMasonry();
+      }
+    } else {
+      // Curtain is still down: update carousel before curtain lifts so there is zero shift!
+      if (carouselChanged) {
+        await buildCarousel(true);
+        buildMasonry();
+      } else if (dataChanged) {
+        buildMasonry();
+        if (initialCarouselPromise) await initialCarouselPromise;
+      } else {
+        if (initialCarouselPromise) await initialCarouselPromise;
+      }
+
+      _allowCurtainLift = true;
+      setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay);
     }
+  } else {
+    // ── Rendered from cache, but fresh fetch timed out or errored ──
+    if (initialCarouselPromise) await initialCarouselPromise;
+    _allowCurtainLift = true;
+    setTimeout(safeLift, LOADER_CONFIG.carouselReadyDelay);
+
+    // If background fetch finishes later in the session, update data & cache without shifting carousel
+    fetchFreshMedia().then(({ photos: latePhotos, videos: lateVideos }) => {
+      try {
+        localStorage.setItem(MEDIA_CACHE_KEY, JSON.stringify({ photos: latePhotos, videos: lateVideos }));
+      } catch (e) {}
+      updateMediaLibrary(latePhotos, lateVideos);
+      updateActivePhotos();
+      updateFooterStats(latePhotos, lateVideos);
+      // NEVER touch or rebuild running carousel here!
+    }).catch(() => {});
   }
 })();

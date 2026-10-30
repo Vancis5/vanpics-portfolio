@@ -65,6 +65,7 @@
 
 
 :root {
+  color-scheme: dark;
   --bg: #0d0c0c;
   --text: #ddd8cf;
   --text-rgb: 221, 216, 207;

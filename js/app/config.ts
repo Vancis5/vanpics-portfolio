@@ -28,7 +28,8 @@ export const APP_CONFIG = {
   loader: {
     liftDuration: 750,
     hardFallbackDelay: 10000,
-    carouselReadyDelay: 120
+    carouselReadyDelay: 120,
+    syncTimeout: 2000
   },
   routing: {
     galleryRecheckDelay: 300,
