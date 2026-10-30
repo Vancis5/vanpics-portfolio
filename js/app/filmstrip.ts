@@ -121,15 +121,19 @@ const FS_TL_SUPPORTED = typeof (window as any).ScrollTimeline === 'function'
 function fsTimelinePos(): number {
   const wrap = domRefs.lightboxImgWrap as HTMLElement | null;
   const max = wrap ? wrap.scrollWidth - wrap.clientWidth : 0;
-  if (!wrap || max < 1) return 0;
-  return clampFilmstripScroll((wrap.scrollLeft / max) * getFilmstripMaxScroll());
+  if (wrap && max >= 1 && wrap.style.overflowX !== 'visible') {
+    return clampFilmstripScroll((wrap.scrollLeft / max) * getFilmstripMaxScroll());
+  }
+  const target = getFilmstripTargetForPhotoProgress(state.cur);
+  return target !== null ? clampFilmstripScroll(target) : 0;
 }
 
-function engageFsTimeline() {
+export function engageFsTimeline() {
   if (fsTl || !FS_TL_SUPPORTED || !state.isMobile || state.currentLightboxIsMotion) return;
   const wrap = domRefs.lightboxImgWrap as HTMLElement | null;
+  if (!wrap || wrap.style.overflowX === 'visible' || state.lbZoomLevel > 1) return;
   const range = getFilmstripMaxScroll();
-  if (!wrap || range < 1) return;
+  if (range < 1) return;
   cancelAllFsRaf();
   fsSyncTarget = null;
   fsSettleTarget = null;
@@ -149,7 +153,7 @@ function engageFsTimeline() {
 }
 
 // bake=true hands the current position back to the JS/native path without a jump
-function disengageFsTimeline(bake = true) {
+export function disengageFsTimeline(bake = true) {
   if (!fsTl) return;
   const pos = fsTimelinePos();
   fsTl.cancel();

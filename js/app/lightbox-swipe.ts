@@ -3,7 +3,7 @@ import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { animateInfo, closeLightbox, openLightbox, navigateLightbox, setLightboxBlur, setLightboxContent, setMobileScrollHandler, updateMobileImgWrapHeight, cancelDescFlipTransition, collapseLightboxDesc, updateLightboxDescPreview } from './lightbox.js';
 import { resetZoom, updateZoomTransform, checkAutoZoomOut } from './lightbox-zoom.js';
-import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress } from './filmstrip.js';
+import { finishFilmstripPhotoSync, settleFilmstripToPhotoProgress, syncFilmstripToPhotoProgress, disengageFsTimeline } from './filmstrip.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getPhotoAspectRatio, saveRatioToCache } from './utils.js';
 import {
@@ -72,6 +72,9 @@ lbEl.addEventListener('click', function (e) {
     if (state.lbZoomLevel > 1) {
       resetZoom();
     } else {
+      if (state.isMobile) {
+        disengageFsTimeline(true);
+      }
       state.lbZoomLevel = 2.5;
       let rect = img.getBoundingClientRect();
       state.lbZoomPanX = -(e.clientX - (rect.left + rect.width / 2)) * (state.lbZoomLevel - 1);
@@ -787,6 +790,9 @@ if (state.isMobile) {
 
       if (e.touches.length === 2 && !dLocked) {
         isPinching = true;
+        if (state.isMobile) {
+          disengageFsTimeline(true);
+        }
         pinchInitDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
         pinchInitLevel = state.lbZoomLevel;
         pinchInitPanX = state.lbZoomPanX;

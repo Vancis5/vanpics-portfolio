@@ -2,6 +2,7 @@ import { domRefs } from './dom.js';
 import { state } from './state.js';
 import { hideFilmstripIfReady, showFilmstripIfReady } from './core.js';
 import { getLastSideNavTime } from './lightbox-nav.js';
+import { disengageFsTimeline, engageFsTimeline } from './filmstrip.js';
 
 const LUCIDE_ZOOM_OUT = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-4 -4 32 32' fill='none' stroke='%23ddd8cf' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round' style='filter:drop-shadow(0 1.5px 2px %23000)'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E") 11 11, zoom-out`;
 
@@ -77,6 +78,7 @@ export function updateZoomTransform(img: any, smooth = true) {
         mWrap.scrollLeft = state.cur * mWrap.offsetWidth; // explicitly bind scroll back unconditionally
         let slides = mWrap.querySelectorAll('.snap-slide') as NodeListOf<HTMLElement>;
         for (let i = 0; i < slides.length; i++) slides[i].style.opacity = '1';
+        requestAnimationFrame(engageFsTimeline);
       }
     };
     
@@ -133,6 +135,9 @@ export function updateZoomTransform(img: any, smooth = true) {
     }
     showFilmstripIfReady();
   } else {
+    if (state.isMobile) {
+      disengageFsTimeline(true);
+    }
     if (!wasZoomed && state.lbZoomLevel >= 1.05) {
       wasZoomed = true;
       triggerZoomHaptic(true);
@@ -222,6 +227,7 @@ export function updateZoomTransform(img: any, smooth = true) {
     }
 
     if (state.isMobile && mWrap.style.overflowX !== 'visible') {
+      disengageFsTimeline(true);
       // Prevent browser from zero-ing out scroll when we swap to visible overflow
       mWrap.style.transform = 'translateX(-' + (state.cur * mWrap.offsetWidth) + 'px)';
       mWrap.style.overflowX = 'visible'; // allow zoom popping over descriptions and screens!
