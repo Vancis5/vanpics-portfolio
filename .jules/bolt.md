@@ -1,3 +1,0 @@
-## 2024-05-14 - Avoiding Layout Thrashing on mousemove
-**Learning:** Calling `getBoundingClientRect()` inside high-frequency events like `mousemove` causes forced synchronous layout (layout thrashing) which blocks the main thread. This app uses glowing cursor trackers that follow the mouse, but they were reading layout on every tick.
-**Action:** Always cache the element's position on `mouseenter` (as document-relative coordinates) and use `e.pageX/pageY` (which are document-relative) instead of `e.clientX/clientY` to compute relative mouse positions. This completely eliminates synchronous layout reads from the critical animation path.

@@ -67,3 +67,4 @@ lighthouse.*
 dist-*/
 .dev.vars
 *:Zone.Identifier
+.jules/
