@@ -2,7 +2,7 @@
 
 my photography & motion portfolio. minimal, typographic, smooth.
 
-> pics by van
+> [**live site → vanpics.pages.dev**](https://vanpics.pages.dev)
 
 ## what it does
 
