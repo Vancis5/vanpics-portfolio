@@ -4,6 +4,8 @@ my photography & motion portfolio. minimal, typographic, smooth.
 
 > [**live site → vanpics.pages.dev**](https://vanpics.pages.dev)
 
+![vanpics preview](preview.jpg)
+
 ## what it does
 
 - masonry grid gallery w/ category filtering
