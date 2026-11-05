@@ -21,17 +21,13 @@ google photos felt too impersonal for the pictures i actually care about. so i b
 
 ### demo
 
-<!-- TODO: GIF 1. category filtering in the grid, click a filter and the masonry reflows. 5 to 8 sec, under 5MB. save as docs/filtering.gif -->
-![category filtering](docs/filtering.gif)
-
-<!-- TODO: GIF 2. open a photo, thumbnail expands into the lightbox, then scroll through the filmstrip. save as docs/lightbox.gif -->
-![lightbox hand-off and filmstrip](docs/lightbox.gif)
-
-<!-- TODO: GIF or phone screenshot. swipe gestures on mobile, ideally a screen recording from your phone. save as docs/mobile.gif -->
-![mobile swipe](docs/mobile.gif)
-
-<!-- TODO: OPTIONAL. screenshot of a photo with a long diary-style caption, since the captions are the whole point. save as docs/caption.png -->
 ![caption example](docs/caption.png)
+
+<!-- TODO: once you record screen clips, drop them in docs/ and uncomment:
+![category filtering](docs/filtering.gif)
+![lightbox hand-off and filmstrip](docs/lightbox.gif)
+![mobile swipe](docs/mobile.gif)
+-->
 
 ## stack
 
