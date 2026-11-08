@@ -60,13 +60,15 @@ export function setAuthStatus(status: 'verifying' | 'secured' | 'failed' | 'unve
 export async function verifyToken(token: string) {
   if (!token) return;
   const rememberCheckbox = document.getElementById('remember-token') as HTMLInputElement | null;
+  const isRemember = rememberCheckbox ? rememberCheckbox.checked : !!localStorage.getItem('vanpics_admin_token');
   
   setAuthStatus('verifying');
   try {
-    const res = await fetch(`${API_BASE_URL}/api/admin/verify`, {
+    const res = await fetch(`${API_BASE_URL}/api/admin/verify?remember=${isRemember}`, {
       method: 'GET',
       headers: {
-        'X-Admin-Token': token
+        'X-Admin-Token': token,
+        'X-Remember': isRemember ? 'true' : 'false'
       }
     });
     

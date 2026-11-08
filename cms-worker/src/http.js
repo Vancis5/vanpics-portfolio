@@ -51,7 +51,7 @@ export function corsHeaders(request, env) {
   const origin = request.headers.get('Origin');
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Range',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, X-Remember, Range',
     'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
@@ -218,6 +218,76 @@ async function verifyJWT(token, secret) {
   }
 }
 
+let authSchemaEnsured = false;
+export async function ensureAuthSchema(db) {
+  if (authSchemaEnsured || !db) return;
+  try {
+    await db.batch([
+      db.prepare(`CREATE TABLE IF NOT EXISTS rate_limits (ip TEXT PRIMARY KEY, attempts INTEGER DEFAULT 0, last_attempt INTEGER)`),
+      db.prepare(`CREATE TABLE IF NOT EXISTS auth_logs (id TEXT PRIMARY KEY, ip_address TEXT, action TEXT NOT NULL, details TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`),
+      db.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_logs_created ON auth_logs(created_at)`)
+    ]);
+    authSchemaEnsured = true;
+  } catch (err) {
+    console.error('ensureAuthSchema error:', err);
+    authSchemaEnsured = true;
+  }
+}
+
+export async function checkRateLimit(db, ip, lockoutMs = 15 * 60 * 1000, maxAttempts = 5) {
+  if (!db || !ip) return { allowed: true };
+  const now = Date.now();
+  try {
+    const row = await db.prepare(
+      `SELECT attempts, last_attempt FROM rate_limits WHERE ip = ?`
+    ).bind(ip).first();
+
+    if (row && row.attempts >= maxAttempts) {
+      const elapsed = now - row.last_attempt;
+      if (elapsed < lockoutMs) {
+        const remainingSec = Math.ceil((lockoutMs - elapsed) / 1000);
+        return { allowed: false, remainingSec };
+      }
+    }
+  } catch (err) {
+    console.error('checkRateLimit error:', err);
+  }
+  return { allowed: true };
+}
+
+export async function recordLoginAttempt(db, ip, success, lockoutMs = 15 * 60 * 1000) {
+  if (!db || !ip) return;
+  const now = Date.now();
+  try {
+    if (success) {
+      await db.prepare(`DELETE FROM rate_limits WHERE ip = ?`).bind(ip).run();
+    } else {
+      await db.prepare(`
+        INSERT INTO rate_limits (ip, attempts, last_attempt)
+        VALUES (?, 1, ?)
+        ON CONFLICT(ip) DO UPDATE SET
+          attempts = CASE WHEN (? - last_attempt) > ? THEN 1 ELSE attempts + 1 END,
+          last_attempt = ?
+      `).bind(ip, now, now, lockoutMs, now).run();
+    }
+  } catch (err) {
+    console.error('recordLoginAttempt error:', err);
+  }
+}
+
+export async function logAuthEvent(db, ip, action, details) {
+  if (!db) return;
+  try {
+    const id = crypto.randomUUID();
+    await db.prepare(
+      `INSERT INTO auth_logs (id, ip_address, action, details, created_at)
+       VALUES (?, ?, ?, ?, datetime('now'))`
+    ).bind(id, ip || 'unknown', action, details || null).run();
+  } catch (err) {
+    console.error('logAuthEvent error:', err);
+  }
+}
+
 export async function assertAdmin(request, env) {
   if (!env.ADMIN_SECRET) {
     return { ok: false, status: 503, error: 'admin secret is not configured' };
@@ -248,27 +318,21 @@ export async function assertAdmin(request, env) {
   const ip =
     request.headers.get('CF-Connecting-IP') ||
     request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
-    null;
+    '127.0.0.1';
   const now = Date.now();
   const lockoutTime = 15 * 60 * 1000; // 15 minutes
+  const maxAttempts = 5;
 
-  if (env.DB && ip) {
-    try {
-      const record = await env.DB.prepare(
-        `INSERT INTO rate_limits (ip, attempts, last_attempt)
-         VALUES (?, 1, ?)
-         ON CONFLICT(ip) DO UPDATE SET
-           attempts = CASE WHEN (? - last_attempt) > ? THEN 1 ELSE attempts + 1 END,
-           last_attempt = CASE WHEN (? - last_attempt) > ? THEN ? ELSE last_attempt END
-         RETURNING attempts, last_attempt`
-      ).bind(ip, now, now, lockoutTime, now, lockoutTime, now).first();
-
-      if (record && record.attempts > 5 && (now - record.last_attempt) < lockoutTime) {
-        const remainingSec = Math.ceil((lockoutTime - (now - record.last_attempt)) / 1000);
-        return { ok: false, status: 429, error: `too many login attempts. try again in ${remainingSec} seconds.` };
-      }
-    } catch (dbErr) {
-      console.error('Rate limit check error:', dbErr);
+  if (env.DB) {
+    await ensureAuthSchema(env.DB);
+    const rateLimit = await checkRateLimit(env.DB, ip, lockoutTime, maxAttempts);
+    if (!rateLimit.allowed) {
+      await logAuthEvent(env.DB, ip, 'rate_limited', `Locked out for ${rateLimit.remainingSec}s`);
+      return {
+        ok: false,
+        status: 429,
+        error: `too many login attempts. security lockout active for ${rateLimit.remainingSec} seconds.`
+      };
     }
   }
 
@@ -288,22 +352,33 @@ export async function assertAdmin(request, env) {
   }
 
   if (mismatch !== 0) {
+    if (env.DB) {
+      await recordLoginAttempt(env.DB, ip, false, lockoutTime);
+      await logAuthEvent(env.DB, ip, 'login_failed', 'invalid admin token attempt');
+    }
     return { ok: false, status: 401, error: 'unauthorized: invalid admin token' };
   }
 
   // Success! Clear/reset attempts on successful login
-  if (env.DB && ip) {
-    try {
-      await env.DB.prepare('DELETE FROM rate_limits WHERE ip = ?').bind(ip).run();
-    } catch (dbErr) {
-      console.error('Rate limit delete error:', dbErr);
-    }
+  if (env.DB) {
+    await recordLoginAttempt(env.DB, ip, true);
+    await logAuthEvent(env.DB, ip, 'login_success', 'authenticated as admin');
   }
 
-  // Correct master password! Issue a secure signed JWT valid for 24 hours (expiry in seconds)
+  // Correct master password! Issue a secure signed JWT
+  // Remember token: 30 days vs 24 hours (matching BIDTRACK)
+  let isRemember = request.headers.get('X-Remember') === 'true';
+  if (!isRemember) {
+    try {
+      const url = new URL(request.url);
+      isRemember = url.searchParams.get('remember') === 'true' || url.searchParams.get('remember') === '1';
+    } catch {}
+  }
+  const durationSeconds = isRemember ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+
   const payload = {
     sub: 'admin',
-    exp: Math.floor(now / 1000) + 24 * 60 * 60
+    exp: Math.floor(now / 1000) + durationSeconds
   };
   const jwt = await signJWT(payload, jwtSecret);
 

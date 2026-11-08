@@ -2110,12 +2110,21 @@
       box-shadow: none;
     }
 
+    .login-input-wrapper.has-error {
+      border-color: var(--danger) !important;
+    }
+
     .login-input-wrapper svg.lock-icon {
       width: 16px;
       height: 16px;
       stroke: var(--text-faint);
       margin-right: 0.75rem;
       flex-shrink: 0;
+      transition: stroke var(--transition);
+    }
+
+    .login-input-wrapper.has-error svg.lock-icon {
+      stroke: var(--danger) !important;
     }
 
     .login-input {
@@ -2134,6 +2143,15 @@
     .login-input::placeholder {
       letter-spacing: 0.01em;
       font-size: 0.8rem;
+    }
+
+    .login-input:-webkit-autofill,
+    .login-input:-webkit-autofill:hover,
+    .login-input:-webkit-autofill:focus,
+    .login-input:-webkit-autofill:active {
+      font-family: 'DM Mono', monospace !important;
+      -webkit-text-fill-color: var(--text) !important;
+      transition: background-color 5000s ease-in-out 0s;
     }
 
     .login-error-message {
@@ -2183,6 +2201,11 @@
       opacity: 0.6;
       cursor: not-allowed;
       box-shadow: none;
+    }
+
+    .btn-login-submit .spinner {
+      border: 2px solid rgba(12, 11, 11, 0.25);
+      border-top-color: #0c0b0b;
     }
 
     /* Custom Form Dropdowns & Nudged Lucide Chevron */

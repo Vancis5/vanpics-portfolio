@@ -20,6 +20,47 @@ if (savedToken) {
     const toast = document.getElementById('toast');
     const rememberWrapper = document.querySelector('.remember-checkbox-wrapper');
 
+    const loginInputWrapper = loginSecretInput ? (loginSecretInput.closest('.login-input-wrapper') as HTMLElement | null) : null;
+    let lockoutTimer: any = null;
+
+    function startLockoutCountdown(seconds: number) {
+      if (lockoutTimer) clearInterval(lockoutTimer);
+      let remaining = Math.max(1, Math.round(seconds));
+      loginBtnSubmit.disabled = true;
+      loginInputWrapper?.classList.add('has-error');
+      loginSecretInput.setAttribute('aria-invalid', 'true');
+
+      const updateText = () => {
+        loginErrorMsg.innerText = `security lockout active: retry in ${remaining}s`;
+      };
+      updateText();
+
+      lockoutTimer = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(lockoutTimer);
+          lockoutTimer = null;
+          loginBtnSubmit.disabled = false;
+          loginErrorMsg.innerText = '';
+          loginInputWrapper?.classList.remove('has-error');
+          loginSecretInput.setAttribute('aria-invalid', 'false');
+        } else {
+          updateText();
+        }
+      }, 1000);
+    }
+
+    // Clear error states on typing (unless active lockout timer is ticking)
+    if (loginSecretInput) {
+      loginSecretInput.addEventListener('input', () => {
+        if (!lockoutTimer) {
+          loginErrorMsg.innerText = '';
+          loginInputWrapper?.classList.remove('has-error');
+          loginSecretInput.setAttribute('aria-invalid', 'false');
+        }
+      });
+    }
+
     // Handle delayed layout transition on initial autofocus, and instant transition on subsequent focus/blur
     if (loginSecretInput) {
       let isInitialLoad = true;
@@ -65,16 +106,13 @@ if (savedToken) {
 
     // Toggle password visibility (restores focus to keep keyboard open)
     if (loginTogglePasswordBtn && loginSecretInput && loginEyeShow && loginEyeHide) {
-      loginTogglePasswordBtn.addEventListener('click', (e) => {
-        if (loginSecretInput.type === 'password') {
-          loginSecretInput.type = 'text';
-          loginEyeShow.style.display = 'none';
-          loginEyeHide.style.display = 'block';
-        } else {
-          loginSecretInput.type = 'password';
-          loginEyeShow.style.display = 'block';
-          loginEyeHide.style.display = 'none';
-        }
+      loginTogglePasswordBtn.addEventListener('click', () => {
+        const isPassword = loginSecretInput.type === 'password';
+        loginSecretInput.type = isPassword ? 'text' : 'password';
+        loginEyeShow.style.display = isPassword ? 'none' : 'block';
+        loginEyeHide.style.display = isPassword ? 'block' : 'none';
+        loginTogglePasswordBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        loginTogglePasswordBtn.title = isPassword ? 'Hide password' : 'Show password';
         loginSecretInput.focus();
       });
     }
@@ -89,18 +127,28 @@ if (savedToken) {
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (lockoutTimer) return;
+
         const token = loginSecretInput.value.trim();
         if (!token) return;
 
         // Loading state
         loginBtnSubmit.disabled = true;
+        loginBtnSubmit.setAttribute('aria-busy', 'true');
+        if (loginBtnText) loginBtnText.style.display = 'none';
+        if (loginBtnSpinner) loginBtnSpinner.style.display = 'inline-block';
         loginErrorMsg.innerText = '';
+        loginInputWrapper?.classList.remove('has-error');
+        loginSecretInput.setAttribute('aria-invalid', 'false');
+
+        const isRemember = loginRememberCheckbox.checked;
 
         try {
-          const res = await fetch(`${API_BASE_URL}/api/admin/verify`, {
+          const res = await fetch(`${API_BASE_URL}/api/admin/verify?remember=${isRemember}`, {
             method: 'GET',
             headers: {
-              'X-Admin-Token': token
+              'X-Admin-Token': token,
+              'X-Remember': isRemember ? 'true' : 'false'
             }
           });
 
@@ -108,7 +156,7 @@ if (savedToken) {
             const data = await res.json();
             const tokenToStore = data.token || token;
 
-            if (loginRememberCheckbox.checked) {
+            if (isRemember) {
               localStorage.setItem('vanpics_admin_token', tokenToStore);
               sessionStorage.removeItem('vanpics_admin_token');
             } else {
@@ -122,14 +170,32 @@ if (savedToken) {
             }, 500);
           } else {
             const errJson = await res.json().catch(() => null);
-            loginErrorMsg.innerText = (errJson && errJson.error) || 'invalid archive token';
+            loginInputWrapper?.classList.add('has-error');
+            loginSecretInput.setAttribute('aria-invalid', 'true');
+
+            if (res.status === 429) {
+              const errorStr = (errJson && errJson.error) || '';
+              const match = errorStr.match(/(\d+)\s*(?:seconds|second|s)\b/i);
+              const remainingSec = match ? parseInt(match[1], 10) : 900;
+              startLockoutCountdown(remainingSec);
+            } else {
+              loginErrorMsg.innerText = (errJson && errJson.error) || 'invalid archive token';
+            }
+
             try { localStorage.removeItem('vanpics_admin_token'); } catch {}
             try { sessionStorage.removeItem('vanpics_admin_token'); } catch {}
           }
         } catch (err) {
+          loginInputWrapper?.classList.add('has-error');
+          loginSecretInput.setAttribute('aria-invalid', 'true');
           loginErrorMsg.innerText = 'server connection failed';
         } finally {
-          loginBtnSubmit.disabled = false;
+          loginBtnSubmit.removeAttribute('aria-busy');
+          if (loginBtnText) loginBtnText.style.display = 'inline';
+          if (loginBtnSpinner) loginBtnSpinner.style.display = 'none';
+          if (!lockoutTimer) {
+            loginBtnSubmit.disabled = false;
+          }
         }
       });
     }

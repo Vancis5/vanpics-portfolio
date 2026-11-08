@@ -39,8 +39,17 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   last_attempt INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS auth_logs (
+  id TEXT PRIMARY KEY,
+  ip_address TEXT,
+  action TEXT NOT NULL,
+  details TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indices for performance
 CREATE INDEX IF NOT EXISTS idx_photos_sort_order ON photos(sort_order ASC, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_category ON photos(category);
 CREATE INDEX IF NOT EXISTS idx_videos_sort_order ON videos(sort_order ASC, created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_logs_created ON auth_logs(created_at);
 
